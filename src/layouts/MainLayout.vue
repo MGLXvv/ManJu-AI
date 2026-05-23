@@ -1,6 +1,6 @@
-﻿<template>
+<template>
   <div class="main-layout">
-    <TopNav />
+    <AppTopBar />
     <main class="main-layout__body">
       <RouterView />
     </main>
@@ -8,5 +8,5 @@
 </template>
 
 <script setup lang="ts">
-import TopNav from '@/components/layout/TopNav.vue'
+import AppTopBar from '@/components/navigation/AppTopBar.vue'
 </script>

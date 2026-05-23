@@ -1,14 +1,16 @@
-﻿<template>
+<template>
   <div class="editor-layout">
-    <TopNav />
-    <WorkflowStepper />
-    <main class="editor-layout__body">
-      <RouterView />
-    </main>
+    <AppTopBar />
+    <div class="editor-layout__body">
+      <EditorSideNav />
+      <main class="editor-layout__workspace">
+        <RouterView />
+      </main>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import TopNav from '@/components/layout/TopNav.vue'
-import WorkflowStepper from '@/components/editor/WorkflowStepper.vue'
+import AppTopBar from '@/components/navigation/AppTopBar.vue'
+import EditorSideNav from '@/components/navigation/EditorSideNav.vue'
 </script>

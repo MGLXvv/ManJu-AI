@@ -1,0 +1,359 @@
+{
+  "nav-home-default": {
+    "width": 24,
+    "height": 24,
+    "label": "首页(默认)",
+    "group": "顶部导航",
+    "file": "nav-home-default.png"
+  },
+  "nav-home-active": {
+    "width": 24,
+    "height": 24,
+    "label": "首页(选中)",
+    "group": "顶部导航",
+    "file": "nav-home-active.png"
+  },
+  "nav-resource-default": {
+    "width": 24,
+    "height": 24,
+    "label": "资源库(默认)",
+    "group": "顶部导航",
+    "file": "nav-resource-default.png"
+  },
+  "nav-resource-active": {
+    "width": 24,
+    "height": 24,
+    "label": "资源库(选中)",
+    "group": "顶部导航",
+    "file": "nav-resource-active.png"
+  },
+  "nav-voice-default": {
+    "width": 24,
+    "height": 24,
+    "label": "音色管理(默认)",
+    "group": "顶部导航",
+    "file": "nav-voice-default.png"
+  },
+  "nav-voice-active": {
+    "width": 24,
+    "height": 24,
+    "label": "音色管理(选中)",
+    "group": "顶部导航",
+    "file": "nav-voice-active.png"
+  },
+  "nav-team-default": {
+    "width": 24,
+    "height": 24,
+    "label": "团队空间(默认)",
+    "group": "顶部导航",
+    "file": "nav-team-default.png"
+  },
+  "nav-team-active": {
+    "width": 24,
+    "height": 24,
+    "label": "团队空间(选中)",
+    "group": "顶部导航",
+    "file": "nav-team-active.png"
+  },
+  "nav-points-default": {
+    "width": 24,
+    "height": 24,
+    "label": "管理充值(默认)",
+    "group": "顶部导航",
+    "file": "nav-points-default.png"
+  },
+  "nav-points-active": {
+    "width": 24,
+    "height": 24,
+    "label": "管理充值(选中)",
+    "group": "顶部导航",
+    "file": "nav-points-active.png"
+  },
+  "nav-system-default": {
+    "width": 24,
+    "height": 24,
+    "label": "系统管理(默认)",
+    "group": "顶部导航",
+    "file": "nav-system-default.png"
+  },
+  "nav-system-active": {
+    "width": 24,
+    "height": 24,
+    "label": "系统管理(选中)",
+    "group": "顶部导航",
+    "file": "nav-system-active.png"
+  },
+  "toolbar-search": {
+    "width": 20,
+    "height": 20,
+    "label": "搜索",
+    "group": "工具栏",
+    "file": "toolbar-search.png"
+  },
+  "toolbar-batch": {
+    "width": 20,
+    "height": 20,
+    "label": "批量",
+    "group": "工具栏",
+    "file": "toolbar-batch.png"
+  },
+  "toolbar-add": {
+    "width": 20,
+    "height": 20,
+    "label": "添加",
+    "group": "工具栏",
+    "file": "toolbar-add.png"
+  },
+  "toolbar-create": {
+    "width": 28,
+    "height": 28,
+    "label": "新建项目",
+    "group": "工具栏",
+    "file": "toolbar-create.png"
+  },
+  "toolbar-import": {
+    "width": 28,
+    "height": 28,
+    "label": "导入项目",
+    "group": "工具栏",
+    "file": "toolbar-import.png"
+  },
+  "editor-fullscreen": {
+    "width": 20,
+    "height": 20,
+    "label": "全屏",
+    "group": "编辑器操作",
+    "file": "editor-fullscreen.png"
+  },
+  "editor-ai-optimize": {
+    "width": 20,
+    "height": 20,
+    "label": "AI优化",
+    "group": "编辑器操作",
+    "file": "editor-ai-optimize.png"
+  },
+  "editor-collapse": {
+    "width": 17,
+    "height": 32,
+    "label": "收起",
+    "group": "编辑器操作",
+    "file": "editor-collapse.png"
+  },
+  "editor-expand": {
+    "width": 17,
+    "height": 32,
+    "label": "展开",
+    "group": "编辑器操作",
+    "file": "editor-expand.png"
+  },
+  "editor-play": {
+    "width": 36,
+    "height": 36,
+    "label": "播放",
+    "group": "编辑器操作",
+    "file": "editor-play.png"
+  },
+  "pager-prev": {
+    "width": 16,
+    "height": 16,
+    "label": "上一页",
+    "group": "分页",
+    "file": "pager-prev.png"
+  },
+  "pager-next": {
+    "width": 16,
+    "height": 16,
+    "label": "下一页",
+    "group": "分页",
+    "file": "pager-next.png"
+  },
+  "asset-edit": {
+    "width": 24,
+    "height": 24,
+    "label": "编辑(默认)",
+    "group": "资源卡片操作",
+    "file": "asset-edit.png"
+  },
+  "asset-visible": {
+    "width": 24,
+    "height": 24,
+    "label": "可见(默认)",
+    "group": "资源卡片操作",
+    "file": "asset-visible.png"
+  },
+  "asset-lock": {
+    "width": 24,
+    "height": 24,
+    "label": "锁定(默认)",
+    "group": "资源卡片操作",
+    "file": "asset-lock.png"
+  },
+  "asset-zoom": {
+    "width": 24,
+    "height": 24,
+    "label": "缩放(默认)",
+    "group": "资源卡片操作",
+    "file": "asset-zoom.png"
+  },
+  "asset-copy": {
+    "width": 24,
+    "height": 24,
+    "label": "复制(默认)",
+    "group": "资源卡片操作",
+    "file": "asset-copy.png"
+  },
+  "asset-delete": {
+    "width": 24,
+    "height": 24,
+    "label": "删除(默认)",
+    "group": "资源卡片操作",
+    "file": "asset-delete.png"
+  },
+  "asset-edit-active": {
+    "width": 24,
+    "height": 24,
+    "label": "编辑(选中)",
+    "group": "资源卡片操作",
+    "file": "asset-edit-active.png"
+  },
+  "asset-visible-active": {
+    "width": 24,
+    "height": 24,
+    "label": "可见(选中)",
+    "group": "资源卡片操作",
+    "file": "asset-visible-active.png"
+  },
+  "asset-lock-active": {
+    "width": 24,
+    "height": 24,
+    "label": "锁定(选中)",
+    "group": "资源卡片操作",
+    "file": "asset-lock-active.png"
+  },
+  "asset-zoom-active": {
+    "width": 24,
+    "height": 24,
+    "label": "缩放(选中)",
+    "group": "资源卡片操作",
+    "file": "asset-zoom-active.png"
+  },
+  "asset-copy-active": {
+    "width": 24,
+    "height": 24,
+    "label": "复制(选中)",
+    "group": "资源卡片操作",
+    "file": "asset-copy-active.png"
+  },
+  "asset-delete-active": {
+    "width": 24,
+    "height": 24,
+    "label": "删除(选中)",
+    "group": "资源卡片操作",
+    "file": "asset-delete-active.png"
+  },
+  "flow-script-edited": {
+    "width": 24,
+    "height": 24,
+    "label": "文案(已编辑)",
+    "group": "流程步骤",
+    "file": "flow-script-edited.png"
+  },
+  "flow-script-editing": {
+    "width": 24,
+    "height": 24,
+    "label": "文案(编辑中)",
+    "group": "流程步骤",
+    "file": "flow-script-editing.png"
+  },
+  "flow-script-unedited": {
+    "width": 24,
+    "height": 24,
+    "label": "文案(未编辑)",
+    "group": "流程步骤",
+    "file": "flow-script-unedited.png"
+  },
+  "flow-setting-edited": {
+    "width": 24,
+    "height": 24,
+    "label": "设定(已编辑)",
+    "group": "流程步骤",
+    "file": "flow-setting-edited.png"
+  },
+  "flow-setting-editing": {
+    "width": 24,
+    "height": 24,
+    "label": "设定(编辑中)",
+    "group": "流程步骤",
+    "file": "flow-setting-editing.png"
+  },
+  "flow-setting-unedited": {
+    "width": 24,
+    "height": 24,
+    "label": "设定(未编辑)",
+    "group": "流程步骤",
+    "file": "flow-setting-unedited.png"
+  },
+  "flow-storyboard-edited": {
+    "width": 24,
+    "height": 24,
+    "label": "分镜(已编辑)",
+    "group": "流程步骤",
+    "file": "flow-storyboard-edited.png"
+  },
+  "flow-storyboard-editing": {
+    "width": 24,
+    "height": 24,
+    "label": "分镜(编辑中)",
+    "group": "流程步骤",
+    "file": "flow-storyboard-editing.png"
+  },
+  "flow-storyboard-unedited": {
+    "width": 24,
+    "height": 24,
+    "label": "分镜(未编辑)",
+    "group": "流程步骤",
+    "file": "flow-storyboard-unedited.png"
+  },
+  "flow-video-edited": {
+    "width": 24,
+    "height": 24,
+    "label": "视频(已编辑)",
+    "group": "流程步骤",
+    "file": "flow-video-edited.png"
+  },
+  "flow-video-editing": {
+    "width": 24,
+    "height": 24,
+    "label": "视频(编辑中)",
+    "group": "流程步骤",
+    "file": "flow-video-editing.png"
+  },
+  "flow-video-unedited": {
+    "width": 24,
+    "height": 24,
+    "label": "视频(未编辑)",
+    "group": "流程步骤",
+    "file": "flow-video-unedited.png"
+  },
+  "flow-complete-edited": {
+    "width": 24,
+    "height": 24,
+    "label": "完成(已编辑)",
+    "group": "流程步骤",
+    "file": "flow-complete-edited.png"
+  },
+  "flow-complete-editing": {
+    "width": 24,
+    "height": 24,
+    "label": "完成(编辑中)",
+    "group": "流程步骤",
+    "file": "flow-complete-editing.png"
+  },
+  "flow-complete-unedited": {
+    "width": 24,
+    "height": 24,
+    "label": "完成(未编辑)",
+    "group": "流程步骤",
+    "file": "flow-complete-unedited.png"
+  }
+}

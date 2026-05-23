@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+coverage/
+*.tsbuildinfo
+
+# Environment and local config
+.env
+.env.*
+!.env.example
+
+# IDE and OS files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local analysis, design references, and generated artifacts
+docs/
+outputs/
+tools/
+原型/
+原型截图/
+task_plan.md
+findings.md
+progress.md
+
+# Archives and large source exports
+*.zip
+*.rar
+*.7z

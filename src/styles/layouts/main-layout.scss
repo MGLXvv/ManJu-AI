@@ -1,0 +1,17 @@
+.main-layout,
+.editor-layout {
+  min-height: 100vh;
+  background: var(--color-bg);
+}
+
+.main-layout,
+.editor-layout {
+  display: grid;
+  grid-template-rows: var(--top-bar-height) 1fr;
+}
+
+.main-layout__body {
+  min-height: 0;
+  padding: 20px 24px 28px;
+  overflow: auto;
+}

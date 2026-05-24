@@ -1,31 +1,37 @@
-﻿<template>
-  <section class="project-list-page">
-    <header class="project-list-page__toolbar">
-      <div class="segmented">
-        <button :class="{ active: store.statusFilter === 'all' }" @click="store.statusFilter = 'all'">全部</button>
-        <button :class="{ active: store.statusFilter === 'in_progress' }" @click="store.statusFilter = 'in_progress'">进行中</button>
-        <button :class="{ active: store.statusFilter === 'completed' }" @click="store.statusFilter = 'completed'">已完成</button>
-      </div>
-      <input v-model="store.keyword" class="search-input" placeholder="请输入项目名称" />
-    </header>
+<template>
+  <section class="dashboard-page">
+    <DashboardBackground />
 
-    <div class="project-grid">
-      <article class="project-card project-card--create">
-        <AppButton>新建项目</AppButton>
-        <AppButton>导入</AppButton>
-      </article>
-      <RouterLink v-for="project in store.filteredProjects" :key="project.id" class="project-card" :to="`/projects/${project.id}/editor/${project.currentStep}`">
-        <strong>{{ project.name }}</strong>
-        <span>{{ project.updatedAt }}</span>
-        <small>{{ project.status === 'completed' ? '已完成' : '进行中' }}</small>
-      </RouterLink>
+    <div class="dashboard-page__content">
+      <header class="dashboard-page__title-block">
+        <h1 class="dashboard-page__title">我的项目</h1>
+        <p class="dashboard-page__summary">共 {{ store.projects.length }} 个项目</p>
+      </header>
+
+      <ProjectToolbar v-model:status="store.statusFilter" v-model:keyword="store.keyword" />
+
+      <ProjectGrid :projects="store.filteredProjects" @create="onCreateProject" @import="onImportProject" />
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import AppButton from '@/components/app/AppButton.vue'
+import { onMounted } from 'vue'
+import DashboardBackground from '@/components/dashboard/DashboardBackground.vue'
+import ProjectGrid from '@/components/dashboard/ProjectGrid.vue'
+import ProjectToolbar from '@/components/dashboard/ProjectToolbar.vue'
 import { useProjectStore } from '@/stores/project'
 
 const store = useProjectStore()
+
+onMounted(() => {
+  void store.bootstrap()
+})
+
+const onCreateProject = async (): Promise<void> => {
+  const name = `新项目 ${store.projects.length + 1}`
+  await store.createProject(name)
+}
+
+const onImportProject = (): void => {}
 </script>

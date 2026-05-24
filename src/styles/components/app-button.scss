@@ -1,0 +1,20 @@
+.app-button {
+  min-width: 88px;
+  height: 36px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-panel-2);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.app-button:hover {
+  filter: brightness(1.06);
+}
+
+.app-button--primary {
+  border: 0;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-2));
+  color: #130d24;
+  font-weight: 600;
+}

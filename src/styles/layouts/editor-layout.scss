@@ -1,0 +1,21 @@
+.editor-layout__body {
+  display: grid;
+  grid-template-columns: var(--editor-side-width) 1fr;
+  min-height: 0;
+}
+
+.editor-layout__workspace {
+  min-width: 0;
+  overflow: auto;
+  padding: 20px 24px 24px 0;
+}
+
+@media (width <= 1024px) {
+  .editor-layout__body {
+    grid-template-columns: 1fr;
+  }
+
+  .editor-layout__workspace {
+    padding: 16px;
+  }
+}

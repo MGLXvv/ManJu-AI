@@ -3,7 +3,7 @@
     <input
       :value="modelValue"
       class="project-search-box__input"
-      placeholder="请输入项目名称"
+      placeholder="搜索名称"
       @input="onInput"
     />
     <FigmaIcon class="project-search-box__icon" name="toolbar-search" :size="18" />

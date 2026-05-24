@@ -13,4 +13,6 @@ export interface Project {
   style: string
   updatedAt: string
   duration?: string
+  coverUrl?: string
+  favorite?: boolean
 }

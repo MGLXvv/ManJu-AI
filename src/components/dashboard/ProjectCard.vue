@@ -1,15 +1,17 @@
 <template>
   <RouterLink class="project-card" :to="`/projects/${project.id}/editor/${project.currentStep}`">
-    <div class="project-card__cover">
-      <span class="project-card__badge" :class="`is-${project.status}`">
-        {{ project.status === 'completed' ? '已完成' : '进行中' }}
-      </span>
-      <span class="project-card__title-shadow">{{ project.name }}</span>
-    </div>
-    <div class="project-card__body">
+    <img v-if="project.coverUrl" class="project-card__image" :src="project.coverUrl" :alt="project.name" />
+    <div v-else class="project-card__fallback"></div>
+
+    <div class="project-card__shade"></div>
+
+    <span class="project-card__mark" :class="project.status === 'completed' ? 'is-completed' : 'is-unfinished'">
+      ★
+    </span>
+
+    <div class="project-card__info">
       <strong class="project-card__title">{{ project.name }}</strong>
-      <span class="project-card__meta">{{ project.updatedAt }}</span>
-      <span class="project-card__meta">画幅 {{ project.ratio }} · {{ project.style }}</span>
+      <span v-if="project.duration" class="project-card__duration">{{ project.duration }}</span>
     </div>
   </RouterLink>
 </template>

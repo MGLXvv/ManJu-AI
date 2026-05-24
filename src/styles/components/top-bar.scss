@@ -5,18 +5,33 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: var(--top-bar-height);
+  height: 68px;
   padding: 0 40px;
   background: #0a0a0b;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 -1px 0 rgb(255 255 255 / 12%);
 }
 
 .app-top-bar__brand {
   position: relative;
   display: inline-flex;
   align-items: center;
-  min-width: 117px;
+  width: 160px;
+  min-width: 160px;
   min-height: 36px;
+  overflow: visible;
+  white-space: nowrap;
+  border: 0;
+  outline: none;
+  box-shadow: none;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.app-top-bar__brand:focus,
+.app-top-bar__brand:focus-visible {
+  border: 0;
+  outline: none;
+  box-shadow: none;
 }
 
 .app-top-bar__brand-glow,
@@ -29,6 +44,7 @@
   line-height: 36px;
   color: #8b5cf6;
   letter-spacing: 0;
+  white-space: nowrap;
 }
 
 .app-top-bar__brand-glow {
@@ -56,25 +72,27 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 12px;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
   background: #262832;
 }
 
 .app-top-bar__tool-btn.is-active {
   background: #0a0a0b;
-  box-shadow: 1px 1px 8px rgba(139, 92, 246, 0.8);
+  box-shadow:
+    0 0 0 1px #8b5cf6,
+    0 0 12px rgb(139 92 246 / 60%);
 }
 
 .app-top-bar__credit {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  height: 38px;
-  min-width: 97px;
+  height: 34px;
+  min-width: 92px;
   padding: 0 12px;
-  border-radius: 19px;
+  border-radius: 18px;
   background: #262832;
 }
 
@@ -102,9 +120,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 12px;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
   color: #8b5cf6;
   background: #0a0a0b;
 }

@@ -1,14 +1,30 @@
 <template>
   <div class="project-status-tabs">
     <button
-      v-for="option in options"
-      :key="option.value"
       type="button"
       class="project-status-tabs__item"
-      :class="{ 'is-active': modelValue === option.value }"
-      @click="$emit('update:modelValue', option.value)"
+      :class="{ 'is-active': modelValue === 'all' }"
+      @click="$emit('update:modelValue', 'all')"
     >
-      {{ option.label }}
+      全部({{ total }})
+    </button>
+
+    <button
+      type="button"
+      class="project-status-tabs__item"
+      :class="{ 'is-active': modelValue === 'in_progress' }"
+      @click="$emit('update:modelValue', 'in_progress')"
+    >
+      进行中({{ inProgress }})
+    </button>
+
+    <button
+      type="button"
+      class="project-status-tabs__item"
+      :class="{ 'is-active': modelValue === 'completed' }"
+      @click="$emit('update:modelValue', 'completed')"
+    >
+      已完成({{ completed }})
     </button>
   </div>
 </template>
@@ -18,15 +34,12 @@ import type { ProjectStatus } from '@/types/project'
 
 defineProps<{
   modelValue: 'all' | ProjectStatus
+  total: number
+  inProgress: number
+  completed: number
 }>()
 
 defineEmits<{
   (e: 'update:modelValue', value: 'all' | ProjectStatus): void
 }>()
-
-const options: Array<{ label: string; value: 'all' | ProjectStatus }> = [
-  { label: '全部', value: 'all' },
-  { label: '进行中', value: 'in_progress' },
-  { label: '已完成', value: 'completed' },
-]
 </script>

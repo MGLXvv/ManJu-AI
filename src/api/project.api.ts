@@ -4,7 +4,13 @@ import { delay, readLocal, writeLocal } from './local'
 
 const PROJECTS_KEY = 'amd.projects'
 
-const getProjects = (): Project[] => readLocal<Project[]>(PROJECTS_KEY, mockProjects)
+const getProjects = (): Project[] => {
+  const stored = readLocal<Project[]>(PROJECTS_KEY, [])
+  if (!Array.isArray(stored) || stored.length < 8) {
+    return mockProjects
+  }
+  return stored
+}
 const setProjects = (projects: Project[]): void => writeLocal(PROJECTS_KEY, projects)
 
 export interface CreateProjectInput {

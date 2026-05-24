@@ -4,17 +4,17 @@
   border: 0;
   border-radius: 0;
   background: #0a0a0b;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .dashboard-page__content {
   position: relative;
   z-index: 1;
   width: 1124px;
-  max-width: calc(100vw - 220px);
-  margin-left: clamp(190px, 14.8vw, 284px);
-  padding-top: 54px;
-  padding-bottom: 92px;
+  max-width: none;
+  margin-left: 310px;
+  padding-top: 64px;
+  padding-bottom: 120px;
   display: grid;
   gap: 0;
 }
@@ -215,6 +215,8 @@
   align-items: start;
   width: 1124px;
   max-width: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 .project-card,
@@ -430,8 +432,10 @@
 @media (max-width: 1919px) {
   .dashboard-page__content {
     width: 1124px;
-    max-width: calc(100vw - 220px);
-    margin-left: clamp(190px, 14.8vw, 284px);
+    max-width: none;
+    margin-left: 310px;
+    padding-top: 64px;
+    padding-bottom: 120px;
   }
 }
 

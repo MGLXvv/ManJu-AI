@@ -33,11 +33,17 @@ export const useProjectStore = defineStore('project', () => {
     }
   }
 
-  const createProject = async (name: string): Promise<Project> => {
+  const createProject = async (
+    name: string,
+    options?: {
+      ratio?: Project['ratio']
+      style?: string
+    },
+  ): Promise<Project> => {
     const created = await projectApi.create({
       name,
-      ratio: '16:9',
-      style: '默认',
+      ratio: options?.ratio ?? '16:9',
+      style: options?.style ?? '默认',
     })
     projects.value = [created, ...projects.value]
     return created

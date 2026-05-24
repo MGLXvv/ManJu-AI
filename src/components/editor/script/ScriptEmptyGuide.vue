@@ -36,10 +36,6 @@
         @click="$emit('select-template', '请将故事拆分为适合分镜制作的镜头段落，每段包含画面、人物动作和旁白。')"
       />
     </div>
-
-    <button class="script-empty-guide__manual-btn" type="button" @click="$emit('manual-edit')">
-      手动输入文案
-    </button>
   </div>
 </template>
 
@@ -48,6 +44,5 @@ import ScriptTemplateButton from './ScriptTemplateButton.vue'
 
 defineEmits<{
   (e: 'select-template', text: string): void
-  (e: 'manual-edit'): void
 }>()
 </script>

@@ -1,7 +1,9 @@
 .main-layout,
 .editor-layout {
+  height: 100vh;
   min-height: 100vh;
   background: var(--color-bg);
+  overflow: hidden;
 }
 
 .main-layout,
@@ -13,5 +15,18 @@
 .main-layout__body {
   min-height: 0;
   padding: 20px 24px 28px;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.main-layout__body::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+.main-layout__content {
+  min-height: 0;
 }

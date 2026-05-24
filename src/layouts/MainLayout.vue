@@ -2,7 +2,9 @@
   <div class="main-layout">
     <AppTopBar />
     <main class="main-layout__body">
-      <RouterView />
+      <div class="main-layout__content">
+        <RouterView />
+      </div>
     </main>
   </div>
 </template>

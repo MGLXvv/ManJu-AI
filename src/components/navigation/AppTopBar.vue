@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <header class="app-top-bar">
     <RouterLink class="app-top-bar__brand" to="/" aria-label="首页">
       <span class="app-top-bar__brand-glow" aria-hidden="true">ManJu AI</span>
@@ -26,18 +26,35 @@
         <span class="app-top-bar__credit-plus" aria-hidden="true">+</span>
       </RouterLink>
 
-      <RouterLink class="app-top-bar__avatar" to="/user" aria-label="用户中心">
-        <CircleUserRound :size="22" aria-hidden="true" />
-      </RouterLink>
+      <div
+        ref="userMenuRef"
+        class="app-top-bar__user"
+        @mouseenter="showUserPopover = true"
+        @mouseleave="showUserPopover = false"
+      >
+        <button
+          class="app-top-bar__avatar"
+          type="button"
+          aria-label="用户中心"
+          :aria-expanded="showUserPopover"
+          @click.stop="showUserPopover = !showUserPopover"
+        >
+          <CircleUserRound :size="22" aria-hidden="true" />
+        </button>
+
+        <UserProfilePopover v-if="showUserPopover" @select="handleUserMenuSelect" />
+      </div>
     </div>
   </header>
 </template>
 
 <script setup lang="ts">
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { CircleUserRound } from 'lucide-vue-next'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import FigmaIcon from '@/components/icons/FigmaIcon.vue'
 import type { FigmaIconName } from '@/components/icons/figmaIconLibrary'
+import UserProfilePopover from '@/components/navigation/UserProfilePopover.vue'
 
 interface NavItem {
   label: string
@@ -46,7 +63,12 @@ interface NavItem {
   iconActive: FigmaIconName
 }
 
+type UserMenuKey = 'messages' | 'password' | 'space' | 'team' | 'logout'
+
 const route = useRoute()
+const router = useRouter()
+const showUserPopover = ref(false)
+const userMenuRef = ref<HTMLElement | null>(null)
 
 const navItems: NavItem[] = [
   { label: '首页', to: '/', iconDefault: 'nav-home-default', iconActive: 'nav-home-active' },
@@ -63,4 +85,38 @@ const isActive = (to: string): boolean => {
   }
   return route.path === to || route.path.startsWith(`${to}/`)
 }
+
+const handleUserMenuSelect = (key: UserMenuKey): void => {
+  showUserPopover.value = false
+
+  if (key === 'space') {
+    void router.push('/resources')
+    return
+  }
+
+  if (key === 'team') {
+    void router.push('/team')
+  }
+}
+
+const handleDocumentClick = (event: MouseEvent): void => {
+  if (!showUserPopover.value) {
+    return
+  }
+
+  const target = event.target as Node | null
+  if (target && userMenuRef.value?.contains(target)) {
+    return
+  }
+
+  showUserPopover.value = false
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleDocumentClick)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleDocumentClick)
+})
 </script>

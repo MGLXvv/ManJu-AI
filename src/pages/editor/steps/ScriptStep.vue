@@ -1,33 +1,43 @@
 <template>
-  <section class="editor-step script-step">
-    <div class="script-step__bg" aria-hidden="true"></div>
+  <div class="script-workbench-card">
+    <header class="script-workbench-card__topbar">
+      <button class="script-model-select" type="button">
+        <span class="script-model-select__icon">Ai</span>
+        <span>Gpt 4.0</span>
+        <span class="script-model-select__arrow">⌄</span>
+      </button>
 
-    <div class="script-step__main">
+      <button class="script-next-btn" type="button" @click="handleNext">进入分镜</button>
+    </header>
+
+    <div class="script-workbench-card__divider"></div>
+
+    <div class="script-workbench-card__body">
       <ScriptInputPanel v-model="sourceText" @import-text="handleImportText" />
 
-      <div class="script-step__side">
-        <ScriptPromptPanel v-model="promptText" />
+      <div class="script-workbench-card__right">
+        <ScriptPromptPanel
+          v-model="promptText"
+          :loading="generating"
+          :can-generate="canGenerate"
+          @save="handleSave"
+          @open-template="handleOpenTemplate"
+          @delete="handleDelete"
+          @generate="handleGenerate"
+        />
+
+        <div class="script-workbench-card__dash-line"></div>
+
         <ScriptResultPanel v-model="generatedScript" :loading="generating" />
       </div>
     </div>
-
-    <ScriptActionBar
-      :can-generate="canGenerate"
-      :can-next="Boolean(generatedScript.trim())"
-      :loading="generating"
-      @save="handleSave"
-      @open-template="handleOpenTemplate"
-      @delete="handleDelete"
-      @generate="handleGenerate"
-      @next="handleNext"
-    />
-  </section>
+  </div>
+  <div class="script-workbench-bg" aria-hidden="true"></div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import ScriptActionBar from '@/components/editor/script/ScriptActionBar.vue'
 import ScriptInputPanel from '@/components/editor/script/ScriptInputPanel.vue'
 import ScriptPromptPanel from '@/components/editor/script/ScriptPromptPanel.vue'
 import ScriptResultPanel from '@/components/editor/script/ScriptResultPanel.vue'

@@ -23,17 +23,21 @@
 
       <ProjectGrid :projects="store.filteredProjects" @create="onCreateProject" @import="onImportProject" />
     </div>
+
+    <CreateProjectModal v-model:open="createModalOpen" @submit="handleCreateProject" />
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import CreateProjectModal from '@/components/dashboard/CreateProjectModal.vue'
 import DashboardBackground from '@/components/dashboard/DashboardBackground.vue'
 import ProjectGrid from '@/components/dashboard/ProjectGrid.vue'
 import ProjectToolbar from '@/components/dashboard/ProjectToolbar.vue'
 import { useProjectStore } from '@/stores/project'
 
 const store = useProjectStore()
+const createModalOpen = ref(false)
 const total = computed(() => store.projects.length)
 const inProgress = computed(() => store.projects.filter((project) => project.status === 'in_progress').length)
 const completed = computed(() => store.projects.filter((project) => project.status === 'completed').length)
@@ -42,9 +46,22 @@ onMounted(() => {
   void store.bootstrap()
 })
 
-const onCreateProject = async (): Promise<void> => {
-  const name = `新项目 ${store.projects.length + 1}`
-  await store.createProject(name)
+const onCreateProject = (): void => {
+  createModalOpen.value = true
+}
+
+interface CreateProjectPayload {
+  name: string
+  ratio: '16:9' | '9:16'
+  style: string
+}
+
+const handleCreateProject = async (payload: CreateProjectPayload): Promise<void> => {
+  await store.createProject(payload.name, {
+    ratio: payload.ratio,
+    style: payload.style,
+  })
+  createModalOpen.value = false
 }
 
 const onImportProject = (): void => {}

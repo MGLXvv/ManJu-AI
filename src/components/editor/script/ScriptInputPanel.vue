@@ -1,38 +1,33 @@
 <template>
-  <section class="script-panel script-input-panel">
-    <header class="script-panel__header">
-      <h2 class="script-panel__title">文案输入</h2>
-      <button class="script-panel__ghost-btn" type="button" @click="triggerImport">文档</button>
-      <input ref="fileInputRef" class="script-input-panel__file-input" type="file" accept=".txt,.md,.text" @change="onFileChange" />
-    </header>
+  <section class="script-input-panel">
+    <h2 class="script-column-title">文案输入</h2>
 
-    <div class="script-input-panel__body">
-      <ScriptEmptyGuide
-        v-if="showGuide"
-        @manual-edit="manualMode = true"
-        @select-template="onSelectTemplate"
-      />
-
-      <textarea
-        v-else
-        ref="textareaRef"
-        v-model="model"
-        class="script-input-panel__textarea"
-        placeholder="请输入你的创意、故事梗概或完整文案"
-      />
-    </div>
-
-    <footer class="script-input-panel__footer">
-      <button
-        v-if="manualMode && !model.trim()"
-        type="button"
-        class="script-input-panel__footer-link"
-        @click="manualMode = false"
-      >
-        返回引导
+    <div class="script-input-panel__card">
+      <button class="script-doc-btn" type="button" @click="triggerImport">
+        <span class="script-doc-btn__icon">↗</span>
+        <span>文档</span>
       </button>
-      <span>共{{ model.length }}个字</span>
-    </footer>
+
+      <input
+        ref="fileInputRef"
+        class="script-input-panel__file-input"
+        type="file"
+        accept=".txt,.md,.text"
+        @change="onFileChange"
+      />
+
+      <div class="script-input-panel__body">
+        <ScriptEmptyGuide v-if="showGuide" @select-template="onSelectTemplate" />
+
+        <textarea
+          v-else
+          ref="textareaRef"
+          v-model="model"
+          class="script-input-panel__textarea"
+          placeholder="请输入你的创意、故事梗概或完整文案"
+        />
+      </div>
+    </div>
   </section>
 </template>
 

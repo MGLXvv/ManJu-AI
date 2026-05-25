@@ -1,38 +1,41 @@
-<template>
-  <div class="script-workbench-card">
-    <header class="script-workbench-card__topbar">
-      <button class="script-model-select" type="button">
-        <span class="script-model-select__icon">Ai</span>
-        <span>Gpt 4.0</span>
-        <span class="script-model-select__arrow">⌄</span>
-      </button>
+﻿<template>
+  <section class="script-step">
+    <div class="script-workbench-bg" aria-hidden="true"></div>
 
-      <button class="script-next-btn" type="button" @click="handleNext">进入分镜</button>
-    </header>
+    <div class="script-workbench-card">
+      <header class="script-workbench-card__topbar">
+        <button class="script-model-select" type="button">
+          <span class="script-model-select__icon">Ai</span>
+          <span>Gpt 4.0</span>
+          <span class="script-model-select__arrow">⌄</span>
+        </button>
 
-    <div class="script-workbench-card__divider"></div>
+        <button class="script-next-btn" type="button" @click="handleNext">进入分镜</button>
+      </header>
 
-    <div class="script-workbench-card__body">
-      <ScriptInputPanel v-model="sourceText" @import-text="handleImportText" />
+      <div class="script-workbench-card__divider"></div>
 
-      <div class="script-workbench-card__right">
-        <ScriptPromptPanel
-          v-model="promptText"
-          :loading="generating"
-          :can-generate="canGenerate"
-          @save="handleSave"
-          @open-template="handleOpenTemplate"
-          @delete="handleDelete"
-          @generate="handleGenerate"
-        />
+      <div class="script-workbench-card__body">
+        <ScriptInputPanel v-model="sourceText" @import-text="handleImportText" />
 
-        <div class="script-workbench-card__dash-line"></div>
+        <div class="script-workbench-card__right">
+          <ScriptPromptPanel
+            v-model="promptText"
+            :loading="generating"
+            :can-generate="canGenerate"
+            @save="handleSave"
+            @open-template="handleOpenTemplate"
+            @delete="handleDelete"
+            @generate="handleGenerate"
+          />
 
-        <ScriptResultPanel v-model="generatedScript" :loading="generating" />
+          <div class="script-workbench-card__dash-line"></div>
+
+          <ScriptResultPanel v-model="generatedScript" :loading="generating" />
+        </div>
       </div>
     </div>
-  </div>
-  <div class="script-workbench-bg" aria-hidden="true"></div>
+  </section>
 </template>
 
 <script setup lang="ts">

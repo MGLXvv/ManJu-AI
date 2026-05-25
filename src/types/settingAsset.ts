@@ -1,7 +1,6 @@
 export type SettingAssetType = 'character' | 'scene' | 'prop'
 export type SettingAssetTypeFilter = 'all' | SettingAssetType
 export type SettingAssetStatus = 'ready' | 'generating' | 'empty'
-export type AssetPanelMode = 'prompt' | 'voice'
 
 export interface SettingAssetAudio {
   title: string
@@ -26,7 +25,6 @@ export interface SettingAsset {
   prompt: string
   imageUrls: string[]
   candidateImages?: string[]
-  activePanel?: AssetPanelMode
   selectedVoiceId?: string
   voiceOptions?: VoiceOption[]
   audio?: SettingAssetAudio

@@ -48,7 +48,7 @@
         </div>
 
         <AssetCandidateList
-          v-if="isCharacter && isExpanded && candidateImages.length > 0"
+          v-if="isExpanded"
           class="asset-card__candidates"
           :images="candidateImages"
           :selected-index="selectedCandidateIndex"
@@ -82,6 +82,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'generate', id: string): void
   (e: 'upload', payload: { id: string; imageUrl: string }): void
+  (e: 'select-candidate', payload: { id: string; imageUrl: string }): void
   (e: 'preview', asset: SettingAsset): void
   (e: 'favorite', id: string): void
   (e: 'delete', id: string): void
@@ -90,13 +91,18 @@ const emit = defineEmits<{
 }>()
 
 const uploadRef = ref<HTMLInputElement | null>(null)
-const activePanel = ref<'prompt' | 'voice'>(props.asset.activePanel ?? 'prompt')
+const activePanel = ref<'prompt' | 'voice'>('prompt')
 const selectedVoiceId = ref(props.asset.selectedVoiceId ?? props.asset.voiceOptions?.[0]?.id ?? '')
 const selectedCandidateIndex = ref(0)
 
 const isCharacter = computed(() => props.asset.type === 'character')
 const voiceOptions = computed(() => props.asset.voiceOptions ?? [])
-const candidateImages = computed(() => props.asset.candidateImages ?? [])
+const candidateImages = computed(() => {
+  if (props.asset.candidateImages && props.asset.candidateImages.length > 0) {
+    return props.asset.candidateImages
+  }
+  return props.asset.imageUrls
+})
 
 const displayImages = computed(() => {
   if (props.asset.imageUrls.length > 0) {
@@ -118,18 +124,11 @@ const promptValue = computed({
 watch(
   () => props.asset.id,
   () => {
-    activePanel.value = props.asset.activePanel ?? 'prompt'
+    activePanel.value = 'prompt'
     selectedVoiceId.value = props.asset.selectedVoiceId ?? props.asset.voiceOptions?.[0]?.id ?? ''
     selectedCandidateIndex.value = 0
   },
 )
-
-watch(activePanel, (value) => {
-  emit('update', {
-    id: props.asset.id,
-    patch: { activePanel: value },
-  })
-})
 
 watch(selectedVoiceId, (value) => {
   emit('update', {
@@ -164,6 +163,6 @@ const onFileChange = (event: Event): void => {
 
 const onSelectCandidate = (payload: { image: string; index: number }): void => {
   selectedCandidateIndex.value = payload.index
-  emit('upload', { id: props.asset.id, imageUrl: payload.image })
+  emit('select-candidate', { id: props.asset.id, imageUrl: payload.image })
 }
 </script>

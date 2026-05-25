@@ -50,16 +50,13 @@ const createSeedAsset = (index: number, type: SettingAssetType, title: string, s
         ]
       : []
 
-  const candidates =
-    type === 'character'
-      ? [
-          createImage(`${title}-候选1`, '#452f73', '#843f96', index * 9 + 1),
-          createImage(`${title}-候选2`, '#32426f', '#585ca2', index * 9 + 2),
-          createImage(`${title}-候选3`, '#6a2f43', '#b54872', index * 9 + 3),
-          createImage(`${title}-候选4`, '#4b3c21', '#a88954', index * 9 + 4),
-          createImage(`${title}-候选5`, '#2f3340', '#5f6f8f', index * 9 + 5),
-        ]
-      : []
+  const candidates = [
+    createImage(`${title}-候选1`, '#452f73', '#843f96', index * 9 + 1),
+    createImage(`${title}-候选2`, '#32426f', '#585ca2', index * 9 + 2),
+    createImage(`${title}-候选3`, '#6a2f43', '#b54872', index * 9 + 3),
+    createImage(`${title}-候选4`, '#4b3c21', '#a88954', index * 9 + 4),
+    createImage(`${title}-候选5`, '#2f3340', '#5f6f8f', index * 9 + 5),
+  ]
 
   return {
     id: `asset-${index + 1}`,
@@ -70,7 +67,6 @@ const createSeedAsset = (index: number, type: SettingAssetType, title: string, s
       'masterpiece, best quality, 1girl, long hair, beautiful girl, flipping hair, hand in hair, leaning on car, sleek sports car, urban street background, sunset, golden hour, cinematic lighting, vibrant colors, detailed outfit,',
     imageUrls,
     candidateImages: candidates,
-    activePanel: type === 'character' ? 'prompt' : undefined,
     selectedVoiceId: type === 'character' ? 'male-mid-deep' : undefined,
     voiceOptions: type === 'character' ? getDefaultVoiceOptions() : undefined,
     status,
@@ -134,8 +130,7 @@ export const useSettingAssetsStore = defineStore('setting-assets', () => {
       roleName: payload.type === 'character' ? '角色音色' : undefined,
       prompt: payload.prompt,
       imageUrls: [],
-      candidateImages: payload.type === 'character' ? [] : undefined,
-      activePanel: payload.type === 'character' ? 'prompt' : undefined,
+      candidateImages: [],
       selectedVoiceId: payload.type === 'character' ? 'male-mid-deep' : undefined,
       voiceOptions: payload.type === 'character' ? getDefaultVoiceOptions() : undefined,
       status: 'empty',
@@ -165,6 +160,21 @@ export const useSettingAssetsStore = defineStore('setting-assets', () => {
         ...asset,
         status: 'ready',
         imageUrls: [imageUrl, ...asset.imageUrls].slice(0, 6),
+      }
+    })
+  }
+
+  const selectCandidateImage = (id: string, imageUrl: string): void => {
+    assets.value = assets.value.map((asset) => {
+      if (asset.id !== id) {
+        return asset
+      }
+
+      const rest = asset.imageUrls.filter((item) => item !== imageUrl)
+      return {
+        ...asset,
+        status: 'ready',
+        imageUrls: [imageUrl, ...rest].slice(0, 6),
       }
     })
   }
@@ -210,6 +220,7 @@ export const useSettingAssetsStore = defineStore('setting-assets', () => {
     deleteAsset,
     toggleFavorite,
     uploadAssetImage,
+    selectCandidateImage,
     generateAssetImage,
   }
 })

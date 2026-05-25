@@ -6,9 +6,10 @@
         :key="asset.id"
         :asset="asset"
         :is-selected="asset.id === selectedAssetId && asset.status !== 'generating'"
-        :is-expanded="asset.id === selectedAssetId && asset.type === 'character' && asset.status !== 'generating'"
+        :is-expanded="asset.id === selectedAssetId && asset.status !== 'generating'"
         @generate="$emit('generate', $event)"
         @upload="$emit('upload', $event)"
+        @select-candidate="$emit('select-candidate', $event)"
         @update="$emit('update', $event)"
         @select="$emit('select', $event)"
         @preview="$emit('preview', $event)"
@@ -31,6 +32,7 @@ defineProps<{
 defineEmits<{
   (e: 'generate', id: string): void
   (e: 'upload', payload: { id: string; imageUrl: string }): void
+  (e: 'select-candidate', payload: { id: string; imageUrl: string }): void
   (e: 'update', payload: { id: string; patch: Partial<SettingAsset> }): void
   (e: 'select', id: string): void
   (e: 'preview', asset: SettingAsset): void

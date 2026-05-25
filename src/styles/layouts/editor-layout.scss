@@ -10,7 +10,7 @@
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  padding: 20px 24px 24px;
+  padding: 0;
 }
 
 @media (width <= 1024px) {
@@ -22,6 +22,6 @@
 
   .editor-layout__workspace {
     overflow: auto;
-    padding: 16px;
+    padding: 0;
   }
 }

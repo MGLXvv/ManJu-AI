@@ -18,6 +18,7 @@
         :selected-asset-id="selectedAssetId"
         @generate="handleGenerate"
         @upload="handleUpload"
+        @select-candidate="handleSelectCandidate"
         @update="handleUpdateAsset"
         @select="handleSelectAsset"
         @preview="openPreview"
@@ -94,6 +95,10 @@ const handleGenerate = (id: string): void => {
 
 const handleUpload = (payload: { id: string; imageUrl: string }): void => {
   assetsStore.uploadAssetImage(payload.id, payload.imageUrl)
+}
+
+const handleSelectCandidate = (payload: { id: string; imageUrl: string }): void => {
+  assetsStore.selectCandidateImage(payload.id, payload.imageUrl)
 }
 
 const handleUpdateAsset = (payload: { id: string; patch: Partial<SettingAsset> }): void => {

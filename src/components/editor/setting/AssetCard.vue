@@ -12,23 +12,38 @@
     @click="$emit('select', asset.id)"
   >
     <div class="asset-card__base">
-      <header class="asset-card__header">
-        <h3 class="asset-card__title">{{ asset.title }}</h3>
+      <div v-if="asset.status === 'generating'" class="asset-card__main">
+        <header class="asset-card__header">
+          <h3 class="asset-card__title">{{ asset.title }}</h3>
 
-        <div class="asset-card__actions">
-          <button type="button" aria-label="收藏" @click.stop="$emit('favorite', asset.id)">
-            <Star :size="15" :fill="asset.favorite ? 'currentColor' : 'none'" />
-          </button>
-          <button type="button" aria-label="删除" @click.stop="$emit('delete', asset.id)">
-            <Trash2 :size="15" />
-          </button>
-        </div>
-      </header>
+          <div class="asset-card__actions">
+            <button type="button" aria-label="收藏" @click.stop="$emit('favorite', asset.id)">
+              <Star :size="15" :fill="asset.favorite ? 'currentColor' : 'none'" />
+            </button>
+            <button type="button" aria-label="删除" @click.stop="$emit('delete', asset.id)">
+              <Trash2 :size="15" />
+            </button>
+          </div>
+        </header>
 
-      <AssetGeneratingCard v-if="asset.status === 'generating'" :label="`${asset.title}生成中...`" />
+        <AssetGeneratingCard :label="`${asset.title}生成中...`" />
+      </div>
 
       <div v-else class="asset-card__content">
         <div class="asset-card__main">
+          <header class="asset-card__header">
+            <h3 class="asset-card__title">{{ asset.title }}</h3>
+
+            <div class="asset-card__actions">
+              <button type="button" aria-label="收藏" @click.stop="$emit('favorite', asset.id)">
+                <Star :size="15" :fill="asset.favorite ? 'currentColor' : 'none'" />
+              </button>
+              <button type="button" aria-label="删除" @click.stop="$emit('delete', asset.id)">
+                <Trash2 :size="15" />
+              </button>
+            </div>
+          </header>
+
           <AssetImageStrip :images="displayImages" @preview="$emit('preview', asset)" />
 
           <AssetContentTabs v-if="isCharacter" v-model="activePanel" />

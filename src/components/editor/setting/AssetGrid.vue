@@ -1,12 +1,16 @@
 <template>
   <div class="asset-grid-wrap">
-    <div class="asset-grid">
+    <div class="asset-grid" :class="{ 'asset-grid--has-expanded': hasExpandedAsset }">
       <AssetCard
         v-for="asset in assets"
         :key="asset.id"
         :asset="asset"
         :is-selected="asset.id === selectedAssetId && asset.status !== 'generating'"
-        :is-expanded="asset.id === selectedAssetId && asset.status !== 'generating'"
+        :is-expanded="
+          asset.id === selectedAssetId &&
+          asset.type === 'character' &&
+          asset.status !== 'generating'
+        "
         @generate="$emit('generate', $event)"
         @upload="$emit('upload', $event)"
         @select-candidate="$emit('select-candidate', $event)"
@@ -21,13 +25,24 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import AssetCard from './AssetCard.vue'
 import type { SettingAsset } from '@/types/settingAsset'
 
-defineProps<{
+const props = defineProps<{
   assets: SettingAsset[]
   selectedAssetId: string
 }>()
+
+const hasExpandedAsset = computed(() => {
+  return props.assets.some((asset) => {
+    return (
+      asset.id === props.selectedAssetId &&
+      asset.type === 'character' &&
+      asset.status !== 'generating'
+    )
+  })
+})
 
 defineEmits<{
   (e: 'generate', id: string): void

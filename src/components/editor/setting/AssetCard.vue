@@ -61,17 +61,17 @@
 
           <footer class="asset-card__time">{{ asset.createdAt }}</footer>
         </div>
-
-        <AssetCandidateList
-          v-if="isExpanded"
-          class="asset-card__candidates"
-          :images="candidateImages"
-          :selected-index="selectedCandidateIndex"
-          @select="onSelectCandidate"
-        />
       </div>
-    </div>
 
+
+    </div>
+          <AssetCandidateList
+        v-if="isExpanded"
+        class="asset-card__candidates"
+        :images="candidateImages"
+        :selected-index="selectedCandidateIndex"
+        @select="onSelectCandidate"
+      />
     <input ref="uploadRef" class="asset-card__upload-input" type="file" accept="image/*" @change="onFileChange" />
   </article>
 </template>

@@ -1,10 +1,13 @@
 .setting-step {
   --asset-card-width: 330px;
   --asset-card-width-compact: 292px;
-  --asset-card-width-expanded: 514px;
+  --asset-expanded-left-width: 296px;
   --asset-expanded-main-width: 275px;
   --asset-expanded-candidates-width: 170px;
   --asset-expanded-gap: 14px;
+  --asset-card-width-expanded: calc(
+    var(--asset-expanded-left-width) + var(--asset-expanded-candidates-width)
+  );
 
   position: relative;
   height: 100%;
@@ -170,9 +173,17 @@
 
 .asset-grid {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 16px;
   align-items: flex-start;
+}
+
+.asset-grid__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  width: 100%;
+  min-width: 0;
 }
 
 .asset-card {
@@ -197,7 +208,7 @@
     background 0.2s ease;
 }
 
-.asset-grid--has-expanded .asset-card:not(.is-expanded) {
+.asset-grid__row--has-expanded .asset-card:not(.is-expanded) {
   flex-basis: var(--asset-card-width-compact);
   width: var(--asset-card-width-compact);
 }
@@ -235,15 +246,23 @@
 }
 
 .asset-card__actions button {
-  display: grid;
-  place-items: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 20px;
   height: 20px;
+  padding: 0;
   border: 0;
   border-radius: 5px;
   background: rgb(0 0 0 / 45%);
   color: rgb(255 255 255 / 85%);
+  line-height: 0;
   cursor: pointer;
+}
+
+.asset-card__actions button svg {
+  display: block;
+  flex: none;
 }
 
 .asset-card.is-generating {
@@ -272,13 +291,21 @@
   height: 446px;
   min-height: 446px;
   max-height: 446px;
+  display: flex;
+  align-items: stretch;
+  gap: 0;
   justify-self: auto;
 }
 
 .asset-card.is-expanded .asset-card__base {
-  width: 100%;
+  flex: 0 0 var(--asset-expanded-left-width);
+  width: var(--asset-expanded-left-width);
+  min-width: var(--asset-expanded-left-width);
+  max-width: var(--asset-expanded-left-width);
   height: 100%;
   padding: 10px;
+  border-radius: 14px 0 0 14px;
+  border-right: 0;
   overflow: hidden;
 }
 
@@ -306,18 +333,17 @@
 .asset-card__content {
   display: block;
   width: 100%;
-  height: calc(100% - 32px);
+  height: 100%;
   min-width: 0;
 }
 
 .asset-card__main {
+  height: 100%;
   min-width: 0;
 }
 
 .asset-card.is-expanded .asset-card__content {
-  display: grid;
-  grid-template-columns: var(--asset-expanded-main-width) var(--asset-expanded-candidates-width);
-  gap: var(--asset-expanded-gap);
+  display: block;
   width: 100%;
   height: 100%;
   min-width: 0;
@@ -671,6 +697,22 @@
   color: #101113;
 }
 
+.asset-card--scene .asset-candidate-list__item.is-selected {
+  border-color: #ffbb4d;
+}
+
+.asset-card--scene .asset-candidate-list__check {
+  background: #ffbb4d;
+}
+
+.asset-card--prop .asset-candidate-list__item.is-selected {
+  border-color: #b68cff;
+}
+
+.asset-card--prop .asset-candidate-list__check {
+  background: #b68cff;
+}
+
 .asset-card__candidates {
   box-sizing: border-box;
   width: var(--asset-expanded-candidates-width);
@@ -679,11 +721,47 @@
   height: 100%;
   min-height: 0;
   padding: 10px 12px 8px;
+  border: 1px solid #323232;
   border-left: 1px solid #323232;
   border-radius: 0 14px 14px 0;
   background: #0a0a0b;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
   display: block;
+}
+
+.asset-card__candidates::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.asset-card.is-expanded .asset-card__candidates,
+.asset-card.is-expanded .asset-candidate-list {
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  overflow-y: auto;
+}
+
+.asset-card:not(.is-expanded) .asset-card__candidates {
+  display: none;
+}
+
+.asset-card--character.is-selected .asset-card__candidates {
+  border-color: #b0f862;
+  border-left-color: #323232;
+}
+
+.asset-card--scene.is-selected .asset-card__candidates {
+  border-color: #ffbb4d;
+  border-left-color: #323232;
+}
+
+.asset-card--prop.is-selected .asset-card__candidates {
+  border-color: #b68cff;
+  border-left-color: #323232;
 }
 
 .asset-audio {
@@ -910,7 +988,6 @@
   .setting-step {
     --asset-card-width: 300px;
     --asset-card-width-compact: 272px;
-    --asset-card-width-expanded: 484px;
   }
 
   .setting-workbench {
@@ -934,6 +1011,11 @@
 
   .setting-toolbar__spacer {
     display: none;
+  }
+
+  .asset-grid__row {
+    min-width: 0;
+    flex-wrap: wrap;
   }
 
   .asset-card {

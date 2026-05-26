@@ -2,13 +2,12 @@
   <section class="storyboard-step">
     <div class="storyboard-step__bg" aria-hidden="true"></div>
 
-    <StoryboardTopActions @batch-generate="handleBatchGenerate" @save-export="handleSaveExport" @next="goVideoStep" />
-
     <div class="storyboard-step__body">
+          <StoryboardTopActions @batch-generate="handleBatchGenerate" @save-export="handleSaveExport" @next="goVideoStep" />
       <div class="storyboard-step__main">
         <StoryboardPromptPanel
-          v-if="activeShot"
-          :shot="activeShot"
+          v-if="currentShot"
+          :shot="currentShot"
           :tag-options="tagOptions"
           :style-options="styleOptions"
           @add-tag="handleAddTag"
@@ -20,8 +19,8 @@
         />
 
         <StoryboardPreviewPanel
-          v-if="activeShot"
-          :shot="activeShot"
+          v-if="currentShot"
+          :shot="currentShot"
           @lock-shot="toggleLock"
           @copy-shot="copyShot"
           @delete-shot="deleteShot"
@@ -30,9 +29,8 @@
           @zoom-shot="noop"
         />
       </div>
-
-      <StoryboardReferenceRail :images="referenceImages" @select="selectReference" />
     </div>
+     <StoryboardReferenceRail :images="currentReferenceImages" @select="selectReference" />
 
     <StoryboardTimeline
       :shots="shots"
@@ -48,7 +46,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import StoryboardPreviewPanel from '@/components/editor/storyboard/StoryboardPreviewPanel.vue'
 import StoryboardPromptPanel from '@/components/editor/storyboard/StoryboardPromptPanel.vue'
@@ -68,6 +66,14 @@ const activeShot = computed(() => store.activeShot)
 const referenceImages = computed(() => store.referenceImages)
 const tagOptions = computed(() => store.tagOptions)
 const styleOptions = computed(() => store.styleOptions)
+const currentShot = computed(() => activeShot.value ?? shots.value[0] ?? null)
+const currentReferenceImages = computed(() => currentShot.value?.referenceImages ?? referenceImages.value)
+
+watchEffect(() => {
+  if (!activeShot.value && shots.value.length > 0) {
+    store.selectShot(shots.value[0].id)
+  }
+})
 
 const selectShot = (id: string): void => {
   store.selectShot(id)

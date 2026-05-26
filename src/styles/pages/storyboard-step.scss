@@ -1,9 +1,12 @@
 .storyboard-step {
-  display: block;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 150px;
+  grid-template-rows: minmax(0, 1fr) 154px;
+  gap: 14px 16px;
   position: relative;
   height: 100%;
   min-height: 0;
-  padding: 16px 20px 14px;
+  padding: 14px 20px;
   box-sizing: border-box;
   background: #0a0a0b;
   overflow: hidden;
@@ -11,6 +14,7 @@
 
 .storyboard-step__bg {
   position: absolute;
+  z-index: 0;
   width: 2401px;
   height: 1229px;
   left: -248px;
@@ -22,11 +26,13 @@
 }
 
 .storyboard-top-actions {
-  position: absolute;
-  right: 26px;
-  top: 10px;
+  position: relative;
+  top: auto;
+  right: auto;
   z-index: 3;
   display: flex;
+  align-items: center;
+  justify-content: flex-end;
   gap: 12px;
 }
 
@@ -48,20 +54,31 @@
 }
 
 .storyboard-step__body {
+  grid-column: 1;
+  grid-row: 1;
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 164px;
-  gap: 16px;
-  height: calc(100% - 176px);
+  grid-template-rows: 48px minmax(0, 1fr);
+  gap: 12px;
   min-height: 0;
-  padding-top: 34px;
+  height: auto;
+  padding: 12px;
+  border: 1px solid #323232;
+  border-radius: 10px;
+  background: rgb(22 23 24 / 82%);
+  overflow: hidden;
 }
 
 .storyboard-step__main {
   display: grid;
-  grid-template-columns: 650px minmax(0, 1fr);
+  grid-template-columns: 620px minmax(0, 1fr);
   gap: 20px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.storyboard-step__main > * {
   min-height: 0;
 }
 
@@ -70,10 +87,11 @@
   overflow-y: auto;
   border: 1px solid #323232;
   border-radius: 8px;
-  padding: 18px;
-  background: rgb(35 36 37 / 68%);
+  padding: 18px 20px;
+  background: rgb(22 23 24 / 82%);
   display: grid;
-  gap: 14px;
+  align-content: start;
+  gap: 12px;
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
@@ -85,7 +103,7 @@
 
 .storyboard-tag-group {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .storyboard-tag-group__header,
@@ -106,15 +124,22 @@
 .storyboard-tag-group__chip {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  min-width: 76px;
   gap: 8px;
   height: 30px;
   padding: 0 10px;
   border: 1px solid #3f4142;
-  border-radius: 999px;
+  border-radius: 8px;
   background: #232425;
   color: #f0f0f0;
   font-size: 12px;
   cursor: pointer;
+}
+
+.storyboard-tag-group__chip:first-child {
+  border-color: #8b5cf6;
+  background: rgb(139 92 246 / 12%);
 }
 
 .storyboard-tag-group__remove {
@@ -130,7 +155,7 @@
 .storyboard-tag-group__add {
   width: 30px;
   height: 30px;
-  border: 1px dashed #666;
+  border: 1px dashed rgb(255 255 255 / 28%);
   border-radius: 999px;
   background: transparent;
   color: #bbb;
@@ -173,10 +198,10 @@
 
 .storyboard-text-area__input {
   width: 100%;
-  min-height: 170px;
-  max-height: 170px;
+  min-height: 190px;
+  max-height: 190px;
   resize: none;
-  border: 1px solid #323232;
+  border: 1px solid rgb(255 255 255 / 40%);
   border-radius: 8px;
   background: #202123;
   color: #d4d4d4;
@@ -223,7 +248,7 @@
   border-radius: 8px;
   background: rgb(35 36 37 / 68%);
   display: grid;
-  grid-template-rows: minmax(0, 1fr) 82px;
+  grid-template-rows: minmax(0, 1fr) 78px;
 }
 
 .storyboard-canvas {
@@ -235,9 +260,10 @@
 }
 
 .storyboard-canvas__image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  width: min(100%, 960px);
+  height: min(100%, 540px);
+  object-fit: contain;
+  background: #252627;
 }
 
 .storyboard-canvas__loading,
@@ -269,34 +295,38 @@
 }
 
 .storyboard-reference-rail {
+  grid-column: 2;
+  grid-row: 1;
   position: relative;
-  border: 1px solid #323232;
-  border-radius: 8px;
-  background: rgb(35 36 37 / 68%);
-  padding: 10px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .storyboard-reference-rail__toggle {
   position: absolute;
-  left: -12px;
+  left: -18px;
   top: 50%;
   transform: translateY(-50%);
+  z-index: 2;
   width: 24px;
-  height: 44px;
-  border: 1px solid #323232;
+  height: 52px;
+  border: 0;
   border-radius: 999px;
-  background: #0a0a0b;
-  color: #bbb;
+  background: #050506;
+  color: #cfcfcf;
   cursor: pointer;
 }
 
 .storyboard-reference-rail__list {
   height: 100%;
-  overflow-y: auto;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 10px;
+  overflow-y: auto;
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
@@ -308,7 +338,8 @@
 
 .storyboard-reference-rail__item {
   width: 100%;
-  height: 86px;
+  height: 92px;
+  flex: 0 0 92px;
   border: 0;
   border-radius: 8px;
   padding: 0;
@@ -324,11 +355,10 @@
 }
 
 .storyboard-timeline {
-  position: absolute;
-  left: 20px;
-  right: 200px;
-  bottom: 14px;
-  height: 146px;
+  grid-column: 1 / -1;
+  grid-row: 2;
+  position: relative;
+  height: 154px;
   display: grid;
   grid-template-columns: 36px minmax(0, 1fr) 36px;
   gap: 10px;
@@ -363,19 +393,20 @@
 }
 
 .storyboard-shot-card {
-  flex: 0 0 200px;
-  height: 112px;
+  flex: 0 0 220px;
+  height: 116px;
   border: 1px solid #323232;
   border-radius: 8px;
   background: #202122;
   display: grid;
-  grid-template-rows: 22px 1fr 22px;
+  grid-template-rows: 22px 1fr 24px;
   overflow: hidden;
   cursor: pointer;
 }
 
 .storyboard-shot-card.is-active {
   border-color: #8b5cf6;
+  box-shadow: 0 0 0 1px rgb(139 92 246 / 35%);
 }
 
 .storyboard-shot-card__header {
@@ -435,8 +466,8 @@
 }
 
 .create-blank-shot-card {
-  flex: 0 0 200px;
-  height: 112px;
+  flex: 0 0 220px;
+  height: 116px;
   border: 1px dashed #4b4d4f;
   border-radius: 8px;
   background: #111213;
@@ -458,19 +489,19 @@
 
 @media (max-width: 1460px) {
   .storyboard-step__main {
-    grid-template-columns: 560px minmax(0, 1fr);
+    grid-template-columns: 620px minmax(0, 1fr);
   }
 }
 
 @media (max-width: 1280px) {
   .storyboard-step {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr) 180px 154px;
     overflow: auto;
   }
 
   .storyboard-step__body {
-    grid-template-columns: 1fr;
     height: auto;
-    padding-top: 48px;
   }
 
   .storyboard-step__main {
@@ -478,13 +509,13 @@
   }
 
   .storyboard-reference-rail {
+    grid-column: 1;
+    grid-row: 2;
     height: 180px;
   }
 
   .storyboard-timeline {
-    position: static;
-    right: auto;
-    left: auto;
-    margin-top: 10px;
+    grid-column: 1;
+    grid-row: 3;
   }
 }

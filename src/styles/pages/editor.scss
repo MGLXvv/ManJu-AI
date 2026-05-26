@@ -41,13 +41,6 @@
   text-align: center;
 }
 
-.storyboard-step {
-  display: grid;
-  grid-template-columns: minmax(420px, 1fr) 420px;
-  grid-template-rows: 1fr 150px;
-  gap: 16px;
-}
-
 .shot-preview {
   display: grid;
   place-items: center;
@@ -64,7 +57,6 @@
 }
 
 @media (width <= 1024px) {
-  .storyboard-step,
   .two-column-step,
   .asset-step {
     grid-template-columns: 1fr;

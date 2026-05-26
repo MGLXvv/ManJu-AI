@@ -1,8 +1,15 @@
-<template>
-  <aside class="storyboard-reference-rail">
-    <button type="button" class="storyboard-reference-rail__toggle" aria-label="收起参考图">›</button>
+﻿<template>
+  <aside class="storyboard-reference-rail" :class="{ 'is-collapsed': collapsed }">
+    <button
+      type="button"
+      class="storyboard-reference-rail__toggle"
+      :aria-label="collapsed ? '展开参考图列表' : '收起参考图列表'"
+      @click="toggleCollapse"
+    >
+      {{ collapsed ? '‹' : '›' }}
+    </button>
 
-    <div class="storyboard-reference-rail__list">
+    <div v-if="!collapsed" class="storyboard-reference-rail__list">
       <button
         v-for="image in images"
         :key="image.id"
@@ -19,11 +26,22 @@
 <script setup lang="ts">
 import type { StoryboardReferenceImage } from '@/types/storyboard'
 
-defineProps<{
-  images: StoryboardReferenceImage[]
+const props = withDefaults(
+  defineProps<{
+    images: StoryboardReferenceImage[]
+    collapsed?: boolean
+  }>(),
+  {
+    collapsed: false,
+  },
+)
+
+const emit = defineEmits<{
+  (e: 'select', id: string): void
+  (e: 'toggle-collapse', collapsed: boolean): void
 }>()
 
-defineEmits<{
-  (e: 'select', id: string): void
-}>()
+const toggleCollapse = (): void => {
+  emit('toggle-collapse', !props.collapsed)
+}
 </script>

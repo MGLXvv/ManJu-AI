@@ -2,51 +2,73 @@
   <section class="storyboard-step">
     <div class="storyboard-step__bg" aria-hidden="true"></div>
 
-    <div class="storyboard-step__body">
-          <StoryboardTopActions @batch-generate="handleBatchGenerate" @save-export="handleSaveExport" @next="goVideoStep" />
-      <div class="storyboard-step__main">
-        <StoryboardPromptPanel
-          v-if="currentShot"
-          :shot="currentShot"
-          :tag-options="tagOptions"
-          :style-options="styleOptions"
-          @add-tag="handleAddTag"
-          @remove-tag="handleRemoveTag"
-          @update-prompt="updatePrompt"
-          @update-style="updateStyle"
-          @update-ratio="updateRatio"
-          @generate-shot="generateShot"
+    <div class="storyboard-layout" :class="{ 'is-reference-collapsed': isReferenceCollapsed }">
+      <div class="storyboard-layout__main">
+        <section class="storyboard-main-card">
+
+        <StoryboardTopActions
+          class="storyboard-main-card__actions"
+          @batch-generate="handleBatchGenerate"
+          @save-export="handleSaveExport"
+          @next="goVideoStep"
         />
 
-        <StoryboardPreviewPanel
-          v-if="currentShot"
-          :shot="currentShot"
-          @lock-shot="toggleLock"
-          @copy-shot="copyShot"
-          @delete-shot="deleteShot"
-          @edit-shot="noop"
-          @view-shot="noop"
-          @zoom-shot="noop"
-        />
+        <div class="storyboard-main-card__divider"></div>
+
+        <div class="storyboard-main-card__body">
+          <StoryboardPromptPanel
+            v-if="currentShot"
+            :shot="currentShot"
+            :tag-options="tagOptions"
+            :style-options="styleOptions"
+            @add-tag="handleAddTag"
+            @remove-tag="handleRemoveTag"
+            @update-prompt="updatePrompt"
+            @update-style="updateStyle"
+            @update-ratio="updateRatio"
+            @generate-shot="generateShot"
+          />
+
+          <StoryboardPreviewPanel
+            v-if="currentShot"
+            :shot="currentShot"
+            @lock-shot="toggleLock"
+            @copy-shot="copyShot"
+            @delete-shot="deleteShot"
+            @edit-shot="noop"
+            @view-shot="noop"
+            @zoom-shot="noop"
+          />
+        </div>
+      </section>
       </div>
-    </div>
-     <StoryboardReferenceRail :images="currentReferenceImages" @select="selectReference" />
 
-    <StoryboardTimeline
-      :shots="shots"
-      :active-shot-id="activeShotId"
-      @select="selectShot"
-      @upload="noop"
-      @copy="copyShot"
-      @delete="deleteShot"
-      @favorite="toggleFavorite"
-      @create="createBlankShot"
-    />
+
+      <StoryboardReferenceRail
+        class="storyboard-layout__reference"
+        :images="currentReferenceImages"
+        :collapsed="isReferenceCollapsed"
+        @select="selectReference"
+        @toggle-collapse="toggleReferenceRail"
+      />
+
+      <StoryboardTimeline
+        class="storyboard-layout__timeline"
+        :shots="shots"
+        :active-shot-id="activeShotId"
+        @select="selectShot"
+        @upload="noop"
+        @copy="copyShot"
+        @delete="deleteShot"
+        @favorite="toggleFavorite"
+        @create="createBlankShot"
+      />
+    </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, watchEffect } from 'vue'
+import { computed, ref, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import StoryboardPreviewPanel from '@/components/editor/storyboard/StoryboardPreviewPanel.vue'
 import StoryboardPromptPanel from '@/components/editor/storyboard/StoryboardPromptPanel.vue'
@@ -68,6 +90,7 @@ const tagOptions = computed(() => store.tagOptions)
 const styleOptions = computed(() => store.styleOptions)
 const currentShot = computed(() => activeShot.value ?? shots.value[0] ?? null)
 const currentReferenceImages = computed(() => currentShot.value?.referenceImages ?? referenceImages.value)
+const isReferenceCollapsed = ref(false)
 
 watchEffect(() => {
   if (!activeShot.value && shots.value.length > 0) {
@@ -132,6 +155,9 @@ const toggleLock = (id: string): void => {
 }
 
 const selectReference = (_id: string): void => {}
+const toggleReferenceRail = (collapsed: boolean): void => {
+  isReferenceCollapsed.value = collapsed
+}
 const handleBatchGenerate = (): void => {}
 const handleSaveExport = (): void => {}
 const noop = (_id?: string): void => {}

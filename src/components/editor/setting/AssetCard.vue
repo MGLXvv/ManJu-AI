@@ -18,10 +18,10 @@
 
           <div class="asset-card__actions">
             <button type="button" aria-label="收藏" @click.stop="$emit('favorite', asset.id)">
-              <Star :size="15" :fill="asset.favorite ? 'currentColor' : 'none'" />
+              <FigmaIcon :name="asset.favorite ? 'asset-star-active' : 'asset-star'" :size="16" />
             </button>
             <button type="button" aria-label="删除" @click.stop="$emit('delete', asset.id)">
-              <Trash2 :size="15" />
+              <FigmaIcon name="asset-delete" :size="16" />
             </button>
           </div>
         </header>
@@ -36,10 +36,10 @@
 
             <div class="asset-card__actions">
               <button type="button" aria-label="收藏" @click.stop="$emit('favorite', asset.id)">
-                <Star :size="15" :fill="asset.favorite ? 'currentColor' : 'none'" />
+                <FigmaIcon :name="asset.favorite ? 'asset-star-active' : 'asset-star'" :size="16" />
               </button>
               <button type="button" aria-label="删除" @click.stop="$emit('delete', asset.id)">
-                <Trash2 :size="15" />
+                <FigmaIcon name="asset-delete" :size="16" />
               </button>
             </div>
           </header>
@@ -78,7 +78,6 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { Star, Trash2 } from 'lucide-vue-next'
 import AssetActionButtons from './AssetActionButtons.vue'
 import AssetCandidateList from './AssetCandidateList.vue'
 import AssetContentTabs from './AssetContentTabs.vue'
@@ -86,6 +85,7 @@ import AssetGeneratingCard from './AssetGeneratingCard.vue'
 import AssetImageStrip from './AssetImageStrip.vue'
 import AssetPromptPanel from './AssetPromptPanel.vue'
 import AssetVoicePanel from './AssetVoicePanel.vue'
+import FigmaIcon from '@/components/icons/FigmaIcon.vue'
 import type { SettingAsset } from '@/types/settingAsset'
 
 const props = defineProps<{

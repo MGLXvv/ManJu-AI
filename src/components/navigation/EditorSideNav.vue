@@ -36,12 +36,7 @@ const navSteps = editorSteps.map((step) => ({
 
 const resolveIcon = (step: WorkflowStep, index: number): FigmaIconName => {
   const state = index < activeIndex.value ? 'edited' : index === activeIndex.value ? 'editing' : 'unedited'
-  const prefix =
-    step === 'settings'
-      ? 'setting'
-      : step === 'dubbing'
-        ? 'video'
-        : step
+  const prefix = step === 'settings' ? 'setting' : step
   const candidate = `flow-${prefix}-${state}` as FigmaIconName
   return FIGMA_ICON_LIBRARY[candidate] ? candidate : 'flow-script-unedited'
 }

@@ -1,17 +1,37 @@
-<template>
+﻿<template>
   <section class="auth-card">
     <h1 class="auth-card__title">{{ titleMap[mode] }}</h1>
 
     <div class="auth-card__tabs" role="tablist" aria-label="登录方式">
+      <div class="auth-card__login-tabs">
+        <button
+          type="button"
+          class="auth-card__tab"
+          :class="{ 'is-active': mode === 'password' }"
+          @click="$emit('update:mode', 'password')"
+        >
+          账号登录
+        </button>
+
+        <span class="auth-card__tab-separator" aria-hidden="true"></span>
+
+        <button
+          type="button"
+          class="auth-card__tab"
+          :class="{ 'is-active': mode === 'code' }"
+          @click="$emit('update:mode', 'code')"
+        >
+          验证码登录
+        </button>
+      </div>
+
       <button
-        v-for="tab in tabs"
-        :key="tab.mode"
         type="button"
-        class="auth-card__tab"
-        :class="{ 'is-active': mode === tab.mode }"
-        @click="$emit('update:mode', tab.mode)"
+        class="auth-card__register-link"
+        :class="{ 'is-active': mode === 'register' }"
+        @click="$emit('update:mode', 'register')"
       >
-        {{ tab.label }}
+        立即注册
       </button>
     </div>
 
@@ -27,7 +47,12 @@
           <button v-if="mode === 'password'" type="button" class="auth-card__link" @click="$emit('forgot')">忘记密码？</button>
         </div>
         <div class="auth-card__input-wrap">
-          <input :type="showPassword ? 'text' : 'password'" :placeholder="passwordPlaceholder" :value="secret" @input="onInput('secret', $event)" />
+          <input
+            :type="showPassword ? 'text' : 'password'"
+            :placeholder="passwordPlaceholder"
+            :value="secret"
+            @input="onInput('secret', $event)"
+          />
           <button type="button" class="auth-card__icon-btn" @click="$emit('toggle-password')">
             <EyeOff v-if="showPassword" :size="15" />
             <Eye v-else :size="15" />
@@ -85,12 +110,6 @@ const emit = defineEmits<{
   (e: 'toggle-password'): void
 }>()
 
-const tabs: Array<{ mode: AuthMode; label: string }> = [
-  { mode: 'password', label: '账号登录' },
-  { mode: 'code', label: '验证码登录' },
-  { mode: 'register', label: '立即注册' },
-]
-
 const titleMap: Record<AuthMode, string> = {
   password: '登录/注册',
   code: '登录/注册',
@@ -99,10 +118,10 @@ const titleMap: Record<AuthMode, string> = {
 }
 
 const submitTextMap: Record<AuthMode, string> = {
-  password: '登 录',
-  code: '登 录',
+  password: '登录',
+  code: '登录',
   register: '注册账号',
-  reset: '保 存',
+  reset: '保存',
 }
 
 const accountLabel = computed(() => {
@@ -122,7 +141,7 @@ const accountPlaceholder = computed(() => {
   if (props.mode === 'code') {
     return '请输入手机号'
   }
-  return '手机号/邮箱/用户名'
+  return '手机号 / 邮箱 / 用户名'
 })
 
 const passwordLabel = computed(() => (props.mode === 'reset' ? '设置新密码' : '密码'))

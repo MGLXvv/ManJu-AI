@@ -26,6 +26,10 @@
         <span class="app-top-bar__credit-plus" aria-hidden="true">+</span>
       </RouterLink>
 
+      <RouterLink class="app-top-bar__tool-btn" to="/points" aria-label="购物车">
+        <FigmaIcon name="topbar-cart" :size="24" />
+      </RouterLink>
+
       <div
         ref="userMenuRef"
         class="app-top-bar__user"
@@ -39,7 +43,7 @@
           :aria-expanded="showUserPopover"
           @click.stop="showUserPopover = !showUserPopover"
         >
-          <CircleUserRound :size="22" aria-hidden="true" />
+          <FigmaIcon :name="showUserPopover ? 'topbar-user-active' : 'topbar-user'" :size="24" />
         </button>
 
         <UserProfilePopover v-if="showUserPopover" @select="handleUserMenuSelect" />
@@ -50,7 +54,6 @@
 
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
-import { CircleUserRound } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
 import FigmaIcon from '@/components/icons/FigmaIcon.vue'
 import type { FigmaIconName } from '@/components/icons/figmaIconLibrary'

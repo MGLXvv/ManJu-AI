@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="auth-social">
     <div class="auth-social__divider">
       <span></span>

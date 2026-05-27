@@ -9,13 +9,13 @@
       @click="$emit('select', { image, index })"
     >
       <img :src="image" :alt="`候选图 ${index + 1}`" />
-      <Check v-if="index === selectedIndex" :size="12" class="asset-candidate-list__check" />
+      <FigmaIcon v-if="index === selectedIndex" name="asset-check" :size="18" class="asset-candidate-list__check" />
     </button>
   </aside>
 </template>
 
 <script setup lang="ts">
-import { Check } from 'lucide-vue-next'
+import FigmaIcon from '@/components/icons/FigmaIcon.vue'
 
 defineProps<{
   images: string[]

@@ -6,7 +6,7 @@
       placeholder="搜索名称"
       @input="onInput"
     />
-    <FigmaIcon class="project-search-box__icon" name="toolbar-search" :size="18" />
+    <FigmaIcon class="project-search-box__icon" name="search" :size="18" />
   </label>
 </template>
 

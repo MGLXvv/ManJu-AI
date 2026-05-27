@@ -6,7 +6,7 @@
     <div class="project-card__shade"></div>
 
     <span class="project-card__mark" :class="project.status === 'completed' ? 'is-completed' : 'is-unfinished'">
-      ★
+      ●
     </span>
 
     <div class="project-card__info">

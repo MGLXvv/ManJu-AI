@@ -16,18 +16,12 @@
           :aria-label="item.label"
         >
           <FigmaIcon :name="isActive(item.to) ? item.iconActive : item.iconDefault" :size="24" />
+          <span class="app-top-bar__tooltip">{{ item.label }}</span>
         </RouterLink>
       </nav>
 
-      <RouterLink class="app-top-bar__credit" to="/points" aria-label="积分">
-        <FigmaIcon class="app-top-bar__credit-icon" name="nav-points-active" :size="20" />
-        <span class="app-top-bar__credit-value">0</span>
-        <span class="app-top-bar__credit-sep" aria-hidden="true"></span>
-        <span class="app-top-bar__credit-plus" aria-hidden="true">+</span>
-      </RouterLink>
-
-      <RouterLink class="app-top-bar__tool-btn" to="/points" aria-label="购物车">
-        <FigmaIcon name="topbar-cart" :size="24" />
+      <RouterLink class="app-top-bar__credit" to="/points" aria-label="积分与购物车">
+        <FigmaIcon :name="isActive('/points') ? 'topbar-credit-cart-active' : 'topbar-credit-cart-default'" :size="24" />
       </RouterLink>
 
       <div
@@ -43,7 +37,7 @@
           :aria-expanded="showUserPopover"
           @click.stop="showUserPopover = !showUserPopover"
         >
-          <FigmaIcon :name="showUserPopover ? 'topbar-user-active' : 'topbar-user'" :size="24" />
+          <FigmaIcon :name="showUserPopover ? 'topbar-user-active' : 'topbar-user-default'" :size="24" />
         </button>
 
         <UserProfilePopover v-if="showUserPopover" @select="handleUserMenuSelect" />
@@ -56,14 +50,14 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import FigmaIcon from '@/components/icons/FigmaIcon.vue'
-import type { FigmaIconName } from '@/components/icons/figmaIconLibrary'
+import type { AppIconName } from '@/components/icons/iconRegistry'
 import UserProfilePopover from '@/components/navigation/UserProfilePopover.vue'
 
 interface NavItem {
   label: string
   to: string
-  iconDefault: FigmaIconName
-  iconActive: FigmaIconName
+  iconDefault: AppIconName
+  iconActive: AppIconName
 }
 
 type UserMenuKey = 'messages' | 'password' | 'space' | 'team' | 'logout'
@@ -74,12 +68,12 @@ const showUserPopover = ref(false)
 const userMenuRef = ref<HTMLElement | null>(null)
 
 const navItems: NavItem[] = [
-  { label: '首页', to: '/', iconDefault: 'nav-home-default', iconActive: 'nav-home-active' },
-  { label: '资源库', to: '/resources', iconDefault: 'nav-resource-default', iconActive: 'nav-resource-active' },
-  { label: '音色管理', to: '/voices', iconDefault: 'nav-voice-default', iconActive: 'nav-voice-active' },
-  { label: '团队空间', to: '/team', iconDefault: 'nav-team-default', iconActive: 'nav-team-active' },
-  { label: '积分管理', to: '/points', iconDefault: 'nav-points-default', iconActive: 'nav-points-active' },
-  { label: '系统管理', to: '/system', iconDefault: 'nav-system-default', iconActive: 'nav-system-active' },
+  { label: '首页', to: '/', iconDefault: 'topbar-home-default', iconActive: 'topbar-home-active' },
+  { label: '资源库', to: '/resources', iconDefault: 'topbar-resource-default', iconActive: 'topbar-resource-active' },
+  { label: '音色管理', to: '/voices', iconDefault: 'topbar-voice-default', iconActive: 'topbar-voice-active' },
+  { label: '团队空间', to: '/team', iconDefault: 'topbar-team-default', iconActive: 'topbar-team-active' },
+  { label: '积分管理', to: '/points', iconDefault: 'topbar-points-default', iconActive: 'topbar-points-active' },
+  { label: '系统管理', to: '/system', iconDefault: 'topbar-system-default', iconActive: 'topbar-system-active' },
 ]
 
 const isActive = (to: string): boolean => {

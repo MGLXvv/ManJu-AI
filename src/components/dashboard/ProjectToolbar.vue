@@ -12,7 +12,7 @@
     <div class="project-toolbar__right">
       <ProjectSearchBox v-model="keywordProxy" />
       <button class="project-batch-btn" type="button" @click="$emit('batch')">
-        <FigmaIcon name="toolbar-batch" :size="18" />
+        <FigmaIcon name="batch" :size="18" />
         <span>批量</span>
       </button>
     </div>

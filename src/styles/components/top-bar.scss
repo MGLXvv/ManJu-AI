@@ -1,4 +1,4 @@
-﻿.app-top-bar {
+.app-top-bar {
   position: sticky;
   top: 0;
   z-index: 40;
@@ -52,7 +52,7 @@
 }
 
 .app-top-bar__brand-text {
-  text-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
+  text-shadow: 0 4px 4px rgb(0 0 0 / 25%);
 }
 
 .app-top-bar__actions {
@@ -69,20 +69,43 @@
 }
 
 .app-top-bar__tool-btn {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
+  border: 1px solid transparent;
   border-radius: 10px;
   background: #262832;
 }
 
+.app-top-bar__tool-btn:hover,
 .app-top-bar__tool-btn.is-active {
-  background: #0a0a0b;
-  box-shadow:
-    0 0 0 1px #8b5cf6,
-    0 0 12px rgb(139 92 246 / 60%);
+  border-color: #8b5cf6;
+  box-shadow: 0 0 12px rgb(139 92 246 / 45%);
+}
+
+.app-top-bar__tooltip {
+  position: absolute;
+  top: 46px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: none;
+  white-space: nowrap;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(#151517, #151517) padding-box,
+    linear-gradient(90deg, #8b5cf6, #ff8df4) border-box;
+  color: #fff;
+  font-size: 12px;
+  z-index: 20;
+}
+
+.app-top-bar__tool-btn:hover .app-top-bar__tooltip {
+  display: block;
 }
 
 .app-top-bar__credit {
@@ -103,29 +126,23 @@
   color: #fff;
 }
 
-.app-top-bar__credit-sep {
-  width: 1px;
-  height: 10px;
-  background: rgba(65, 68, 87, 0.8);
-}
-
 .app-top-bar__credit-plus {
   font-family: 'Inter', var(--font-sans);
   font-size: 16px;
   line-height: 16px;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgb(255 255 255 / 80%);
 }
 
 .app-top-bar__avatar {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
-  border: 0;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #2c2d34;
   border-radius: 10px;
   color: #8b5cf6;
-  background: #0a0a0b;
+  background: #23242a;
   cursor: pointer;
 }
 
@@ -137,6 +154,8 @@
 
 .app-top-bar__avatar:hover,
 .app-top-bar__avatar[aria-expanded='true'] {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 12px rgb(139 92 246 / 45%);
   color: #a475ff;
 }
 

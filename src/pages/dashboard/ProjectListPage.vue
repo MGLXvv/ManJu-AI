@@ -1,7 +1,5 @@
 <template>
   <section class="dashboard-page">
-    <DashboardBackground />
-
     <div class="dashboard-page__content">
       <header class="dashboard-page__title-block">
         <h1 class="dashboard-page__title">我的项目</h1>
@@ -31,7 +29,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import CreateProjectModal from '@/components/dashboard/CreateProjectModal.vue'
-import DashboardBackground from '@/components/dashboard/DashboardBackground.vue'
 import ProjectGrid from '@/components/dashboard/ProjectGrid.vue'
 import ProjectToolbar from '@/components/dashboard/ProjectToolbar.vue'
 import { useProjectStore } from '@/stores/project'

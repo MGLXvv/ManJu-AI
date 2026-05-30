@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="asset-audio">
     <div class="asset-audio__meta">
       <span>{{ audio.title }}</span>
@@ -15,14 +15,13 @@
     </div>
 
     <button class="asset-audio__play" type="button" aria-label="播放">
-      <Play :size="14" />
+      <span class="asset-audio__play-icon" aria-hidden="true"></span>
     </button>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Play } from 'lucide-vue-next'
 import type { SettingAssetAudio } from '@/types/settingAsset'
 
 const props = defineProps<{
@@ -31,3 +30,4 @@ const props = defineProps<{
 
 const bars = computed(() => props.audio.waveform ?? Array.from({ length: 34 }, (_, i) => (i % 7) + 5))
 </script>
+

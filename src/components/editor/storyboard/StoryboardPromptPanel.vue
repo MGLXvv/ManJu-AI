@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <aside class="storyboard-prompt-panel">
     <StoryboardTagGroup
       title="角色"

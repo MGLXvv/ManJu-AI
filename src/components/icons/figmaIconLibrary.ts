@@ -2,12 +2,21 @@ import { APP_ICON_REGISTRY, type AppIconName } from './iconRegistry'
 
 export interface FigmaIconDef {
   url: string
+  label: string
+  group: string
 }
 
 export type FigmaIconName = AppIconName
 
 export const FIGMA_ICON_LIBRARY: Record<FigmaIconName, FigmaIconDef> = Object.fromEntries(
-  Object.entries(APP_ICON_REGISTRY).map(([name, url]) => [name, { url }]),
+  Object.entries(APP_ICON_REGISTRY).map(([name, url]) => [
+    name,
+    {
+      url,
+      label: name,
+      group: 'all',
+    },
+  ]),
 ) as Record<FigmaIconName, FigmaIconDef>
 
 export const FIGMA_ICON_GROUPS = [

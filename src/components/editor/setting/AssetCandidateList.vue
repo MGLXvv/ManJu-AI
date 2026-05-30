@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <aside class="asset-candidate-list">
     <button
       v-for="(image, index) in images"
@@ -9,20 +9,22 @@
       @click="$emit('select', { image, index })"
     >
       <img :src="image" :alt="`候选图 ${index + 1}`" />
-      <FigmaIcon v-if="index === selectedIndex" name="asset-check" :size="18" class="asset-candidate-list__check" />
+      <span class="asset-candidate-list__label">{{ `${title}-候选${index + 1}` }}</span>
+      <span v-if="index === selectedIndex" class="asset-candidate-list__check" aria-hidden="true">✓</span>
     </button>
   </aside>
 </template>
 
 <script setup lang="ts">
-import FigmaIcon from '@/components/icons/FigmaIcon.vue'
 
 defineProps<{
   images: string[]
   selectedIndex: number
+  title: string
 }>()
 
 defineEmits<{
   (e: 'select', payload: { image: string; index: number }): void
 }>()
 </script>
+

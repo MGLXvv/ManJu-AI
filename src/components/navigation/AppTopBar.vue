@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <header class="app-top-bar">
     <RouterLink class="app-top-bar__brand" to="/" aria-label="首页">
       <span class="app-top-bar__brand-glow" aria-hidden="true">ManJu AI</span>
@@ -15,13 +15,16 @@
           :to="item.to"
           :aria-label="item.label"
         >
-          <FigmaIcon :name="isActive(item.to) ? item.iconActive : item.iconDefault" :size="24" />
+          <FigmaIcon :name="item.iconDefault" :size="24" />
           <span class="app-top-bar__tooltip">{{ item.label }}</span>
         </RouterLink>
       </nav>
 
       <RouterLink class="app-top-bar__credit" to="/points" aria-label="积分与购物车">
-        <FigmaIcon :name="isActive('/points') ? 'topbar-credit-cart-active' : 'topbar-credit-cart-default'" :size="24" />
+        <FigmaIcon :name="isActive('/points') ? 'topbar-credit-diamond-active' : 'topbar-credit-diamond-default'" :size="20" />
+        <span class="app-top-bar__credit-value">{{ creditPoints }}</span>
+        <span class="app-top-bar__credit-plus">+</span>
+        <FigmaIcon name="topbar-credit-cart-default" :size="20" />
       </RouterLink>
 
       <div
@@ -37,7 +40,7 @@
           :aria-expanded="showUserPopover"
           @click.stop="showUserPopover = !showUserPopover"
         >
-          <FigmaIcon :name="showUserPopover ? 'topbar-user-active' : 'topbar-user-default'" :size="24" />
+          <FigmaIcon name="topbar-user-default" :size="24" />
         </button>
 
         <UserProfilePopover v-if="showUserPopover" @select="handleUserMenuSelect" />
@@ -47,7 +50,7 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import FigmaIcon from '@/components/icons/FigmaIcon.vue'
 import type { AppIconName } from '@/components/icons/iconRegistry'
@@ -57,7 +60,6 @@ interface NavItem {
   label: string
   to: string
   iconDefault: AppIconName
-  iconActive: AppIconName
 }
 
 type UserMenuKey = 'messages' | 'password' | 'space' | 'team' | 'logout'
@@ -68,13 +70,18 @@ const showUserPopover = ref(false)
 const userMenuRef = ref<HTMLElement | null>(null)
 
 const navItems: NavItem[] = [
-  { label: '首页', to: '/', iconDefault: 'topbar-home-default', iconActive: 'topbar-home-active' },
-  { label: '资源库', to: '/resources', iconDefault: 'topbar-resource-default', iconActive: 'topbar-resource-active' },
-  { label: '音色管理', to: '/voices', iconDefault: 'topbar-voice-default', iconActive: 'topbar-voice-active' },
-  { label: '团队空间', to: '/team', iconDefault: 'topbar-team-default', iconActive: 'topbar-team-active' },
-  { label: '积分管理', to: '/points', iconDefault: 'topbar-points-default', iconActive: 'topbar-points-active' },
-  { label: '系统管理', to: '/system', iconDefault: 'topbar-system-default', iconActive: 'topbar-system-active' },
+  { label: '首页', to: '/', iconDefault: 'topbar-home-default' },
+  { label: '资源库', to: '/resources', iconDefault: 'topbar-resource-default' },
+  { label: '音色管理', to: '/voices', iconDefault: 'topbar-voice-default' },
+  { label: '团队空间', to: '/team', iconDefault: 'topbar-team-default' },
+  { label: '积分管理', to: '/points', iconDefault: 'topbar-points-default' },
+  { label: '系统管理', to: '/system', iconDefault: 'topbar-system-default' },
 ]
+
+const creditPoints = computed(() => {
+  const value = Number(route.query.points ?? 0)
+  return Number.isFinite(value) ? value : 0
+})
 
 const isActive = (to: string): boolean => {
   if (to === '/') {

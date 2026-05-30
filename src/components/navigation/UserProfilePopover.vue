@@ -1,8 +1,8 @@
-<template>
+﻿<template>
   <div class="user-popover" role="menu">
     <div class="user-popover__profile">
       <div class="user-popover__avatar" aria-hidden="true">
-        <CircleUserRound :size="30" />
+        <FigmaIcon name="topbar-user-default" :size="30" />
       </div>
 
       <div class="user-popover__meta">
@@ -24,7 +24,7 @@
         @click="$emit('select', item.key)"
       >
         <span class="user-popover__item-icon" aria-hidden="true">
-          <component :is="item.icon" :size="16" />
+          <FigmaIcon :name="item.icon" :size="16" />
           <span v-if="item.key === 'messages'" class="user-popover__notify-dot"></span>
         </span>
         <span class="user-popover__item-label">{{ item.label }}</span>
@@ -34,16 +34,17 @@
 </template>
 
 <script setup lang="ts">
-import { Bell, CircleUserRound, FolderOpen, LockKeyhole, LogOut, UsersRound } from 'lucide-vue-next'
+import FigmaIcon from '@/components/icons/FigmaIcon.vue'
+import type { AppIconName } from '@/components/icons/iconRegistry'
 
 type MenuKey = 'messages' | 'password' | 'space' | 'team' | 'logout'
 
-const menuItems: Array<{ key: MenuKey; label: string; icon: object }> = [
-  { key: 'messages', label: '消息通知 (6)', icon: Bell },
-  { key: 'password', label: '修改密码', icon: LockKeyhole },
-  { key: 'space', label: '资源库个人空间', icon: FolderOpen },
-  { key: 'team', label: '切换团队空间', icon: UsersRound },
-  { key: 'logout', label: '退出登录', icon: LogOut },
+const menuItems: Array<{ key: MenuKey; label: string; icon: AppIconName }> = [
+  { key: 'messages', label: '消息通知 (6)', icon: 'user-menu-notify' },
+  { key: 'password', label: '修改密码', icon: 'user-menu-password' },
+  { key: 'space', label: '资源库个人空间', icon: 'user-menu-space' },
+  { key: 'team', label: '切换团队空间', icon: 'user-menu-switch-team' },
+  { key: 'logout', label: '退出登录', icon: 'user-menu-logout' },
 ]
 
 defineEmits<{

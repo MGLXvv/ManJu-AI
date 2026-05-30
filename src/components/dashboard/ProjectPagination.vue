@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <nav class="project-pagination" aria-label="项目分页">
     <button
       class="project-pagination__arrow is-plain"
@@ -6,7 +6,7 @@
       :disabled="modelValue <= 1"
       @click="$emit('update:modelValue', modelValue - 1)"
     >
-      ‹
+      <FigmaIcon name="pager-prev" :size="16" />
     </button>
 
     <button
@@ -26,29 +26,29 @@
       :disabled="modelValue >= totalPages"
       @click="$emit('update:modelValue', modelValue + 1)"
     >
-      ›
+      <FigmaIcon name="pager-next" :size="16" />
     </button>
 
-    <select class="project-pagination__select" :value="pageSize" @change="onSizeChange">
-      <option :value="12">12/页</option>
-      <option :value="18">18/页</option>
-      <option :value="24">24/页</option>
-    </select>
+    <div class="project-pagination__jump-wrap">
+      <select class="project-pagination__select" :value="modelValue" @change="onPageSelect">
+        <option v-for="page in pages" :key="`jump-${page}`" :value="page">{{ page }}</option>
+      </select>
+      <FigmaIcon name="chevron-down" :size="14" class="project-pagination__select-icon" />
+    </div>
   </nav>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import FigmaIcon from '@/components/icons/FigmaIcon.vue'
 
 const props = defineProps<{
   modelValue: number
   pages: number[]
-  pageSize: number
 }>()
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: number): void
-  (e: 'update:pageSize', value: number): void
 }>()
 
 const totalPages = computed(() => Math.max(1, props.pages.length))
@@ -73,9 +73,9 @@ const visiblePages = computed(() => {
   return Array.from({ length: windowSize }, (_, index) => start + index)
 })
 
-const onSizeChange = (event: Event): void => {
+const onPageSelect = (event: Event): void => {
   const target = event.target as HTMLSelectElement | null
-  const nextSize = Number(target?.value ?? props.pageSize)
-  emit('update:pageSize', nextSize)
+  const nextPage = Number(target?.value ?? props.modelValue)
+  emit('update:modelValue', nextPage)
 }
 </script>

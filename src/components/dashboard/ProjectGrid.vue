@@ -14,7 +14,6 @@
     <ProjectPagination
       v-if="projects.length > 0"
       v-model="page"
-      v-model:page-size="pageSize"
       :pages="pages"
     />
   </section>
@@ -37,7 +36,7 @@ defineEmits<{
 }>()
 
 const page = ref(1)
-const pageSize = ref(12)
+const pageSize = ref(29)
 
 const totalPages = computed(() => Math.max(1, Math.ceil(props.projects.length / pageSize.value)))
 const pages = computed(() => Array.from({ length: totalPages.value }, (_, index) => index + 1))

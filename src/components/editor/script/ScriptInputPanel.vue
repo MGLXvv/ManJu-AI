@@ -4,7 +4,7 @@
 
     <div class="script-input-panel__card">
       <button class="script-doc-btn" type="button" @click="triggerImport">
-        <span class="script-doc-btn__icon">↗</span>
+        <FigmaIcon class="script-doc-btn__icon" name="action-doc-link" :size="20" />
         <span>文档</span>
       </button>
 
@@ -33,6 +33,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, ref } from 'vue'
+import FigmaIcon from '@/components/icons/FigmaIcon.vue'
 import ScriptEmptyGuide from './ScriptEmptyGuide.vue'
 
 const model = defineModel<string>({ required: true })

@@ -1,13 +1,11 @@
 <template>
   <div class="asset-generating-card">
-    <Loader2 class="asset-generating-card__spinner" :size="18" />
+    <span class="asset-generating-card__spinner" aria-hidden="true">◌</span>
     <span>{{ label }}</span>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Loader2 } from 'lucide-vue-next'
-
 withDefaults(
   defineProps<{
     label?: string

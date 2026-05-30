@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <section class="video-prompt-panel">
     <header class="video-prompt-panel__title">视频提示词</header>
 

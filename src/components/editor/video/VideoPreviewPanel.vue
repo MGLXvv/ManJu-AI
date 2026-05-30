@@ -20,7 +20,7 @@
       </template>
 
       <button type="button" class="video-preview-panel__play" :aria-label="isPlaying ? '暂停预览' : '播放预览'" @click="togglePlay">
-        {{ isPlaying ? '❚❚' : '▶' }}
+        <FigmaIcon name="video-play-large" :size="32" />
       </button>
 
       <div class="video-preview-panel__progress">
@@ -46,6 +46,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import StoryboardCanvasToolbar from '@/components/editor/storyboard/StoryboardCanvasToolbar.vue'
+import FigmaIcon from '@/components/icons/FigmaIcon.vue'
 import type { StoryboardShot } from '@/types/storyboard'
 
 const props = defineProps<{

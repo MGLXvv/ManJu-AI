@@ -1,6 +1,6 @@
-<template>
+﻿<template>
   <button class="script-template-btn" :class="{ 'is-active': active }" type="button" @click="$emit('click')">
-    <FigmaIcon name="toolbar-add" :size="12" />
+    <FigmaIcon name="card-add" :size="13" />
     <span class="script-template-btn__title">{{ title }}</span>
     <span class="script-template-btn__desc">{{ desc }}</span>
   </button>
@@ -19,3 +19,4 @@ defineEmits<{
   (e: 'click'): void
 }>()
 </script>
+

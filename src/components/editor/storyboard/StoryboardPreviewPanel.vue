@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <section class="storyboard-preview-panel">
     <div class="storyboard-canvas">
       <template v-if="shot.status === 'generating' || shot.status === 'pending'">

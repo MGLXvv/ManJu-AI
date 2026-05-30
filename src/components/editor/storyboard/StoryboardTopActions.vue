@@ -2,7 +2,7 @@
   <div class="storyboard-top-actions">
     <button type="button" class="storyboard-top-actions__model" aria-label="选择模型">
       <span>{{ modelLabel }}</span>
-      <ChevronDown :size="16" />
+      <FigmaIcon name="chevron-down" :size="16" />
     </button>
 
     <div class="storyboard-top-actions__group">
@@ -20,7 +20,7 @@
 </template>
 
 <script setup lang="ts">
-import { ChevronDown } from 'lucide-vue-next'
+import FigmaIcon from '@/components/icons/FigmaIcon.vue'
 
 withDefaults(
   defineProps<{

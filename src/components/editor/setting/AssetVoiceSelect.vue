@@ -2,7 +2,7 @@
   <div class="asset-voice-select" ref="rootRef">
     <button class="asset-voice-select__trigger" type="button" @click="open = !open">
       <span>{{ selectedLabel }}</span>
-      <ChevronDown :size="14" class="asset-voice-select__arrow" />
+      <FigmaIcon name="chevron-down" :size="14" class="asset-voice-select__arrow" />
     </button>
 
     <div v-if="open" class="asset-voice-select__menu">
@@ -23,7 +23,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { ChevronDown } from 'lucide-vue-next'
+import FigmaIcon from '@/components/icons/FigmaIcon.vue'
 import type { VoiceOption } from '@/types/settingAsset'
 
 const props = defineProps<{

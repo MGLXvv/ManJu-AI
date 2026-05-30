@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <section class="script-prompt-block">
     <h2 class="script-column-title">编辑提示词</h2>
 
@@ -11,32 +11,23 @@
 
       <footer class="script-prompt-card__actions">
         <div class="script-prompt-card__actions-left">
-          <button class="script-action-pill script-action-pill--danger" type="button" @click="$emit('delete')">
-            <FigmaIcon name="asset-delete" :size="12" />
+          <button class="script-action-pill" type="button" @click="$emit('delete')">
+            <FigmaIcon name="action-delete" :size="18" />
             <span>删除</span>
           </button>
 
           <button class="script-action-pill" type="button" @click="$emit('save')">
-            <FigmaIcon name="asset-copy" :size="12" />
+            <FigmaIcon name="action-save" :size="18" />
             <span>保存</span>
           </button>
 
           <button class="script-action-pill" type="button" @click="$emit('open-template')">
-            <FigmaIcon name="asset-edit" :size="12" />
+            <FigmaIcon name="action-template" :size="18" />
             <span>模板</span>
           </button>
         </div>
 
         <div class="script-prompt-card__actions-right">
-          <button
-            class="script-generate-outline"
-            type="button"
-            :disabled="!canGenerate || loading"
-            @click="$emit('generate')"
-          >
-            生成剧本
-          </button>
-
           <button
             class="script-generate-outline"
             type="button"

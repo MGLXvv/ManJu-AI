@@ -6,7 +6,7 @@
       :aria-label="collapsed ? '展开参考图列表' : '收起参考图列表'"
       @click="toggleCollapse"
     >
-      {{ collapsed ? '‹' : '›' }}
+      <FigmaIcon name="reference-rail-handle" :size="16" />
     </button>
 
     <div v-if="!collapsed" class="storyboard-reference-rail__list">
@@ -24,6 +24,7 @@
 </template>
 
 <script setup lang="ts">
+import FigmaIcon from '@/components/icons/FigmaIcon.vue'
 import type { StoryboardReferenceImage } from '@/types/storyboard'
 
 const props = withDefaults(

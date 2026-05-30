@@ -17,11 +17,17 @@
           <h3 class="asset-card__title">{{ asset.title }}</h3>
 
           <div class="asset-card__actions">
-            <button type="button" aria-label="收藏" @click.stop="$emit('favorite', asset.id)">
-              <FigmaIcon :name="asset.favorite ? 'asset-star-active' : 'asset-star'" :size="16" />
+            <button
+              type="button"
+              class="asset-card__favorite-btn"
+              :class="{ 'is-active': asset.favorite }"
+              aria-label="收藏"
+              @click.stop="$emit('favorite', asset.id)"
+            >
+              <FigmaIcon :name="asset.favorite ? 'asset-star-purple' : 'asset-star-outline'" :size="16" />
             </button>
-            <button type="button" aria-label="删除" @click.stop="$emit('delete', asset.id)">
-              <FigmaIcon name="asset-delete" :size="16" />
+            <button type="button" class="asset-card__trash-btn" aria-label="删除" @click.stop="$emit('delete', asset.id)">
+              <FigmaIcon name="asset-trash" :size="16" />
             </button>
           </div>
         </header>
@@ -35,16 +41,22 @@
             <h3 class="asset-card__title">{{ asset.title }}</h3>
 
             <div class="asset-card__actions">
-              <button type="button" aria-label="收藏" @click.stop="$emit('favorite', asset.id)">
-                <FigmaIcon :name="asset.favorite ? 'asset-star-active' : 'asset-star'" :size="16" />
+              <button
+                type="button"
+                class="asset-card__favorite-btn"
+                :class="{ 'is-active': asset.favorite }"
+                aria-label="收藏"
+                @click.stop="$emit('favorite', asset.id)"
+              >
+                <FigmaIcon :name="asset.favorite ? 'asset-star-purple' : 'asset-star-outline'" :size="16" />
               </button>
-              <button type="button" aria-label="删除" @click.stop="$emit('delete', asset.id)">
-                <FigmaIcon name="asset-delete" :size="16" />
+              <button type="button" class="asset-card__trash-btn" aria-label="删除" @click.stop="$emit('delete', asset.id)">
+                <FigmaIcon name="asset-trash" :size="16" />
               </button>
             </div>
           </header>
 
-          <AssetImageStrip :images="displayImages" @preview="$emit('preview', asset)" />
+          <AssetImageStrip :images="displayImages" :title="asset.title" @preview="$emit('preview', asset)" />
 
           <AssetContentTabs v-if="isCharacter" v-model="activePanel" />
           <div v-else class="asset-card__single-label">提示词</div>
@@ -65,10 +77,11 @@
 
 
     </div>
-          <AssetCandidateList
+      <AssetCandidateList
         v-if="isExpanded"
         class="asset-card__candidates"
         :images="candidateImages"
+        :title="asset.title"
         :selected-index="selectedCandidateIndex"
         @select="onSelectCandidate"
       />
@@ -106,7 +119,7 @@ const emit = defineEmits<{
 }>()
 
 const uploadRef = ref<HTMLInputElement | null>(null)
-const activePanel = ref<'prompt' | 'voice'>('prompt')
+const activePanel = ref<'prompt' | 'voice'>(props.asset.type === 'character' ? 'voice' : 'prompt')
 const selectedVoiceId = ref(props.asset.selectedVoiceId ?? props.asset.voiceOptions?.[0]?.id ?? '')
 const selectedCandidateIndex = ref(0)
 
@@ -139,7 +152,7 @@ const promptValue = computed({
 watch(
   () => props.asset.id,
   () => {
-    activePanel.value = 'prompt'
+    activePanel.value = props.asset.type === 'character' ? 'voice' : 'prompt'
     selectedVoiceId.value = props.asset.selectedVoiceId ?? props.asset.voiceOptions?.[0]?.id ?? ''
     selectedCandidateIndex.value = 0
   },

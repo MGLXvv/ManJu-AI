@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import type { SettingAsset, SettingAssetType, SettingAssetTypeFilter, VoiceOption } from '@/types/settingAsset'
 
-const createImage = (label: string, colorA: string, colorB: string, seed: number): string => {
+const createImage = (_label: string, colorA: string, colorB: string, seed: number): string => {
   const encoded = encodeURIComponent(
     `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">
       <defs>
@@ -13,8 +13,6 @@ const createImage = (label: string, colorA: string, colorB: string, seed: number
       </defs>
       <rect width="640" height="360" fill="url(#g)" />
       <circle cx="${80 + (seed % 7) * 70}" cy="${58 + (seed % 5) * 48}" r="${28 + (seed % 4) * 8}" fill="rgba(255,255,255,0.2)" />
-      <rect x="0" y="278" width="640" height="82" fill="rgba(0,0,0,0.42)" />
-      <text x="22" y="330" fill="white" font-family="Segoe UI, PingFang SC, Microsoft YaHei, sans-serif" font-size="34" font-weight="700">${label}</text>
     </svg>`,
   )
   return `data:image/svg+xml;charset=UTF-8,${encoded}`

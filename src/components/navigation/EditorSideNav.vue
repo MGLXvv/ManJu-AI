@@ -1,7 +1,7 @@
-<template>
+﻿<template>
   <aside class="editor-side-nav" aria-label="创作流程">
     <RouterLink
-      v-for="(step, index) in navSteps"
+      v-for="(step, index) in editorSteps"
       :key="step.key"
       class="editor-side-nav__item"
       :class="{
@@ -9,11 +9,13 @@
         'is-done': index < activeIndex,
       }"
       :to="{ name: step.route, params: route.params }"
+      :aria-label="step.label"
     >
       <span class="editor-side-nav__icon-wrap">
-        <FigmaIcon class="editor-side-nav__icon" :name="resolveIcon(step.key, index)" :size="18" />
+        <FigmaIcon class="editor-side-nav__icon" :name="resolveIcon(step.key)" :size="24" />
       </span>
-      <span class="editor-side-nav__label">{{ step.shortLabel }}</span>
+      <span class="editor-side-nav__label">{{ resolveLabel(step.key) }}</span>
+      <span v-if="index < editorSteps.length - 1" class="editor-side-nav__divider" aria-hidden="true" />
     </RouterLink>
   </aside>
 </template>
@@ -24,20 +26,34 @@ import { useRoute } from 'vue-router'
 import FigmaIcon from '@/components/icons/FigmaIcon.vue'
 import { editorSteps } from '@/stores/editor'
 import type { WorkflowStep } from '@/types/project'
-import { FIGMA_ICON_LIBRARY, type FigmaIconName } from '@/components/icons/figmaIconLibrary'
+import type { FigmaIconName } from '@/components/icons/figmaIconLibrary'
 
 const route = useRoute()
 const activeIndex = computed(() => editorSteps.findIndex((step) => step.route === route.name))
 
-const navSteps = editorSteps.map((step) => ({
-  ...step,
-  shortLabel: step.key === 'storyboard' ? '分镜' : step.key === 'settings' ? '设定' : step.key === 'script' ? '文案' : step.label.slice(0, 2),
-}))
+const resolveIcon = (step: WorkflowStep): FigmaIconName => {
+  const iconMap: Record<WorkflowStep, FigmaIconName> = {
+    script: 'flow-script-edited',
+    settings: 'flow-settings-edited',
+    storyboard: 'flow-storyboard-edited',
+    video: 'flow-video-edited',
+    dubbing: 'flow-video-edited',
+    complete: 'flow-complete-edited',
+  }
 
-const resolveIcon = (step: WorkflowStep, index: number): FigmaIconName => {
-  const state = index < activeIndex.value ? 'edited' : index === activeIndex.value ? 'editing' : 'unedited'
-  const prefix = step === 'settings' ? 'setting' : step
-  const candidate = `flow-${prefix}-${state}` as FigmaIconName
-  return FIGMA_ICON_LIBRARY[candidate] ? candidate : 'flow-script-unedited'
+  return iconMap[step] ?? 'flow-script-edited'
+}
+
+const resolveLabel = (step: WorkflowStep): string => {
+  const labelMap: Record<WorkflowStep, string> = {
+    script: '文案',
+    settings: '设定',
+    storyboard: '分镜',
+    video: '视频',
+    dubbing: '配音',
+    complete: '完成',
+  }
+
+  return labelMap[step] ?? '文案'
 }
 </script>

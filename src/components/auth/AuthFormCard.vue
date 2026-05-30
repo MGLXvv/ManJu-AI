@@ -54,8 +54,8 @@
             @input="onInput('secret', $event)"
           />
           <button type="button" class="auth-card__icon-btn" @click="$emit('toggle-password')">
-            <EyeOff v-if="showPassword" :size="15" />
-            <Eye v-else :size="15" />
+            <FigmaIcon v-if="showPassword" name="form-eye-on" :size="15" />
+            <FigmaIcon v-else name="form-eye-off" :size="15" />
           </button>
         </div>
       </label>
@@ -69,7 +69,15 @@
       </label>
 
       <label class="auth-card__agree">
-        <input type="checkbox" :checked="agreed" @change="onToggleAgree" />
+        <button
+          type="button"
+          class="auth-card__agree-toggle"
+          :class="{ 'is-checked': agreed }"
+          :aria-pressed="agreed"
+          @click="$emit('update:agreed', !agreed)"
+        >
+          <FigmaIcon name="checkbox-checked" :size="12" class="auth-card__agree-icon" :class="{ 'is-visible': agreed }" />
+        </button>
         <span>我同意 服务条款 与 隐私政策</span>
       </label>
 
@@ -82,7 +90,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Eye, EyeOff } from 'lucide-vue-next'
+import FigmaIcon from '@/components/icons/FigmaIcon.vue'
 import AuthSocialRow from './AuthSocialRow.vue'
 
 export type AuthMode = 'password' | 'code' | 'register' | 'reset'
@@ -156,8 +164,4 @@ const onInput = (field: 'account' | 'secret', event: Event): void => {
   }
 }
 
-const onToggleAgree = (event: Event): void => {
-  const target = event.target as HTMLInputElement
-  emit('update:agreed', target.checked)
-}
 </script>

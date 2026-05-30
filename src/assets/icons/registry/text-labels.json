@@ -1,0 +1,242 @@
+[
+  {
+    "source": "首页.svg",
+    "text": "首页",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "资源库.svg",
+    "text": "资源库",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "音色管理.svg",
+    "text": "音色管理",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "团队空间.svg",
+    "text": "团队空间",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "管理充值.svg",
+    "text": "管理充值",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "系统管理.svg",
+    "text": "系统管理",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "搜索名称.svg",
+    "text": "搜索名称",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "批量.svg",
+    "text": "批量",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "新建项目.svg",
+    "text": "新建项目",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "导入项目.svg",
+    "text": "导入项目",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "文档.svg",
+    "text": "文档",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "Gpt.40.svg",
+    "text": "Gpt.40",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "保存.svg",
+    "text": "保存",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "模板.svg",
+    "text": "模板",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "删除.svg",
+    "text": "删除",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "AI优化.svg",
+    "text": "AI优化",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "全屏.svg",
+    "text": "全屏",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "收起.svg",
+    "text": "收起",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "展开.svg",
+    "text": "展开",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "上传.svg",
+    "text": "上传",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "删除-1.svg",
+    "text": "删除-1",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "删除-2.svg",
+    "text": "删除-2",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "已编辑.svg",
+    "text": "已编辑",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "编辑中.svg",
+    "text": "编辑中",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "未编辑.svg",
+    "text": "未编辑",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "未选中.svg",
+    "text": "未选中",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "未选中-1.svg",
+    "text": "未选中-1",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "选中.svg",
+    "text": "选中",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "选中-1.svg",
+    "text": "选中-1",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "已选.svg",
+    "text": "已选",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "未选.svg",
+    "text": "未选",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "已收藏.svg",
+    "text": "已收藏",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "未收藏.svg",
+    "text": "未收藏",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "正常操作.svg",
+    "text": "正常操作",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "禁止操作.svg",
+    "text": "禁止操作",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "空状态.svg",
+    "text": "空状态",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "未操作.svg",
+    "text": "未操作",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "视频播放.svg",
+    "text": "视频播放",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "花店.svg",
+    "text": "花店",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "夜晚街道.svg",
+    "text": "夜晚街道",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "主角家.svg",
+    "text": "主角家",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "音色播放按钮.svg",
+    "text": "音色播放按钮",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "添加.svg",
+    "text": "添加",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "添加-1.svg",
+    "text": "添加-1",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "编辑.svg",
+    "text": "编辑",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "未完成.svg",
+    "text": "未完成",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "已完成.svg",
+    "text": "已完成",
+    "usage": "render as HTML text; do not convert to iconfont"
+  },
+  {
+    "source": "选中可删除.svg",
+    "text": "选中可删除",
+    "usage": "render as HTML text; do not convert to iconfont"
+  }
+]

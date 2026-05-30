@@ -1,0 +1,9 @@
+{
+  "private": true,
+  "scripts": {
+    "build:iconfont": "svgtofont --sources ./iconfont_input --output ./dist-iconfont --fontName manju-icons --css --symbolName mj-icon-[name]"
+  },
+  "devDependencies": {
+    "svgtofont": "latest"
+  }
+}

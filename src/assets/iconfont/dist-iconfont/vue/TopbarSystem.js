@@ -1,0 +1,25 @@
+import { defineComponent, h } from 'vue';
+
+export const TopbarSystem = defineComponent({
+  name: 'TopbarSystem',
+  props: {
+    class: {
+      type: String,
+      default: ''
+    }
+  },
+  setup(props, { attrs }) {
+    return () => h(
+      'svg',
+      {
+        viewBox: '0 0 20 20',
+        
+        class: `manju-icons ${props.class}`,
+        ...attrs
+      },
+      [
+        h('path', {"d": "M19 8L28.5 13.5V24.5L19 30L9.5 24.5V13.5L19 8ZM19 10.311L11.5 14.6531V23.3469L19 27.689L26.5 23.3469V14.6531L19 10.311ZM19 23C16.7909 23 15 21.2091 15 19C15 16.7909 16.7909 15 19 15C21.2091 15 23 16.7909 23 19C23 21.2091 21.2091 23 19 23ZM19 21C20.1046 21 21 20.1046 21 19C21 17.8954 20.1046 17 19 17C17.8954 17 17 17.8954 17 19C17 20.1046 17.8954 21 19 21Z", "fillRule": "evenodd"})
+      ]
+    );
+  }
+});

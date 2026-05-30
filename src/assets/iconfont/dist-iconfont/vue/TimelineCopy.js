@@ -1,0 +1,25 @@
+import { defineComponent, h } from 'vue';
+
+export const TimelineCopy = defineComponent({
+  name: 'TimelineCopy',
+  props: {
+    class: {
+      type: String,
+      default: ''
+    }
+  },
+  setup(props, { attrs }) {
+    return () => h(
+      'svg',
+      {
+        viewBox: '0 0 20 20',
+        
+        class: `manju-icons ${props.class}`,
+        ...attrs
+      },
+      [
+        h('path', {"d": "M4.66653 4.00004V2.00004C4.66653 1.63185 4.96501 1.33337 5.3332 1.33337H13.3332C13.7014 1.33337 13.9999 1.63185 13.9999 2.00004V11.3334C13.9999 11.7016 13.7014 12 13.3332 12H11.3332V13.9994C11.3332 14.368 11.0333 14.6667 10.662 14.6667H2.67111C2.30039 14.6667 2 14.3703 2 13.9994L2.00173 4.66729C2.0018 4.29878 2.30176 4.00004 2.67295 4.00004H4.66653ZM5.99987 4.00004H11.3332V10.6667H12.6665V2.66671H5.99987V4.00004Z", "fillRule": "evenodd"})
+      ]
+    );
+  }
+});

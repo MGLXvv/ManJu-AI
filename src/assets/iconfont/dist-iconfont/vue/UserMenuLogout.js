@@ -1,0 +1,25 @@
+import { defineComponent, h } from 'vue';
+
+export const UserMenuLogout = defineComponent({
+  name: 'UserMenuLogout',
+  props: {
+    class: {
+      type: String,
+      default: ''
+    }
+  },
+  setup(props, { attrs }) {
+    return () => h(
+      'svg',
+      {
+        viewBox: '0 0 20 20',
+        
+        class: `manju-icons ${props.class}`,
+        ...attrs
+      },
+      [
+        h('path', {"d": "M3.33341 14.6666C2.96523 14.6666 2.66675 14.3681 2.66675 13.9999V1.99992C2.66675 1.63173 2.96523 1.33325 3.33341 1.33325H12.6667C13.0349 1.33325 13.3334 1.63173 13.3334 1.99992V3.99992H12.0001V2.66659H4.00008V13.3333H12.0001V11.9999H13.3334V13.9999C13.3334 14.3681 13.0349 14.6666 12.6667 14.6666H3.33341ZM12.0001 10.6666V8.66658H7.33342V7.33325H12.0001V5.33325L15.3334 7.99992L12.0001 10.6666Z", "fillRule": "evenodd"})
+      ]
+    );
+  }
+});

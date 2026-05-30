@@ -1,0 +1,981 @@
+[
+  {
+    "name": "topbar-credit-diamond-default",
+    "source": "Group 1.svg",
+    "category": "svg-only/separated",
+    "reason": "gradient/multicolor; use SVG, not iconfont"
+  },
+  {
+    "name": "topbar-cart-default",
+    "source": "Group 1.svg",
+    "category": "iconfont-ready/navigation",
+    "reason": "separated from credit/cart combined group"
+  },
+  {
+    "name": "topbar-credit-diamond-active",
+    "source": "Group 1-1.svg",
+    "category": "svg-only/separated",
+    "reason": "gradient/multicolor; use SVG, not iconfont"
+  },
+  {
+    "name": "topbar-cart-active",
+    "source": "Group 1-1.svg",
+    "category": "iconfont-ready/navigation",
+    "reason": "separated from credit/cart combined group"
+  },
+  {
+    "name": "topbar-credit-value",
+    "source": "Group 1.svg",
+    "category": "text-separated",
+    "text": "0 / +",
+    "reason": "render as HTML text, not icon"
+  },
+  {
+    "name": "flow-script",
+    "source": "Group 152.svg",
+    "category": "iconfont-ready/flow",
+    "reason": "split icon from text label group"
+  },
+  {
+    "name": "flow-settings",
+    "source": "Group 153.svg",
+    "category": "iconfont-ready/flow",
+    "reason": "split icon from text label group"
+  },
+  {
+    "name": "flow-storyboard",
+    "source": "Group 156.svg",
+    "category": "iconfont-ready/flow",
+    "reason": "split icon from text label group"
+  },
+  {
+    "name": "flow-video",
+    "source": "Group 154.svg",
+    "category": "iconfont-ready/flow",
+    "reason": "split icon from text label group"
+  },
+  {
+    "name": "flow-complete",
+    "source": "Group 155.svg",
+    "category": "iconfont-ready/flow",
+    "reason": "split icon from text label group"
+  },
+  {
+    "name": "topbar-home",
+    "source": "Group 2.svg",
+    "category": "iconfont-ready/navigation",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "topbar-resource",
+    "source": "Group 3.svg",
+    "category": "iconfont-ready/navigation",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "topbar-voice",
+    "source": "Group 4.svg",
+    "category": "iconfont-ready/navigation",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "topbar-team",
+    "source": "Group 5.svg",
+    "category": "iconfont-ready/navigation",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "topbar-points",
+    "source": "Group 6.svg",
+    "category": "iconfont-ready/navigation",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "topbar-system",
+    "source": "Group 7.svg",
+    "category": "iconfont-ready/navigation",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "topbar-user",
+    "source": "Frame.svg",
+    "category": "iconfont-ready/navigation",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "search",
+    "source": "Frame-2.svg",
+    "category": "iconfont-ready/toolbar",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "batch",
+    "source": "Group 17.svg",
+    "category": "iconfont-ready/toolbar",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "project-create-plus",
+    "source": "Frame 2.svg",
+    "category": "iconfont-ready/toolbar",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "project-import",
+    "source": "Frame 3.svg",
+    "category": "iconfont-ready/toolbar",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "action-document",
+    "source": "Frame-3.svg",
+    "category": "iconfont-ready/toolbar",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "model-openai",
+    "source": "Frame-4.svg",
+    "category": "iconfont-ready/toolbar",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "chevron-down",
+    "source": "Frame-5.svg",
+    "category": "iconfont-ready/toolbar",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "action-save",
+    "source": "Frame-6.svg",
+    "category": "iconfont-ready/toolbar",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "action-template",
+    "source": "Frame-7.svg",
+    "category": "iconfont-ready/toolbar",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "action-delete",
+    "source": "Frame-8.svg",
+    "category": "iconfont-ready/toolbar",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "tool-edit",
+    "source": "Group 212.svg",
+    "category": "iconfont-ready/editor-tools",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "tool-view",
+    "source": "Group 213.svg",
+    "category": "iconfont-ready/editor-tools",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "tool-lock",
+    "source": "Group 214.svg",
+    "category": "iconfont-ready/editor-tools",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "tool-zoom",
+    "source": "Group 217.svg",
+    "category": "iconfont-ready/editor-tools",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "tool-copy",
+    "source": "Group 216.svg",
+    "category": "iconfont-ready/editor-tools",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "tool-delete",
+    "source": "Group 215.svg",
+    "category": "iconfont-ready/editor-tools",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "tool-edit-alt",
+    "source": "Group 212-1.svg",
+    "category": "iconfont-ready/editor-tools",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "tool-view-off",
+    "source": "Group 213-1.svg",
+    "category": "iconfont-ready/editor-tools",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "tool-lock-alt",
+    "source": "Group 214-1.svg",
+    "category": "iconfont-ready/editor-tools",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "tool-zoom-out",
+    "source": "Group 217-1.svg",
+    "category": "iconfont-ready/editor-tools",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "tool-copy-alt",
+    "source": "Group 216-1.svg",
+    "category": "iconfont-ready/editor-tools",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "tool-delete-alt",
+    "source": "Group 215-1.svg",
+    "category": "iconfont-ready/editor-tools",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "tool-fullscreen",
+    "source": "Group 248.svg",
+    "category": "iconfont-ready/editor-tools",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "reference-expand-right",
+    "source": "Group 293.svg",
+    "category": "iconfont-ready/editor-tools",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "reference-collapse-left",
+    "source": "Group 294.svg",
+    "category": "iconfont-ready/editor-tools",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "timeline-upload",
+    "source": "Frame-13.svg",
+    "category": "iconfont-ready/timeline",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "timeline-upload-active",
+    "source": "Frame-14.svg",
+    "category": "iconfont-ready/timeline",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "timeline-copy",
+    "source": "Frame-12.svg",
+    "category": "iconfont-ready/timeline",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "timeline-copy-active",
+    "source": "Frame-15.svg",
+    "category": "iconfont-ready/timeline",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "timeline-delete",
+    "source": "Group 296.svg",
+    "category": "iconfont-ready/timeline",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "timeline-delete-active",
+    "source": "Group 295.svg",
+    "category": "iconfont-ready/timeline",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "pager-prev",
+    "source": "Group 306.svg",
+    "category": "iconfont-ready/timeline",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "pager-next",
+    "source": "Group 307.svg",
+    "category": "iconfont-ready/timeline",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "card-delete",
+    "source": "Group 20.svg",
+    "category": "iconfont-ready/cards",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "card-upload",
+    "source": "Group 21.svg",
+    "category": "iconfont-ready/cards",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "card-edit",
+    "source": "Group 22.svg",
+    "category": "iconfont-ready/cards",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "card-add",
+    "source": "Group 28.svg",
+    "category": "iconfont-ready/cards",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "asset-star-outline",
+    "source": "Group 175.svg",
+    "category": "iconfont-ready/cards",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "asset-trash",
+    "source": "Group 176.svg",
+    "category": "iconfont-ready/cards",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "star-orange",
+    "source": "Group 243.svg",
+    "category": "iconfont-ready/cards",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "star-outline",
+    "source": "Group 245.svg",
+    "category": "iconfont-ready/cards",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "star-green",
+    "source": "Group 246.svg",
+    "category": "iconfont-ready/cards",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "star-purple",
+    "source": "Group 247.svg",
+    "category": "iconfont-ready/cards",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "checkbox-checked",
+    "source": "Frame-16.svg",
+    "category": "iconfont-ready/forms",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "checkbox-muted",
+    "source": "Frame-17.svg",
+    "category": "iconfont-ready/forms",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "chip-close",
+    "source": "Frame-9.svg",
+    "category": "iconfont-ready/chips",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "chip-close-active",
+    "source": "Frame-10.svg",
+    "category": "iconfont-ready/chips",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "chip-close-muted",
+    "source": "Frame-11.svg",
+    "category": "iconfont-ready/chips",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "chip-add",
+    "source": "Group 207.svg",
+    "category": "iconfont-ready/chips",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "user-menu-notify",
+    "source": "Group 316.svg",
+    "category": "iconfont-ready/user-menu",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "user-menu-password",
+    "source": "Frame-20.svg",
+    "category": "iconfont-ready/user-menu",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "user-menu-space",
+    "source": "Frame-21.svg",
+    "category": "iconfont-ready/user-menu",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "user-menu-switch-team",
+    "source": "Frame-18.svg",
+    "category": "iconfont-ready/user-menu",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "user-menu-logout",
+    "source": "Frame-19.svg",
+    "category": "iconfont-ready/user-menu",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "social-wechat",
+    "source": "Group 67.svg",
+    "category": "iconfont-ready/social",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "social-qq",
+    "source": "Group 66.svg",
+    "category": "iconfont-ready/social",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "social-alipay",
+    "source": "Group 68.svg",
+    "category": "iconfont-ready/social",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "reference-rail-handle",
+    "source": "Group 188.svg",
+    "category": "iconfont-ready/misc",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "play-small",
+    "source": "Group 287.svg",
+    "category": "iconfont-ready/misc",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "ai-text-control",
+    "source": "Group 224.svg",
+    "category": "iconfont-ready/misc",
+    "reason": "single-color iconfont candidate; wrappers/backgrounds stripped where applicable"
+  },
+  {
+    "name": "首页",
+    "source": "首页.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "资源库",
+    "source": "资源库.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "音色管理",
+    "source": "音色管理.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "团队空间",
+    "source": "团队空间.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "管理充值",
+    "source": "管理充值.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "系统管理",
+    "source": "系统管理.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "搜索名称",
+    "source": "搜索名称.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "批量",
+    "source": "批量.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "新建项目",
+    "source": "新建项目.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "导入项目",
+    "source": "导入项目.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "文档",
+    "source": "文档.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "Gpt.40",
+    "source": "Gpt.40.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "保存",
+    "source": "保存.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "模板",
+    "source": "模板.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "删除",
+    "source": "删除.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "AI优化",
+    "source": "AI优化.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "全屏",
+    "source": "全屏.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "收起",
+    "source": "收起.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "展开",
+    "source": "展开.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "上传",
+    "source": "上传.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "删除-1",
+    "source": "删除-1.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "删除-2",
+    "source": "删除-2.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "已编辑",
+    "source": "已编辑.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "编辑中",
+    "source": "编辑中.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "未编辑",
+    "source": "未编辑.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "未选中",
+    "source": "未选中.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "未选中-1",
+    "source": "未选中-1.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "选中",
+    "source": "选中.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "选中-1",
+    "source": "选中-1.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "已选",
+    "source": "已选.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "未选",
+    "source": "未选.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "已收藏",
+    "source": "已收藏.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "未收藏",
+    "source": "未收藏.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "正常操作",
+    "source": "正常操作.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "禁止操作",
+    "source": "禁止操作.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "空状态",
+    "source": "空状态.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "未操作",
+    "source": "未操作.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "视频播放",
+    "source": "视频播放.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "花店",
+    "source": "花店.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "夜晚街道",
+    "source": "夜晚街道.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "主角家",
+    "source": "主角家.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "音色播放按钮",
+    "source": "音色播放按钮.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "添加",
+    "source": "添加.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "添加-1",
+    "source": "添加-1.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "编辑",
+    "source": "编辑.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "未完成",
+    "source": "未完成.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "已完成",
+    "source": "已完成.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "选中可删除",
+    "source": "选中可删除.svg",
+    "category": "text-separated",
+    "reason": "text label; use HTML/CSS text"
+  },
+  {
+    "name": "Group 145",
+    "source": "Group 145.svg",
+    "category": "svg_only/with_text_originals",
+    "reason": "compound component/multicolor/contains text or background; keep SVG or rebuild with HTML text"
+  },
+  {
+    "name": "Group 146",
+    "source": "Group 146.svg",
+    "category": "svg_only/with_text_originals",
+    "reason": "compound component/multicolor/contains text or background; keep SVG or rebuild with HTML text"
+  },
+  {
+    "name": "Group 157",
+    "source": "Group 157.svg",
+    "category": "svg_only/with_text_originals",
+    "reason": "compound component/multicolor/contains text or background; keep SVG or rebuild with HTML text"
+  },
+  {
+    "name": "Group 158",
+    "source": "Group 158.svg",
+    "category": "svg_only/with_text_originals",
+    "reason": "compound component/multicolor/contains text or background; keep SVG or rebuild with HTML text"
+  },
+  {
+    "name": "Group 159",
+    "source": "Group 159.svg",
+    "category": "svg_only/with_text_originals",
+    "reason": "compound component/multicolor/contains text or background; keep SVG or rebuild with HTML text"
+  },
+  {
+    "name": "Group 160",
+    "source": "Group 160.svg",
+    "category": "svg_only/with_text_originals",
+    "reason": "compound component/multicolor/contains text or background; keep SVG or rebuild with HTML text"
+  },
+  {
+    "name": "Group 161",
+    "source": "Group 161.svg",
+    "category": "svg_only/with_text_originals",
+    "reason": "compound component/multicolor/contains text or background; keep SVG or rebuild with HTML text"
+  },
+  {
+    "name": "Group 162",
+    "source": "Group 162.svg",
+    "category": "svg_only/with_text_originals",
+    "reason": "compound component/multicolor/contains text or background; keep SVG or rebuild with HTML text"
+  },
+  {
+    "name": "Group 163",
+    "source": "Group 163.svg",
+    "category": "svg_only/with_text_originals",
+    "reason": "compound component/multicolor/contains text or background; keep SVG or rebuild with HTML text"
+  },
+  {
+    "name": "Group 164",
+    "source": "Group 164.svg",
+    "category": "svg_only/with_text_originals",
+    "reason": "compound component/multicolor/contains text or background; keep SVG or rebuild with HTML text"
+  },
+  {
+    "name": "Group 165",
+    "source": "Group 165.svg",
+    "category": "svg_only/with_text_originals",
+    "reason": "compound component/multicolor/contains text or background; keep SVG or rebuild with HTML text"
+  },
+  {
+    "name": "Group 166",
+    "source": "Group 166.svg",
+    "category": "svg_only/with_text_originals",
+    "reason": "compound component/multicolor/contains text or background; keep SVG or rebuild with HTML text"
+  },
+  {
+    "name": "Group 223",
+    "source": "Group 223.svg",
+    "category": "svg_only/components",
+    "reason": "compound component/multicolor/contains text or background; keep SVG or rebuild with HTML text"
+  },
+  {
+    "name": "Group 278",
+    "source": "Group 278.svg",
+    "category": "svg_only/with_text_originals",
+    "reason": "compound component/multicolor/contains text or background; keep SVG or rebuild with HTML text"
+  },
+  {
+    "name": "Group 63",
+    "source": "Group 63.svg",
+    "category": "svg_only/components",
+    "reason": "compound component/multicolor/contains text or background; keep SVG or rebuild with HTML text"
+  },
+  {
+    "name": "Group 193",
+    "source": "Group 193.svg",
+    "category": "svg_only/with_text_originals",
+    "reason": "compound component/multicolor/contains text or background; keep SVG or rebuild with HTML text"
+  },
+  {
+    "name": "Group 194",
+    "source": "Group 194.svg",
+    "category": "svg_only/with_text_originals",
+    "reason": "compound component/multicolor/contains text or background; keep SVG or rebuild with HTML text"
+  },
+  {
+    "name": "Group 297",
+    "source": "Group 297.svg",
+    "category": "svg_only/with_text_originals",
+    "reason": "compound component/multicolor/contains text or background; keep SVG or rebuild with HTML text"
+  },
+  {
+    "name": "Rectangle 114",
+    "source": "Rectangle 114.svg",
+    "category": "svg_only/components",
+    "reason": "compound component/multicolor/contains text or background; keep SVG or rebuild with HTML text"
+  },
+  {
+    "name": "Rectangle 115",
+    "source": "Rectangle 115.svg",
+    "category": "svg_only/components",
+    "reason": "compound component/multicolor/contains text or background; keep SVG or rebuild with HTML text"
+  },
+  {
+    "name": "Rectangle 117",
+    "source": "Rectangle 117.svg",
+    "category": "svg_only/components",
+    "reason": "compound component/multicolor/contains text or background; keep SVG or rebuild with HTML text"
+  },
+  {
+    "name": "Rectangle 19",
+    "source": "Rectangle 19.svg",
+    "category": "svg_only/components",
+    "reason": "compound component/multicolor/contains text or background; keep SVG or rebuild with HTML text"
+  },
+  {
+    "name": "Rectangle 41",
+    "source": "Rectangle 41.svg",
+    "category": "svg_only/components",
+    "reason": "compound component/multicolor/contains text or background; keep SVG or rebuild with HTML text"
+  },
+  {
+    "name": "Rectangle 48",
+    "source": "Rectangle 48.svg",
+    "category": "svg_only/components",
+    "reason": "compound component/multicolor/contains text or background; keep SVG or rebuild with HTML text"
+  },
+  {
+    "name": "Rectangle 48-1",
+    "source": "Rectangle 48-1.svg",
+    "category": "svg_only/components",
+    "reason": "compound component/multicolor/contains text or background; keep SVG or rebuild with HTML text"
+  },
+  {
+    "name": "Rectangle 48-2",
+    "source": "Rectangle 48-2.svg",
+    "category": "svg_only/components",
+    "reason": "compound component/multicolor/contains text or background; keep SVG or rebuild with HTML text"
+  },
+  {
+    "name": "Rectangle 48-3",
+    "source": "Rectangle 48-3.svg",
+    "category": "svg_only/components",
+    "reason": "compound component/multicolor/contains text or background; keep SVG or rebuild with HTML text"
+  },
+  {
+    "name": "Rectangle 48-4",
+    "source": "Rectangle 48-4.svg",
+    "category": "svg_only/components",
+    "reason": "compound component/multicolor/contains text or background; keep SVG or rebuild with HTML text"
+  },
+  {
+    "name": "Rectangle 61",
+    "source": "Rectangle 61.svg",
+    "category": "svg_only/components",
+    "reason": "compound component/multicolor/contains text or background; keep SVG or rebuild with HTML text"
+  },
+  {
+    "name": "Rectangle 214",
+    "source": "Rectangle 214.svg",
+    "category": "svg_only/components",
+    "reason": "compound component/multicolor/contains text or background; keep SVG or rebuild with HTML text"
+  },
+  {
+    "name": "Frame-1",
+    "source": "Frame-1.svg",
+    "category": "svg-only/complex",
+    "reason": "not mapped in first necessary batch; review manually"
+  },
+  {
+    "name": "Group 3-1",
+    "source": "Group 3-1.svg",
+    "category": "svg-only/complex",
+    "reason": "not mapped in first necessary batch; review manually"
+  },
+  {
+    "name": "Group 7-1",
+    "source": "Group 7-1.svg",
+    "category": "svg-only/complex",
+    "reason": "not mapped in first necessary batch; review manually"
+  },
+  {
+    "name": "Group 6-1",
+    "source": "Group 6-1.svg",
+    "category": "svg-only/complex",
+    "reason": "not mapped in first necessary batch; review manually"
+  },
+  {
+    "name": "Group 2-1",
+    "source": "Group 2-1.svg",
+    "category": "svg-only/complex",
+    "reason": "not mapped in first necessary batch; review manually"
+  },
+  {
+    "name": "Group 4-1",
+    "source": "Group 4-1.svg",
+    "category": "svg-only/complex",
+    "reason": "not mapped in first necessary batch; review manually"
+  },
+  {
+    "name": "Group 5-1",
+    "source": "Group 5-1.svg",
+    "category": "svg-only/complex",
+    "reason": "not mapped in first necessary batch; review manually"
+  },
+  {
+    "name": "空状态(1) 2",
+    "source": "空状态(1) 2.svg",
+    "category": "svg-only/complex",
+    "reason": "not mapped in first necessary batch; review manually"
+  }
+]

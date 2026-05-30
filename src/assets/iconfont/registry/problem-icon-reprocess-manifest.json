@@ -1,0 +1,38 @@
+﻿{
+    "generated_at":  "2026-05-30T17:02:16+08:00",
+    "scope":  "problem-icons",
+    "aliases":  {
+                    "card-star-green":  "star-filled",
+                    "chip-close-default":  "chip-close",
+                    "chip-close-active":  "chip-close",
+                    "tool-delete-active":  "trash",
+                    "card-star-outline":  "star-outline",
+                    "asset-star-purple":  "star-filled",
+                    "tool-lock-active":  "tool-lock",
+                    "asset-trash":  "trash",
+                    "tool-copy-active":  "tool-copy",
+                    "tool-delete":  "trash",
+                    "asset-star-outline":  "star-outline",
+                    "tool-edit-active":  "tool-edit",
+                    "chip-close-muted":  "chip-close",
+                    "card-star-orange":  "star-filled"
+                },
+    "canonical_glyphs":  [
+                             "tool-edit",
+                             "tool-lock",
+                             "tool-view",
+                             "tool-view-off",
+                             "tool-zoom",
+                             "tool-zoom-out",
+                             "tool-copy",
+                             "chip-close",
+                             "star-outline",
+                             "star-filled",
+                             "trash"
+                         ],
+    "rules":  [
+                  "strip-background-layers",
+                  "single-glyph-currentColor",
+                  "merge-state-variants-into-alias"
+              ]
+}

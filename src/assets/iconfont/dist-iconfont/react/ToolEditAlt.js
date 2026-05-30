@@ -1,0 +1,4 @@
+import React from 'react';
+export const ToolEditAlt = props => (
+  <svg viewBox="0 0 20 20"  {...props} className={`manju-icons ${props.className ? props.className : ''}`}><path d="M23.7574 9.99666L16.2914 17.4626L16.2989 21.7098L20.537 21.7023L28 14.2393V26.9967C28 27.549 27.5523 27.9967 27 27.9967H11C10.4477 27.9967 10 27.549 10 26.9967V10.9967C10 10.4444 10.4477 9.99666 11 9.99666H23.7574ZM27.4853 9.09717L28.8995 10.5114L19.7071 19.7038L18.2954 19.7063L18.2929 18.2896L27.4853 9.09717Z" fillRule="evenodd" /></svg>
+);

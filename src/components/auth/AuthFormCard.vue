@@ -76,7 +76,7 @@
           :aria-pressed="agreed"
           @click="$emit('update:agreed', !agreed)"
         >
-          <FigmaIcon name="checkbox-checked" :size="12" class="auth-card__agree-icon" :class="{ 'is-visible': agreed }" />
+          <FigmaIcon name="checkbox-checked" :size="30" class="auth-card__agree-icon" :class="{ 'is-visible': agreed }" />
         </button>
         <span>我同意 服务条款 与 隐私政策</span>
       </label>
@@ -84,13 +84,14 @@
       <button class="auth-card__submit" type="submit">{{ submitTextMap[mode] }}</button>
     </form>
 
-    <AuthSocialRow />
+    <AuthSocialRow @select="$emit('social-login', $event)" />
   </section>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import FigmaIcon from '@/components/icons/FigmaIcon.vue'
+import type { ThirdPartyProvider } from '@/types/auth'
 import AuthSocialRow from './AuthSocialRow.vue'
 
 export type AuthMode = 'password' | 'code' | 'register' | 'reset'
@@ -116,6 +117,7 @@ const emit = defineEmits<{
   (e: 'submit'): void
   (e: 'forgot'): void
   (e: 'toggle-password'): void
+  (e: 'social-login', value: ThirdPartyProvider): void
 }>()
 
 const titleMap: Record<AuthMode, string> = {
@@ -163,5 +165,4 @@ const onInput = (field: 'account' | 'secret', event: Event): void => {
     emit('update:secret', target.value)
   }
 }
-
 </script>

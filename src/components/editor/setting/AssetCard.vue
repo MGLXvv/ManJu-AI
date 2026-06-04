@@ -7,16 +7,29 @@
         'is-generating': asset.status === 'generating',
         'is-selected': isSelected,
         'is-expanded': isExpanded,
+        'is-batch-mode': batchMode,
+        'is-batch-selected': isBatchSelected,
       },
     ]"
-    @click="$emit('select', asset.id)"
+    @click="handleCardClick"
   >
+    <button
+      v-if="batchMode"
+      type="button"
+      class="asset-card__batch-check"
+      :class="{ 'is-active': isBatchSelected }"
+      aria-label="选择素材"
+      @click.stop="$emit('toggle-batch', asset.id)"
+    >
+      <span></span>
+    </button>
+
     <div class="asset-card__base">
       <div v-if="asset.status === 'generating'" class="asset-card__main">
         <header class="asset-card__header">
           <h3 class="asset-card__title">{{ asset.title }}</h3>
 
-          <div class="asset-card__actions">
+          <div v-if="!batchMode" class="asset-card__actions">
             <button
               type="button"
               class="asset-card__favorite-btn"
@@ -40,7 +53,7 @@
           <header class="asset-card__header">
             <h3 class="asset-card__title">{{ asset.title }}</h3>
 
-            <div class="asset-card__actions">
+            <div v-if="!batchMode" class="asset-card__actions">
               <button
                 type="button"
                 class="asset-card__favorite-btn"
@@ -69,9 +82,10 @@
             :voice-options="voiceOptions"
           />
 
-          <AssetActionButtons @generate="$emit('generate', asset.id)" @upload="triggerUpload" />
-
-          <footer class="asset-card__time">{{ asset.createdAt }}</footer>
+          <div class="asset-card__footer">
+            <AssetActionButtons @generate="$emit('generate', asset.id)" @upload="triggerUpload" />
+            <footer class="asset-card__time">{{ asset.createdAt }}</footer>
+          </div>
         </div>
       </div>
 
@@ -105,6 +119,8 @@ const props = defineProps<{
   asset: SettingAsset
   isSelected: boolean
   isExpanded: boolean
+  batchMode?: boolean
+  isBatchSelected?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -115,6 +131,7 @@ const emit = defineEmits<{
   (e: 'favorite', id: string): void
   (e: 'delete', id: string): void
   (e: 'select', id: string): void
+  (e: 'toggle-batch', id: string): void
   (e: 'update', payload: { id: string; patch: Partial<SettingAsset> }): void
 }>()
 
@@ -192,5 +209,14 @@ const onFileChange = (event: Event): void => {
 const onSelectCandidate = (payload: { image: string; index: number }): void => {
   selectedCandidateIndex.value = payload.index
   emit('select-candidate', { id: props.asset.id, imageUrl: payload.image })
+}
+
+const handleCardClick = (): void => {
+  if (props.batchMode) {
+    emit('toggle-batch', props.asset.id)
+    return
+  }
+
+  emit('select', props.asset.id)
 }
 </script>

@@ -1,9 +1,6 @@
 ﻿<template>
   <div class="storyboard-top-actions">
-    <button type="button" class="storyboard-top-actions__model" aria-label="选择模型">
-      <span>{{ modelLabel }}</span>
-      <FigmaIcon name="chevron-down" :size="16" />
-    </button>
+    <EditorModelSelect />
 
     <div class="storyboard-top-actions__group">
       <button type="button" class="storyboard-top-actions__btn" @click="$emit('batch-generate')">{{ batchLabel }}</button>
@@ -20,18 +17,16 @@
 </template>
 
 <script setup lang="ts">
-import FigmaIcon from '@/components/icons/FigmaIcon.vue'
+import EditorModelSelect from '@/components/editor/common/EditorModelSelect.vue'
 
 withDefaults(
   defineProps<{
-    modelLabel?: string
     batchLabel?: string
     saveLabel?: string
     nextLabel?: string
   }>(),
   {
-    modelLabel: 'Gpt 4.0',
-    batchLabel: '批量生成',
+    batchLabel: '批量操作',
     saveLabel: '保存并导出',
     nextLabel: '进入视频生成',
   },

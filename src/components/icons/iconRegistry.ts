@@ -87,6 +87,8 @@ const ICON_FILE_MAP = {
   'timeline-upload-active': 'Frame-14.svg',
   'video-play-large': 'Group 223.svg',
   'reference-rail-handle': 'Group 188.svg',
+  'reference-expand-right': 'reference-expand-right.svg',
+  'reference-collapse-left': 'reference-collapse-left.svg',
   'create-blank-shot': 'Group 278.svg',
 
   // Auth/form
@@ -174,6 +176,8 @@ const ICON_FONT_MAP: Partial<Record<AppIconName, IconFontName>> = {
   'timeline-copy-active': 'timeline-copy',
   'timeline-upload-default': 'timeline-upload',
   'timeline-upload-active': 'timeline-upload',
+  'reference-expand-right': 'reference-expand-right',
+  'reference-collapse-left': 'reference-collapse-left',
   'social-wechat': 'social-wechat',
   'social-qq': 'social-qq',
   'social-alipay': 'social-alipay',

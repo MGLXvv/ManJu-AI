@@ -4,45 +4,7 @@
 
     <div class="script-workbench-card">
       <header class="script-workbench-card__topbar">
-        <div ref="modelSelectRef" class="script-model-select-wrap">
-          <button
-            class="script-model-select"
-            type="button"
-            aria-haspopup="listbox"
-            :aria-expanded="modelMenuOpen"
-            @click="toggleModelMenu"
-          >
-            <img
-              v-if="selectedModel.iconUrl"
-              class="script-model-select__icon-img"
-              :src="selectedModel.iconUrl"
-              :alt="selectedModel.name"
-            />
-            <FigmaIcon v-else class="script-model-select__icon-fallback" :name="selectedModel.iconName" :size="20" />
-            <span class="script-model-select__label">{{ selectedModel.name }}</span>
-            <span class="script-model-select__arrow">⌄</span>
-          </button>
-
-          <div v-if="modelMenuOpen" class="script-model-menu" role="listbox" aria-label="选择模型">
-            <button
-              v-for="model in modelOptions"
-              :key="model.id"
-              type="button"
-              class="script-model-menu__item"
-              :class="{ 'is-active': model.id === selectedModel.id }"
-              @click="selectModel(model.id)"
-            >
-              <img
-                v-if="model.iconUrl"
-                class="script-model-menu__icon-img"
-                :src="model.iconUrl"
-                :alt="model.name"
-              />
-              <FigmaIcon v-else class="script-model-menu__icon-fallback" :name="model.iconName" :size="20" />
-              <span>{{ model.name }}</span>
-            </button>
-          </div>
-        </div>
+        <EditorModelSelect />
 
         <button class="script-next-btn" type="button" @click="handleNext">进入分镜</button>
       </header>
@@ -73,13 +35,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import FigmaIcon from '@/components/icons/FigmaIcon.vue'
+import EditorModelSelect from '@/components/editor/common/EditorModelSelect.vue'
 import ScriptInputPanel from '@/components/editor/script/ScriptInputPanel.vue'
 import ScriptPromptPanel from '@/components/editor/script/ScriptPromptPanel.vue'
 import ScriptResultPanel from '@/components/editor/script/ScriptResultPanel.vue'
-import type { FigmaIconName } from '@/components/icons/figmaIconLibrary'
 import { useEditorStore } from '@/stores/editor'
 
 const router = useRouter()
@@ -92,28 +53,6 @@ const promptText = ref(
 )
 const generatedScript = ref('')
 const generating = ref(false)
-const modelSelectRef = ref<HTMLElement | null>(null)
-const modelMenuOpen = ref(false)
-
-interface ModelOption {
-  id: string
-  name: string
-  iconUrl?: string
-  iconName: FigmaIconName
-}
-
-const modelOptions: ModelOption[] = [
-  {
-    id: 'gpt-4.0',
-    name: 'Gpt 4.0',
-    iconName: 'model-openai',
-  },
-]
-
-const selectedModelId = ref(modelOptions[0]?.id ?? '')
-const selectedModel = computed(
-  () => modelOptions.find((option) => option.id === selectedModelId.value) ?? modelOptions[0],
-)
 
 const projectId = computed(() => String(route.params.projectId ?? ''))
 const canGenerate = computed(() => Boolean(sourceText.value.trim() || promptText.value.trim()))
@@ -170,33 +109,6 @@ const handleGenerate = async (): Promise<void> => {
     generating.value = false
   }
 }
-
-const toggleModelMenu = (): void => {
-  modelMenuOpen.value = !modelMenuOpen.value
-}
-
-const selectModel = (modelId: string): void => {
-  selectedModelId.value = modelId
-  modelMenuOpen.value = false
-}
-
-const closeModelMenuOnOutside = (event: MouseEvent): void => {
-  const target = event.target as Node | null
-  if (!target || !modelSelectRef.value) {
-    return
-  }
-  if (!modelSelectRef.value.contains(target)) {
-    modelMenuOpen.value = false
-  }
-}
-
-onMounted(() => {
-  document.addEventListener('mousedown', closeModelMenuOnOutside)
-})
-
-onBeforeUnmount(() => {
-  document.removeEventListener('mousedown', closeModelMenuOnOutside)
-})
 
 const handleNext = (): void => {
   router.push({

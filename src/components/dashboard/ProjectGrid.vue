@@ -1,61 +1,53 @@
-<template>
-  <section class="project-grid-block" aria-label="项目列表">
+﻿<template>
+  <section class="project-grid-block">
     <div class="project-grid">
-      <ProjectCreateCard @create="$emit('create')" @import="$emit('import')" />
+      <ProjectCreateCard v-if="!batchMode" @create="$emit('create')" @import="$emit('import')" />
+      <ProjectCard
+        v-for="project in projects"
+        :key="project.id"
+        :project="project"
+        :batch-mode="batchMode"
+        :selected="selectedIds.includes(project.id)"
+        @toggle-select="$emit('toggle-select', $event)"
+        @delete="$emit('delete', $event)"
+      />
 
-      <ProjectCard v-for="project in pagedProjects" :key="project.id" :project="project" />
-
-      <article v-if="projects.length === 0" class="project-empty-state">
-        <h3 class="project-empty-state__title">还没有项目</h3>
-        <p class="project-empty-state__desc">点击左侧卡片新建项目，或导入已有项目继续创作。</p>
-      </article>
+      <div v-if="!projects.length" class="project-empty-state">
+        <p class="project-empty-state__title">没有匹配的项目</p>
+        <p class="project-empty-state__desc">试试调整筛选条件或新建一个项目。</p>
+      </div>
     </div>
 
-    <ProjectPagination
-      v-if="projects.length > 0"
-      v-model="page"
-      :pages="pages"
-    />
+    <ProjectPagination :model-value="currentPage" :pages="pages" @update:model-value="$emit('update:currentPage', $event)" />
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import ProjectCard from './ProjectCard.vue'
-import ProjectCreateCard from './ProjectCreateCard.vue'
-import ProjectPagination from './ProjectPagination.vue'
+import ProjectCard from '@/components/dashboard/ProjectCard.vue'
+import ProjectCreateCard from '@/components/dashboard/ProjectCreateCard.vue'
+import ProjectPagination from '@/components/dashboard/ProjectPagination.vue'
 import type { Project } from '@/types/project'
 
-const props = defineProps<{
-  projects: Project[]
-}>()
+withDefaults(
+  defineProps<{
+    projects: Project[]
+    batchMode?: boolean
+    selectedIds?: string[]
+    currentPage: number
+    pages: number[]
+  }>(),
+  {
+    batchMode: false,
+    selectedIds: () => [],
+    pages: () => [1],
+  },
+)
 
 defineEmits<{
   (e: 'create'): void
   (e: 'import'): void
+  (e: 'toggle-select', id: string): void
+  (e: 'delete', id: string): void
+  (e: 'update:currentPage', page: number): void
 }>()
-
-const page = ref(1)
-const pageSize = ref(29)
-
-const totalPages = computed(() => Math.max(1, Math.ceil(props.projects.length / pageSize.value)))
-const pages = computed(() => Array.from({ length: totalPages.value }, (_, index) => index + 1))
-
-const pagedProjects = computed(() => {
-  const start = (page.value - 1) * pageSize.value
-  return props.projects.slice(start, start + pageSize.value)
-})
-
-watch(
-  () => props.projects.length,
-  () => {
-    if (page.value > totalPages.value) {
-      page.value = totalPages.value
-    }
-  },
-)
-
-watch(pageSize, () => {
-  page.value = 1
-})
 </script>

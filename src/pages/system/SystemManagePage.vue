@@ -1,0 +1,133 @@
+<template>
+  <section class="system-page">
+    <div class="system-page__bg" aria-hidden="true"></div>
+
+    <div class="system-page__content">
+      <SystemSidebar v-model="activePanel" />
+
+      <div class="system-page__main">
+        <SystemStylePanel
+          v-if="activePanel === 'styles'"
+          :items="filteredStyles"
+          :search="styleSearch"
+          @update:search="styleSearch = $event"
+          @create="createStyle"
+          @update="updateStyle"
+          @delete="deleteStyle"
+        />
+
+        <SystemPermissionPanel
+          v-else-if="activePanel === 'permissions'"
+          :items="permissions"
+          @create="createPermission"
+          @update="updatePermission"
+          @delete="deletePermission"
+        />
+
+        <SystemMessagePanel
+          v-else
+          v-model:filter="messageFilter"
+          :items="paginatedMessages"
+          :page="messagePage"
+          :page-count="messagePageCount"
+          @update:page="setMessagePage"
+          @clear="clearMessages"
+          @mark-all-read="markAllRead"
+          @open-detail="openMessageDetail"
+        />
+      </div>
+    </div>
+
+    <SystemMessageDetailModal :message="selectedMessage" @close="selectedMessageId = ''" />
+  </section>
+</template>
+
+<script setup lang="ts">
+import { computed, ref } from 'vue'
+import SystemMessageDetailModal from '@/components/system/SystemMessageDetailModal.vue'
+import SystemMessagePanel from '@/components/system/SystemMessagePanel.vue'
+import SystemPermissionPanel from '@/components/system/SystemPermissionPanel.vue'
+import SystemSidebar from '@/components/system/SystemSidebar.vue'
+import SystemStylePanel from '@/components/system/SystemStylePanel.vue'
+import { useSystemStore } from '@/stores/system'
+import type { SystemPermissionItem } from '@/types/system'
+
+const store = useSystemStore()
+const selectedMessageId = ref('')
+
+const activePanel = computed({
+  get: () => store.activePanel,
+  set: (value) => {
+    store.activePanel = value
+    selectedMessageId.value = ''
+  },
+})
+
+const styleSearch = computed({
+  get: () => store.styleSearch,
+  set: (value) => {
+    store.styleSearch = value
+  },
+})
+
+const filteredStyles = computed(() => store.filteredStyles)
+const permissions = computed(() => store.permissions)
+const messageFilter = computed({
+  get: () => store.messageFilter,
+  set: (value) => {
+    store.messageFilter = value
+    store.setMessagePage(1)
+  },
+})
+const paginatedMessages = computed(() => store.paginatedMessages)
+const messagePage = computed(() => store.messagePage)
+const messagePageCount = computed(() => store.messagePageCount)
+const selectedMessage = computed(() => store.messages.find((item) => item.id === selectedMessageId.value) ?? null)
+
+const createStyle = (payload: { name: string; category: string; prompt: string }): void => {
+  store.createStyle(payload)
+}
+
+const updateStyle = (id: string, payload: { name: string; category: string; prompt: string }): void => {
+  store.updateStyle(id, payload)
+}
+
+const deleteStyle = (id: string): void => {
+  store.deleteStyle(id)
+}
+
+const createPermission = (
+  payload: { role: string; members: number; permissions: SystemPermissionItem['permissions'] },
+): void => {
+  store.createPermission(payload)
+}
+
+const updatePermission = (
+  id: string,
+  payload: { role: string; members: number; permissions: SystemPermissionItem['permissions'] },
+): void => {
+  store.updatePermission(id, payload)
+}
+
+const deletePermission = (id: string): void => {
+  store.deletePermission(id)
+}
+
+const setMessagePage = (page: number): void => {
+  store.setMessagePage(page)
+}
+
+const markAllRead = (): void => {
+  store.markAllRead()
+}
+
+const clearMessages = (): void => {
+  store.clearMessages()
+  selectedMessageId.value = ''
+}
+
+const openMessageDetail = (id: string): void => {
+  store.markMessageRead(id)
+  selectedMessageId.value = id
+}
+</script>

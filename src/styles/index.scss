@@ -11,12 +11,17 @@
 @use './components/editor-side-nav';
 @use './components/app-button';
 @use './components/app-input';
+@use './components/batch-selection-toolbar';
 
 @use './pages/login';
 @use './pages/project-list';
+@use './pages/resource-library';
+@use './pages/voice-manage';
+@use './pages/system-manage';
 @use './pages/editor';
 @use './pages/script-step';
 @use './pages/setting-step';
 @use './pages/storyboard-step';
 @use './pages/video-step';
+@use './pages/dubbing-step';
 @use './pages/placeholder';

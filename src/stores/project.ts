@@ -54,12 +54,27 @@ export const useProjectStore = defineStore('project', () => {
     projects.value = projects.value.filter((project) => project.id !== id)
   }
 
+  const replaceProject = (next: Project | null): void => {
+    if (!next) return
+    projects.value = projects.value.map((project) => (project.id === next.id ? next : project))
+  }
+
   const updateProjectStep = async (id: string, step: Project['currentStep']): Promise<void> => {
-    const next = await projectApi.update({ id, currentStep: step })
-    if (!next) {
-      return
-    }
-    projects.value = projects.value.map((project) => (project.id === id ? next : project))
+    replaceProject(await projectApi.update({ id, currentStep: step }))
+  }
+
+  const toggleProjectFavorite = async (id: string): Promise<void> => {
+    const current = projects.value.find((project) => project.id === id)
+    if (!current) return
+    replaceProject(await projectApi.update({ id, favorite: !current.favorite }))
+  }
+
+  const toggleProjectStatus = async (id: string): Promise<void> => {
+    const current = projects.value.find((project) => project.id === id)
+    if (!current) return
+    const nextStatus: ProjectStatus = current.status === 'completed' ? 'in_progress' : 'completed'
+    const nextStep: Project['currentStep'] = nextStatus === 'completed' ? 'complete' : current.currentStep === 'complete' ? 'storyboard' : current.currentStep
+    replaceProject(await projectApi.update({ id, status: nextStatus, currentStep: nextStep }))
   }
 
   return {
@@ -73,5 +88,7 @@ export const useProjectStore = defineStore('project', () => {
     createProject,
     deleteProject,
     updateProjectStep,
+    toggleProjectFavorite,
+    toggleProjectStatus,
   }
 })

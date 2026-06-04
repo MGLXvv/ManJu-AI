@@ -1,12 +1,12 @@
-<template>
+﻿<template>
   <Teleport to="body">
     <div v-if="open" class="create-project-modal">
-      <div class="create-project-modal__overlay" @click="close"></div>
+      <div class="create-project-modal__overlay" @click="requestClose"></div>
 
       <section class="create-project-modal__dialog" role="dialog" aria-modal="true" aria-label="新建项目设置">
         <header class="create-project-modal__header">
           <h2 class="create-project-modal__title">新建项目设置</h2>
-          <button class="create-project-modal__close" type="button" aria-label="关闭" @click="close">×</button>
+          <button class="create-project-modal__close" type="button" aria-label="关闭" @click="requestClose">×</button>
         </header>
 
         <form class="create-project-modal__body" @submit.prevent="submit">
@@ -31,7 +31,7 @@
                 @click="form.ratio = '16:9'"
               >
                 <span class="create-project-modal__ratio-icon create-project-modal__ratio-icon--landscape"></span>
-                <span>横版16:9</span>
+                <span>横版 16:9</span>
               </button>
 
               <button
@@ -63,13 +63,30 @@
 
           <button class="create-project-modal__submit" type="submit">创建项目</button>
         </form>
+
+        <div v-if="showCancelConfirm" class="create-project-modal__confirm-mask">
+          <section
+            class="create-project-modal__confirm-dialog"
+            role="alertdialog"
+            aria-modal="true"
+            aria-label="确认放弃设置"
+          >
+            <p class="create-project-modal__confirm-title">确定放弃设置？</p>
+            <div class="create-project-modal__confirm-actions">
+              <button class="create-project-modal__confirm-btn is-primary" type="button" @click="confirmClose">
+                确定
+              </button>
+              <button class="create-project-modal__confirm-btn" type="button" @click="cancelCloseConfirm">取消</button>
+            </div>
+          </section>
+        </div>
       </section>
     </div>
   </Teleport>
 </template>
 
 <script setup lang="ts">
-import { reactive, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 
 const open = defineModel<boolean>('open', { required: true })
 
@@ -83,16 +100,43 @@ const form = reactive({
   style: '',
 })
 
+const showCancelConfirm = ref(false)
+
+const resetForm = (): void => {
+  form.name = ''
+  form.ratio = '16:9'
+  form.style = ''
+}
+
+const isDirty = computed(() => form.name.trim().length > 0 || form.ratio !== '16:9' || form.style !== '')
+
 watch(open, (value) => {
   if (value) {
-    form.name = ''
-    form.ratio = '16:9'
-    form.style = ''
+    resetForm()
+    showCancelConfirm.value = false
   }
 })
 
 const close = (): void => {
+  showCancelConfirm.value = false
   open.value = false
+}
+
+const requestClose = (): void => {
+  if (!isDirty.value) {
+    close()
+    return
+  }
+
+  showCancelConfirm.value = true
+}
+
+const confirmClose = (): void => {
+  close()
+}
+
+const cancelCloseConfirm = (): void => {
+  showCancelConfirm.value = false
 }
 
 const submit = (): void => {
@@ -105,5 +149,7 @@ const submit = (): void => {
     ratio: form.ratio,
     style: form.style || '国漫',
   })
+
+  close()
 }
 </script>

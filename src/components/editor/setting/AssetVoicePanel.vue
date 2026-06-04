@@ -1,14 +1,18 @@
 <template>
   <div class="asset-voice-panel">
-    <AssetVoiceSelect v-model="voiceIdProxy" :options="voiceOptions" />
-    <AssetAudioControl v-if="selectedAudio" :audio="selectedAudio" />
+    <AssetAudioControl
+      v-if="selectedAudio"
+      :audio="selectedAudio"
+      :selected-voice-id="voiceIdProxy"
+      :voice-options="voiceOptions"
+      @update:selected-voice-id="voiceIdProxy = $event"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import AssetAudioControl from './AssetAudioControl.vue'
-import AssetVoiceSelect from './AssetVoiceSelect.vue'
 import type { SettingAssetAudio, VoiceOption } from '@/types/settingAsset'
 
 const props = defineProps<{

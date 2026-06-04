@@ -7,7 +7,7 @@
       aria-label="预览"
       @click="$emit('preview')"
     >
-      <FigmaIcon name="tool-zoom" :size="14" />
+      <FigmaIcon name="result-fullscreen" :size="14" />
     </button>
 
     <div v-if="hasImages" class="asset-image-strip__grid">

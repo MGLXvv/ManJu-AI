@@ -3,14 +3,23 @@ import type { Project, ProjectStatus, WorkflowStep } from '@/types/project'
 import { delay, readLocal, writeLocal } from './local'
 
 const PROJECTS_KEY = 'amd.projects'
+const MIN_SEED_COUNT = mockProjects.length
 
 const getProjects = (): Project[] => {
   const stored = readLocal<Project[]>(PROJECTS_KEY, [])
   if (!Array.isArray(stored) || stored.length < 8) {
     return mockProjects
   }
-  return stored
+
+  if (stored.length >= MIN_SEED_COUNT) {
+    return stored
+  }
+
+  const existingIds = new Set(stored.map((project) => project.id))
+  const supplemental = mockProjects.filter((project) => !existingIds.has(project.id))
+  return [...stored, ...supplemental].slice(0, MIN_SEED_COUNT)
 }
+
 const setProjects = (projects: Project[]): void => writeLocal(PROJECTS_KEY, projects)
 
 export interface CreateProjectInput {
@@ -24,6 +33,7 @@ export interface UpdateProjectInput {
   status?: ProjectStatus
   currentStep?: WorkflowStep
   name?: string
+  favorite?: boolean
 }
 
 export const projectApi = {
@@ -43,6 +53,7 @@ export const projectApi = {
       ratio: input.ratio,
       style: input.style,
       updatedAt: now,
+      favorite: false,
     }
     const next = [created, ...getProjects()]
     setProjects(next)

@@ -62,7 +62,15 @@
   pointer-events: none;
 }
 
+.auth-login-page__panel-stack {
+  position: relative;
+  width: 480px;
+  min-height: 575px;
+}
+
 .auth-card {
+  position: relative;
+  z-index: 2;
   pointer-events: auto;
   width: 480px;
   min-height: 575px;
@@ -79,12 +87,14 @@
   font-weight: 700;
   letter-spacing: 1px;
   color: #fff;
+  white-space: nowrap;
 }
 
 .auth-card__tabs {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 20px;
   margin-top: 58px;
   margin-bottom: 42px;
 }
@@ -93,14 +103,18 @@
   display: inline-flex;
   align-items: center;
   gap: 18px;
+  min-width: 0;
+  flex-wrap: nowrap;
 }
 
 .auth-card__tab {
+  flex: 0 0 auto;
   border: 0;
   background: transparent;
   color: #979797;
   font-size: 18px;
   line-height: 1;
+  white-space: nowrap;
   padding: 0;
   cursor: pointer;
 }
@@ -110,17 +124,20 @@
 }
 
 .auth-card__tab-separator {
+  flex: 0 0 auto;
   width: 1px;
   height: 20px;
   background: rgb(255 255 255 / 45%);
 }
 
 .auth-card__register-link {
+  flex: 0 0 auto;
   border: 0;
   background: transparent;
   color: #9b5cff;
   font-size: 18px;
   line-height: 1;
+  white-space: nowrap;
   padding: 0;
   cursor: pointer;
 }
@@ -225,10 +242,11 @@
 }
 
 .auth-card__agree-toggle {
+  position: relative;
   display: grid;
   place-items: center;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   padding: 0;
   border: 1px solid rgb(255 255 255 / 45%);
   border-radius: 4px;
@@ -243,6 +261,11 @@
 
 .auth-card__agree-icon {
   opacity: 0;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  line-height: 1;
 }
 
 .auth-card__agree-icon.is-visible {
@@ -294,35 +317,179 @@
   display: flex;
   justify-content: center;
   gap: 24px;
-  margin-top: 18px;
+  margin-top: 14px;
 }
 
 .auth-social__button {
-  width: 44px;
-  height: 44px;
+  position: relative;
+  width: 64px;
+  height: 64px;
   display: grid;
   place-items: center;
   border: 0;
-  border-radius: 14px;
-  background: #262832;
+  background: transparent;
+  color: #fff;
   cursor: pointer;
 }
 
-.auth-social__text-icon {
-  display: grid;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 999px;
-  background: #fff;
-  color: #151517;
-  font-size: 20px;
-  font-weight: 700;
+.auth-social__button::before {
+  content: "";
+  position: absolute;
+  inset: 9px;
+  border-radius: 14px;
+  background: #262832;
+  transition: filter 160ms ease;
+}
+
+.auth-social__glyph,
+.auth-social__alipay {
+  position: relative;
+  z-index: 1;
+}
+
+.auth-social__glyph {
+  display: block;
+  color: #fff;
   line-height: 1;
 }
 
-.auth-social__button:hover {
+.auth-social__button--wechat .auth-social__glyph {
+  transform: translateY(0);
+}
+
+.auth-social__button--qq .auth-social__glyph {
+  transform: translateY(-1px);
+}
+
+.auth-social__alipay {
+  width: 30px;
+  height: 30px;
+  display: block;
+}
+
+.auth-social__button--alipay .auth-social__alipay {
+  transform: translateY(-1px);
+}
+
+.auth-social__button:hover::before {
   filter: brightness(1.08);
+}
+
+.auth-third-party-card {
+  position: absolute;
+  right: calc(100% + 28px);
+  top: 50%;
+  z-index: 1;
+  width: 340px;
+  min-height: 450px;
+  padding: 30px 28px 26px;
+  border-radius: 28px;
+  background: rgb(24 22 30 / 84%);
+  box-shadow: 0 18px 44px rgb(0 0 0 / 38%);
+  opacity: 0;
+  transform: translate(24px, -50%);
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+  pointer-events: auto;
+}
+
+.auth-third-party-card.is-visible {
+  opacity: 1;
+  transform: translate(0, -50%);
+}
+
+.auth-third-party-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.auth-third-party-card__eyebrow {
+  margin: 0;
+  color: #8e8b97;
+  font-size: 13px;
+}
+
+.auth-third-party-card__title {
+  margin: 8px 0 0;
+  color: #fff;
+  font-size: 26px;
+  line-height: 1.15;
+  font-weight: 700;
+}
+
+.auth-third-party-card__close {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 8%);
+  color: #c9c5d0;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.auth-third-party-card__qr {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  margin-top: 28px;
+}
+
+.auth-third-party-card__qr-frame {
+  width: 176px;
+  height: 176px;
+  padding: 14px;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 6%);
+}
+
+.auth-third-party-card__qr-grid {
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+  background:
+    linear-gradient(90deg, #111 10px, transparent 10px) 0 0 / 26px 26px,
+    linear-gradient(#111 10px, transparent 10px) 0 0 / 26px 26px,
+    radial-gradient(circle at 16px 16px, #111 0 11px, transparent 12px),
+    radial-gradient(circle at calc(100% - 16px) 16px, #111 0 11px, transparent 12px),
+    radial-gradient(circle at 16px calc(100% - 16px), #111 0 11px, transparent 12px),
+    #fff;
+}
+
+.auth-third-party-card__hint {
+  margin: 0;
+  color: #d8d4df;
+  font-size: 14px;
+}
+
+.auth-third-party-card__actions {
+  display: grid;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.auth-third-party-card__action {
+  height: 42px;
+  border: 0;
+  border-radius: 12px;
+  background:
+    radial-gradient(64.4% 133.41% at 97.53% 113.7%, rgb(255 187 77 / 30%) 0%, rgb(140 63 255 / 0%) 100%),
+    #8c3fff;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.auth-third-party-card__action.is-secondary {
+  border: 1px solid rgb(255 255 255 / 16%);
+  background: #232324;
+  color: #d7d3de;
 }
 
 @media (width <= 1024px) {
@@ -330,6 +497,10 @@
     justify-content: center;
     align-items: end;
     padding: 16px;
+  }
+
+  .auth-login-page__panel-stack {
+    width: min(480px, 92vw);
   }
 
   .auth-card {
@@ -352,4 +523,25 @@
   .auth-card__register-link {
     font-size: 15px;
   }
+
+  .auth-third-party-card {
+    position: static;
+    width: min(480px, 92vw);
+    min-height: auto;
+    margin-bottom: 16px;
+    transform: none;
+    opacity: 1;
+  }
+
+  .auth-third-party-card.is-visible {
+    transform: none;
+  }
 }
+
+
+
+
+
+
+
+

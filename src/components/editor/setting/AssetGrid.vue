@@ -13,11 +13,14 @@
           :asset="asset"
           :is-selected="asset.id === selectedAssetId && asset.status !== 'generating'"
           :is-expanded="isExpandedAsset(asset)"
+          :batch-mode="batchMode"
+          :is-batch-selected="(batchSelectedIds ?? []).includes(asset.id)"
           @generate="$emit('generate', $event)"
           @upload="$emit('upload', $event)"
           @select-candidate="$emit('select-candidate', $event)"
           @update="$emit('update', $event)"
           @select="$emit('select', $event)"
+          @toggle-batch="$emit('toggle-batch', $event)"
           @preview="$emit('preview', $event)"
           @favorite="$emit('favorite', $event)"
           @delete="$emit('delete', $event)"
@@ -35,6 +38,8 @@ import type { SettingAsset } from '@/types/settingAsset'
 const props = defineProps<{
   assets: SettingAsset[]
   selectedAssetId: string
+  batchMode?: boolean
+  batchSelectedIds?: string[]
 }>()
 
 const CARD_WIDTH = 330
@@ -45,6 +50,7 @@ let resizeObserver: ResizeObserver | null = null
 
 const isExpandedAsset = (asset: SettingAsset): boolean => {
   return (
+    !props.batchMode &&
     asset.id === props.selectedAssetId &&
     asset.status !== 'generating'
   )
@@ -102,6 +108,7 @@ defineEmits<{
   (e: 'select-candidate', payload: { id: string; imageUrl: string }): void
   (e: 'update', payload: { id: string; patch: Partial<SettingAsset> }): void
   (e: 'select', id: string): void
+  (e: 'toggle-batch', id: string): void
   (e: 'preview', asset: SettingAsset): void
   (e: 'favorite', id: string): void
   (e: 'delete', id: string): void

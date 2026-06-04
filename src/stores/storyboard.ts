@@ -125,12 +125,13 @@ export const useStoryboardStore = defineStore('storyboard', () => {
     } as Partial<StoryboardShot>)
   }
 
-  const generateActiveShot = async (): Promise<void> => {
-    if (!activeShot.value) return
-    const currentId = activeShot.value.id
-    patchShotById(currentId, { status: 'pending' })
+  const generateShotById = async (id: string): Promise<void> => {
+    const target = shots.value.find((item) => item.id === id)
+    if (!target) return
+
+    patchShotById(id, { status: 'pending' })
     await new Promise((resolve) => window.setTimeout(resolve, 450))
-    patchShotById(currentId, { status: 'generating' })
+    patchShotById(id, { status: 'generating' })
     await new Promise((resolve) => window.setTimeout(resolve, 1200))
 
     const now = Date.now()
@@ -144,7 +145,7 @@ export const useStoryboardStore = defineStore('storyboard', () => {
     )}`
 
     shots.value = shots.value.map((shot) => {
-      if (shot.id !== currentId) return shot
+      if (shot.id !== id) return shot
       return {
         ...shot,
         status: 'success',
@@ -152,6 +153,11 @@ export const useStoryboardStore = defineStore('storyboard', () => {
         referenceImages: [{ id: `ref-${now}`, url: newImage }, ...shot.referenceImages].slice(0, 8),
       }
     })
+  }
+
+  const generateActiveShot = async (): Promise<void> => {
+    if (!activeShot.value) return
+    await generateShotById(activeShot.value.id)
   }
 
   return {
@@ -173,6 +179,7 @@ export const useStoryboardStore = defineStore('storyboard', () => {
     deleteShot,
     addTagToActiveShot,
     removeTagFromActiveShot,
+    generateShotById,
     generateActiveShot,
   }
 })

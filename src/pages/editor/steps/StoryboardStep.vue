@@ -4,45 +4,57 @@
 
     <div class="storyboard-layout" :class="{ 'is-reference-collapsed': isReferenceCollapsed }">
       <div class="storyboard-layout__main">
-        <section class="storyboard-main-card">
-
-        <StoryboardTopActions
-          class="storyboard-main-card__actions"
-          @batch-generate="handleBatchGenerate"
-          @save-export="handleSaveExport"
-          @next="goVideoStep"
-        />
-
-        <div class="storyboard-main-card__divider"></div>
-
-        <div class="storyboard-main-card__body">
-          <StoryboardPromptPanel
-            v-if="currentShot"
-            :shot="currentShot"
-            :tag-options="tagOptions"
-            :style-options="styleOptions"
-            @add-tag="handleAddTag"
-            @remove-tag="handleRemoveTag"
-            @update-prompt="updatePrompt"
-            @update-style="updateStyle"
-            @update-ratio="updateRatio"
-            @generate-shot="generateShot"
+        <section class="storyboard-main-card" :class="{ 'has-batch-toolbar': batchMode }">
+          <StoryboardTopActions
+            class="storyboard-main-card__actions"
+            :batch-label="batchMode ? '退出批量' : '批量操作'"
+            @batch-generate="handleBatchTrigger"
+            @save-export="handleSaveExport"
+            @next="goVideoStep"
           />
 
-          <StoryboardPreviewPanel
-            v-if="currentShot"
-            :shot="currentShot"
-            @lock-shot="toggleLock"
-            @copy-shot="copyShot"
-            @delete-shot="deleteShot"
-            @edit-shot="noop"
-            @view-shot="noop"
-            @zoom-shot="noop"
+          <BatchSelectionToolbar
+            v-if="batchMode"
+            action-label="批量生成"
+            primary-label="全选分镜"
+            :selected-count="selectedShotIds.length"
+            :total-count="shots.length"
+            :primary-selected="isAllShotsSelected"
+            :action-disabled="selectedShotIds.length === 0"
+            @exit="exitBatchMode"
+            @toggle-primary="toggleSelectAllShots"
+            @action="handleBatchGenerate"
           />
-        </div>
-      </section>
+
+          <div class="storyboard-main-card__divider"></div>
+
+          <div class="storyboard-main-card__body">
+            <StoryboardPromptPanel
+              v-if="currentShot"
+              :shot="currentShot"
+              :tag-options="tagOptions"
+              :style-options="styleOptions"
+              @add-tag="handleAddTag"
+              @remove-tag="handleRemoveTag"
+              @update-prompt="updatePrompt"
+              @update-style="updateStyle"
+              @update-ratio="updateRatio"
+              @generate-shot="generateShot"
+            />
+
+            <StoryboardPreviewPanel
+              v-if="currentShot"
+              :shot="currentShot"
+              @lock-shot="toggleLock"
+              @copy-shot="copyShot"
+              @delete-shot="deleteShot"
+              @edit-shot="noop"
+              @view-shot="noop"
+              @zoom-shot="noop"
+            />
+          </div>
+        </section>
       </div>
-
 
       <StoryboardReferenceRail
         class="storyboard-layout__reference"
@@ -56,7 +68,9 @@
         class="storyboard-layout__timeline"
         :shots="shots"
         :active-shot-id="activeShotId"
-        @select="selectShot"
+        :batch-mode="batchMode"
+        :batch-selected-ids="selectedShotIds"
+        @select="handleTimelineSelect"
         @upload="noop"
         @copy="copyShot"
         @delete="deleteShot"
@@ -68,8 +82,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watchEffect } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import BatchSelectionToolbar from '@/components/editor/common/BatchSelectionToolbar.vue'
 import StoryboardPreviewPanel from '@/components/editor/storyboard/StoryboardPreviewPanel.vue'
 import StoryboardPromptPanel from '@/components/editor/storyboard/StoryboardPromptPanel.vue'
 import StoryboardReferenceRail from '@/components/editor/storyboard/StoryboardReferenceRail.vue'
@@ -91,15 +106,37 @@ const styleOptions = computed(() => store.styleOptions)
 const currentShot = computed(() => activeShot.value ?? shots.value[0] ?? null)
 const currentReferenceImages = computed(() => currentShot.value?.referenceImages ?? referenceImages.value)
 const isReferenceCollapsed = ref(false)
+const batchMode = ref(false)
+const selectedShotIds = ref<string[]>([])
+const isAllShotsSelected = computed(
+  () => shots.value.length > 0 && shots.value.every((shot) => selectedShotIds.value.includes(shot.id)),
+)
 
-watchEffect(() => {
-  if (!activeShot.value && shots.value.length > 0) {
-    store.selectShot(shots.value[0].id)
-  }
-})
+watch(
+  shots,
+  (value) => {
+    if (!activeShot.value && value.length > 0) {
+      store.selectShot(value[0].id)
+    }
+
+    selectedShotIds.value = selectedShotIds.value.filter((id) => value.some((shot) => shot.id === id))
+  },
+  { immediate: true },
+)
 
 const selectShot = (id: string): void => {
   store.selectShot(id)
+}
+
+const handleTimelineSelect = (id: string): void => {
+  if (batchMode.value) {
+    selectedShotIds.value = selectedShotIds.value.includes(id)
+      ? selectedShotIds.value.filter((item) => item !== id)
+      : [...selectedShotIds.value, id]
+    return
+  }
+
+  selectShot(id)
 }
 
 const handleAddTag = (type: StoryboardTagType, tagId: string): void => {
@@ -155,10 +192,37 @@ const toggleLock = (id: string): void => {
 }
 
 const selectReference = (_id: string): void => {}
+
 const toggleReferenceRail = (collapsed: boolean): void => {
   isReferenceCollapsed.value = collapsed
 }
-const handleBatchGenerate = (): void => {}
+
+const exitBatchMode = (): void => {
+  batchMode.value = false
+  selectedShotIds.value = []
+}
+
+const toggleSelectAllShots = (): void => {
+  selectedShotIds.value = isAllShotsSelected.value ? [] : shots.value.map((shot) => shot.id)
+}
+
+const handleBatchTrigger = (): void => {
+  if (batchMode.value) {
+    exitBatchMode()
+    return
+  }
+
+  batchMode.value = true
+}
+
+const handleBatchGenerate = async (): Promise<void> => {
+  if (selectedShotIds.value.length === 0) return
+
+  for (const id of selectedShotIds.value) {
+    await store.generateShotById(id)
+  }
+}
+
 const handleSaveExport = (): void => {}
 const noop = (_id?: string): void => {}
 

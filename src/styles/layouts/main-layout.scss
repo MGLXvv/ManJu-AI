@@ -2,6 +2,8 @@
 .editor-layout {
   height: 100vh;
   min-height: 100vh;
+  height: 100dvh;
+  min-height: 100dvh;
   background: var(--color-bg);
   overflow: hidden;
 }
@@ -27,6 +29,11 @@
   display: none;
 }
 
+.main-layout__body.is-dashboard {
+  overflow: hidden;
+}
+
 .main-layout__content {
   min-height: 0;
+  height: 100%;
 }

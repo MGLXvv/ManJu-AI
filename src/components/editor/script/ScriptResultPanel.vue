@@ -1,10 +1,10 @@
-﻿<template>
+<template>
   <section class="script-result-block">
     <h2 class="script-column-title">剧本生成</h2>
 
     <div ref="resultCardRef" class="script-result-card">
       <div class="script-result-card__body">
-        <div v-if="loading" class="script-result-card__placeholder">正在生成剧本...</div>
+        <div v-if="loading" class="script-result-card__placeholder">{{ placeholderText }}</div>
 
         <div v-else-if="!model.trim()" class="script-result-empty" aria-hidden="true">
           <FigmaIcon name="empty-ufo" :size="132" class="script-result-empty__ufo" />
@@ -14,6 +14,7 @@
           v-else
           v-model="model"
           class="script-result-card__textarea"
+          :disabled="disabled"
           placeholder="生成结果会显示在这里"
         />
       </div>
@@ -24,13 +25,20 @@
         <div class="script-result-card__tools">
           <button
             type="button"
+            :disabled="disabled"
             :aria-label="isFullscreen ? '退出全屏' : '全屏'"
             :title="isFullscreen ? '退出全屏' : '全屏'"
             @click="toggleFullscreen"
           >
             <FigmaIcon name="result-fullscreen" :size="20" />
           </button>
-          <button type="button" aria-label="AI优化">
+          <button
+            type="button"
+            aria-label="AI优化"
+            title="AI优化"
+            :disabled="disabled || !model.trim()"
+            @click="$emit('optimize')"
+          >
             <FigmaIcon name="result-ai-optimize" :size="20" />
           </button>
         </div>
@@ -40,16 +48,24 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import FigmaIcon from '@/components/icons/FigmaIcon.vue'
 
-defineProps<{
+const props = defineProps<{
   loading?: boolean
+  disabled?: boolean
+  placeholderText?: string
+}>()
+
+defineEmits<{
+  (e: 'optimize'): void
 }>()
 
 const model = defineModel<string>({ required: true })
 const resultCardRef = ref<HTMLElement | null>(null)
 const isFullscreen = ref(false)
+
+const placeholderText = computed(() => props.placeholderText || '正在生成剧本...')
 
 const syncFullscreenState = (): void => {
   isFullscreen.value = document.fullscreenElement === resultCardRef.value

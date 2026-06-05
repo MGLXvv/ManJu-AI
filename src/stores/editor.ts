@@ -1,7 +1,9 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { editorApi } from '@/api/editor.api'
+import { buildSettingDraftPatch } from '@/features/editor/settingDraftState'
 import type { EditorDraft } from '@/types/editor'
+import type { SettingAsset } from '@/types/settingAsset'
 import type { WorkflowStep } from '@/types/project'
 
 export const editorSteps: Array<{ key: WorkflowStep; label: string; route: string }> = [
@@ -43,6 +45,7 @@ export const useEditorStore = defineStore('editor', () => {
     if (!currentProjectId.value || !draft.value) {
       return
     }
+
     draft.value = await editorApi.saveDraft(currentProjectId.value, draft.value)
   }
 
@@ -50,12 +53,52 @@ export const useEditorStore = defineStore('editor', () => {
     if (!draft.value) {
       return
     }
+
     draft.value = {
       ...draft.value,
       script: {
         ...draft.value.script,
         content,
       },
+    }
+  }
+
+  const updateScriptPrompt = (prompt: string): void => {
+    if (!draft.value) {
+      return
+    }
+
+    draft.value = {
+      ...draft.value,
+      script: {
+        ...draft.value.script,
+        prompt,
+      },
+    }
+  }
+
+  const updateGeneratedScript = (generated: string): void => {
+    if (!draft.value) {
+      return
+    }
+
+    draft.value = {
+      ...draft.value,
+      script: {
+        ...draft.value.script,
+        generated,
+      },
+    }
+  }
+
+  const updateSettingAssets = (assets: SettingAsset[]): void => {
+    if (!draft.value) {
+      return
+    }
+
+    draft.value = {
+      ...draft.value,
+      ...buildSettingDraftPatch(assets),
     }
   }
 
@@ -69,5 +112,8 @@ export const useEditorStore = defineStore('editor', () => {
     loadDraft,
     saveDraft,
     updateScriptContent,
+    updateScriptPrompt,
+    updateGeneratedScript,
+    updateSettingAssets,
   }
 })

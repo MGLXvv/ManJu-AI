@@ -36,6 +36,33 @@ export interface UpdateProjectInput {
   favorite?: boolean
 }
 
+export interface ImportProjectInput {
+  name: string
+  ratio: Project['ratio']
+  style: string
+  status?: ProjectStatus
+  currentStep?: WorkflowStep
+  duration?: string
+  coverUrl?: string
+  favorite?: boolean
+}
+
+const createProjectRecord = (input: ImportProjectInput): Project => {
+  const now = new Date().toLocaleString('zh-CN', { hour12: false })
+  return {
+    id: `project-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    name: input.name,
+    status: input.status ?? 'in_progress',
+    currentStep: input.currentStep ?? (input.status === 'completed' ? 'complete' : 'script'),
+    ratio: input.ratio,
+    style: input.style,
+    updatedAt: now,
+    duration: input.duration,
+    coverUrl: input.coverUrl,
+    favorite: input.favorite ?? false,
+  }
+}
+
 export const projectApi = {
   async list(): Promise<Project[]> {
     await delay()
@@ -44,20 +71,22 @@ export const projectApi = {
 
   async create(input: CreateProjectInput): Promise<Project> {
     await delay()
-    const now = new Date().toLocaleString('zh-CN', { hour12: false })
-    const created: Project = {
-      id: `project-${Date.now()}`,
-      name: input.name,
-      status: 'in_progress',
-      currentStep: 'script',
-      ratio: input.ratio,
-      style: input.style,
-      updatedAt: now,
-      favorite: false,
-    }
+    const created = createProjectRecord(input)
     const next = [created, ...getProjects()]
     setProjects(next)
     return created
+  },
+
+  async importProjects(inputs: ImportProjectInput[]): Promise<Project[]> {
+    await delay(120)
+    const imported = inputs.map((item) => createProjectRecord(item))
+    setProjects([...imported, ...getProjects()])
+    return imported
+  },
+
+  async exportProject(id: string): Promise<Project | null> {
+    await delay(60)
+    return getProjects().find((project) => project.id === id) ?? null
   },
 
   async update(input: UpdateProjectInput): Promise<Project | null> {

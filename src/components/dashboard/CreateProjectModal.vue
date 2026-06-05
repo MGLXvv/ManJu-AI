@@ -76,22 +76,18 @@
           <button class="create-project-modal__submit" type="submit">创建项目</button>
         </form>
 
-        <div v-if="showCancelConfirm" class="create-project-modal__confirm-mask">
-          <section
-            class="create-project-modal__confirm-dialog"
-            role="alertdialog"
-            aria-modal="true"
-            aria-label="确认放弃设置"
-          >
-            <p class="create-project-modal__confirm-title">确定放弃设置？</p>
-            <div class="create-project-modal__confirm-actions">
-              <button class="create-project-modal__confirm-btn is-primary" type="button" @click="confirmClose">
-                确定
-              </button>
-              <button class="create-project-modal__confirm-btn" type="button" @click="cancelCloseConfirm">取消</button>
-            </div>
-          </section>
-        </div>
+        <AppConfirmDialog
+          :open="showCancelConfirm"
+          title="确定放弃设置？"
+          confirm-text="确定"
+          cancel-text="取消"
+          confirm-tone="primary"
+          size="sm"
+          center-title
+          center-actions
+          @confirm="confirmClose"
+          @cancel="cancelCloseConfirm"
+        />
       </section>
     </div>
   </Teleport>
@@ -99,6 +95,7 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
+import AppConfirmDialog from '@/components/common/AppConfirmDialog.vue'
 import {
   createEmptyCreateProjectForm,
   getCreateProjectFieldErrors,

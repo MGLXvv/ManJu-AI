@@ -1,7 +1,10 @@
 import type { GenerationStatus } from './project'
+import type { SettingAsset } from './settingAsset'
 
 export interface ScriptDraft {
   content: string
+  prompt: string
+  generated: string
   updatedAt: string
 }
 
@@ -12,6 +15,12 @@ export interface CharacterSetting {
 }
 
 export interface SceneSetting {
+  id: string
+  name: string
+  description: string
+}
+
+export interface PropSetting {
   id: string
   name: string
   description: string
@@ -35,5 +44,7 @@ export interface EditorDraft {
   script: ScriptDraft
   characters: CharacterSetting[]
   scenes: SceneSetting[]
+  props: PropSetting[]
+  settingAssets: SettingAsset[]
   shots: Shot[]
 }

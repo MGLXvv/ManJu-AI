@@ -10,6 +10,41 @@
   overflow: hidden;
 }
 
+.script-step__toast-stack {
+  position: fixed;
+  top: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 240;
+  pointer-events: none;
+}
+
+.script-step__toast {
+  min-width: 220px;
+  padding: 12px 18px;
+  border: 1px solid rgb(255 255 255 / 12%);
+  border-radius: 14px;
+  background: rgb(24 22 30 / 92%);
+  color: #f0edf7;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+  box-shadow: 0 18px 40px rgb(0 0 0 / 30%);
+}
+
+.script-toast-enter-active,
+.script-toast-leave-active {
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+.script-toast-enter-from,
+.script-toast-leave-to {
+  opacity: 0;
+  transform: translate(-50%, -8px);
+}
+
 .script-workbench-bg {
   position: absolute;
   inset: 0;
@@ -42,6 +77,23 @@
   justify-content: space-between;
   height: 72px;
   padding: 0 36px 0 54px;
+}
+
+.script-workbench-card__topbar-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.script-workbench-card__save-state {
+  color: #7fdc67;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 600;
+}
+
+.script-workbench-card__save-state.is-dirty {
+  color: #f4d85a;
 }
 
 .script-workbench-card__divider {
@@ -148,6 +200,11 @@
   cursor: pointer;
 }
 
+.script-next-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .script-workbench-card__body {
   display: grid;
   grid-template-columns: minmax(500px, 1fr) minmax(500px, 1fr);
@@ -210,6 +267,15 @@
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+}
+
+.script-doc-btn:disabled,
+.script-action-pill:disabled,
+.script-prompt-card__textarea:disabled,
+.script-input-panel__textarea:disabled,
+.script-result-card__textarea:disabled {
+  opacity: 0.56;
+  cursor: not-allowed;
 }
 
 .script-doc-btn__icon {
@@ -353,6 +419,13 @@
   gap: 10px;
 }
 
+.script-prompt-card__status {
+  color: rgb(255 255 255 / 52%);
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
 .script-action-pill {
   display: inline-flex;
   align-items: center;
@@ -478,6 +551,11 @@
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
+}
+
+.script-result-card__tools button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .script-action-bar {

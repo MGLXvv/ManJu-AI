@@ -1,7 +1,8 @@
-import { defineStore } from 'pinia'
+﻿import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
+import { normalizeStoryboardShotsWithTagOptions } from '@/features/editor/storyboardDraftState'
 import { storyboardShotsMock, storyboardStylesMock, storyboardTagOptions } from '@/mocks/storyboard.mock'
-import type { StoryboardRatio, StoryboardShot, StoryboardTag, StoryboardTagType } from '@/types/storyboard'
+import type { StoryboardRatio, StoryboardShot, StoryboardTag, StoryboardTagOptions } from '@/types/storyboard'
 
 const cloneShot = (shot: StoryboardShot): StoryboardShot => ({
   ...shot,
@@ -11,11 +12,18 @@ const cloneShot = (shot: StoryboardShot): StoryboardShot => ({
   referenceImages: shot.referenceImages.map((item) => ({ ...item })),
 })
 
+const cloneTagOptions = (options: StoryboardTagOptions): StoryboardTagOptions => ({
+  characters: options.characters.map((item) => ({ ...item })),
+  scenes: options.scenes.map((item) => ({ ...item })),
+  props: options.props.map((item) => ({ ...item })),
+})
+
 export const useStoryboardStore = defineStore('storyboard', () => {
   const shots = ref<StoryboardShot[]>(storyboardShotsMock.map(cloneShot))
   const activeShotId = ref(shots.value[0]?.id ?? '')
+  const tagOptionsState = ref<StoryboardTagOptions>(cloneTagOptions(storyboardTagOptions))
 
-  const tagOptions = computed(() => storyboardTagOptions)
+  const tagOptions = computed(() => tagOptionsState.value)
   const styleOptions = computed(() => storyboardStylesMock)
 
   const activeShot = computed(() => shots.value.find((item) => item.id === activeShotId.value) ?? null)
@@ -23,6 +31,11 @@ export const useStoryboardStore = defineStore('storyboard', () => {
 
   const selectShot = (id: string): void => {
     activeShotId.value = id
+  }
+
+  const setTagOptions = (options: StoryboardTagOptions): void => {
+    tagOptionsState.value = cloneTagOptions(options)
+    shots.value = normalizeStoryboardShotsWithTagOptions(shots.value, tagOptionsState.value)
   }
 
   const patchShotById = (id: string, patch: Partial<StoryboardShot>): void => {
@@ -107,7 +120,7 @@ export const useStoryboardStore = defineStore('storyboard', () => {
     }))
   }
 
-  const addTagToActiveShot = (type: StoryboardTagType, tag: StoryboardTag): void => {
+  const addTagToActiveShot = (type: StoryboardTag['type'], tag: StoryboardTag): void => {
     if (!activeShot.value) return
     const key = type === 'character' ? 'characters' : type === 'scene' ? 'scenes' : 'props'
     const current = activeShot.value[key]
@@ -117,7 +130,7 @@ export const useStoryboardStore = defineStore('storyboard', () => {
     } as Partial<StoryboardShot>)
   }
 
-  const removeTagFromActiveShot = (type: StoryboardTagType, tagId: string): void => {
+  const removeTagFromActiveShot = (type: StoryboardTag['type'], tagId: string): void => {
     if (!activeShot.value) return
     const key = type === 'character' ? 'characters' : type === 'scene' ? 'scenes' : 'props'
     updateActiveShot({
@@ -168,6 +181,7 @@ export const useStoryboardStore = defineStore('storyboard', () => {
     tagOptions,
     styleOptions,
     selectShot,
+    setTagOptions,
     updateActiveShot,
     updateActiveShotPrompt,
     updateActiveShotStyle,

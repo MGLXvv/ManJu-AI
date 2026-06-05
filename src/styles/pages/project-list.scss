@@ -34,6 +34,10 @@
   pointer-events: none;
 }
 
+.dashboard-page__import-input {
+  display: none;
+}
+
 .dashboard-page__toast {
   min-width: 220px;
   padding: 12px 18px;
@@ -58,60 +62,6 @@
 .dashboard-toast-leave-to {
   opacity: 0;
   transform: translate(-50%, -8px);
-}
-
-.dashboard-page__delete-mask {
-  position: fixed;
-  inset: 0;
-  z-index: 230;
-  display: grid;
-  place-items: center;
-  background: rgb(0 0 0 / 52%);
-  backdrop-filter: blur(6px);
-}
-
-.dashboard-page__delete-dialog {
-  width: 280px;
-  padding: 24px 20px 18px;
-  border: 1px solid rgb(255 255 255 / 14%);
-  border-radius: 16px;
-  background: #141416;
-  box-shadow: 0 24px 64px rgb(0 0 0 / 38%);
-}
-
-.dashboard-page__delete-title {
-  margin: 0;
-  color: #fff;
-  font-size: 16px;
-  line-height: 1.4;
-  font-weight: 600;
-  text-align: center;
-}
-
-.dashboard-page__delete-actions {
-  display: flex;
-  justify-content: center;
-  gap: 14px;
-  margin-top: 22px;
-}
-
-.dashboard-page__delete-btn {
-  min-width: 84px;
-  height: 34px;
-  padding: 0 16px;
-  border: 1px solid #505157;
-  border-radius: 10px;
-  background: #232425;
-  color: #f1eff5;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.dashboard-page__delete-btn.is-danger {
-  border-color: rgb(255 121 145 / 34%);
-  background: rgb(255 107 129 / 14%);
-  color: #ffd0d8;
 }
 
 .dashboard-page__header-shell {
@@ -698,59 +648,6 @@
   background: #0a0a0b;
   box-shadow: 0 4px 10.8px rgb(0 0 0 / 25%);
   overflow: hidden;
-}
-
-.create-project-modal__confirm-mask {
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  display: grid;
-  place-items: center;
-  background: rgb(0 0 0 / 26%);
-  backdrop-filter: blur(2px);
-}
-
-.create-project-modal__confirm-dialog {
-  width: 228px;
-  min-height: 120px;
-  padding: 26px 18px 18px;
-  border: 1px solid rgb(255 255 255 / 18%);
-  border-radius: 10px;
-  background: #fff;
-  box-shadow: 0 14px 40px rgb(0 0 0 / 28%);
-}
-
-.create-project-modal__confirm-title {
-  margin: 0;
-  color: #202124;
-  font-size: 16px;
-  line-height: 20px;
-  font-weight: 600;
-  text-align: center;
-}
-
-.create-project-modal__confirm-actions {
-  display: flex;
-  justify-content: center;
-  gap: 24px;
-  margin-top: 28px;
-}
-
-.create-project-modal__confirm-btn {
-  min-width: 50px;
-  height: 28px;
-  padding: 0 12px;
-  border: 1px solid #9ab6ff;
-  border-radius: 4px;
-  background: #fff;
-  color: #3568ff;
-  font-size: 13px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.create-project-modal__confirm-btn.is-primary {
-  background: #f4f8ff;
 }
 
 .create-project-modal__header {

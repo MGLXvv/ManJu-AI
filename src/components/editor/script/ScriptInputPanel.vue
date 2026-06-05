@@ -3,7 +3,7 @@
     <h2 class="script-column-title">文案输入</h2>
 
     <div class="script-input-panel__card">
-      <button class="script-doc-btn" type="button" @click="triggerImport">
+      <button class="script-doc-btn" type="button" :disabled="disabled" @click="triggerImport">
         <FigmaIcon class="script-doc-btn__icon" name="action-doc-link" :size="20" />
         <span>文档</span>
       </button>
@@ -13,6 +13,7 @@
         class="script-input-panel__file-input"
         type="file"
         accept=".txt,.md,.text"
+        :disabled="disabled"
         @change="onFileChange"
       />
 
@@ -24,6 +25,7 @@
           ref="textareaRef"
           v-model="model"
           class="script-input-panel__textarea"
+          :disabled="disabled"
           placeholder="请输入你的创意、故事梗概或完整文案"
         />
       </div>
@@ -35,6 +37,10 @@
 import { computed, nextTick, ref } from 'vue'
 import FigmaIcon from '@/components/icons/FigmaIcon.vue'
 import ScriptEmptyGuide from './ScriptEmptyGuide.vue'
+
+defineProps<{
+  disabled?: boolean
+}>()
 
 const model = defineModel<string>({ required: true })
 
@@ -74,6 +80,7 @@ const onFileChange = async (event: Event): Promise<void> => {
   if (target) {
     target.value = ''
   }
+
   await nextTick()
   textareaRef.value?.focus()
 }

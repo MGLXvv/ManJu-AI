@@ -21,6 +21,41 @@
   overflow: hidden;
 }
 
+.setting-step__toast-stack {
+  position: fixed;
+  top: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 240;
+  pointer-events: none;
+}
+
+.setting-step__toast {
+  min-width: 220px;
+  padding: 12px 18px;
+  border: 1px solid rgb(255 255 255 / 12%);
+  border-radius: 14px;
+  background: rgb(24 22 30 / 92%);
+  color: #f0edf7;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+  box-shadow: 0 18px 40px rgb(0 0 0 / 30%);
+}
+
+.setting-toast-enter-active,
+.setting-toast-leave-active {
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+.setting-toast-enter-from,
+.setting-toast-leave-to {
+  opacity: 0;
+  transform: translate(-50%, -8px);
+}
+
 .setting-step__bg {
   position: absolute;
   width: 2401px;
@@ -1140,6 +1175,20 @@
   font-size: 13px;
 }
 
+.create-asset-modal__field.is-invalid > span {
+  color: #ff8f9f;
+}
+
+.create-asset-modal__field.is-invalid input,
+.create-asset-modal__field.is-invalid textarea,
+.create-asset-modal__field.is-invalid select {
+  box-shadow: 0 0 0 1px rgb(255 107 129 / 56%);
+}
+
+.create-asset-modal__field.is-flash {
+  animation: create-asset-field-flash 560ms ease;
+}
+
 .create-asset-modal__body input,
 .create-asset-modal__body textarea,
 .create-asset-modal__body select {
@@ -1171,6 +1220,29 @@
   color: #fff;
   font-weight: 600;
   cursor: pointer;
+}
+
+@keyframes create-asset-field-flash {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  18% {
+    transform: translateX(-3px);
+  }
+
+  42% {
+    transform: translateX(3px);
+  }
+
+  66% {
+    transform: translateX(-2px);
+  }
+
+  82% {
+    transform: translateX(2px);
+  }
 }
 
 .asset-preview-modal__dialog {

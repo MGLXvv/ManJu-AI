@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <section class="storyboard-step">
     <div class="storyboard-step__bg" aria-hidden="true"></div>
 
@@ -90,12 +90,16 @@ import StoryboardPromptPanel from '@/components/editor/storyboard/StoryboardProm
 import StoryboardReferenceRail from '@/components/editor/storyboard/StoryboardReferenceRail.vue'
 import StoryboardTimeline from '@/components/editor/storyboard/StoryboardTimeline.vue'
 import StoryboardTopActions from '@/components/editor/storyboard/StoryboardTopActions.vue'
+import { resolveStoryboardTagOptions } from '@/features/editor/storyboardDraftState'
+import { useEditorStore } from '@/stores/editor'
 import { useStoryboardStore } from '@/stores/storyboard'
 import type { StoryboardTagType } from '@/types/storyboard'
 
 const store = useStoryboardStore()
+const editorStore = useEditorStore()
 const router = useRouter()
 const route = useRoute()
+const projectId = computed(() => String(route.params.projectId ?? ''))
 
 const shots = computed(() => store.shots)
 const activeShotId = computed(() => store.activeShotId)
@@ -233,3 +237,4 @@ const goVideoStep = (): void => {
   })
 }
 </script>
+

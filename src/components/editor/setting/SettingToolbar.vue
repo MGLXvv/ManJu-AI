@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <header class="setting-toolbar">
     <div class="setting-toolbar__model">
       <EditorModelSelect
@@ -25,7 +25,7 @@
     <div class="setting-toolbar__spacer"></div>
 
     <button class="setting-toolbar__outline" type="button" @click="$emit('save-export')">保存并导出</button>
-    <button class="setting-toolbar__primary" type="button" @click="$emit('next')">进入图片生成</button>
+    <button class="setting-toolbar__primary" type="button" @click="$emit('next')">进入分镜生成</button>
   </header>
 </template>
 

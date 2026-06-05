@@ -10,6 +10,7 @@
         :selected="selectedIds.includes(project.id)"
         @toggle-select="$emit('toggle-select', $event)"
         @delete="$emit('delete', $event)"
+        @export="$emit('export', $event)"
       />
 
       <div v-if="!projects.length" class="project-empty-state">
@@ -48,6 +49,7 @@ defineEmits<{
   (e: 'import'): void
   (e: 'toggle-select', id: string): void
   (e: 'delete', id: string): void
+  (e: 'export', id: string): void
   (e: 'update:currentPage', page: number): void
 }>()
 </script>

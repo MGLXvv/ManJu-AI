@@ -55,7 +55,7 @@
             <span class="project-card__action-tip">编辑</span>
             <FigmaIcon name="card-edit" :size="14" />
           </button>
-          <button type="button" class="project-card__action" @click.stop="handleActionClick">
+          <button type="button" class="project-card__action" @click.stop="handleExportClick">
             <span class="project-card__action-tip">导出</span>
             <FigmaIcon name="card-upload" :size="14" />
           </button>
@@ -84,6 +84,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'toggle-select', id: string): void
   (e: 'delete', id: string): void
+  (e: 'export', id: string): void
 }>()
 
 const router = useRouter()
@@ -100,6 +101,10 @@ const handleEditClick = (): void => {
 
 const handleDeleteClick = (): void => {
   emit('delete', props.project.id)
+}
+
+const handleExportClick = (): void => {
+  emit('export', props.project.id)
 }
 
 const handleCardClick = (): void => {

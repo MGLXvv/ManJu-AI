@@ -10,7 +10,7 @@
       <img v-if="selectedModel.iconUrl" class="script-model-select__icon-img" :src="selectedModel.iconUrl" :alt="selectedModel.name" />
       <FigmaIcon v-else class="script-model-select__icon-fallback" :name="selectedModel.iconName" :size="20" />
       <span class="script-model-select__label">{{ selectedModel.name }}</span>
-      <span class="script-model-select__arrow">▾</span>
+      <span class="script-model-select__arrow">⌄</span>
     </button>
 
     <div v-if="menuOpen" class="script-model-menu" role="listbox" aria-label="选择模型">

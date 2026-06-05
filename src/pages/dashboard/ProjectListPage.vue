@@ -56,10 +56,19 @@
           @import="onImportProject"
           @toggle-select="toggleProjectSelection"
           @delete="deleteSingleProject"
+          @export="exportSingleProject"
           @update:current-page="currentPage = $event"
         />
       </div>
     </div>
+
+    <input
+      ref="importInput"
+      class="dashboard-page__import-input"
+      type="file"
+      accept="application/json,.json"
+      @change="onImportFileChange"
+    />
 
     <CreateProjectModal v-model:open="createModalOpen" @submit="handleCreateProject" />
 
@@ -71,27 +80,26 @@
       </Transition>
     </Teleport>
 
-    <Teleport to="body">
-      <div v-if="deleteConfirm" class="dashboard-page__delete-mask" @click="cancelDelete">
-        <section class="dashboard-page__delete-dialog" role="alertdialog" aria-modal="true" @click.stop>
-          <p class="dashboard-page__delete-title">{{ deleteConfirm.title }}</p>
-          <div class="dashboard-page__delete-actions">
-            <button class="dashboard-page__delete-btn is-danger" type="button" @click="confirmDelete">
-              {{ deleteConfirm.confirmText }}
-            </button>
-            <button class="dashboard-page__delete-btn" type="button" @click="cancelDelete">
-              {{ deleteConfirm.cancelText }}
-            </button>
-          </div>
-        </section>
-      </div>
-    </Teleport>
+    <AppConfirmDialog
+      :open="Boolean(deleteConfirm)"
+      :title="deleteConfirm?.title ?? ''"
+      :confirm-text="deleteConfirm?.confirmText ?? ''"
+      :cancel-text="deleteConfirm?.cancelText ?? ''"
+      confirm-tone="danger"
+      size="sm"
+      center-title
+      center-actions
+      @confirm="confirmDelete"
+      @cancel="cancelDelete"
+    />
   </section>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import AppConfirmDialog from '@/components/common/AppConfirmDialog.vue'
 import { buildDeleteDialogCopy, buildDeleteToastMessage } from '@/features/dashboard/projectDeleteState'
+import { buildProjectExportFileName, parseImportedProjects } from '@/features/dashboard/projectTransferState'
 import BatchSelectionToolbar from '@/components/editor/common/BatchSelectionToolbar.vue'
 import CreateProjectModal from '@/components/dashboard/CreateProjectModal.vue'
 import ProjectGrid from '@/components/dashboard/ProjectGrid.vue'
@@ -104,6 +112,7 @@ const batchMode = ref(false)
 const selectedIds = ref<string[]>([])
 const currentPage = ref(1)
 const toastMessage = ref('')
+const importInput = ref<HTMLInputElement | null>(null)
 const deleteConfirm = ref<null | { ids: string[]; title: string; confirmText: string; cancelText: string }>(null)
 let toastTimer: number | null = null
 const total = computed(() => store.projects.length)
@@ -167,7 +176,10 @@ const handleCreateProject = async (payload: CreateProjectPayload): Promise<void>
   createModalOpen.value = false
 }
 
-const onImportProject = (): void => {}
+const onImportProject = (): void => {
+  if (batchMode.value) return
+  importInput.value?.click()
+}
 
 const showToast = (message: string): void => {
   toastMessage.value = message
@@ -178,6 +190,53 @@ const showToast = (message: string): void => {
     toastMessage.value = ''
     toastTimer = null
   }, 2600)
+}
+
+const exportSingleProject = async (id: string): Promise<void> => {
+  const project = await store.exportProject(id)
+  if (!project) {
+    showToast('导出失败，未找到当前项目')
+    return
+  }
+
+  const fileName = buildProjectExportFileName(project.name)
+  const blob = new Blob([JSON.stringify(project, null, 2)], {
+    type: 'application/json;charset=utf-8',
+  })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = fileName
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+  showToast('项目已导出')
+}
+
+const onImportFileChange = async (event: Event): Promise<void> => {
+  const target = event.target as HTMLInputElement | null
+  const file = target?.files?.[0]
+  if (!file) return
+
+  try {
+    const text = await file.text()
+    const imported = parseImportedProjects(text)
+    const created = await store.importProjects(imported)
+    currentPage.value = 1
+    showToast(created.length === 1 ? '项目已导入' : `已导入 ${created.length} 个项目`)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : ''
+    if (message === 'PROJECT_IMPORT_INVALID') {
+      showToast('导入失败，文件内容不符合项目格式')
+    } else {
+      showToast('导入失败，请选择有效的 JSON 文件')
+    }
+  } finally {
+    if (target) {
+      target.value = ''
+    }
+  }
 }
 
 const onBatchAction = (): void => {

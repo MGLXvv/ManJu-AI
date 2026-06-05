@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { projectApi } from '@/api/project.api'
+import type { ImportedProjectPayload } from '@/features/dashboard/projectTransferState'
 import type { Project, ProjectStatus } from '@/types/project'
 
 export const useProjectStore = defineStore('project', () => {
@@ -12,9 +13,10 @@ export const useProjectStore = defineStore('project', () => {
   const keyword = ref('')
 
   const filteredProjects = computed(() => {
+    const normalizedKeyword = keyword.value.trim().toLocaleLowerCase()
     return projects.value.filter((project) => {
       const matchStatus = statusFilter.value === 'all' || project.status === statusFilter.value
-      const matchKeyword = !keyword.value || project.name.includes(keyword.value.trim())
+      const matchKeyword = !normalizedKeyword || project.name.toLocaleLowerCase().includes(normalizedKeyword)
       return matchStatus && matchKeyword
     })
   })
@@ -54,6 +56,16 @@ export const useProjectStore = defineStore('project', () => {
     projects.value = projects.value.filter((project) => project.id !== id)
   }
 
+  const importProjects = async (items: ImportedProjectPayload[]): Promise<Project[]> => {
+    const imported = await projectApi.importProjects(items)
+    projects.value = [...imported, ...projects.value]
+    return imported
+  }
+
+  const exportProject = async (id: string): Promise<Project | null> => {
+    return projectApi.exportProject(id)
+  }
+
   const replaceProject = (next: Project | null): void => {
     if (!next) return
     projects.value = projects.value.map((project) => (project.id === next.id ? next : project))
@@ -87,6 +99,8 @@ export const useProjectStore = defineStore('project', () => {
     bootstrap,
     createProject,
     deleteProject,
+    importProjects,
+    exportProject,
     updateProjectStep,
     toggleProjectFavorite,
     toggleProjectStatus,

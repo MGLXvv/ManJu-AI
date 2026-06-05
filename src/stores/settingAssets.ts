@@ -73,21 +73,35 @@ const createSeedAsset = (index: number, type: SettingAssetType, title: string, s
   }
 }
 
-const seedAssets: SettingAsset[] = [
-  createSeedAsset(0, 'character', '角色-男主', 'ready'),
-  createSeedAsset(1, 'character', '角色-女主', 'generating'),
-  createSeedAsset(2, 'character', '角色-男主', 'ready'),
-  createSeedAsset(3, 'scene', '场景-沙地', 'ready'),
-  createSeedAsset(4, 'prop', '道具-武器', 'ready'),
-  createSeedAsset(5, 'character', '角色-男主', 'ready'),
-  createSeedAsset(6, 'character', '角色-女主', 'generating'),
-  createSeedAsset(7, 'character', '角色-男主', 'ready'),
-  createSeedAsset(8, 'scene', '场景-沙地', 'ready'),
-  createSeedAsset(9, 'prop', '道具-武器', 'ready'),
-]
+const cloneAsset = (asset: SettingAsset): SettingAsset => ({
+  ...asset,
+  imageUrls: [...asset.imageUrls],
+  candidateImages: asset.candidateImages ? [...asset.candidateImages] : undefined,
+  voiceOptions: asset.voiceOptions?.map((item) => ({ ...item })),
+  audio: asset.audio
+    ? {
+        ...asset.audio,
+        waveform: asset.audio.waveform ? [...asset.audio.waveform] : undefined,
+      }
+    : undefined,
+})
+
+export const createDefaultSettingAssets = (): SettingAsset[] =>
+  [
+    createSeedAsset(0, 'character', '角色-男主', 'ready'),
+    createSeedAsset(1, 'character', '角色-女主', 'generating'),
+    createSeedAsset(2, 'character', '角色-男主', 'ready'),
+    createSeedAsset(3, 'scene', '场景-沙地', 'ready'),
+    createSeedAsset(4, 'prop', '道具-武器', 'ready'),
+    createSeedAsset(5, 'character', '角色-男主', 'ready'),
+    createSeedAsset(6, 'character', '角色-女主', 'generating'),
+    createSeedAsset(7, 'character', '角色-男主', 'ready'),
+    createSeedAsset(8, 'scene', '场景-沙地', 'ready'),
+    createSeedAsset(9, 'prop', '道具-武器', 'ready'),
+  ].map(cloneAsset)
 
 export const useSettingAssetsStore = defineStore('setting-assets', () => {
-  const assets = ref<SettingAsset[]>(seedAssets)
+  const assets = ref<SettingAsset[]>(createDefaultSettingAssets())
   const keyword = ref('')
   const activeType = ref<SettingAssetTypeFilter>('all')
 
@@ -118,6 +132,14 @@ export const useSettingAssetsStore = defineStore('setting-assets', () => {
 
   const setActiveType = (value: SettingAssetTypeFilter): void => {
     activeType.value = value
+  }
+
+  const setAssets = (nextAssets: SettingAsset[]): void => {
+    assets.value = nextAssets.map(cloneAsset)
+  }
+
+  const resetAssets = (): void => {
+    assets.value = createDefaultSettingAssets()
   }
 
   const createAsset = (payload: { type: SettingAssetType; title: string; prompt: string }): void => {
@@ -213,6 +235,8 @@ export const useSettingAssetsStore = defineStore('setting-assets', () => {
     counts,
     setKeyword,
     setActiveType,
+    setAssets,
+    resetAssets,
     createAsset,
     updateAsset,
     deleteAsset,

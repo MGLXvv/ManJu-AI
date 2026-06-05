@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <section class="script-prompt-block">
     <h2 class="script-column-title">编辑提示词</h2>
 
@@ -6,35 +6,37 @@
       <textarea
         v-model="model"
         class="script-prompt-card__textarea"
+        :disabled="disabled"
         placeholder="请输入生成剧本时的要求，例如字数、风格、剧情重点、角色表现等"
       />
 
       <footer class="script-prompt-card__actions">
         <div class="script-prompt-card__actions-left">
-          <button class="script-action-pill" type="button" @click="$emit('delete')">
+          <button class="script-action-pill" type="button" :disabled="disabled" @click="$emit('delete')">
             <FigmaIcon name="action-delete" :size="18" />
             <span>删除</span>
           </button>
 
-          <button class="script-action-pill" type="button" @click="$emit('save')">
+          <button class="script-action-pill" type="button" :disabled="disabled" @click="$emit('save')">
             <FigmaIcon name="action-save" :size="18" />
-            <span>保存</span>
+            <span>{{ actionState === 'saving' ? '保存中' : '保存' }}</span>
           </button>
 
-          <button class="script-action-pill" type="button" @click="$emit('open-template')">
+          <button class="script-action-pill" type="button" :disabled="disabled" @click="$emit('open-template')">
             <FigmaIcon name="action-template" :size="18" />
             <span>模板</span>
           </button>
         </div>
 
         <div class="script-prompt-card__actions-right">
+          <span v-if="statusText" class="script-prompt-card__status">{{ statusText }}</span>
           <button
             class="script-generate-outline"
             type="button"
-            :disabled="!canGenerate || loading"
+            :disabled="!canGenerate || disabled"
             @click="$emit('generate')"
           >
-            生成剧本
+            {{ actionState === 'generating' ? '生成中' : actionState === 'optimizing' ? '优化中' : '生成剧本' }}
           </button>
         </div>
       </footer>
@@ -47,7 +49,9 @@ import FigmaIcon from '@/components/icons/FigmaIcon.vue'
 
 defineProps<{
   canGenerate: boolean
-  loading?: boolean
+  disabled?: boolean
+  statusText?: string
+  actionState?: 'idle' | 'saving' | 'generating' | 'optimizing'
 }>()
 
 defineEmits<{

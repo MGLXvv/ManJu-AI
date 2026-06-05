@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <Teleport to="body">
     <div v-if="open" class="create-project-modal">
       <div class="create-project-modal__overlay" @click="requestClose"></div>
@@ -10,7 +10,11 @@
         </header>
 
         <form class="create-project-modal__body" @submit.prevent="submit">
-          <label class="create-project-modal__field">
+          <label
+            class="create-project-modal__field"
+            :class="{ 'is-invalid': fieldErrors.name, 'is-flash': fieldErrors.name }"
+            :key="`name-${invalidFlashNonce}`"
+          >
             <span class="create-project-modal__label">项目名称</span>
             <input
               v-model.trim="form.name"
@@ -20,7 +24,11 @@
             />
           </label>
 
-          <div class="create-project-modal__field">
+          <div
+            class="create-project-modal__field"
+            :class="{ 'is-invalid': fieldErrors.ratio, 'is-flash': fieldErrors.ratio }"
+            :key="`ratio-${invalidFlashNonce}`"
+          >
             <span class="create-project-modal__label">画面比例</span>
 
             <div class="create-project-modal__ratio-grid">
@@ -46,7 +54,11 @@
             </div>
           </div>
 
-          <label class="create-project-modal__field">
+          <label
+            class="create-project-modal__field"
+            :class="{ 'is-invalid': fieldErrors.style, 'is-flash': fieldErrors.style }"
+            :key="`style-${invalidFlashNonce}`"
+          >
             <span class="create-project-modal__label">整体风格</span>
 
             <div class="create-project-modal__select-wrap">
@@ -87,6 +99,12 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
+import {
+  createEmptyCreateProjectForm,
+  getCreateProjectFieldErrors,
+  isCreateProjectFormDirty,
+  type CreateProjectFieldErrors,
+} from '@/features/dashboard/createProjectModalState'
 
 const open = defineModel<boolean>('open', { required: true })
 
@@ -94,21 +112,18 @@ const emit = defineEmits<{
   (e: 'submit', payload: { name: string; ratio: '16:9' | '9:16'; style: string }): void
 }>()
 
-const form = reactive({
-  name: '',
-  ratio: '16:9' as '16:9' | '9:16',
-  style: '',
-})
-
+const form = reactive(createEmptyCreateProjectForm())
+const fieldErrors = ref<CreateProjectFieldErrors>({})
+const invalidFlashNonce = ref(0)
 const showCancelConfirm = ref(false)
 
 const resetForm = (): void => {
-  form.name = ''
-  form.ratio = '16:9'
-  form.style = ''
+  Object.assign(form, createEmptyCreateProjectForm())
+  fieldErrors.value = {}
+  invalidFlashNonce.value = 0
 }
 
-const isDirty = computed(() => form.name.trim().length > 0 || form.ratio !== '16:9' || form.style !== '')
+const isDirty = computed(() => isCreateProjectFormDirty(form))
 
 watch(open, (value) => {
   if (value) {
@@ -140,14 +155,18 @@ const cancelCloseConfirm = (): void => {
 }
 
 const submit = (): void => {
-  if (!form.name.trim()) {
+  const nextErrors = getCreateProjectFieldErrors(form)
+  fieldErrors.value = nextErrors
+
+  if (Object.keys(nextErrors).length > 0) {
+    invalidFlashNonce.value += 1
     return
   }
 
   emit('submit', {
     name: form.name.trim(),
-    ratio: form.ratio,
-    style: form.style || '国漫',
+    ratio: form.ratio as '16:9' | '9:16',
+    style: form.style,
   })
 
   close()

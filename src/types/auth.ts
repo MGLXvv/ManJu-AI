@@ -1,20 +1,33 @@
-export type AuthMode = 'password' | 'code' | 'register' | 'reset'
+﻿export type AuthMode = 'password' | 'code' | 'register' | 'reset'
 export type ThirdPartyProvider = 'wechat' | 'qq' | 'alipay'
 
-export interface LoginPayload {
-  mode: AuthMode
+export interface PasswordLoginPayload {
   account: string
-  secret: string
+  password: string
+}
+
+export interface CodeLoginPayload {
+  account: string
+  code: string
 }
 
 export interface RegisterPayload {
   username: string
   account: string
-  secret: string
+  code: string
+  password: string
+  bindProvider?: ThirdPartyProvider
 }
 
 export interface ResetPasswordPayload {
   username: string
+  account: string
+  code: string
+  password: string
+}
+
+export interface LoginPayload {
+  mode: AuthMode
   account: string
   secret: string
 }

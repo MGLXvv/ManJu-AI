@@ -62,11 +62,36 @@
     </div>
 
     <CreateProjectModal v-model:open="createModalOpen" @submit="handleCreateProject" />
+
+    <Teleport to="body">
+      <Transition name="dashboard-toast">
+        <div v-if="toastMessage" class="dashboard-page__toast-stack" aria-live="polite">
+          <div class="dashboard-page__toast">{{ toastMessage }}</div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <Teleport to="body">
+      <div v-if="deleteConfirm" class="dashboard-page__delete-mask" @click="cancelDelete">
+        <section class="dashboard-page__delete-dialog" role="alertdialog" aria-modal="true" @click.stop>
+          <p class="dashboard-page__delete-title">{{ deleteConfirm.title }}</p>
+          <div class="dashboard-page__delete-actions">
+            <button class="dashboard-page__delete-btn is-danger" type="button" @click="confirmDelete">
+              {{ deleteConfirm.confirmText }}
+            </button>
+            <button class="dashboard-page__delete-btn" type="button" @click="cancelDelete">
+              {{ deleteConfirm.cancelText }}
+            </button>
+          </div>
+        </section>
+      </div>
+    </Teleport>
   </section>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { buildDeleteDialogCopy, buildDeleteToastMessage } from '@/features/dashboard/projectDeleteState'
 import BatchSelectionToolbar from '@/components/editor/common/BatchSelectionToolbar.vue'
 import CreateProjectModal from '@/components/dashboard/CreateProjectModal.vue'
 import ProjectGrid from '@/components/dashboard/ProjectGrid.vue'
@@ -78,6 +103,9 @@ const createModalOpen = ref(false)
 const batchMode = ref(false)
 const selectedIds = ref<string[]>([])
 const currentPage = ref(1)
+const toastMessage = ref('')
+const deleteConfirm = ref<null | { ids: string[]; title: string; confirmText: string; cancelText: string }>(null)
+let toastTimer: number | null = null
 const total = computed(() => store.projects.length)
 const inProgress = computed(() => store.projects.filter((project) => project.status === 'in_progress').length)
 const completed = computed(() => store.projects.filter((project) => project.status === 'completed').length)
@@ -141,6 +169,17 @@ const handleCreateProject = async (payload: CreateProjectPayload): Promise<void>
 
 const onImportProject = (): void => {}
 
+const showToast = (message: string): void => {
+  toastMessage.value = message
+  if (toastTimer) {
+    window.clearTimeout(toastTimer)
+  }
+  toastTimer = window.setTimeout(() => {
+    toastMessage.value = ''
+    toastTimer = null
+  }, 2600)
+}
+
 const onBatchAction = (): void => {
   batchMode.value = true
   selectedIds.value = []
@@ -167,11 +206,34 @@ const toggleSelectAllVisible = (): void => {
 const deleteSelectedProjects = async (): Promise<void> => {
   const ids = [...selectedIds.value]
   if (!ids.length) return
-  await Promise.all(ids.map((id) => store.deleteProject(id)))
-  exitBatchMode()
+  deleteConfirm.value = {
+    ids,
+    ...buildDeleteDialogCopy(ids.length),
+  }
 }
 
 const deleteSingleProject = async (id: string): Promise<void> => {
-  await store.deleteProject(id)
+  deleteConfirm.value = {
+    ids: [id],
+    ...buildDeleteDialogCopy(1),
+  }
+}
+
+const cancelDelete = (): void => {
+  deleteConfirm.value = null
+}
+
+const confirmDelete = async (): Promise<void> => {
+  if (!deleteConfirm.value) return
+
+  const ids = [...deleteConfirm.value.ids]
+  deleteConfirm.value = null
+  await Promise.all(ids.map((id) => store.deleteProject(id)))
+
+  if (batchMode.value) {
+    exitBatchMode()
+  }
+
+  showToast(buildDeleteToastMessage(ids.length))
 }
 </script>

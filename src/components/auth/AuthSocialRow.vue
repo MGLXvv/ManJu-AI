@@ -1,8 +1,8 @@
-﻿<template>
+<template>
   <div class="auth-social">
     <div class="auth-social__divider">
       <span></span>
-      <em>或者</em>
+      <em>{{ t('auth.action.or') }}</em>
       <span></span>
     </div>
     <div class="auth-social__buttons">
@@ -10,8 +10,11 @@
         v-for="item in items"
         :key="item.label"
         type="button"
-        class="auth-social__button" :class="`auth-social__button--${item.provider}`"
-        :title="item.label"
+        class="auth-social__button"
+        :class="`auth-social__button--${item.provider}`"
+        :data-label="item.label"
+        :aria-label="item.label"
+        :disabled="disabled"
         @click="$emit('select', item.provider)"
       >
         <FigmaIcon v-if="item.type === 'icon'" class="auth-social__glyph" :name="item.name" :size="56" />
@@ -36,23 +39,32 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import FigmaIcon from '@/components/icons/FigmaIcon.vue'
 import type { FigmaIconName } from '@/components/icons/figmaIconLibrary'
 import type { ThirdPartyProvider } from '@/types/auth'
+
+withDefaults(
+  defineProps<{
+    disabled?: boolean
+  }>(),
+  {
+    disabled: false,
+  },
+)
 
 defineEmits<{
   (e: 'select', value: ThirdPartyProvider): void
 }>()
 
-const items: Array<
-  | { type: 'icon'; name: FigmaIconName; label: string; provider: ThirdPartyProvider }
-  | { type: 'alipay'; label: string; provider: ThirdPartyProvider }
-> = [
-  { type: 'icon', name: 'social-wechat', label: '微信登录', provider: 'wechat' },
-  { type: 'icon', name: 'social-qq', label: 'QQ登录', provider: 'qq' },
-  { type: 'alipay', label: '支付宝登录', provider: 'alipay' },
-]
+const { t } = useI18n()
+
+const items = computed<
+  Array<{ type: 'icon'; name: FigmaIconName; label: string; provider: ThirdPartyProvider } | { type: 'alipay'; label: string; provider: ThirdPartyProvider }>
+>(() => [
+  { type: 'icon', name: 'social-wechat', label: t('auth.social.wechat'), provider: 'wechat' },
+  { type: 'icon', name: 'social-qq', label: t('auth.social.qq'), provider: 'qq' },
+  { type: 'alipay', label: t('auth.social.alipay'), provider: 'alipay' },
+])
 </script>
-
-
-

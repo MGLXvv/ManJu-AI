@@ -4,7 +4,9 @@ import { authApi, authStorageKeys } from '@/api/auth.api'
 import { readLocal } from '@/api/local'
 import type {
   AuthUser,
+  CodeLoginPayload,
   LoginPayload,
+  PasswordLoginPayload,
   RegisterPayload,
   ResetPasswordPayload,
   ThirdPartyLoginPayload,
@@ -23,6 +25,28 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true
     try {
       const session = await authApi.login(payload)
+      token.value = session.token
+      user.value = session.user
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const loginByPassword = async (payload: PasswordLoginPayload): Promise<void> => {
+    loading.value = true
+    try {
+      const session = await authApi.loginByPassword(payload)
+      token.value = session.token
+      user.value = session.user
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const loginByCode = async (payload: CodeLoginPayload): Promise<void> => {
+    loading.value = true
+    try {
+      const session = await authApi.loginByCode(payload)
       token.value = session.token
       user.value = session.user
     } finally {
@@ -50,10 +74,10 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  const requestCode = async (account: string): Promise<void> => {
+  const requestCode = async (account: string): Promise<{ code: string }> => {
     loading.value = true
     try {
-      await authApi.requestCode(account)
+      return await authApi.requestCode(account)
     } finally {
       loading.value = false
     }
@@ -91,6 +115,8 @@ export const useAuthStore = defineStore('auth', () => {
     loading,
     isAuthenticated,
     login,
+    loginByPassword,
+    loginByCode,
     register,
     resetPassword,
     requestCode,

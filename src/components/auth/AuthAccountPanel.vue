@@ -240,14 +240,14 @@ const requestCode = async (): Promise<void> => {
 const submit = async (): Promise<void> => {
   if (props.mode === 'password') {
     if (!account.value.trim() || !password.value.trim()) return
-    await authStore.login({ mode: 'password', account: account.value.trim(), secret: password.value.trim() })
+    await authStore.loginByPassword({ account: account.value.trim(), password: password.value.trim() })
     await router.push('/')
     return
   }
 
   if (props.mode === 'code') {
     if (!account.value.trim() || !code.value.trim()) return
-    await authStore.login({ mode: 'code', account: account.value.trim(), secret: code.value.trim() })
+    await authStore.loginByCode({ account: account.value.trim(), code: code.value.trim() })
     await router.push('/')
     return
   }
@@ -260,7 +260,8 @@ const submit = async (): Promise<void> => {
     await authStore.register({
       username: username.value.trim(),
       account: account.value.trim(),
-      secret: password.value.trim(),
+      code: code.value.trim(),
+      password: password.value.trim(),
     })
     await router.push('/')
     return
@@ -269,7 +270,8 @@ const submit = async (): Promise<void> => {
   await authStore.resetPassword({
     username: username.value.trim(),
     account: account.value.trim(),
-    secret: password.value.trim(),
+    code: code.value.trim(),
+      password: password.value.trim(),
   })
   emit('update:mode', 'password')
   password.value = ''
@@ -292,3 +294,4 @@ onBeforeUnmount(() => {
   clearTimer()
 })
 </script>
+

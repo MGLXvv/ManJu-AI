@@ -4,7 +4,7 @@
       <template v-if="shot.status === 'generating' || shot.status === 'pending'">
         <div class="video-preview-panel__loading">视频生成中...</div>
       </template>
-      <template v-else-if="hasMedia">
+      <template v-else-if="hasPlayableVideo">
         <video
           ref="videoRef"
           class="video-preview-panel__media"
@@ -14,6 +14,10 @@
           playsinline
           muted
         ></video>
+      </template>
+      <template v-else-if="shot.imageUrl">
+        <img class="video-preview-panel__media" :src="shot.imageUrl" :alt="shot.title" />
+        <div v-if="hasMockVideo" class="video-preview-panel__mock-badge">已生成模拟视频</div>
       </template>
       <template v-else>
         <div class="video-preview-panel__empty">当前镜头暂无视频预览</div>
@@ -28,7 +32,7 @@
         <div class="video-preview-panel__progress-track">
           <i class="video-preview-panel__progress-bar"></i>
         </div>
-        <span>00:10</span>
+        <span>{{ durationLabel }}</span>
       </div>
     </div>
 
@@ -65,12 +69,14 @@ defineEmits<{
 const videoRef = ref<HTMLVideoElement | null>(null)
 const isPlaying = ref(false)
 
-const videoSrc = computed(() => (props.shot as StoryboardShot & { videoUrl?: string }).videoUrl ?? '')
-const hasMedia = computed(() => Boolean(videoSrc.value || props.shot.imageUrl))
+const videoSrc = computed(() => props.shot.videoUrl ?? '')
+const hasPlayableVideo = computed(() => Boolean(videoSrc.value && !videoSrc.value.startsWith('mock-video://')))
+const hasMockVideo = computed(() => Boolean(videoSrc.value && videoSrc.value.startsWith('mock-video://')))
+const durationLabel = computed(() => `00:${String(props.shot.durationSeconds ?? 10).padStart(2, '0')}`)
 
 const togglePlay = async (): Promise<void> => {
   const video = videoRef.value
-  if (!video || !videoSrc.value) return
+  if (!video || !videoSrc.value || !hasPlayableVideo.value) return
 
   if (video.paused) {
     await video.play()

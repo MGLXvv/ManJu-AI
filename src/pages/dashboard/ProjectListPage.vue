@@ -71,15 +71,6 @@
     />
 
     <CreateProjectModal v-model:open="createModalOpen" @submit="handleCreateProject" />
-
-    <Teleport to="body">
-      <Transition name="dashboard-toast">
-        <div v-if="toastMessage" class="dashboard-page__toast-stack" aria-live="polite">
-          <div class="dashboard-page__toast">{{ toastMessage }}</div>
-        </div>
-      </Transition>
-    </Teleport>
-
     <AppConfirmDialog
       :open="Boolean(deleteConfirm)"
       :title="deleteConfirm?.title ?? ''"
@@ -100,21 +91,22 @@ import { computed, onMounted, ref, watch } from 'vue'
 import AppConfirmDialog from '@/components/common/AppConfirmDialog.vue'
 import { buildDeleteDialogCopy, buildDeleteToastMessage } from '@/features/dashboard/projectDeleteState'
 import { buildProjectExportFileName, parseImportedProjects } from '@/features/dashboard/projectTransferState'
+import { buildProjectArtifactEnvelope } from '@/features/shared/projectArtifactState'
 import BatchSelectionToolbar from '@/components/editor/common/BatchSelectionToolbar.vue'
 import CreateProjectModal from '@/components/dashboard/CreateProjectModal.vue'
 import ProjectGrid from '@/components/dashboard/ProjectGrid.vue'
 import ProjectToolbar from '@/components/dashboard/ProjectToolbar.vue'
 import { useProjectStore } from '@/stores/project'
+import { useUiFeedbackStore } from '@/stores/uiFeedback'
 
 const store = useProjectStore()
+const uiFeedback = useUiFeedbackStore()
 const createModalOpen = ref(false)
 const batchMode = ref(false)
 const selectedIds = ref<string[]>([])
 const currentPage = ref(1)
-const toastMessage = ref('')
 const importInput = ref<HTMLInputElement | null>(null)
 const deleteConfirm = ref<null | { ids: string[]; title: string; confirmText: string; cancelText: string }>(null)
-let toastTimer: number | null = null
 const total = computed(() => store.projects.length)
 const inProgress = computed(() => store.projects.filter((project) => project.status === 'in_progress').length)
 const completed = computed(() => store.projects.filter((project) => project.status === 'completed').length)
@@ -181,26 +173,20 @@ const onImportProject = (): void => {
   importInput.value?.click()
 }
 
-const showToast = (message: string): void => {
-  toastMessage.value = message
-  if (toastTimer) {
-    window.clearTimeout(toastTimer)
-  }
-  toastTimer = window.setTimeout(() => {
-    toastMessage.value = ''
-    toastTimer = null
-  }, 2600)
-}
-
 const exportSingleProject = async (id: string): Promise<void> => {
   const project = await store.exportProject(id)
   if (!project) {
-    showToast('导出失败，未找到当前项目')
+    uiFeedback.showToast('导出失败，未找到当前项目', { tone: 'error' })
     return
   }
 
   const fileName = buildProjectExportFileName(project.name)
-  const blob = new Blob([JSON.stringify(project, null, 2)], {
+  const payload = buildProjectArtifactEnvelope({
+    artifact: 'project',
+    projectId: project.id || project.name,
+    payload: project,
+  })
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
     type: 'application/json;charset=utf-8',
   })
   const url = URL.createObjectURL(blob)
@@ -211,7 +197,7 @@ const exportSingleProject = async (id: string): Promise<void> => {
   link.click()
   document.body.removeChild(link)
   URL.revokeObjectURL(url)
-  showToast('项目已导出')
+  uiFeedback.showToast('项目已导出', { tone: 'success' })
 }
 
 const onImportFileChange = async (event: Event): Promise<void> => {
@@ -224,13 +210,13 @@ const onImportFileChange = async (event: Event): Promise<void> => {
     const imported = parseImportedProjects(text)
     const created = await store.importProjects(imported)
     currentPage.value = 1
-    showToast(created.length === 1 ? '项目已导入' : `已导入 ${created.length} 个项目`)
+    uiFeedback.showToast(created.length === 1 ? '项目已导入' : `已导入 ${created.length} 个项目`, { tone: 'success' })
   } catch (error) {
     const message = error instanceof Error ? error.message : ''
     if (message === 'PROJECT_IMPORT_INVALID') {
-      showToast('导入失败，文件内容不符合项目格式')
+      uiFeedback.showToast('导入失败，文件内容不符合项目格式', { tone: 'error' })
     } else {
-      showToast('导入失败，请选择有效的 JSON 文件')
+      uiFeedback.showToast('导入失败，请选择有效的 JSON 文件', { tone: 'error' })
     }
   } finally {
     if (target) {
@@ -293,6 +279,6 @@ const confirmDelete = async (): Promise<void> => {
     exitBatchMode()
   }
 
-  showToast(buildDeleteToastMessage(ids.length))
+  uiFeedback.showToast(buildDeleteToastMessage(ids.length), { tone: 'success' })
 }
 </script>

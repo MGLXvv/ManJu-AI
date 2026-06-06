@@ -2,7 +2,12 @@
   <section class="video-prompt-panel">
     <header class="video-prompt-panel__title">视频提示词</header>
 
-    <textarea v-model="videoPrompt" class="video-prompt-panel__textarea" placeholder="请输入视频镜头提示词" />
+    <textarea
+      :value="videoPrompt"
+      class="video-prompt-panel__textarea"
+      placeholder="请输入视频镜头提示词"
+      @input="emit('update-video-prompt', ($event.target as HTMLTextAreaElement).value)"
+    />
 
     <section class="video-voice-table">
       <header class="video-voice-table__row video-voice-table__row--head">
@@ -15,7 +20,7 @@
         <span class="video-voice-table__cell">{{ item.name }}</span>
         <div class="video-voice-table__cell">
           <label class="video-voice-table__voice-field">
-            <select v-model="voiceMap[item.id]">
+            <select :value="voiceMap[item.id]" @change="updateVoice(item.id, ($event.target as HTMLSelectElement).value)">
               <option v-for="voice in voiceOptions" :key="voice" :value="voice">{{ voice }}</option>
             </select>
           </label>
@@ -35,7 +40,12 @@
     <section class="video-dialogue">
       <header class="video-dialogue__title">对白</header>
       <div class="video-dialogue__field">
-        <textarea v-model="dialogue" class="video-dialogue__textarea" placeholder="请输入对白内容" />
+        <textarea
+          :value="dialogue"
+          class="video-dialogue__textarea"
+          placeholder="请输入对白内容"
+          @input="emit('update-dialogue', ($event.target as HTMLTextAreaElement).value)"
+        />
         <button type="button" class="video-dialogue__optimize" aria-label="AI优化对白">
           <FigmaIcon name="result-ai-optimize" :size="20" />
         </button>
@@ -44,19 +54,19 @@
 
     <section class="video-duration">
       <header class="video-duration__title">时长</header>
-      <select v-model="duration">
+      <select :value="String(durationSeconds)" @change="emit('update-duration', Number(($event.target as HTMLSelectElement).value))">
         <option value="5">5 秒</option>
         <option value="10">10 秒</option>
         <option value="15">15 秒</option>
       </select>
     </section>
 
-    <button type="button" class="video-prompt-panel__generate" @click="$emit('generate-video')">生成视频</button>
+    <button type="button" class="video-prompt-panel__generate" @click="emit('generate-video')">生成视频</button>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed } from 'vue'
 import FigmaIcon from '@/components/icons/FigmaIcon.vue'
 import type { StoryboardShot } from '@/types/storyboard'
 
@@ -64,35 +74,40 @@ const props = defineProps<{
   shot: StoryboardShot
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   (e: 'generate-video'): void
+  (e: 'update-video-prompt', value: string): void
+  (e: 'update-dialogue', value: string): void
+  (e: 'update-duration', value: number): void
+  (e: 'update-voice', payload: { characterId: string; voice: string }): void
+  (e: 'remove-character', characterId: string): void
 }>()
 
-const videoPrompt = ref(props.shot.prompt)
-const dialogue = ref('')
-const duration = ref('10')
 const voiceOptions = ['浑厚男中音', '清亮青年音', '温柔女声', '磁性旁白', '活泼少女音']
-const voiceMap = ref<Record<string, string>>({})
 
 const characterRows = computed(() => {
   if (props.shot.characters.length > 0) return props.shot.characters
   return [{ id: 'default-1', name: '默认角色', type: 'character' as const }]
 })
 
-watch(
-  characterRows,
-  (rows) => {
-    for (const row of rows) {
-      if (!voiceMap.value[row.id]) {
-        voiceMap.value[row.id] = voiceOptions[0]
-      }
-    }
-  },
-  { immediate: true },
-)
+const voiceMap = computed<Record<string, string>>(() => {
+  const base = Object.fromEntries(characterRows.value.map((item) => [item.id, voiceOptions[0]]))
+  for (const assignment of props.shot.voiceAssignments ?? []) {
+    base[assignment.characterId] = assignment.voice
+  }
+  return base
+})
+
+const videoPrompt = computed(() => props.shot.videoPrompt ?? props.shot.prompt)
+const dialogue = computed(() => props.shot.dialogue ?? '')
+const durationSeconds = computed(() => props.shot.durationSeconds ?? 10)
+
+const updateVoice = (characterId: string, voice: string): void => {
+  emit('update-voice', { characterId, voice })
+}
 
 const removeCharacter = (id: string): void => {
   if (id.startsWith('default-')) return
-  delete voiceMap.value[id]
+  emit('remove-character', id)
 }
 </script>

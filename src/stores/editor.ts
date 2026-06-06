@@ -1,10 +1,14 @@
-import { defineStore } from 'pinia'
+﻿import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { editorApi } from '@/api/editor.api'
+import { buildDubbingDraftPatch } from '@/features/editor/dubbingDraftState'
 import { buildSettingDraftPatch } from '@/features/editor/settingDraftState'
+import { buildStoryboardDraftShots } from '@/features/editor/storyboardPersistState'
+import type { DubbingRoleCardModel } from '@/types/dubbing'
 import type { EditorDraft } from '@/types/editor'
-import type { SettingAsset } from '@/types/settingAsset'
 import type { WorkflowStep } from '@/types/project'
+import type { SettingAsset } from '@/types/settingAsset'
+import type { StoryboardShot } from '@/types/storyboard'
 
 export const editorSteps: Array<{ key: WorkflowStep; label: string; route: string }> = [
   { key: 'script', label: '文案处理', route: 'editor-script' },
@@ -102,6 +106,28 @@ export const useEditorStore = defineStore('editor', () => {
     }
   }
 
+  const updateStoryboardShots = (shots: StoryboardShot[]): void => {
+    if (!draft.value) {
+      return
+    }
+
+    draft.value = {
+      ...draft.value,
+      shots: buildStoryboardDraftShots(shots),
+    }
+  }
+
+  const updateDubbingDraft = (input: { modelId: string; cards: DubbingRoleCardModel[] }): void => {
+    if (!draft.value) {
+      return
+    }
+
+    draft.value = {
+      ...draft.value,
+      ...buildDubbingDraftPatch(input),
+    }
+  }
+
   return {
     currentProjectId,
     currentStep,
@@ -115,5 +141,7 @@ export const useEditorStore = defineStore('editor', () => {
     updateScriptPrompt,
     updateGeneratedScript,
     updateSettingAssets,
+    updateStoryboardShots,
+    updateDubbingDraft,
   }
 })

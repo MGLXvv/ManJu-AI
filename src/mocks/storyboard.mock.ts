@@ -1,4 +1,4 @@
-import type { StoryboardShot, StoryboardShotStatus, StoryboardTag, StoryboardTagOptions } from '@/types/storyboard'
+﻿import type { StoryboardShot, StoryboardShotStatus, StoryboardTag, StoryboardTagOptions } from '@/types/storyboard'
 
 const makeImage = (label: string, colorA: string, colorB: string, seed: number): string => {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
@@ -27,7 +27,7 @@ export const storyboardTagOptions: StoryboardTagOptions = {
     makeTag('ch-zhaolinger', '赵灵儿', 'character'),
     makeTag('ch-xiaolongnv', '小龙女', 'character'),
     makeTag('ch-xuban', '虚斑', 'character'),
-    makeTag('ch-lvxiaoyao', '李逍遥', 'character'),
+    makeTag('ch-lixiaoyao', '李逍遥', 'character'),
   ],
   scenes: [
     makeTag('sc-flower', '花店', 'scene'),
@@ -52,8 +52,17 @@ const createShot = (index: number, status: StoryboardShotStatus = 'success'): St
     index: index + 1,
     title: `镜头 ${index + 1}`,
     imageUrl,
-    prompt:
-      '深夜街道霓虹灯映照，角色在雨中停步回头，近景情绪镜头，电影感光影，细节丰富，动态构图。',
+    videoUrl: '',
+    prompt: '深夜街道霓虹灯映照，角色在雨中停步回头，近景情绪镜头，电影感光影，细节丰富，动态构图。',
+    videoPrompt: '角色在夜色街道中缓步前行，镜头缓推，霓虹反射在积水地面，保留人物情绪停顿。',
+    dialogue: index % 2 === 0 ? '今晚的风，比想象中更冷。' : '再往前一步，就能看见答案。', 
+    durationSeconds: 10,
+    voiceAssignments: [
+      {
+        characterId: storyboardTagOptions.characters[index % storyboardTagOptions.characters.length].id,
+        voice: '浑厚男中音',
+      },
+    ],
     characters: [storyboardTagOptions.characters[index % storyboardTagOptions.characters.length]],
     scenes: [storyboardTagOptions.scenes[index % storyboardTagOptions.scenes.length]],
     props: [storyboardTagOptions.props[index % storyboardTagOptions.props.length]],

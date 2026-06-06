@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <section class="storyboard-timeline">
     <button type="button" class="storyboard-timeline__nav" aria-label="向左滑动分镜" @click="slideTrack(-1)">
       ‹

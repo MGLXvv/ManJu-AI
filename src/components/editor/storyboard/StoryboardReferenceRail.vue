@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <aside class="storyboard-reference-rail" :class="{ 'is-collapsed': collapsed }">
     <button
       type="button"
@@ -58,9 +58,10 @@
         :key="image.id"
         type="button"
         class="storyboard-reference-rail__item"
+        :class="{ 'is-active': image.url === activeImageUrl }"
         @click="$emit('select', image.id)"
       >
-        <img :src="image.url" :alt="image.id" />
+        <img :src="image.url" :alt="image.label || image.id" />
       </button>
     </div>
   </aside>
@@ -73,9 +74,11 @@ const props = withDefaults(
   defineProps<{
     images: StoryboardReferenceImage[]
     collapsed?: boolean
+    activeImageUrl?: string
   }>(),
   {
     collapsed: false,
+    activeImageUrl: '',
   },
 )
 

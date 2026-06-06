@@ -50,14 +50,6 @@
     <CreateAssetModal v-model:open="createModalOpen" @submit="createAsset" />
     <AssetPreviewModal v-model:open="previewOpen" :asset="previewAsset" />
 
-    <Teleport to="body">
-      <Transition name="setting-toast">
-        <div v-if="toastMessage" class="setting-step__toast-stack" aria-live="polite">
-          <div class="setting-step__toast">{{ toastMessage }}</div>
-        </div>
-      </Transition>
-    </Teleport>
-
     <AppConfirmDialog
       :open="leaveConfirmOpen"
       :title="leaveDialogCopy.title"
@@ -94,13 +86,16 @@ import AssetPreviewModal from '@/components/editor/setting/AssetPreviewModal.vue
 import CreateAssetModal from '@/components/editor/setting/CreateAssetModal.vue'
 import SettingTabs from '@/components/editor/setting/SettingTabs.vue'
 import SettingToolbar from '@/components/editor/setting/SettingToolbar.vue'
+import { validateEditorAdvance } from '@/features/editor/editorCompletionState'
 import { buildSettingAssetsSnapshot, resolveSettingAssets } from '@/features/editor/settingDraftState'
 import { buildSettingDeleteDialogCopy, buildSettingDeleteToastMessage } from '@/features/editor/settingDeleteState'
 import { buildSettingLeaveDialogCopy, shouldInterceptSettingLeave } from '@/features/editor/settingLeaveConfirmState'
-import { buildSettingExportFileName, buildSettingExportPayload } from '@/features/editor/settingTransferState'
+import { buildSettingExportPayload } from '@/features/editor/settingTransferState'
+import { buildProjectArtifactEnvelope, buildProjectArtifactFileName } from '@/features/shared/projectArtifactState'
 import { useEditorStore } from '@/stores/editor'
-import { createDefaultSettingAssets, useSettingAssetsStore } from '@/stores/settingAssets'
 import { useProjectStore } from '@/stores/project'
+import { createDefaultSettingAssets, useSettingAssetsStore } from '@/stores/settingAssets'
+import { useUiFeedbackStore } from '@/stores/uiFeedback'
 import type { SettingAsset, SettingAssetTypeFilter } from '@/types/settingAsset'
 
 const router = useRouter()
@@ -108,6 +103,7 @@ const route = useRoute()
 const assetsStore = useSettingAssetsStore()
 const editorStore = useEditorStore()
 const projectStore = useProjectStore()
+const uiFeedback = useUiFeedbackStore()
 
 const createModalOpen = ref(false)
 const previewOpen = ref(false)
@@ -116,26 +112,22 @@ const selectedAssetId = ref('')
 const batchMode = ref(false)
 const selectedBatchIds = ref<string[]>([])
 const submitting = ref(false)
-const toastMessage = ref('')
 const leaveConfirmOpen = ref(false)
 const deleteConfirmOpen = ref(false)
 const pendingLeaveTarget = ref<RouteLocationRaw | null>(null)
 const pendingDeleteIds = ref<string[]>([])
 const bypassLeaveGuard = ref(false)
 const lastSavedSnapshot = ref('')
-let toastTimer: number | null = null
 
 const projectId = computed(() => String(route.params.projectId ?? ''))
 const keyword = computed({
   get: () => assetsStore.keyword,
   set: (value: string) => assetsStore.setKeyword(value),
 })
-
 const activeType = computed({
   get: () => assetsStore.activeType,
   set: (value: SettingAssetTypeFilter) => assetsStore.setActiveType(value),
 })
-
 const counts = computed(() => assetsStore.counts)
 const filteredAssets = computed(() => assetsStore.filteredAssets)
 const filteredAssetIds = computed(() => filteredAssets.value.map((item) => item.id))
@@ -143,9 +135,7 @@ const allAssetIds = computed(() => assetsStore.assets.map((item) => item.id))
 const currentSnapshot = computed(() => buildSettingAssetsSnapshot(assetsStore.assets))
 const isDirty = computed(() => currentSnapshot.value !== lastSavedSnapshot.value)
 const isFilteredFullySelected = computed(
-  () =>
-    filteredAssetIds.value.length > 0 &&
-    filteredAssetIds.value.every((id) => selectedBatchIds.value.includes(id)),
+  () => filteredAssetIds.value.length > 0 && filteredAssetIds.value.every((id) => selectedBatchIds.value.includes(id)),
 )
 const isAllSelected = computed(
   () => allAssetIds.value.length > 0 && allAssetIds.value.every((id) => selectedBatchIds.value.includes(id)),
@@ -182,16 +172,8 @@ watch(
   { immediate: true },
 )
 
-const showToast = (message: string): void => {
-  toastMessage.value = message
-  if (toastTimer) {
-    window.clearTimeout(toastTimer)
-  }
-
-  toastTimer = window.setTimeout(() => {
-    toastMessage.value = ''
-    toastTimer = null
-  }, 2400)
+const showToast = (message: string, tone: 'info' | 'success' | 'error' = 'info'): void => {
+  uiFeedback.showToast(message, { tone })
 }
 
 const markSaved = (): void => {
@@ -210,7 +192,7 @@ const persistSettingDraft = async (): Promise<boolean> => {
     markSaved()
     return true
   } catch {
-    showToast('设定保存失败，请稍后再试')
+    showToast('设定保存失败，请稍后再试', 'error')
     return false
   } finally {
     submitting.value = false
@@ -231,16 +213,28 @@ const openPreview = (asset: SettingAsset): void => {
   previewOpen.value = true
 }
 
-const handleGenerate = (id: string): void => {
-  void assetsStore.generateAssetImage(id)
+const handleGenerate = async (id: string): Promise<void> => {
+  try {
+    await assetsStore.generateAssetImage(id)
+    showToast('素材已生成', 'success')
+  } catch (error) {
+    const message = error instanceof Error ? error.message : ''
+    if (message === 'SETTING_IMAGE_GENERATE_FAILED') {
+      showToast('素材生成失败，请调整提示词后重试', 'error')
+      return
+    }
+    showToast('素材生成失败，请稍后再试', 'error')
+  }
 }
 
 const handleUpload = (payload: { id: string; imageUrl: string }): void => {
   assetsStore.uploadAssetImage(payload.id, payload.imageUrl)
+  showToast('素材图片已上传', 'success')
 }
 
 const handleSelectCandidate = (payload: { id: string; imageUrl: string }): void => {
   assetsStore.selectCandidateImage(payload.id, payload.imageUrl)
+  showToast('候选图已应用到当前素材', 'success')
 }
 
 const handleUpdateAsset = (payload: { id: string; patch: Partial<SettingAsset> }): void => {
@@ -289,7 +283,7 @@ const confirmDelete = (): void => {
     exitBatchMode()
   }
 
-  showToast(buildSettingDeleteToastMessage(ids.length))
+  showToast(buildSettingDeleteToastMessage(ids.length), 'success')
   pendingDeleteIds.value = []
   deleteConfirmOpen.value = false
 }
@@ -337,16 +331,20 @@ const handleSaveExport = async (): Promise<void> => {
     return
   }
 
-  const payload = buildSettingExportPayload(assetsStore.assets)
+  const payload = buildProjectArtifactEnvelope({
+    artifact: 'setting',
+    projectId: projectId.value || 'setting',
+    payload: buildSettingExportPayload(assetsStore.assets),
+  })
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' })
   const objectUrl = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = objectUrl
-  link.download = buildSettingExportFileName(projectId.value)
+  link.download = buildProjectArtifactFileName(projectId.value || 'setting', 'setting')
   link.click()
   URL.revokeObjectURL(objectUrl)
 
-  showToast(hadChanges ? '设定已保存并导出' : '设定已导出')
+  showToast(hadChanges ? '设定已保存并导出' : '设定已导出', 'success')
 }
 
 const cancelLeaveConfirm = (): void => {
@@ -398,20 +396,25 @@ onBeforeRouteLeave((to) => {
 })
 
 const goImageGenerate = async (): Promise<void> => {
+  const validation = validateEditorAdvance('settingsToStoryboard', { assets: assetsStore.assets })
+  if (!validation.ok) {
+    showToast(validation.message, 'error')
+    return
+  }
+
   const saved = await persistSettingDraft()
   if (!saved) {
     return
   }
 
   if (projectId.value) {
-    await projectStore.updateProjectStep(projectId.value, 'storyboard')
+    await projectStore.updateProjectStep(projectId.value, validation.nextStep)
   }
 
-  showToast('设定已保存，正在进入分镜生成')
-  router.push({
-    name: 'editor-storyboard',
+  showToast(validation.successMessage, 'success')
+  await router.push({
+    name: validation.routeName,
     params: route.params,
   })
 }
 </script>
-

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="storyboard-select-row">
     <label class="storyboard-select-row__item">
       <span>图像风格</span>

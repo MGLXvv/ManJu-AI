@@ -11,7 +11,13 @@ export interface StoryboardTag {
 export interface StoryboardReferenceImage {
   id: string
   url: string
+  label?: string
   sourceShotId?: string
+}
+
+export interface StoryboardVoiceAssignment {
+  characterId: string
+  voice: string
 }
 
 export interface StoryboardShot {
@@ -19,7 +25,12 @@ export interface StoryboardShot {
   index: number
   title: string
   imageUrl?: string
+  videoUrl?: string
   prompt: string
+  videoPrompt?: string
+  dialogue?: string
+  durationSeconds?: number
+  voiceAssignments?: StoryboardVoiceAssignment[]
   characters: StoryboardTag[]
   scenes: StoryboardTag[]
   props: StoryboardTag[]

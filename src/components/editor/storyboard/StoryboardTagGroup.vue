@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <section class="storyboard-tag-group">
     <header class="storyboard-tag-group__header">{{ title }}</header>
 

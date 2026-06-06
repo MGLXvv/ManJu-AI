@@ -253,6 +253,21 @@
   cursor: pointer;
 }
 
+.video-preview-panel__mock-badge {
+  position: absolute;
+  left: 20px;
+  top: 20px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 48%);
+  color: #f5f1ff;
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .video-preview-panel__progress {
   position: absolute;
   left: 24px;

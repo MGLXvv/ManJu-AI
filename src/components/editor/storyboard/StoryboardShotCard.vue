@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <article
     class="storyboard-shot-card"
     :class="{ 'is-active': active, 'is-batch-mode': batchMode, 'is-batch-selected': batchSelected }"

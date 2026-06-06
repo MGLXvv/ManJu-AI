@@ -1,6 +1,6 @@
-export type SettingAssetType = 'character' | 'scene' | 'prop'
+﻿export type SettingAssetType = 'character' | 'scene' | 'prop'
 export type SettingAssetTypeFilter = 'all' | SettingAssetType
-export type SettingAssetStatus = 'ready' | 'generating' | 'empty'
+export type SettingAssetStatus = 'ready' | 'generating' | 'empty' | 'failed'
 
 export interface SettingAssetAudio {
   title: string
@@ -32,3 +32,4 @@ export interface SettingAsset {
   favorite?: boolean
   createdAt: string
 }
+

@@ -1,4 +1,4 @@
-import type { EditorDraft } from '@/types/editor'
+﻿import type { EditorDraft } from '@/types/editor'
 
 export const createDefaultEditorDraft = (projectId: string): EditorDraft => ({
   projectId,
@@ -13,4 +13,8 @@ export const createDefaultEditorDraft = (projectId: string): EditorDraft => ({
   props: [],
   settingAssets: [],
   shots: [],
+  dubbing: {
+    modelId: 'index-tts',
+    cards: [],
+  },
 })

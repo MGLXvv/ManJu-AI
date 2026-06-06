@@ -1,10 +1,9 @@
+﻿import { hasAnyMockFailureToken } from '@/features/shared/mockFailureState'
+
 export interface ScriptGenerationInput {
   sourceText: string
   promptText: string
 }
-
-const MOCK_GENERATE_FAIL_TOKEN = '#mock-generate-fail'
-const MOCK_OPTIMIZE_FAIL_TOKEN = '#mock-optimize-fail'
 
 const excerpt = (value: string, fallback: string): string => {
   const normalized = value.trim().replace(/\s+/g, ' ')
@@ -20,7 +19,7 @@ export const canEnterStoryboard = (generatedScript: string): boolean => {
 }
 
 export const generateMockScript = ({ sourceText, promptText }: ScriptGenerationInput): string => {
-  if (sourceText.includes(MOCK_GENERATE_FAIL_TOKEN) || promptText.includes(MOCK_GENERATE_FAIL_TOKEN)) {
+  if (hasAnyMockFailureToken([sourceText, promptText], ['#mock-generate-fail'])) {
     throw new Error('SCRIPT_GENERATE_FAILED')
   }
 
@@ -35,7 +34,7 @@ export const generateMockScript = ({ sourceText, promptText }: ScriptGenerationI
 }
 
 export const optimizeMockScript = (generatedScript: string): string => {
-  if (generatedScript.includes(MOCK_OPTIMIZE_FAIL_TOKEN)) {
+  if (hasAnyMockFailureToken([generatedScript], ['#mock-optimize-fail'])) {
     throw new Error('SCRIPT_OPTIMIZE_FAILED')
   }
 
@@ -45,10 +44,7 @@ export const optimizeMockScript = (generatedScript: string): string => {
     .map((segment) => segment.trim())
     .filter(Boolean)
 
-  const baseSegments =
-    normalized.length > 0
-      ? normalized
-      : ['第一幕：补充故事起点。', '第二幕：补充冲突升级。', '第三幕：补充成长收束。']
+  const baseSegments = normalized.length > 0 ? normalized : ['第一幕：补充故事起点。', '第二幕：补充冲突升级。', '第三幕：补充成长收束。']
 
   return baseSegments
     .map((segment, index) => {

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <aside class="storyboard-prompt-panel">
     <div class="storyboard-prompt-panel__card">
       <StoryboardTagGroup

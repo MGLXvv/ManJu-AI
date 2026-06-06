@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <section class="script-step">
     <div class="script-workbench-bg" aria-hidden="true"></div>
 
@@ -48,14 +48,6 @@
       </div>
     </div>
 
-    <Teleport to="body">
-      <Transition name="script-toast">
-        <div v-if="toastMessage" class="script-step__toast-stack" aria-live="polite">
-          <div class="script-step__toast">{{ toastMessage }}</div>
-        </div>
-      </Transition>
-    </Teleport>
-
     <AppConfirmDialog
       :open="leaveConfirmOpen"
       :title="leaveDialogCopy.title"
@@ -78,15 +70,18 @@ import ScriptInputPanel from '@/components/editor/script/ScriptInputPanel.vue'
 import ScriptPromptPanel from '@/components/editor/script/ScriptPromptPanel.vue'
 import ScriptResultPanel from '@/components/editor/script/ScriptResultPanel.vue'
 import { buildScriptDraftSnapshot, hasUnsavedScriptChanges } from '@/features/editor/scriptDraftState'
-import { canEnterStoryboard, generateMockScript, optimizeMockScript } from '@/features/editor/scriptGenerationState'
+import { validateEditorAdvance } from '@/features/editor/editorCompletionState'
+import { generateMockScript, optimizeMockScript } from '@/features/editor/scriptGenerationState'
 import { buildScriptLeaveDialogCopy, shouldInterceptScriptLeave } from '@/features/editor/scriptLeaveConfirmState'
 import { useEditorStore } from '@/stores/editor'
 import { useProjectStore } from '@/stores/project'
+import { useUiFeedbackStore } from '@/stores/uiFeedback'
 
 const router = useRouter()
 const route = useRoute()
 const editorStore = useEditorStore()
 const projectStore = useProjectStore()
+const uiFeedback = useUiFeedbackStore()
 
 const DEFAULT_PROMPT = '请将输入故事整理为适合漫画短剧制作的三幕结构，保留核心冲突、角色转折和后续可拆分的镜头线索。'
 
@@ -97,16 +92,14 @@ const generating = ref(false)
 const optimizing = ref(false)
 const submitting = ref(false)
 const selectedModelId = ref('gpt-4.0')
-const toastMessage = ref('')
 const leaveConfirmOpen = ref(false)
 const lastSavedSnapshot = ref(buildScriptDraftSnapshot({ sourceText: '', promptText: DEFAULT_PROMPT, generatedScript: '' }))
 const pendingLeaveTarget = ref<RouteLocationRaw | null>(null)
 const bypassLeaveGuard = ref(false)
-let toastTimer: number | null = null
 
 const projectId = computed(() => String(route.params.projectId ?? ''))
 const canGenerate = computed(() => Boolean(sourceText.value.trim() || promptText.value.trim()))
-const canEnterNext = computed(() => canEnterStoryboard(generatedScript.value))
+const canEnterNext = computed(() => Boolean(generatedScript.value.trim()))
 const isBusy = computed(() => generating.value || optimizing.value || submitting.value)
 const actionState = computed<'idle' | 'saving' | 'generating' | 'optimizing'>(() => {
   if (submitting.value) return 'saving'
@@ -126,13 +119,7 @@ const statusText = computed(() => {
       return isDirty.value ? '当前内容有修改，建议先保存' : '当前内容已同步到草稿'
   }
 })
-const resultPlaceholderText = computed(() => {
-  if (optimizing.value) {
-    return '正在优化剧本内容...'
-  }
-
-  return '正在生成剧本...'
-})
+const resultPlaceholderText = computed(() => (optimizing.value ? '正在优化剧本内容...' : '正在生成剧本...'))
 const currentSnapshot = computed(() =>
   buildScriptDraftSnapshot({
     sourceText: sourceText.value,
@@ -181,16 +168,8 @@ watch(generatedScript, (generated) => {
   editorStore.updateGeneratedScript(generated)
 })
 
-const showToast = (message: string): void => {
-  toastMessage.value = message
-  if (toastTimer) {
-    window.clearTimeout(toastTimer)
-  }
-
-  toastTimer = window.setTimeout(() => {
-    toastMessage.value = ''
-    toastTimer = null
-  }, 2400)
+const showToast = (message: string, tone: 'info' | 'success' | 'error' = 'info'): void => {
+  uiFeedback.showToast(message, { tone })
 }
 
 const resolveEditorError = (error: unknown, fallback: string): string => {
@@ -202,7 +181,7 @@ const resolveEditorError = (error: unknown, fallback: string): string => {
     case 'SCRIPT_GENERATE_FAILED':
       return '剧本生成失败，请调整文案或提示词后重试'
     case 'SCRIPT_OPTIMIZE_FAILED':
-      return 'AI 优化失败，请稍后再试'
+      return 'AI优化失败，请稍后再试'
     default:
       return fallback
   }
@@ -219,7 +198,7 @@ const persistDraft = async (): Promise<boolean> => {
     markSaved()
     return true
   } catch (error) {
-    showToast(resolveEditorError(error, '保存失败，请稍后再试'))
+    showToast(resolveEditorError(error, '保存失败，请稍后再试'), 'error')
     return false
   } finally {
     submitting.value = false
@@ -281,7 +260,7 @@ const handleImportText = (text: string): void => {
 const handleSave = async (): Promise<void> => {
   const saved = await persistDraft()
   if (saved) {
-    showToast('文案内容已保存')
+    showToast('文案内容已保存', 'success')
   }
 }
 
@@ -295,7 +274,7 @@ const handleDelete = async (): Promise<void> => {
   generatedScript.value = ''
   const saved = await persistDraft()
   if (saved) {
-    showToast('文案内容已清空')
+    showToast('文案内容已清空', 'success')
   }
 }
 
@@ -313,10 +292,10 @@ const handleGenerate = async (): Promise<void> => {
     })
     const saved = await persistDraft()
     if (saved) {
-      showToast('剧本生成完成')
+      showToast('剧本生成完成', 'success')
     }
   } catch (error) {
-    showToast(resolveEditorError(error, '剧本生成失败，请稍后再试'))
+    showToast(resolveEditorError(error, '剧本生成失败，请稍后再试'), 'error')
   } finally {
     generating.value = false
   }
@@ -333,18 +312,19 @@ const handleOptimize = async (): Promise<void> => {
     generatedScript.value = optimizeMockScript(generatedScript.value)
     const saved = await persistDraft()
     if (saved) {
-      showToast('剧本已完成 AI 优化')
+      showToast('剧本已完成 AI 优化', 'success')
     }
   } catch (error) {
-    showToast(resolveEditorError(error, 'AI 优化失败，请稍后再试'))
+    showToast(resolveEditorError(error, 'AI优化失败，请稍后再试'), 'error')
   } finally {
     optimizing.value = false
   }
 }
 
 const handleNext = async (): Promise<void> => {
-  if (!canEnterNext.value) {
-    showToast('请先生成剧本，再进入下一步')
+  const validation = validateEditorAdvance('scriptToSettings', { generatedScript: generatedScript.value })
+  if (!validation.ok) {
+    showToast(validation.message, 'error')
     return
   }
 
@@ -354,11 +334,12 @@ const handleNext = async (): Promise<void> => {
   }
 
   if (projectId.value) {
-    await projectStore.updateProjectStep(projectId.value, 'settings')
+    await projectStore.updateProjectStep(projectId.value, validation.nextStep)
   }
 
-  router.push({
-    name: 'editor-settings',
+  showToast(validation.successMessage, 'success')
+  await router.push({
+    name: validation.routeName,
     params: route.params,
   })
 }

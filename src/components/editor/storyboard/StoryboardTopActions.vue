@@ -3,6 +3,9 @@
     <EditorModelSelect />
 
     <div class="storyboard-top-actions__group">
+      <div v-if="saveStateLabel" class="storyboard-top-actions__save-state" :class="`is-${saveStateTone}`">
+        {{ saveStateLabel }}
+      </div>
       <button type="button" class="storyboard-top-actions__btn" @click="$emit('batch-generate')">{{ batchLabel }}</button>
       <button type="button" class="storyboard-top-actions__btn" @click="$emit('save-export')">{{ saveLabel }}</button>
       <button
@@ -24,11 +27,15 @@ withDefaults(
     batchLabel?: string
     saveLabel?: string
     nextLabel?: string
+    saveStateLabel?: string
+    saveStateTone?: 'saving' | 'dirty' | 'saved'
   }>(),
   {
     batchLabel: '批量操作',
     saveLabel: '保存并导出',
     nextLabel: '进入视频生成',
+    saveStateLabel: '',
+    saveStateTone: 'saved',
   },
 )
 

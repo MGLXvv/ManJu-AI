@@ -68,6 +68,7 @@
 }
 
 .dubbing-toolbar__filter,
+.dubbing-toolbar__save,
 .dubbing-toolbar__batch {
   height: 36px;
   padding: 0 16px;
@@ -78,6 +79,17 @@
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
+}
+
+.dubbing-toolbar__save:disabled,
+.dubbing-toolbar__batch:disabled,
+.dubbing-footer__primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.dubbing-toolbar__actions .storyboard-top-actions__save-state-pill {
+  margin-right: 4px;
 }
 
 .dubbing-toolbar__search {
@@ -286,15 +298,89 @@
   font-size: 12px;
 }
 
+.dubbing-role-card__table-row:has(.dubbing-role-card__line-play.is-playing) {
+  background:
+    linear-gradient(90deg, rgb(167 103 255 / 14%) 0%, rgb(240 166 255 / 4%) 72%, transparent 100%);
+}
+
 .dubbing-role-card__line-shot {
   color: #f0f0f0;
   font-weight: 500;
 }
 
+.dubbing-role-card__line-text-wrap {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .dubbing-role-card__line-text {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.dubbing-role-card__line-playing {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #d9b0ff;
+}
+
+.dubbing-role-card__line-playing-label {
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.dubbing-role-card__line-wave {
+  height: 12px;
+  display: inline-flex;
+  align-items: end;
+  gap: 2px;
+}
+
+.dubbing-role-card__line-wave span {
+  width: 2px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #a767ff 0%, #f0a6ff 100%);
+  animation: dubbing-line-wave 1s ease-in-out infinite;
+}
+
+.dubbing-role-card__line-wave span:nth-child(1) {
+  height: 5px;
+  animation-delay: 0s;
+}
+
+.dubbing-role-card__line-wave span:nth-child(2) {
+  height: 11px;
+  animation-delay: 0.12s;
+}
+
+.dubbing-role-card__line-wave span:nth-child(3) {
+  height: 7px;
+  animation-delay: 0.24s;
+}
+
+.dubbing-role-card__line-wave span:nth-child(4) {
+  height: 10px;
+  animation-delay: 0.36s;
+}
+
+@keyframes dubbing-line-wave {
+  0%,
+  100% {
+    transform: scaleY(0.72);
+    opacity: 0.58;
+  }
+
+  50% {
+    transform: scaleY(1.18);
+    opacity: 1;
+  }
 }
 
 .dubbing-role-card__line-play {
@@ -309,6 +395,26 @@
   display: grid;
   place-items: center;
   cursor: pointer;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+
+.dubbing-role-card__line-play.is-playing {
+  background: linear-gradient(180deg, #a767ff 0%, #f0a6ff 100%);
+  color: #17181c;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 18%);
+}
+
+.dubbing-role-card__table-row:has(.dubbing-role-card__line-play.is-playing) .dubbing-role-card__line-shot {
+  color: #fff;
+}
+
+.dubbing-role-card__line-play:disabled {
+  opacity: 0.32;
+  cursor: not-allowed;
 }
 
 .dubbing-role-card__footer {

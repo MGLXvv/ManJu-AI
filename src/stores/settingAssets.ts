@@ -1,5 +1,6 @@
 ﻿import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
+import { hasAnyMockFailureToken } from '@/features/shared/mockFailureState'
 import type { SettingAsset, SettingAssetType, SettingAssetTypeFilter, VoiceOption } from '@/types/settingAsset'
 
 const createImage = (_label: string, colorA: string, colorB: string, seed: number): string => {
@@ -86,6 +87,8 @@ const cloneAsset = (asset: SettingAsset): SettingAsset => ({
     : undefined,
 })
 
+const normalizeKeyword = (value: string): string => value.trim().toLocaleLowerCase()
+
 export const createDefaultSettingAssets = (): SettingAsset[] =>
   [
     createSeedAsset(0, 'character', '角色-男主', 'ready'),
@@ -106,10 +109,16 @@ export const useSettingAssetsStore = defineStore('setting-assets', () => {
   const activeType = ref<SettingAssetTypeFilter>('all')
 
   const filteredAssets = computed(() => {
-    const word = keyword.value.trim()
+    const word = normalizeKeyword(keyword.value)
     return assets.value.filter((asset) => {
       const typeMatch = activeType.value === 'all' || asset.type === activeType.value
-      const keywordMatch = !word || asset.title.includes(word)
+      const searchFields = [
+        asset.title,
+        asset.prompt,
+        asset.roleName ?? '',
+        ...(asset.voiceOptions?.map((item) => item.name) ?? []),
+      ].map(normalizeKeyword)
+      const keywordMatch = !word || searchFields.some((field) => field.includes(word))
       return typeMatch && keywordMatch
     })
   })
@@ -214,6 +223,11 @@ export const useSettingAssetsStore = defineStore('setting-assets', () => {
 
     assets.value = assets.value.map((asset) => (asset.id === id ? { ...asset, status: 'generating' } : asset))
     await new Promise((resolve) => window.setTimeout(resolve, 1400))
+
+    if (hasAnyMockFailureToken([target.title, target.prompt], ['#mock-image-fail'])) {
+      assets.value = assets.value.map((asset) => (asset.id === id ? { ...asset, status: 'failed' } : asset))
+      throw new Error('SETTING_IMAGE_GENERATE_FAILED')
+    }
 
     assets.value = assets.value.map((asset) => {
       if (asset.id !== id) {

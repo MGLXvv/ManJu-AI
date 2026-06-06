@@ -3,7 +3,7 @@
     <div class="storyboard-canvas" :class="{ 'is-generating': isGenerating }">
       <div class="storyboard-canvas__stage">
         <template v-if="isGenerating">
-          <div class="storyboard-canvas__loading">绛夊緟鎶藉浘涓?..</div>
+          <div class="storyboard-canvas__loading">正在生成分镜图...</div>
         </template>
         <template v-else-if="shot.imageUrl">
           <img class="storyboard-canvas__image" :src="shot.imageUrl" :alt="shot.title" />

@@ -1,4 +1,5 @@
 ﻿import { buildSettingDraftPatch } from '@/features/editor/settingDraftState'
+import { buildProjectArtifactFileName } from '@/features/shared/projectArtifactState'
 import type { SettingAsset } from '@/types/settingAsset'
 
 export interface ExportedSettingPayload {
@@ -21,12 +22,5 @@ export const buildSettingExportPayload = (assets: SettingAsset[]): ExportedSetti
 }
 
 export const buildSettingExportFileName = (projectId: string): string => {
-  const normalizedProjectId = (projectId || 'setting')
-    .trim()
-    .replace(/[\\/:*?"<>|]+/g, '-')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
-
-  return `${normalizedProjectId || 'setting'}-assets.json`
+  return buildProjectArtifactFileName(projectId || 'setting', 'setting')
 }

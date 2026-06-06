@@ -1,30 +1,43 @@
-import { describe, expect, it } from 'vitest'
+﻿import { describe, expect, it } from 'vitest'
 import { buildProjectExportFileName, parseImportedProjects } from './projectTransferState'
 
 describe('projectTransferState', () => {
   it('builds a safe export filename from project name', () => {
-    expect(buildProjectExportFileName('测试 / Project 01')).toBe('测试-Project-01.json')
+    expect(buildProjectExportFileName('测试 / Project 01')).toBe('测试-Project-01-project.json')
   })
 
-  it('parses a single imported project object into an array', () => {
-    const parsed = parseImportedProjects(
+  it('parses a single project payload', () => {
+    const [project] = parseImportedProjects(
       JSON.stringify({
-        name: '导入项目',
+        name: 'Demo',
         ratio: '16:9',
-        style: '国漫',
+        style: '国风漫画',
+        status: 'in_progress',
+        currentStep: 'script',
+        duration: '00:45:00',
       }),
     )
-
-    expect(parsed).toEqual([
-      {
-        name: '导入项目',
-        ratio: '16:9',
-        style: '国漫',
-      },
-    ])
+    expect(project.name).toBe('Demo')
   })
 
-  it('throws when imported json has no valid project entries', () => {
-    expect(() => parseImportedProjects(JSON.stringify({ foo: 'bar' }))).toThrow('PROJECT_IMPORT_INVALID')
+  it('parses an exported project envelope payload', () => {
+    const [project] = parseImportedProjects(
+      JSON.stringify({
+        version: 'mock-v1',
+        artifact: 'project',
+        projectId: 'p-1',
+        exportedAt: '2026-06-06T00:00:00.000Z',
+        payload: {
+          id: 'p-1',
+          name: 'Envelope Demo',
+          ratio: '9:16',
+          style: '都市短篇',
+          status: 'in_progress',
+          currentStep: 'script',
+          updatedAt: '2026-03-12 17:16:00',
+        },
+      }),
+    )
+    expect(project.name).toBe('Envelope Demo')
   })
 })

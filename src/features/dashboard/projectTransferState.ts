@@ -1,3 +1,4 @@
+﻿import { buildProjectArtifactFileName, type ProjectArtifactEnvelope } from '@/features/shared/projectArtifactState'
 import type { Project } from '@/types/project'
 
 export interface ImportedProjectPayload {
@@ -9,6 +10,11 @@ export interface ImportedProjectPayload {
   duration?: string
   coverUrl?: string
   favorite?: boolean
+}
+
+interface ProjectArtifactProjectPayload extends ImportedProjectPayload {
+  id?: string
+  updatedAt?: string
 }
 
 const normalizeText = (value: unknown): string => (typeof value === 'string' ? value.trim() : '')
@@ -65,6 +71,19 @@ const sanitizeImportedProject = (value: unknown): ImportedProjectPayload | null 
   return sanitized
 }
 
+const unwrapImportedPayloads = (value: unknown): unknown => {
+  if (!value || typeof value !== 'object') {
+    return value
+  }
+
+  const record = value as Record<string, unknown>
+  if (record.version === 'mock-v1' && record.artifact === 'project' && 'payload' in record) {
+    return record.payload as ProjectArtifactEnvelope<ProjectArtifactProjectPayload>['payload']
+  }
+
+  return value
+}
+
 export const parseImportedProjects = (raw: string): ImportedProjectPayload[] => {
   let parsed: unknown
 
@@ -74,7 +93,10 @@ export const parseImportedProjects = (raw: string): ImportedProjectPayload[] => 
     throw new Error('PROJECT_IMPORT_INVALID_JSON')
   }
 
-  const normalized = (Array.isArray(parsed) ? parsed : [parsed]).map(sanitizeImportedProject).filter(Boolean) as ImportedProjectPayload[]
+  const normalized = (Array.isArray(parsed) ? parsed : [parsed])
+    .map(unwrapImportedPayloads)
+    .map(sanitizeImportedProject)
+    .filter(Boolean) as ImportedProjectPayload[]
 
   if (!normalized.length) {
     throw new Error('PROJECT_IMPORT_INVALID')
@@ -84,12 +106,5 @@ export const parseImportedProjects = (raw: string): ImportedProjectPayload[] => 
 }
 
 export const buildProjectExportFileName = (name: string): string => {
-  const sanitized = name
-    .trim()
-    .replace(/[\\/:*?"<>|]+/g, ' ')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
-
-  return `${sanitized || 'project'}.json`
+  return buildProjectArtifactFileName(name, 'project')
 }

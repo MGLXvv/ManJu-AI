@@ -49,14 +49,6 @@ const createSeedAsset = (index: number, type: SettingAssetType, title: string, s
         ]
       : []
 
-  const candidates = [
-    createImage(`${title}-候选1`, '#452f73', '#843f96', index * 9 + 1),
-    createImage(`${title}-候选2`, '#32426f', '#585ca2', index * 9 + 2),
-    createImage(`${title}-候选3`, '#6a2f43', '#b54872', index * 9 + 3),
-    createImage(`${title}-候选4`, '#4b3c21', '#a88954', index * 9 + 4),
-    createImage(`${title}-候选5`, '#2f3340', '#5f6f8f', index * 9 + 5),
-  ]
-
   return {
     id: `asset-${index + 1}`,
     type,
@@ -65,7 +57,7 @@ const createSeedAsset = (index: number, type: SettingAssetType, title: string, s
     prompt:
       'masterpiece, best quality, 1girl, long hair, beautiful girl, flipping hair, hand in hair, leaning on car, sleek sports car, urban street background, sunset, golden hour, cinematic lighting, vibrant colors, detailed outfit,',
     imageUrls,
-    candidateImages: candidates,
+    candidateImages: [...imageUrls],
     selectedVoiceId: type === 'character' ? 'male-mid-deep' : undefined,
     voiceOptions: type === 'character' ? getDefaultVoiceOptions() : undefined,
     status,
@@ -180,15 +172,26 @@ export const useSettingAssetsStore = defineStore('setting-assets', () => {
     assets.value = assets.value.map((asset) => (asset.id === id ? { ...asset, favorite: !asset.favorite } : asset))
   }
 
+  const setFavoriteForAssets = (ids: string[], favorite = true): void => {
+    if (ids.length === 0) {
+      return
+    }
+
+    const idSet = new Set(ids)
+    assets.value = assets.value.map((asset) => (idSet.has(asset.id) ? { ...asset, favorite } : asset))
+  }
+
   const uploadAssetImage = (id: string, imageUrl: string): void => {
     assets.value = assets.value.map((asset) => {
       if (asset.id !== id) {
         return asset
       }
+      const nextCandidates = [imageUrl, ...(asset.candidateImages ?? [])].slice(0, 12)
       return {
         ...asset,
         status: 'ready',
         imageUrls: [imageUrl, ...asset.imageUrls].slice(0, 6),
+        candidateImages: nextCandidates,
       }
     })
   }
@@ -255,6 +258,7 @@ export const useSettingAssetsStore = defineStore('setting-assets', () => {
     updateAsset,
     deleteAsset,
     toggleFavorite,
+    setFavoriteForAssets,
     uploadAssetImage,
     selectCandidateImage,
     generateAssetImage,

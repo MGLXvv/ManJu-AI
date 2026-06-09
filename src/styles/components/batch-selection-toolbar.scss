@@ -48,10 +48,25 @@
 }
 
 .batch-selection-toolbar__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   border: 0;
   background: linear-gradient(90deg, #b969ff 0%, #ef86ff 100%);
   color: #fff;
   font-weight: 600;
+}
+
+.batch-selection-toolbar__action.is-secondary {
+  border: 1px solid rgb(255 255 255 / 16%);
+  background: #232425;
+  color: #d2d2d2;
+}
+
+.batch-selection-toolbar__action.is-danger {
+  background: linear-gradient(90deg, #b969ff 0%, #ef86ff 100%);
+  color: #fff;
 }
 
 .batch-selection-toolbar__action:disabled {

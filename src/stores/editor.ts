@@ -106,6 +106,17 @@ export const useEditorStore = defineStore('editor', () => {
     }
   }
 
+  const updateStoryboardGenerationMode = (mode: 'multi-param' | 'image' | null): void => {
+    if (!draft.value) {
+      return
+    }
+
+    draft.value = {
+      ...draft.value,
+      storyboardGenerationMode: mode,
+    }
+  }
+
   const updateStoryboardShots = (shots: StoryboardShot[]): void => {
     if (!draft.value) {
       return
@@ -141,6 +152,7 @@ export const useEditorStore = defineStore('editor', () => {
     updateScriptPrompt,
     updateGeneratedScript,
     updateSettingAssets,
+    updateStoryboardGenerationMode,
     updateStoryboardShots,
     updateDubbingDraft,
   }

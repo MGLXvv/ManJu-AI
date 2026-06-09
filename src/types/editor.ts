@@ -58,6 +58,7 @@ export interface EditorDraft {
   scenes: SceneSetting[]
   props: PropSetting[]
   settingAssets: SettingAsset[]
+  storyboardGenerationMode: 'multi-param' | 'image' | null
   shots: Shot[]
   dubbing: DubbingDraft
 }

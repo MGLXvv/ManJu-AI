@@ -23,17 +23,44 @@
         <ScriptInputPanel v-model="sourceText" :disabled="isBusy" @import-text="handleImportText" />
 
         <div class="script-workbench-card__right">
-          <ScriptPromptPanel
-            v-model="promptText"
-            :disabled="isBusy"
-            :status-text="statusText"
-            :action-state="actionState"
-            :can-generate="canGenerate"
-            @save="handleSave"
-            @open-template="handleOpenTemplate"
-            @delete="handleDelete"
-            @generate="handleGenerate"
-          />
+          <div
+            ref="promptWrapRef"
+            class="script-workbench-card__prompt-wrap"
+            :class="{ 'is-template-open': templatePanelOpen }"
+          >
+            <ScriptPromptPanel
+              v-model="promptText"
+              :disabled="isBusy"
+              :status-text="statusText"
+              :action-state="actionState"
+              :can-generate="canGenerate"
+              @save="handleSave"
+              @open-template="handleOpenTemplate"
+              @delete="handleDelete"
+              @generate="handleGenerate"
+            />
+
+            <ScriptTemplatePopover
+              v-if="templatePanelOpen"
+              ref="templatePopoverRef"
+              :style="templatePopoverStyle"
+              :templates="scriptTemplateStore.templates"
+              :selected-template-id="selectedTemplateId"
+              :mode="templatePanelMode"
+              :form-name="templateForm.name"
+              :form-content="templateForm.content"
+              :errors="templateFormErrors"
+              :saving="templateSubmitting"
+              @apply-template="handleApplyTemplate"
+              @start-create="handleStartCreateTemplate"
+              @start-edit="handleStartEditTemplate"
+              @request-delete="handleRequestDeleteTemplate"
+              @cancel-edit="handleCancelTemplateEdit"
+              @save-template="handleSaveTemplate"
+              @update:form-name="handleTemplateNameChange"
+              @update:form-content="handleTemplateContentChange"
+            />
+          </div>
 
           <div class="script-workbench-card__dash-line"></div>
 
@@ -58,30 +85,63 @@
       @confirm="confirmLeave"
       @cancel="cancelLeaveConfirm"
     />
+
+    <AppConfirmDialog
+      :open="templateDiscardConfirmOpen"
+      title="确定放弃模板编辑？"
+      description="当前模板内容尚未保存，关闭后本次编辑会丢失。"
+      confirm-text="确认放弃"
+      cancel-text="继续编辑"
+      confirm-tone="danger"
+      @confirm="confirmDiscardTemplateChanges"
+      @cancel="cancelDiscardTemplateChanges"
+    />
+
+    <AppConfirmDialog
+      :open="templateDeleteConfirmOpen"
+      title="确定删除当前模板？"
+      description="删除后该模板将无法继续在提示词区直接复用。"
+      confirm-text="确认删除"
+      cancel-text="取消"
+      confirm-tone="danger"
+      @confirm="confirmDeleteTemplate"
+      @cancel="cancelDeleteTemplate"
+    />
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter, type RouteLocationRaw } from 'vue-router'
 import AppConfirmDialog from '@/components/common/AppConfirmDialog.vue'
 import EditorModelSelect from '@/components/editor/common/EditorModelSelect.vue'
 import ScriptInputPanel from '@/components/editor/script/ScriptInputPanel.vue'
 import ScriptPromptPanel from '@/components/editor/script/ScriptPromptPanel.vue'
 import ScriptResultPanel from '@/components/editor/script/ScriptResultPanel.vue'
+import ScriptTemplatePopover from '@/components/editor/script/ScriptTemplatePopover.vue'
 import { buildScriptDraftSnapshot, hasUnsavedScriptChanges } from '@/features/editor/scriptDraftState'
 import { validateEditorAdvance } from '@/features/editor/editorCompletionState'
 import { generateMockScript, optimizeMockScript } from '@/features/editor/scriptGenerationState'
 import { buildScriptLeaveDialogCopy, shouldInterceptScriptLeave } from '@/features/editor/scriptLeaveConfirmState'
+import {
+  buildScriptTemplateInput,
+  createEmptyScriptTemplateInput,
+  hasScriptTemplateInputChanges,
+  validateScriptTemplateInput,
+  type ScriptTemplateFormErrors,
+} from '@/features/editor/scriptTemplateState'
 import { useEditorStore } from '@/stores/editor'
 import { useProjectStore } from '@/stores/project'
+import { useScriptTemplateStore } from '@/stores/scriptTemplates'
 import { useUiFeedbackStore } from '@/stores/uiFeedback'
+import type { ScriptTemplateInput } from '@/types/scriptTemplate'
 
 const router = useRouter()
 const route = useRoute()
 const editorStore = useEditorStore()
 const projectStore = useProjectStore()
 const uiFeedback = useUiFeedbackStore()
+const scriptTemplateStore = useScriptTemplateStore()
 
 const DEFAULT_PROMPT = '请将输入故事整理为适合漫画短剧制作的三幕结构，保留核心冲突、角色转折和后续可拆分的镜头线索。'
 
@@ -93,6 +153,21 @@ const optimizing = ref(false)
 const submitting = ref(false)
 const selectedModelId = ref('gpt-4.0')
 const leaveConfirmOpen = ref(false)
+const templatePanelOpen = ref(false)
+const templatePanelMode = ref<'list' | 'create' | 'edit'>('list')
+const templateSubmitting = ref(false)
+const promptWrapRef = ref<HTMLElement | null>(null)
+const templatePopoverRef = ref<HTMLElement | { $el?: HTMLElement } | null>(null)
+const templatePopoverStyle = ref<Record<string, string>>({})
+const templateDiscardConfirmOpen = ref(false)
+const templateDiscardAction = ref<'close' | 'back-to-list'>('close')
+const templateDeleteConfirmOpen = ref(false)
+const selectedTemplateId = ref<string | null>(null)
+const editingTemplateId = ref<string | null>(null)
+const pendingDeleteTemplateId = ref<string | null>(null)
+const templateForm = ref<ScriptTemplateInput>(createEmptyScriptTemplateInput())
+const templateInitialForm = ref<ScriptTemplateInput>(createEmptyScriptTemplateInput())
+const templateFormErrors = ref<ScriptTemplateFormErrors>({})
 const lastSavedSnapshot = ref(buildScriptDraftSnapshot({ sourceText: '', promptText: DEFAULT_PROMPT, generatedScript: '' }))
 const pendingLeaveTarget = ref<RouteLocationRaw | null>(null)
 const bypassLeaveGuard = ref(false)
@@ -135,6 +210,52 @@ const isDirty = computed(() =>
   }),
 )
 const leaveDialogCopy = buildScriptLeaveDialogCopy()
+const templateFormDirty = computed(() =>
+  hasScriptTemplateInputChanges(templateInitialForm.value, templateForm.value),
+)
+
+const updateTemplatePopoverPosition = (): void => {
+  const wrapEl = promptWrapRef.value
+  const popoverEl = (templatePopoverRef.value &&
+    '$el' in templatePopoverRef.value &&
+    templatePopoverRef.value.$el
+    ? templatePopoverRef.value.$el
+    : templatePopoverRef.value) as HTMLElement | null
+  const promptCardEl = wrapEl?.querySelector<HTMLElement>('.script-prompt-card')
+
+  if (!wrapEl || !popoverEl || !promptCardEl) {
+    return
+  }
+
+  const wrapRect = wrapEl.getBoundingClientRect()
+  const promptCardRect = promptCardEl.getBoundingClientRect()
+  const width = promptCardRect.width
+  const left = promptCardRect.left - wrapRect.left
+  const top = promptCardRect.bottom - wrapRect.top - 9
+
+  templatePopoverStyle.value = {
+    left: `${left}px`,
+    top: `${top}px`,
+    width: `${width}px`,
+  }
+}
+
+const handleGlobalPointerDown = (event: PointerEvent): void => {
+  if (!templatePanelOpen.value) {
+    return
+  }
+
+  const target = event.target as Node | null
+  if (!target) {
+    return
+  }
+
+  if (promptWrapRef.value?.contains(target)) {
+    return
+  }
+
+  handleRequestCloseTemplatePanel()
+}
 
 watch(
   projectId,
@@ -234,10 +355,13 @@ const handleBeforeUnload = (event: BeforeUnloadEvent): void => {
 
 onMounted(() => {
   window.addEventListener('beforeunload', handleBeforeUnload)
+  document.addEventListener('pointerdown', handleGlobalPointerDown)
+  scriptTemplateStore.ensureLoaded()
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('beforeunload', handleBeforeUnload)
+  document.removeEventListener('pointerdown', handleGlobalPointerDown)
 })
 
 onBeforeRouteLeave((to) => {
@@ -265,7 +389,17 @@ const handleSave = async (): Promise<void> => {
 }
 
 const handleOpenTemplate = (): void => {
-  promptText.value = '请将输入故事拆分为适合分镜制作的镜头段落，每段包含场景、角色动作、台词或旁白，并标注情绪变化。'
+  if (!templatePanelOpen.value) {
+    scriptTemplateStore.ensureLoaded()
+  }
+
+  templatePanelMode.value = 'list'
+  templateFormErrors.value = {}
+  templatePanelOpen.value = !templatePanelOpen.value
+
+  if (templatePanelOpen.value) {
+    void nextTick(updateTemplatePopoverPosition)
+  }
 }
 
 const handleDelete = async (): Promise<void> => {
@@ -342,5 +476,176 @@ const handleNext = async (): Promise<void> => {
     name: validation.routeName,
     params: route.params,
   })
+}
+
+const resetTemplateEditor = (): void => {
+  templatePanelMode.value = 'list'
+  editingTemplateId.value = null
+  templateForm.value = createEmptyScriptTemplateInput()
+  templateInitialForm.value = createEmptyScriptTemplateInput()
+  templateFormErrors.value = {}
+}
+
+const handleApplyTemplate = (templateId: string): void => {
+  const template = scriptTemplateStore.templates.find((item) => item.id === templateId)
+  if (!template) {
+    return
+  }
+
+  selectedTemplateId.value = template.id
+  promptText.value = template.content
+  templatePanelOpen.value = false
+  resetTemplateEditor()
+  showToast(`已应用模板：${template.name}`, 'success')
+}
+
+const handleStartCreateTemplate = (): void => {
+  templatePanelMode.value = 'create'
+  editingTemplateId.value = null
+  templateForm.value = createEmptyScriptTemplateInput()
+  templateInitialForm.value = createEmptyScriptTemplateInput()
+  templateFormErrors.value = {}
+  void nextTick(updateTemplatePopoverPosition)
+}
+
+const handleStartEditTemplate = (templateId: string): void => {
+  const template = scriptTemplateStore.templates.find((item) => item.id === templateId)
+  if (!template) {
+    showToast('未找到要修改的模板', 'error')
+    return
+  }
+
+  selectedTemplateId.value = template.id
+  editingTemplateId.value = template.id
+  templatePanelMode.value = 'edit'
+  templateForm.value = buildScriptTemplateInput(template)
+  templateInitialForm.value = buildScriptTemplateInput(template)
+  templateFormErrors.value = {}
+  void nextTick(updateTemplatePopoverPosition)
+}
+
+const handleCancelTemplateEdit = (): void => {
+  if (templateFormDirty.value) {
+    templateDiscardAction.value = 'back-to-list'
+    templateDiscardConfirmOpen.value = true
+    return
+  }
+
+  resetTemplateEditor()
+}
+
+const handleRequestCloseTemplatePanel = (): void => {
+  if (templatePanelMode.value !== 'list' && templateFormDirty.value) {
+    templateDiscardAction.value = 'close'
+    templateDiscardConfirmOpen.value = true
+    return
+  }
+
+  templatePanelOpen.value = false
+  templatePopoverStyle.value = {}
+  resetTemplateEditor()
+}
+
+const handleTemplateNameChange = (value: string): void => {
+  templateForm.value = {
+    ...templateForm.value,
+    name: value,
+  }
+  templateFormErrors.value = {
+    ...templateFormErrors.value,
+    name: undefined,
+  }
+}
+
+const handleTemplateContentChange = (value: string): void => {
+  templateForm.value = {
+    ...templateForm.value,
+    content: value,
+  }
+  templateFormErrors.value = {
+    ...templateFormErrors.value,
+    content: undefined,
+  }
+}
+
+const cancelDiscardTemplateChanges = (): void => {
+  templateDiscardConfirmOpen.value = false
+}
+
+const handleRequestDeleteTemplate = (templateId: string): void => {
+  pendingDeleteTemplateId.value = templateId
+  templateDeleteConfirmOpen.value = true
+}
+
+const cancelDeleteTemplate = (): void => {
+  templateDeleteConfirmOpen.value = false
+  pendingDeleteTemplateId.value = null
+}
+
+const confirmDeleteTemplate = async (): Promise<void> => {
+  const templateId = pendingDeleteTemplateId.value
+  if (!templateId) {
+    return
+  }
+
+  templateSubmitting.value = true
+  try {
+    await scriptTemplateStore.deleteTemplate(templateId)
+    if (selectedTemplateId.value === templateId) {
+      selectedTemplateId.value = null
+    }
+    if (editingTemplateId.value === templateId) {
+      resetTemplateEditor()
+    }
+    showToast('提示词模板已删除', 'success')
+  } catch {
+    showToast('模板删除失败，请稍后再试', 'error')
+  } finally {
+    templateSubmitting.value = false
+    templateDeleteConfirmOpen.value = false
+    pendingDeleteTemplateId.value = null
+  }
+}
+
+const confirmDiscardTemplateChanges = (): void => {
+  templateDiscardConfirmOpen.value = false
+  if (templateDiscardAction.value === 'close') {
+    templatePanelOpen.value = false
+    templatePopoverStyle.value = {}
+  }
+  resetTemplateEditor()
+}
+
+const handleSaveTemplate = async (): Promise<void> => {
+  const validation = validateScriptTemplateInput(
+    scriptTemplateStore.templates,
+    templateForm.value,
+    editingTemplateId.value,
+  )
+
+  if (!validation.ok) {
+    templateFormErrors.value = validation.errors
+    return
+  }
+
+  templateSubmitting.value = true
+  try {
+    if (templatePanelMode.value === 'create') {
+      const created = await scriptTemplateStore.createTemplate(validation.value)
+      selectedTemplateId.value = created.id
+      showToast('提示词模板已添加', 'success')
+    } else if (editingTemplateId.value) {
+      const updated = await scriptTemplateStore.updateTemplate(editingTemplateId.value, validation.value)
+      selectedTemplateId.value = updated.id
+      showToast('提示词模板已更新', 'success')
+    }
+
+    templatePanelOpen.value = false
+    resetTemplateEditor()
+  } catch {
+    showToast('模板保存失败，请稍后再试', 'error')
+  } finally {
+    templateSubmitting.value = false
+  }
 }
 </script>

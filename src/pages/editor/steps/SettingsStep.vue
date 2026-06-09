@@ -9,25 +9,24 @@
         @add="openCreateModal"
         @batch="handleBatch"
         @save-export="handleSaveExport"
-        @next="goImageGenerate"
+        @next="openGenerationModeDialog"
       />
 
       <SettingTabs v-model="activeType" :counts="counts" />
 
       <BatchSelectionToolbar
         v-if="batchMode"
-        action-label="批量删除"
         primary-label="本页全选"
         secondary-label="全部资产"
         :selected-count="selectedBatchIds.length"
         :total-count="assetsStore.assets.length"
         :primary-selected="isFilteredFullySelected"
         :secondary-selected="isAllSelected"
-        :action-disabled="selectedBatchIds.length === 0"
+        :actions="batchActions"
         @exit="exitBatchMode"
         @toggle-primary="toggleSelectFiltered"
         @toggle-secondary="toggleSelectAll"
-        @action="handleBatchDelete"
+        @action="handleBatchAction"
       />
 
       <AssetGrid
@@ -49,6 +48,52 @@
 
     <CreateAssetModal v-model:open="createModalOpen" @submit="createAsset" />
     <AssetPreviewModal v-model:open="previewOpen" :asset="previewAsset" />
+
+    <div v-if="generationModeDialogOpen" class="setting-generation-mode-dialog">
+      <div class="setting-generation-mode-dialog__overlay" @click="closeGenerationModeDialog"></div>
+      <div class="setting-generation-mode-dialog__panel">
+        <div class="setting-generation-mode-dialog__header">
+          <h2>选择生成方式</h2>
+          <p>进入分镜生成前，先确定本次生成模式。</p>
+        </div>
+
+        <div class="setting-generation-mode-dialog__options">
+          <button
+            type="button"
+            class="setting-generation-mode-dialog__option"
+            :class="{ 'is-active': pendingStoryboardMode === 'multi-param' }"
+            @click="pendingStoryboardMode = 'multi-param'"
+          >
+            <span class="setting-generation-mode-dialog__option-title">多参生成</span>
+            <span class="setting-generation-mode-dialog__option-desc">保留更多可调参数，适合精细控制分镜。</span>
+          </button>
+
+          <button
+            type="button"
+            class="setting-generation-mode-dialog__option"
+            :class="{ 'is-active': pendingStoryboardMode === 'image' }"
+            @click="pendingStoryboardMode = 'image'"
+          >
+            <span class="setting-generation-mode-dialog__option-title">图片生成</span>
+            <span class="setting-generation-mode-dialog__option-desc">以图片生成流程进入，适合快速出图。</span>
+          </button>
+        </div>
+
+        <div class="setting-generation-mode-dialog__actions">
+          <button type="button" class="setting-generation-mode-dialog__cancel" @click="closeGenerationModeDialog">
+            取消
+          </button>
+          <button
+            type="button"
+            class="setting-generation-mode-dialog__confirm"
+            :disabled="submitting"
+            @click="confirmGenerationMode"
+          >
+            {{ submitting ? '进入中' : '确认进入' }}
+          </button>
+        </div>
+      </div>
+    </div>
 
     <AppConfirmDialog
       :open="leaveConfirmOpen"
@@ -80,6 +125,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter, type RouteLocationRaw } from 'vue-router'
 import AppConfirmDialog from '@/components/common/AppConfirmDialog.vue'
+import type { AppIconName } from '@/components/icons/iconRegistry'
 import BatchSelectionToolbar from '@/components/editor/common/BatchSelectionToolbar.vue'
 import AssetGrid from '@/components/editor/setting/AssetGrid.vue'
 import AssetPreviewModal from '@/components/editor/setting/AssetPreviewModal.vue'
@@ -108,6 +154,8 @@ const uiFeedback = useUiFeedbackStore()
 const createModalOpen = ref(false)
 const previewOpen = ref(false)
 const previewAsset = ref<SettingAsset | null>(null)
+const generationModeDialogOpen = ref(false)
+const pendingStoryboardMode = ref<'multi-param' | 'image'>('multi-param')
 const selectedAssetId = ref('')
 const batchMode = ref(false)
 const selectedBatchIds = ref<string[]>([])
@@ -142,6 +190,16 @@ const isAllSelected = computed(
 )
 const leaveDialogCopy = buildSettingLeaveDialogCopy()
 const deleteDialogCopy = computed(() => buildSettingDeleteDialogCopy(Math.max(pendingDeleteIds.value.length, 1)))
+const batchActions = computed<
+  Array<{ key: string; label: string; icon: AppIconName; disabled: boolean; tone: 'secondary' | 'danger' }>
+>(() => {
+  const disabled = selectedBatchIds.value.length === 0
+  return [
+    { key: 'favorite', label: '批量收藏', icon: 'asset-star-outline', disabled, tone: 'secondary' as const },
+    { key: 'export', label: '批量导出', icon: 'card-upload', disabled, tone: 'secondary' as const },
+    { key: 'delete', label: '批量删除', icon: 'action-delete', disabled, tone: 'danger' as const },
+  ]
+})
 
 watch(
   projectId,
@@ -211,6 +269,19 @@ const createAsset = (payload: { type: Exclude<SettingAssetTypeFilter, 'all'>; ti
 const openPreview = (asset: SettingAsset): void => {
   previewAsset.value = asset
   previewOpen.value = true
+}
+
+const openGenerationModeDialog = (): void => {
+  pendingStoryboardMode.value = editorStore.draft?.storyboardGenerationMode ?? 'multi-param'
+  generationModeDialogOpen.value = true
+}
+
+const closeGenerationModeDialog = (): void => {
+  if (submitting.value) {
+    return
+  }
+
+  generationModeDialogOpen.value = false
 }
 
 const handleGenerate = async (id: string): Promise<void> => {
@@ -315,6 +386,62 @@ const handleBatchDelete = (): void => {
   requestDelete(selectedBatchIds.value)
 }
 
+const handleBatchFavorite = (): void => {
+  if (selectedBatchIds.value.length === 0) {
+    return
+  }
+
+  assetsStore.setFavoriteForAssets(selectedBatchIds.value, true)
+  showToast(`已收藏 ${selectedBatchIds.value.length} 项素材`, 'success')
+}
+
+const handleBatchExport = (): void => {
+  if (selectedBatchIds.value.length === 0) {
+    return
+  }
+
+  const selectedAssets = assetsStore.assets.filter((asset) => selectedBatchIds.value.includes(asset.id))
+  const payload = {
+    type: 'setting-batch-export-placeholder',
+    projectId: projectId.value || 'setting',
+    exportedAt: new Date().toISOString(),
+    count: selectedAssets.length,
+    items: selectedAssets.map((asset) => ({
+      id: asset.id,
+      type: asset.type,
+      title: asset.title,
+      prompt: asset.prompt,
+      favorite: Boolean(asset.favorite),
+      imageCount: asset.imageUrls.length,
+      candidateCount: asset.candidateImages?.length ?? 0,
+    })),
+  }
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' })
+  const objectUrl = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = objectUrl
+  link.download = `${projectId.value || 'setting'}-batch-export-placeholder.json`
+  link.click()
+  URL.revokeObjectURL(objectUrl)
+
+  showToast(`已导出 ${selectedAssets.length} 项素材`, 'success')
+}
+
+const handleBatchAction = (actionKey?: string): void => {
+  switch (actionKey) {
+    case 'favorite':
+      handleBatchFavorite()
+      return
+    case 'export':
+      handleBatchExport()
+      return
+    case 'delete':
+    default:
+      handleBatchDelete()
+  }
+}
+
 const handleBatch = (): void => {
   if (batchMode.value) {
     exitBatchMode()
@@ -395,17 +522,20 @@ onBeforeRouteLeave((to) => {
   return false
 })
 
-const goImageGenerate = async (): Promise<void> => {
+const confirmGenerationMode = async (): Promise<void> => {
   const validation = validateEditorAdvance('settingsToStoryboard', { assets: assetsStore.assets })
   if (!validation.ok) {
     showToast(validation.message, 'error')
     return
   }
 
+  editorStore.updateStoryboardGenerationMode(pendingStoryboardMode.value)
   const saved = await persistSettingDraft()
   if (!saved) {
     return
   }
+
+  generationModeDialogOpen.value = false
 
   if (projectId.value) {
     await projectStore.updateProjectStep(projectId.value, validation.nextStep)

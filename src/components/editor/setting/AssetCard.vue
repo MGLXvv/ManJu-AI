@@ -92,7 +92,7 @@
 
     </div>
       <AssetCandidateList
-        v-if="isExpanded"
+        v-if="showCandidateLibrary"
         class="asset-card__candidates"
         :images="candidateImages"
         :title="asset.title"
@@ -138,15 +138,18 @@ const emit = defineEmits<{
 const uploadRef = ref<HTMLInputElement | null>(null)
 const activePanel = ref<'prompt' | 'voice'>(props.asset.type === 'character' ? 'voice' : 'prompt')
 const selectedVoiceId = ref(props.asset.selectedVoiceId ?? props.asset.voiceOptions?.[0]?.id ?? '')
-const selectedCandidateIndex = ref(0)
 
 const isCharacter = computed(() => props.asset.type === 'character')
 const voiceOptions = computed(() => props.asset.voiceOptions ?? [])
-const candidateImages = computed(() => {
-  if (props.asset.candidateImages && props.asset.candidateImages.length > 0) {
-    return props.asset.candidateImages
+const candidateImages = computed(() => props.asset.candidateImages ?? [])
+const showCandidateLibrary = computed(() => props.isExpanded && candidateImages.value.length >= 2)
+const selectedCandidateIndex = computed(() => {
+  const currentImage = props.asset.imageUrls[0]
+  if (!currentImage) {
+    return 0
   }
-  return props.asset.imageUrls
+  const currentIndex = candidateImages.value.findIndex((image) => image === currentImage)
+  return currentIndex >= 0 ? currentIndex : 0
 })
 
 const displayImages = computed(() => {
@@ -171,7 +174,6 @@ watch(
   () => {
     activePanel.value = props.asset.type === 'character' ? 'voice' : 'prompt'
     selectedVoiceId.value = props.asset.selectedVoiceId ?? props.asset.voiceOptions?.[0]?.id ?? ''
-    selectedCandidateIndex.value = 0
   },
 )
 
@@ -207,7 +209,6 @@ const onFileChange = (event: Event): void => {
 }
 
 const onSelectCandidate = (payload: { image: string; index: number }): void => {
-  selectedCandidateIndex.value = payload.index
   emit('select-candidate', { id: props.asset.id, imageUrl: payload.image })
 }
 

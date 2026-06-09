@@ -12,6 +12,7 @@ export const createDefaultEditorDraft = (projectId: string): EditorDraft => ({
   scenes: [],
   props: [],
   settingAssets: [],
+  storyboardGenerationMode: null,
   shots: [],
   dubbing: {
     modelId: 'index-tts',

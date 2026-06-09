@@ -23,7 +23,30 @@
       >
         {{ secondaryLabel }}
       </button>
-      <button type="button" class="batch-selection-toolbar__action" :disabled="actionDisabled" @click="$emit('action')">
+      <template v-if="actions?.length">
+        <button
+          v-for="action in actions"
+          :key="action.key"
+          type="button"
+          class="batch-selection-toolbar__action"
+          :class="{
+            'is-secondary': action.tone === 'secondary',
+            'is-danger': action.tone === 'danger',
+          }"
+          :disabled="action.disabled"
+          @click="$emit('action', action.key)"
+        >
+          <AppIcon v-if="action.icon" :name="action.icon" :size="16" />
+          <span>{{ action.label }}</span>
+        </button>
+      </template>
+      <button
+        v-else
+        type="button"
+        class="batch-selection-toolbar__action"
+        :disabled="actionDisabled"
+        @click="$emit('action')"
+      >
         {{ actionLabel }}
       </button>
     </div>
@@ -31,23 +54,37 @@
 </template>
 
 <script setup lang="ts">
+import AppIcon from '@/components/icons/AppIcon.vue'
+import type { AppIconName } from '@/components/icons/iconRegistry'
+
+interface BatchToolbarAction {
+  key: string
+  label: string
+  icon?: AppIconName
+  disabled?: boolean
+  tone?: 'primary' | 'secondary' | 'danger'
+}
+
 withDefaults(
   defineProps<{
     selectedCount: number
     totalCount: number
-    actionLabel: string
+    actionLabel?: string
     actionDisabled?: boolean
     primaryLabel?: string
     primarySelected?: boolean
     secondaryLabel?: string
     secondarySelected?: boolean
+    actions?: BatchToolbarAction[]
   }>(),
   {
+    actionLabel: '执行操作',
     actionDisabled: false,
     primaryLabel: '本页全选',
     primarySelected: false,
     secondaryLabel: undefined,
     secondarySelected: false,
+    actions: undefined,
   },
 )
 
@@ -55,6 +92,6 @@ defineEmits<{
   (e: 'exit'): void
   (e: 'toggle-primary'): void
   (e: 'toggle-secondary'): void
-  (e: 'action'): void
+  (e: 'action', actionKey?: string): void
 }>()
 </script>

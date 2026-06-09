@@ -22,7 +22,13 @@
             <span>{{ actionState === 'saving' ? '保存中' : '保存' }}</span>
           </button>
 
-          <button class="script-action-pill" type="button" :disabled="disabled" @click="$emit('open-template')">
+          <button
+            class="script-action-pill"
+            type="button"
+            data-script-template-trigger="true"
+            :disabled="disabled"
+            @click="$emit('open-template')"
+          >
             <FigmaIcon name="action-template" :size="18" />
             <span>模板</span>
           </button>

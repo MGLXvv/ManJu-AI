@@ -19,6 +19,7 @@ const sampleShot = (): StoryboardShot => ({
   style: '国风漫画',
   ratio: '16:9',
   status: 'success',
+  isHidden: false,
   isLocked: false,
   isFavorite: false,
   referenceImages: [{ id: 'ref-1', url: 'ref-image-1' }],
@@ -46,6 +47,7 @@ describe('storyboardDirtyState', () => {
           status: 'success',
           style: '国风漫画',
           ratio: '16:9',
+          isHidden: false,
           isLocked: false,
           isFavorite: false,
           referenceImages: [{ id: 'ref-1', url: 'ref-image-1' }],
@@ -65,6 +67,14 @@ describe('storyboardDirtyState', () => {
         {
           ...sampleShot(),
           prompt: '提示词 2',
+        },
+      ]),
+    ).toBe(true)
+    expect(
+      hasUnsavedStoryboardChanges(lastSavedSnapshot, [
+        {
+          ...sampleShot(),
+          isHidden: true,
         },
       ]),
     ).toBe(true)

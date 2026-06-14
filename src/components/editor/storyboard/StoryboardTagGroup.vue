@@ -9,6 +9,7 @@
         type="button"
         class="storyboard-tag-group__chip"
         :class="{ 'is-selected': selectedId === item.id }"
+        :disabled="disabled"
         @click="selectItem(item.id)"
       >
         <span>{{ item.name }}</span>
@@ -25,7 +26,7 @@
         </span>
       </button>
 
-      <div v-if="availableOptions.length > 0" class="storyboard-tag-group__add-wrap">
+      <div v-if="availableOptions.length > 0 && !disabled" class="storyboard-tag-group__add-wrap">
         <button type="button" class="storyboard-tag-group__add" @click="open = !open">+</button>
         <div v-if="open" class="storyboard-tag-group__menu">
           <button
@@ -51,6 +52,7 @@ const props = defineProps<{
   title: string
   items: StoryboardTag[]
   options: StoryboardTag[]
+  disabled?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -67,14 +69,17 @@ const availableOptions = computed(() => {
 })
 
 const selectItem = (id: string): void => {
+  if (props.disabled) return
   selectedId.value = id
 }
 
 const removeItem = (id: string): void => {
+  if (props.disabled) return
   emit('remove', id)
 }
 
 const selectOption = (id: string): void => {
+  if (props.disabled) return
   emit('add', id)
   selectedId.value = id
   open.value = false

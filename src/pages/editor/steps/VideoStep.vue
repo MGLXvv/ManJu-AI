@@ -26,7 +26,7 @@
             :action-disabled="selectedShotIds.length === 0"
             @exit="exitBatchMode"
             @toggle-primary="toggleSelectAllShots"
-            @action="handleBatchGenerate"
+            @action="openBatchGenerateDialog"
           />
 
           <div class="storyboard-main-card__divider"></div>
@@ -35,11 +35,19 @@
             <VideoPromptPanel
               v-if="currentShot"
               :shot="currentShot"
+              :available-characters="availableCharacters"
+              :optimizing-video-prompt="optimizingVideoPrompt"
+              :optimizing-dialogue="optimizingDialogue"
               @update-video-prompt="store.updateActiveShotVideoPrompt"
               @update-dialogue="store.updateActiveShotDialogue"
+              @optimize-video-prompt="optimizeVideoPrompt"
+              @optimize-dialogue="optimizeDialogue"
               @update-duration="store.updateActiveShotDuration"
               @update-voice="updateVoice"
               @remove-character="removeCharacter"
+              @add-character="addCharacter"
+              @upload-attachments="uploadAttachments"
+              @remove-attachment="removeAttachment"
               @generate-video="generateShot"
             />
 
@@ -96,6 +104,62 @@
       @cancel="cancelDeleteConfirm"
     />
 
+    <Teleport to="body">
+      <Transition name="storyboard-batch-generate-dialog-fade">
+        <div v-if="batchGenerateDialogOpen" class="storyboard-batch-generate-dialog__mask" @click="closeBatchGenerateDialog">
+          <section class="storyboard-batch-generate-dialog" role="dialog" aria-modal="true" @click.stop>
+            <header class="storyboard-batch-generate-dialog__header">
+              <h3>批量生成</h3>
+              <button type="button" class="storyboard-batch-generate-dialog__close" @click="closeBatchGenerateDialog">×</button>
+            </header>
+
+            <div class="storyboard-batch-generate-dialog__body">
+              <div class="storyboard-batch-generate-dialog__mode-row">
+                <button
+                  type="button"
+                  class="storyboard-batch-generate-dialog__mode-btn"
+                  :class="{ 'is-active': batchGenerateMode === 'immediate' }"
+                  @click="batchGenerateMode = 'immediate'"
+                >
+                  <span>立即生成</span>
+                  <small>立刻生成已选视频</small>
+                </button>
+                <button
+                  type="button"
+                  class="storyboard-batch-generate-dialog__mode-btn"
+                  :class="{ 'is-active': batchGenerateMode === 'scheduled' }"
+                  @click="batchGenerateMode = 'scheduled'"
+                >
+                  <span>定时生成</span>
+                  <small>按预设时间自动开始</small>
+                </button>
+              </div>
+
+              <div v-if="batchGenerateMode === 'scheduled'" class="storyboard-batch-generate-dialog__schedule">
+                <span class="storyboard-batch-generate-dialog__label">选择生成时间</span>
+                <div class="storyboard-batch-generate-dialog__schedule-row">
+                  <select v-model="batchGenerateDay">
+                    <option value="today">今天</option>
+                    <option value="tomorrow">明天</option>
+                  </select>
+                  <select v-model="batchGenerateTime">
+                    <option value="08:00">08:00</option>
+                    <option value="12:00">12:00</option>
+                    <option value="18:00">18:00</option>
+                    <option value="21:00">21:00</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="storyboard-batch-generate-dialog__actions">
+              <button type="button" class="storyboard-batch-generate-dialog__confirm" @click="confirmBatchGenerate">确定</button>
+            </div>
+          </section>
+        </div>
+      </Transition>
+    </Teleport>
+
     <StoryboardImagePreviewDialog
       :open="previewDialogOpen"
       :image-url="previewDialogImageUrl"
@@ -137,7 +201,12 @@ import {
   canOpenStoryboardImageTools,
   type StoryboardSelectionRect,
 } from '@/features/editor/storyboardPreviewState'
-import { buildVideoBatchGenerateMessage, buildVideoGenerateErrorMessage } from '@/features/editor/videoGenerationState'
+import {
+  buildVideoBatchGenerateMessage,
+  buildVideoGenerateErrorMessage,
+  optimizeMockVideoDialogue,
+  optimizeMockVideoPrompt,
+} from '@/features/editor/videoGenerationState'
 import { buildVideoExportFileName } from '@/features/editor/videoPersistState'
 import { buildProjectArtifactEnvelope } from '@/features/shared/projectArtifactState'
 import { useEditorStore } from '@/stores/editor'
@@ -157,11 +226,16 @@ const shots = computed(() => store.shots)
 const activeShotId = computed(() => store.activeShotId)
 const activeShot = computed(() => store.activeShot)
 const currentShot = computed(() => activeShot.value ?? shots.value[0] ?? null)
+const availableCharacters = computed(() => store.tagOptions.characters)
 const batchMode = ref(false)
 const selectedShotIds = ref<string[]>([])
 const submitting = ref(false)
 const leaveConfirmOpen = ref(false)
 const deleteConfirmOpen = ref(false)
+const batchGenerateDialogOpen = ref(false)
+const batchGenerateMode = ref<'immediate' | 'scheduled'>('immediate')
+const batchGenerateDay = ref<'today' | 'tomorrow'>('today')
+const batchGenerateTime = ref('08:00')
 const pendingLeaveTarget = ref<RouteLocationRaw | null>(null)
 const pendingDeleteShotId = ref<string | null>(null)
 const bypassLeaveGuard = ref(false)
@@ -170,6 +244,9 @@ const previewDialogOpen = ref(false)
 const previewDialogMode = ref<'view' | 'zoom'>('view')
 const editDialogOpen = ref(false)
 const editingImage = ref(false)
+const optimizingVideoPrompt = ref(false)
+const optimizingDialogue = ref(false)
+let scheduledBatchGenerateTimer: number | null = null
 
 const isAllShotsSelected = computed(
   () => shots.value.length > 0 && shots.value.every((shot) => selectedShotIds.value.includes(shot.id)),
@@ -269,6 +346,38 @@ const generateShot = async (): Promise<void> => {
   }
 }
 
+const optimizeVideoPrompt = async (): Promise<void> => {
+  const shot = currentShot.value
+  if (!shot) return
+
+  optimizingVideoPrompt.value = true
+  try {
+    const optimized = await optimizeMockVideoPrompt(shot.videoPrompt ?? shot.prompt ?? '')
+    store.updateActiveShotVideoPrompt(optimized)
+    showToast('视频提示词已优化', 'success')
+  } catch (error) {
+    showToast(buildVideoGenerateErrorMessage(error), 'error')
+  } finally {
+    optimizingVideoPrompt.value = false
+  }
+}
+
+const optimizeDialogue = async (): Promise<void> => {
+  const shot = currentShot.value
+  if (!shot) return
+
+  optimizingDialogue.value = true
+  try {
+    const optimized = await optimizeMockVideoDialogue(shot.dialogue ?? '')
+    store.updateActiveShotDialogue(optimized)
+    showToast('对白已优化', 'success')
+  } catch (error) {
+    showToast(buildVideoGenerateErrorMessage(error), 'error')
+  } finally {
+    optimizingDialogue.value = false
+  }
+}
+
 const createBlankShot = (): void => {
   store.createBlankShot()
 }
@@ -291,12 +400,59 @@ const toggleLock = (id: string): void => {
   store.toggleLock(id)
 }
 
-const updateVoice = ({ characterId, voice }: { characterId: string; voice: string }): void => {
-  store.updateActiveShotVoice(characterId, voice)
+const updateVoice = ({ assignmentId, voice }: { assignmentId: string; voice: string }): void => {
+  store.updateActiveShotVoice(assignmentId, voice)
 }
 
-const removeCharacter = (characterId: string): void => {
-  store.removeTagFromActiveShot('character', characterId)
+const addCharacter = ({
+  characterId,
+  voice,
+  afterId,
+}: {
+  characterId: string
+  voice: string
+  afterId?: string | null
+}): void => {
+  const target = availableCharacters.value.find((item) => item.id === characterId)
+  if (!target) {
+    showToast('请选择有效角色后再保存', 'error')
+    return
+  }
+
+  const shot = currentShot.value
+  if (!shot) return
+
+  if (!shot.characters.some((item) => item.id === target.id)) {
+    store.addTagToActiveShot('character', target)
+  }
+
+  store.addActiveShotVoiceAssignment({
+    characterId,
+    voice,
+    afterId,
+  })
+  showToast('角色音色已添加', 'success')
+}
+
+const removeCharacter = (assignmentId: string): void => {
+  store.removeActiveShotVoice(assignmentId)
+  showToast('角色音色已删除', 'success')
+}
+
+const uploadAttachments = (files: File[]): void => {
+  for (const file of files) {
+    store.addActiveShotAttachment({
+      name: file.name,
+      size: file.size,
+      type: file.type,
+    })
+  }
+  showToast(`已添加 ${files.length} 个附件`, 'success')
+}
+
+const removeAttachment = (attachmentId: string): void => {
+  store.removeActiveShotAttachment(attachmentId)
+  showToast('附件已移除', 'success')
 }
 
 const exitBatchMode = (): void => {
@@ -317,22 +473,44 @@ const handleBatchTrigger = (): void => {
   batchMode.value = true
 }
 
-const handleBatchGenerate = async (): Promise<void> => {
+const runBatchGenerate = async (): Promise<void> => {
   if (selectedShotIds.value.length === 0) return
 
-  let successCount = 0
-  let failedCount = 0
-
-  for (const id of selectedShotIds.value) {
-    try {
-      await store.generateVideoById(id)
-      successCount += 1
-    } catch {
-      failedCount += 1
-    }
-  }
+  const results = await Promise.allSettled(selectedShotIds.value.map((id) => store.generateVideoById(id)))
+  const successCount = results.filter((item) => item.status === 'fulfilled').length
+  const failedCount = results.length - successCount
 
   showToast(buildVideoBatchGenerateMessage({ successCount, failedCount }), failedCount > 0 ? 'error' : 'success')
+}
+
+const openBatchGenerateDialog = (): void => {
+  if (selectedShotIds.value.length === 0) return
+  batchGenerateDialogOpen.value = true
+}
+
+const closeBatchGenerateDialog = (): void => {
+  batchGenerateDialogOpen.value = false
+}
+
+const confirmBatchGenerate = async (): Promise<void> => {
+  batchGenerateDialogOpen.value = false
+
+  if (batchGenerateMode.value === 'scheduled') {
+    if (scheduledBatchGenerateTimer !== null) {
+      window.clearTimeout(scheduledBatchGenerateTimer)
+    }
+    showToast(
+      `已安排${batchGenerateDay.value === 'today' ? '今天' : '明天'} ${batchGenerateTime.value} 自动生成 ${selectedShotIds.value.length} 个视频`,
+      'success',
+    )
+    scheduledBatchGenerateTimer = window.setTimeout(() => {
+      scheduledBatchGenerateTimer = null
+      void runBatchGenerate()
+    }, 800)
+    return
+  }
+
+  await runBatchGenerate()
 }
 
 const handleSaveExport = async (): Promise<void> => {
@@ -411,6 +589,10 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('beforeunload', handleBeforeUnload)
+  if (scheduledBatchGenerateTimer !== null) {
+    window.clearTimeout(scheduledBatchGenerateTimer)
+    scheduledBatchGenerateTimer = null
+  }
 })
 
 onBeforeRouteLeave((to: RouteLocationNormalizedLoadedGeneric) => {

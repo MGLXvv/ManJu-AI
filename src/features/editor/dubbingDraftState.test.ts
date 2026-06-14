@@ -33,7 +33,7 @@ const makeShot = (overrides: Partial<Shot> = {}): Shot => ({
   videoPrompt: '视频提示词',
   dialogue: '这段对白需要配音',
   durationSeconds: 10,
-  voiceAssignments: [{ characterId: 'asset-char-1', voice: '浑厚男中音' }],
+  voiceAssignments: [{ id: 'voice-1', characterId: 'asset-char-1', voice: '浑厚男中音' }],
   status: 'success',
   style: '国风漫画',
   ratio: '16:9',

@@ -27,6 +27,11 @@ export interface BuildStoryboardEditedImageResult {
   referenceLabel: string
 }
 
+export interface BuildStoryboardUpscaledImageInput {
+  sourceUrl: string
+  title: string
+}
+
 const clamp = (value: number, min: number, max: number): number => Math.min(Math.max(value, min), max)
 
 export const buildStoryboardSaveState = ({ submitting, isDirty }: StoryboardSaveStateInput): StoryboardSaveState => {
@@ -97,6 +102,34 @@ export const buildStoryboardEditedImage = ({
   return {
     imageUrl,
     referenceLabel: '编辑结果',
+  }
+}
+
+export const buildStoryboardUpscaledImage = ({
+  sourceUrl,
+  title,
+}: BuildStoryboardUpscaledImageInput): BuildStoryboardEditedImageResult => {
+  const imageUrl = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+      <defs>
+        <linearGradient id="shine" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#4fd5ff" stop-opacity="0.8" />
+          <stop offset="100%" stop-color="#fff1a6" stop-opacity="0.56" />
+        </linearGradient>
+      </defs>
+      <rect width="1280" height="720" fill="#0b1220" />
+      <image href="${sourceUrl}" width="1280" height="720" preserveAspectRatio="xMidYMid slice" />
+      <rect width="1280" height="720" fill="url(#shine)" opacity="0.24" />
+      <rect x="48" y="42" width="1184" height="636" rx="28" fill="none" stroke="#ffffff" stroke-opacity="0.9" stroke-width="8" />
+      <rect x="0" y="588" width="1280" height="132" fill="rgba(4,8,15,0.62)" />
+      <text x="38" y="650" fill="#ffffff" font-family="Segoe UI, PingFang SC, Microsoft YaHei, sans-serif" font-size="54" font-weight="700">${title} · 高清放大</text>
+      <text x="38" y="694" fill="#d8edf7" font-family="Segoe UI, PingFang SC, Microsoft YaHei, sans-serif" font-size="28">增强清晰度、细节和边缘质感</text>
+    </svg>`,
+  )}`
+
+  return {
+    imageUrl,
+    referenceLabel: '高清放大',
   }
 }
 

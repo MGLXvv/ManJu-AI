@@ -1,7 +1,8 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
   buildStoryboardSaveState,
   buildStoryboardEditedImage,
+  buildStoryboardUpscaledImage,
   clampStoryboardSelection,
   canOpenStoryboardImageTools,
 } from './storyboardPreviewState'
@@ -64,6 +65,16 @@ describe('storyboardPreviewState', () => {
 
     expect(result.imageUrl.startsWith('data:image/svg+xml;charset=UTF-8,')).toBe(true)
     expect(result.referenceLabel).toBe('编辑结果')
+  })
+
+  it('builds upscaled storyboard image data url', () => {
+    const result = buildStoryboardUpscaledImage({
+      sourceUrl: 'https://example.com/image.png',
+      title: '镜头 1',
+    })
+
+    expect(result.imageUrl.startsWith('data:image/svg+xml;charset=UTF-8,')).toBe(true)
+    expect(result.referenceLabel).toBe('高清放大')
   })
 
   it('only enables image tools when shot image exists', () => {

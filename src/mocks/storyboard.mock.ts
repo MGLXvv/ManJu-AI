@@ -44,7 +44,7 @@ export const storyboardTagOptions: StoryboardTagOptions = {
 
 const ts = '2026年3月12日 17:16'
 
-const createShot = (index: number, status: StoryboardShotStatus = 'success'): StoryboardShot => {
+const createShot = (index: number, status: StoryboardShotStatus = 'pending-review'): StoryboardShot => {
   const label = `分镜${index + 1}`
   const imageUrl = makeImage(label, '#314263', '#8152c2', index)
   return {
@@ -59,6 +59,7 @@ const createShot = (index: number, status: StoryboardShotStatus = 'success'): St
     durationSeconds: 10,
     voiceAssignments: [
       {
+        id: `voice-${index + 1}-1`,
         characterId: storyboardTagOptions.characters[index % storyboardTagOptions.characters.length].id,
         voice: '浑厚男中音',
       },
@@ -69,6 +70,7 @@ const createShot = (index: number, status: StoryboardShotStatus = 'success'): St
     style: '国风漫画',
     ratio: '16:9',
     status,
+    isHidden: false,
     isFavorite: index % 2 === 0,
     isLocked: false,
     createdAt: ts,
@@ -83,12 +85,12 @@ const createShot = (index: number, status: StoryboardShotStatus = 'success'): St
 }
 
 export const storyboardShotsMock: StoryboardShot[] = [
-  createShot(0, 'success'),
-  createShot(1, 'generating'),
-  createShot(2, 'success'),
-  createShot(3, 'idle'),
-  createShot(4, 'success'),
-  createShot(5, 'success'),
+  createShot(0),
+  createShot(1),
+  createShot(2),
+  createShot(3),
+  createShot(4),
+  createShot(5),
 ]
 
 export const storyboardStylesMock = ['国风漫画', '二次元', '写实电影感', '赛博朋克']

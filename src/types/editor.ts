@@ -1,7 +1,11 @@
-﻿import type { GenerationStatus } from './project'
 import type { DubbingDraft } from './dubbing'
 import type { SettingAsset } from './settingAsset'
-import type { StoryboardRatio, StoryboardReferenceImage, StoryboardVoiceAssignment } from './storyboard'
+import type {
+  StoryboardRatio,
+  StoryboardReferenceImage,
+  StoryboardShotStatus,
+  StoryboardVoiceAssignment,
+} from './storyboard'
 
 export interface ScriptDraft {
   content: string
@@ -42,9 +46,10 @@ export interface Shot {
   dialogue?: string
   durationSeconds?: number
   voiceAssignments?: StoryboardVoiceAssignment[]
-  status: GenerationStatus
+  status: StoryboardShotStatus
   style?: string
   ratio?: StoryboardRatio
+  isHidden?: boolean
   isLocked?: boolean
   isFavorite?: boolean
   referenceImages?: StoryboardReferenceImage[]

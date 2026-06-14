@@ -1,8 +1,19 @@
-﻿<template>
+<template>
   <article
     class="storyboard-shot-card"
-    :class="{ 'is-active': active, 'is-batch-mode': batchMode, 'is-batch-selected': batchSelected }"
+    :class="{
+      'is-active': active,
+      'is-batch-mode': batchMode,
+      'is-batch-selected': batchSelected,
+      'is-hidden': Boolean(shot.isHidden),
+      'is-locked': Boolean(shot.isLocked),
+      'is-dragging': dragging,
+      'is-generating': isGenerating,
+    }"
+    :draggable="draggable"
     @click="$emit('select', shot.id)"
+    @dragstart="$emit('drag-start', shot.id, $event)"
+    @dragend="$emit('drag-end')"
   >
     <button
       v-if="batchMode"
@@ -17,18 +28,33 @@
 
     <div class="storyboard-shot-card__thumb-wrap">
       <div class="storyboard-shot-card__thumb">
-        <img v-if="shot.imageUrl" :src="shot.imageUrl" :alt="shot.title" />
+        <template v-if="isGenerating">
+          <div class="storyboard-shot-card__loading">
+            <div class="storyboard-shot-card__loading-line">
+              <span class="storyboard-shot-card__loading-hourglass">⌛</span>
+              <strong>镜头生成中...</strong>
+            </div>
+            <span class="storyboard-shot-card__loading-bar" aria-hidden="true">
+              <span></span>
+            </span>
+          </div>
+        </template>
+        <img v-else-if="shot.imageUrl" :src="shot.imageUrl" :alt="shot.title" />
         <span v-else>空白分镜</span>
       </div>
 
       <header class="storyboard-shot-card__header">
-        <span class="storyboard-shot-card__index">镜头{{ shot.index }}</span>
+        <span class="storyboard-shot-card__index">{{ shotNumberLabel }}</span>
+        <div class="storyboard-shot-card__meta">
+          <span v-if="shot.isHidden" class="storyboard-shot-card__status-tag is-hidden">隐藏</span>
+          <span v-if="shot.isLocked" class="storyboard-shot-card__status-tag is-locked">锁定</span>
+        </div>
         <button
           v-if="!batchMode"
           type="button"
           class="storyboard-shot-card__star-btn"
           :class="{ 'is-favorite': shot.isFavorite }"
-          aria-label="收藏"
+          :aria-label="shot.isFavorite ? '取消标记' : '标记镜头'"
           @click.stop="$emit('favorite', shot.id)"
         >
           <span class="storyboard-shot-card__star-bg" aria-hidden="true"></span>
@@ -39,30 +65,39 @@
       </header>
     </div>
 
-    <footer v-if="!batchMode" class="storyboard-shot-card__actions">
+    <footer v-if="!batchMode && !isGenerating" class="storyboard-shot-card__actions">
       <button type="button" aria-label="上传" @click.stop="$emit('upload', shot.id)">
         <FigmaIcon name="timeline-upload-default" :size="15" />
+        <span class="storyboard-shot-card__tooltip">上传</span>
       </button>
       <button type="button" aria-label="复制" @click.stop="$emit('copy', shot.id)">
         <FigmaIcon name="timeline-copy-default" :size="15" />
+        <span class="storyboard-shot-card__tooltip">复制</span>
       </button>
       <button type="button" aria-label="删除" @click.stop="$emit('delete', shot.id)">
         <FigmaIcon name="timeline-delete-default" :size="15" />
+        <span class="storyboard-shot-card__tooltip">删除</span>
       </button>
     </footer>
   </article>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import FigmaIcon from '@/components/icons/FigmaIcon.vue'
 import type { StoryboardShot } from '@/types/storyboard'
 
-defineProps<{
+const props = defineProps<{
   shot: StoryboardShot
   active: boolean
   batchMode?: boolean
   batchSelected?: boolean
+  draggable?: boolean
+  dragging?: boolean
 }>()
+
+const shotNumberLabel = computed(() => props.shot.title.replace(/^镜头\s*/, '镜头'))
+const isGenerating = computed(() => props.shot.status === 'generating')
 
 defineEmits<{
   (e: 'select', id: string): void
@@ -70,5 +105,7 @@ defineEmits<{
   (e: 'copy', id: string): void
   (e: 'delete', id: string): void
   (e: 'favorite', id: string): void
+  (e: 'drag-start', id: string, event: DragEvent): void
+  (e: 'drag-end'): void
 }>()
 </script>

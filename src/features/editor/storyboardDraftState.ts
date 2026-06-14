@@ -1,5 +1,5 @@
 ﻿import type { EditorDraft } from '@/types/editor'
-import type { StoryboardShot, StoryboardTag, StoryboardTagOptions } from '@/types/storyboard'
+import type { StoryboardShot, StoryboardTag, StoryboardTagOptions, StoryboardVoiceAssignment } from '@/types/storyboard'
 
 const cloneTag = (tag: StoryboardTag): StoryboardTag => ({ ...tag })
 
@@ -16,6 +16,23 @@ const mapSummaryToTag =
     name: item.name,
     type,
   })
+
+const normalizeVoiceAssignments = (shot: StoryboardShot): StoryboardVoiceAssignment[] => {
+  const existing = (shot.voiceAssignments ?? []).map((item, index) => ({
+    ...item,
+    id: item.id || `voice-${shot.id}-${index + 1}`,
+  }))
+
+  if (existing.length > 0) {
+    return existing
+  }
+
+  return shot.characters.map((character, index) => ({
+    id: `voice-${shot.id}-${index + 1}`,
+    characterId: character.id,
+    voice: '浑厚男中音',
+  }))
+}
 
 export const resolveStoryboardTagOptions = (
   draft: EditorDraft | null,
@@ -47,5 +64,6 @@ export const normalizeStoryboardShotsWithTagOptions = (
     characters: shot.characters.filter((item) => characterIds.has(item.id)).map(cloneTag),
     scenes: shot.scenes.filter((item) => sceneIds.has(item.id)).map(cloneTag),
     props: shot.props.filter((item) => propIds.has(item.id)).map(cloneTag),
+    voiceAssignments: normalizeVoiceAssignments(shot).filter((item) => characterIds.has(item.characterId)),
   }))
 }

@@ -20,7 +20,7 @@ describe('editorApi.saveDraft', () => {
         dialogue: '正常对白',
         durationSeconds: 10,
         voiceAssignments: [],
-        status: 'idle',
+        status: 'pending-review',
         style: '国风漫画',
         ratio: '16:9',
         isLocked: false,

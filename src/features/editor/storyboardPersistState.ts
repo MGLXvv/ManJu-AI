@@ -12,9 +12,21 @@ export interface ExportedStoryboardPayload {
   shots: Shot[]
 }
 
+type LegacyStoryboardShotStatus = Shot['status'] | 'idle' | 'pending'
+
+type LegacyPersistedStoryboardShot = Omit<Shot, 'status'> & {
+  status: LegacyStoryboardShotStatus
+}
+
 const cloneReferenceImage = (image: StoryboardReferenceImage): StoryboardReferenceImage => ({ ...image })
 
 const buildTagMap = (items: StoryboardTag[]) => new Map(items.map((item) => [item.id, { ...item }]))
+
+const normalizeLegacyStoryboardStatus = (status: LegacyStoryboardShotStatus): Shot['status'] => {
+  if (status === 'idle') return 'pending-review'
+  if (status === 'pending') return 'generating'
+  return status
+}
 
 export const buildStoryboardDraftShots = (shots: StoryboardShot[]): Shot[] =>
   shots.map((shot) => ({
@@ -34,13 +46,14 @@ export const buildStoryboardDraftShots = (shots: StoryboardShot[]): Shot[] =>
     status: shot.status,
     style: shot.style,
     ratio: shot.ratio,
+    isHidden: shot.isHidden ?? false,
     isLocked: shot.isLocked ?? false,
     isFavorite: shot.isFavorite ?? false,
     referenceImages: shot.referenceImages.map(cloneReferenceImage),
     createdAt: shot.createdAt ?? '2026年3月12日 17:16',
   }))
 
-export const resolveStoryboardShots = (shots: Shot[], options: StoryboardTagOptions): StoryboardShot[] => {
+export const resolveStoryboardShots = (shots: LegacyPersistedStoryboardShot[], options: StoryboardTagOptions): StoryboardShot[] => {
   const characterMap = buildTagMap(options.characters)
   const sceneMap = buildTagMap(options.scenes)
   const propMap = buildTagMap(options.props)
@@ -61,7 +74,8 @@ export const resolveStoryboardShots = (shots: Shot[], options: StoryboardTagOpti
     props: shot.propIds.map((id) => propMap.get(id)).filter(Boolean) as StoryboardTag[],
     style: shot.style ?? '国风漫画',
     ratio: shot.ratio ?? '16:9',
-    status: shot.status,
+    status: normalizeLegacyStoryboardStatus(shot.status),
+    isHidden: shot.isHidden ?? false,
     isLocked: shot.isLocked ?? false,
     isFavorite: shot.isFavorite ?? false,
     referenceImages: (shot.referenceImages ?? []).map(cloneReferenceImage),
@@ -79,12 +93,19 @@ export const buildStoryboardExportFileName = (projectId: string): string => {
 }
 
 export const validateStoryboardBeforeVideo = (shots: StoryboardShot[]): StoryboardVideoValidationResult => {
-  const hasGeneratedShot = shots.some((shot) => shot.status === 'success' && Boolean(shot.imageUrl))
+  const visibleShots = shots.filter((shot) => !shot.isHidden)
 
-  if (!hasGeneratedShot) {
+  if (visibleShots.length === 0) {
     return {
       ok: false,
-      message: '请至少生成一个分镜镜头后再进入视频生成',
+      message: '请至少保留一个可见分镜后再进入视频生成',
+    }
+  }
+
+  if (visibleShots.some((shot) => shot.status !== 'success' || !shot.imageUrl)) {
+    return {
+      ok: false,
+      message: '请先为所有可见分镜生成首帧后再进入视频生成',
     }
   }
 

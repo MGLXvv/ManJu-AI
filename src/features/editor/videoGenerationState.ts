@@ -6,11 +6,39 @@ export const shouldMockVideoGenerateFail = (input: {
   dialogue: string
 }): boolean => hasAnyMockFailureToken([input.title, input.videoPrompt, input.dialogue], ['#mock-video-fail'])
 
+const appendOptimizeSuffix = (value: string, suffix: string): string => {
+  const trimmed = value.trim()
+  if (!trimmed) return ''
+  return trimmed.includes(suffix) ? trimmed : `${trimmed}${suffix}`
+}
+
+export const optimizeMockVideoPrompt = async (prompt: string): Promise<string> => {
+  await new Promise((resolve) => globalThis.setTimeout(resolve, 420))
+  if (prompt.includes('#mock-optimize-fail')) {
+    throw new Error('VIDEO_OPTIMIZE_FAILED')
+  }
+
+  return appendOptimizeSuffix(prompt, ' 镜头运动更明确，主体层次更清晰，氛围光影更聚焦。')
+}
+
+export const optimizeMockVideoDialogue = async (dialogue: string): Promise<string> => {
+  await new Promise((resolve) => globalThis.setTimeout(resolve, 420))
+  if (dialogue.includes('#mock-optimize-fail')) {
+    throw new Error('VIDEO_OPTIMIZE_FAILED')
+  }
+
+  return appendOptimizeSuffix(dialogue, ' 情绪更集中，语气更自然，停顿节奏更适合配音。')
+}
+
 export const buildVideoGenerateErrorMessage = (error: unknown): string => {
   const code = error instanceof Error ? error.message : String(error ?? '')
 
   if (code === 'VIDEO_GENERATE_FAILED') {
     return '视频生成失败，请调整提示词后重试'
+  }
+
+  if (code === 'VIDEO_OPTIMIZE_FAILED') {
+    return 'AI优化失败，请稍后再试'
   }
 
   return '视频生成失败，请稍后再试'

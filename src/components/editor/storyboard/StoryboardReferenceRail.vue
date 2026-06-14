@@ -59,6 +59,7 @@
         type="button"
         class="storyboard-reference-rail__item"
         :class="{ 'is-active': image.url === activeImageUrl }"
+        :disabled="disabled"
         @click="$emit('select', image.id)"
       >
         <img :src="image.url" :alt="image.label || image.id" />
@@ -75,10 +76,12 @@ const props = withDefaults(
     images: StoryboardReferenceImage[]
     collapsed?: boolean
     activeImageUrl?: string
+    disabled?: boolean
   }>(),
   {
     collapsed: false,
     activeImageUrl: '',
+    disabled: false,
   },
 )
 

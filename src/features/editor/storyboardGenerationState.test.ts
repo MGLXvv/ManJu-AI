@@ -1,5 +1,9 @@
 ﻿import { describe, expect, it } from 'vitest'
-import { buildStoryboardGenerateErrorMessage, shouldMockStoryboardGenerateFail } from './storyboardGenerationState'
+import {
+  buildStoryboardGenerateErrorMessage,
+  optimizeMockStoryboardPrompt,
+  shouldMockStoryboardGenerateFail,
+} from './storyboardGenerationState'
 
 describe('storyboardGenerationState', () => {
   it('triggers mock failure when title or prompt contains the fail token', () => {
@@ -10,6 +14,19 @@ describe('storyboardGenerationState', () => {
 
   it('maps stable generate errors to user-facing copy', () => {
     expect(buildStoryboardGenerateErrorMessage('STORYBOARD_GENERATE_FAILED')).toBe('分镜生成失败，请调整提示词后重试')
+    expect(buildStoryboardGenerateErrorMessage('STORYBOARD_OPTIMIZE_FAILED')).toBe('AI优化失败，请稍后再试')
     expect(buildStoryboardGenerateErrorMessage('UNKNOWN_ERROR')).toBe('分镜生成失败，请稍后再试')
+  })
+
+  it('optimizes storyboard prompt into a richer visual description', () => {
+    const optimized = optimizeMockStoryboardPrompt('夜晚街道霓虹灯闪烁，角色在雨中停步回头')
+
+    expect(optimized).toContain('镜头')
+    expect(optimized).toContain('光影')
+    expect(optimized).toContain('情绪')
+  })
+
+  it('throws a stable error code when mocked optimization should fail', () => {
+    expect(() => optimizeMockStoryboardPrompt('#mock-optimize-fail')).toThrowError('STORYBOARD_OPTIMIZE_FAILED')
   })
 })

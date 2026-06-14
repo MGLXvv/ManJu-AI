@@ -36,7 +36,7 @@ describe('storyboardDraftState', () => {
         props: [{ id: 'old-prop', name: '旧道具', type: 'prop' }],
         style: '国风漫画',
         ratio: '16:9',
-        status: 'idle',
+        status: 'pending-review',
         referenceImages: [],
         createdAt: '2026-03-12 17:16',
       },

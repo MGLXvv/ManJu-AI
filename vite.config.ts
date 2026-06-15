@@ -9,6 +9,12 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  server: {
+    host: '0.0.0.0',
+    allowedHosts: [
+      'assessing-seventh-ecommerce-goals.trycloudflare.com',
+    ],
+  },
   test: {
     include: ['src/**/*.test.ts'],
     environment: 'node',

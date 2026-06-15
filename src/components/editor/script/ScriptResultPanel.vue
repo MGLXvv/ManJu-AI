@@ -7,7 +7,7 @@
         <div v-if="loading" class="script-result-card__placeholder">{{ placeholderText }}</div>
 
         <div v-else-if="!model.trim()" class="script-result-empty" aria-hidden="true">
-          <FigmaIcon name="empty-ufo" :size="132" class="script-result-empty__ufo" />
+          <img class="script-result-empty__ufo" :src="scriptEmptyStateImage" alt="" />
         </div>
 
         <textarea
@@ -50,6 +50,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import FigmaIcon from '@/components/icons/FigmaIcon.vue'
+import scriptEmptyStateImage from '@/assets/icons/svg/script-empty-ufo.svg'
 
 const props = defineProps<{
   loading?: boolean

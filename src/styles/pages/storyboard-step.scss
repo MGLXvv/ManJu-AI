@@ -1,10 +1,31 @@
 .storyboard-step {
+  --storyboard-page-pad-y: clamp(12px, 1.2963vh, 14px);
+  --storyboard-page-pad-x: clamp(14px, 1.0417vw, 20px);
+
+  --storyboard-reference-width: clamp(150px, 11.0938vw, 213px);
+  --storyboard-reference-collapsed-width: clamp(22px, 1.25vw, 24px);
+  --storyboard-layout-gap: clamp(14px, 1.0417vw, 20px);
+
+  --storyboard-timeline-height: clamp(156px, 17.2222vh, 186px);
+  --storyboard-timeline-collapsed-height: clamp(22px, 1.25vw, 24px);
+
+  --storyboard-main-topbar-height: clamp(52px, 5.5556vh, 60px);
+  --storyboard-prompt-width: clamp(420px, 33.5938vw, 645px);
+  --storyboard-prompt-collapsed-width: 18px;
+
+  --storyboard-shot-card-width: clamp(176px, 10.8333vw, 208px);
+  --storyboard-shot-card-height: clamp(130px, 14.1667vh, 153px);
+  --storyboard-insert-card-width: clamp(62px, 3.8542vw, 74px);
+  --storyboard-insert-card-height: clamp(94px, 10.1852vh, 110px);
+
+  --storyboard-reference-item-height: clamp(76px, 8.5185vh, 92px);
+
   position: relative;
   width: 100%;
   min-width: 0;
   height: 100%;
   min-height: 0;
-  padding: 14px 20px;
+  padding: var(--storyboard-page-pad-y) var(--storyboard-page-pad-x);
   box-sizing: border-box;
   background: #0a0a0b;
   overflow: hidden;
@@ -24,9 +45,9 @@
 }
 
 .storyboard-layout {
-  --reference-width: 150px;
-  --layout-column-gap: 16px;
-  --timeline-height: 170px;
+  --reference-width: var(--storyboard-reference-width);
+  --layout-column-gap: var(--storyboard-layout-gap);
+  --timeline-height: var(--storyboard-timeline-height);
   position: relative;
   z-index: 1;
   display: grid;
@@ -61,18 +82,18 @@
 }
 
 .storyboard-layout.is-reference-collapsed {
-  --reference-width: 24px;
+  --reference-width: var(--storyboard-reference-collapsed-width);
 }
 
 .storyboard-layout.is-timeline-collapsed {
-  --timeline-height: 24px;
+  --timeline-height: var(--storyboard-timeline-collapsed-height);
 }
 
 .storyboard-main-card {
   height: 100%;
   min-height: 0;
   display: grid;
-  grid-template-rows: 58px 1px minmax(0, 1fr);
+  grid-template-rows: var(--storyboard-main-topbar-height) 1px minmax(0, 1fr);
   border: 1px solid #323232;
   border-radius: 10px;
   background: rgb(22 23 24 / 82%);
@@ -80,7 +101,7 @@
 }
 
 .storyboard-main-card.has-batch-toolbar {
-  grid-template-rows: 58px auto 1px minmax(0, 1fr);
+  grid-template-rows: var(--storyboard-main-topbar-height) auto 1px minmax(0, 1fr);
 }
 
 .storyboard-layout__main {
@@ -89,7 +110,7 @@
   min-height: 0;
   height: 100%;
   box-sizing: border-box;
-  padding: 0 10px 12px 0;
+  padding: 0 clamp(8px, 0.5208vw, 10px) clamp(10px, 1.1111vh, 12px) 0;
 }
 
 .storyboard-main-card__actions,
@@ -101,20 +122,20 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 0 18px;
+  gap: clamp(10px, 0.625vw, 12px);
+  padding: 0 clamp(16px, 0.9375vw, 18px);
 }
 
 .storyboard-top-actions__group {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: clamp(10px, 0.625vw, 12px);
 }
 
 .storyboard-top-actions__mode {
-  min-width: 84px;
-  height: 30px;
-  padding: 0 12px;
+  min-width: clamp(70px, 4.375vw, 84px);
+  height: clamp(28px, 2.7778vh, 30px);
+  padding: 0 clamp(10px, 0.625vw, 12px);
   border: 1px solid rgb(185 105 255 / 20%);
   border-radius: 999px;
   display: inline-flex;
@@ -127,9 +148,9 @@
 }
 
 .storyboard-top-actions__save-state {
-  min-width: 68px;
-  height: 30px;
-  padding: 0 12px;
+  min-width: clamp(60px, 3.5417vw, 68px);
+  height: clamp(28px, 2.7778vh, 30px);
+  padding: 0 clamp(10px, 0.625vw, 12px);
   border: 1px solid rgb(255 255 255 / 14%);
   border-radius: 999px;
   display: inline-flex;
@@ -158,10 +179,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
-  min-width: 168px;
-  height: 44px;
-  padding: 0 18px;
+  gap: clamp(12px, 0.7292vw, 14px);
+  min-width: clamp(144px, 8.75vw, 168px);
+  height: clamp(38px, 4.0741vh, 44px);
+  padding: 0 clamp(14px, 0.9375vw, 18px);
   border: 0;
   border-radius: 999px;
   background: #32363b;
@@ -175,8 +196,8 @@
 }
 
 .storyboard-top-actions__btn {
-  height: 36px;
-  padding: 0 18px;
+  height: clamp(32px, 3.3333vh, 36px);
+  padding: 0 clamp(14px, 0.9375vw, 18px);
   border: 1px solid rgb(255 255 255 / 32%);
   border-radius: 999px;
   background: #252628;
@@ -198,17 +219,20 @@
 
 .storyboard-main-card__body {
   display: grid;
-  grid-template-columns: minmax(320px, 40%) minmax(0, 1fr);
-  gap: 20px;
-  padding: 20px 20px 30px;
+  grid-template-columns: var(--storyboard-prompt-width) minmax(0, 1fr);
+  gap: clamp(14px, 1.0417vw, 20px);
+  padding:
+    clamp(14px, 1.8519vh, 20px)
+    clamp(14px, 1.0417vw, 20px)
+    clamp(22px, 2.7778vh, 30px);
   min-height: 0;
   overflow: hidden;
   transition: gap 0.2s ease;
 }
 
 .storyboard-main-card__body.is-prompt-collapsed {
-  grid-template-columns: 18px minmax(0, 1fr);
-  gap: 14px;
+  grid-template-columns: var(--storyboard-prompt-collapsed-width) minmax(0, 1fr);
+  gap: clamp(12px, 0.7292vw, 14px);
 }
 
 .storyboard-main-card__body {
@@ -241,7 +265,7 @@
 }
 
 .storyboard-prompt-panel.is-collapsed {
-  width: 18px;
+  width: var(--storyboard-prompt-collapsed-width);
   overflow: visible;
 }
 
@@ -251,10 +275,10 @@
   border: 1px solid rgb(255 255 255 / 14%);
   border-radius: 12px;
   background: linear-gradient(180deg, rgb(33 34 35 / 86%) 0%, rgb(20 21 22 / 84%) 100%);
-  padding: 14px 12px 12px;
+  padding: clamp(12px, 1.2963vh, 14px) clamp(10px, 0.625vw, 12px) clamp(10px, 1.1111vh, 12px);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: clamp(10px, 1.1111vh, 12px);
   transition:
     padding 0.2s ease,
     background 0.2s ease,
@@ -283,7 +307,7 @@
   top: 33%;
   transform: translateY(-50%);
   width: 5px;
-  height: 66px;
+  height: clamp(56px, 6.1111vh, 66px);
   padding: 0;
   border: 0;
   border-radius: 2.5px;
@@ -340,7 +364,7 @@
 .storyboard-prompt-panel__insert-grid,
 .storyboard-prompt-panel__insert-field {
   display: grid;
-  gap: 12px;
+  gap: clamp(10px, 1.1111vh, 12px);
 }
 
 .storyboard-prompt-panel__insert-field > span {
@@ -351,7 +375,7 @@
 }
 
 .storyboard-prompt-panel__insert-field select {
-  height: 34px;
+  height: clamp(32px, 3.1481vh, 34px);
   border: 1px solid #323232;
   border-radius: 8px;
   background: #232425;
@@ -378,7 +402,7 @@
 .storyboard-tag-group__list {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: clamp(6px, 0.4167vw, 8px);
   padding-right: 8px;
 }
 
@@ -387,9 +411,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 76px;
-  height: 30px;
-  padding: 0 14px;
+  min-width: clamp(68px, 3.9583vw, 76px);
+  height: clamp(28px, 2.7778vh, 30px);
+  padding: 0 clamp(10px, 0.7292vw, 14px);
   border: 1px solid #3f4142;
   border-radius: 8px;
   background: #232425;
@@ -462,14 +486,14 @@
 .storyboard-tag-group__add {
   display: grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
+  width: clamp(28px, 2.7778vh, 30px);
+  height: clamp(28px, 2.7778vh, 30px);
   padding: 0;
   border: 1px solid #3a3d40;
   border-radius: 8px;
   background: #222427;
   color: #d4d7dc;
-  font-size: 24px;
+  font-size: clamp(20px, 1.25vw, 24px);
   line-height: 1;
   text-align: center;
   transform: translateY(-1px);
@@ -590,7 +614,7 @@
 }
 
 .storyboard-select-row__item select {
-  height: 34px;
+  height: clamp(32px, 3.1481vh, 34px);
   border: 1px solid #323232;
   border-radius: 8px;
   background: #232425;
@@ -602,7 +626,7 @@
 .storyboard-prompt-panel__generate {
   margin-top: auto;
   flex: 0 0 auto;
-  height: 38px;
+  height: clamp(34px, 3.5185vh, 38px);
   border: 0;
   border-radius: 8px;
   background: linear-gradient(90deg, #b969ff 0%, #d87dff 58%, #f0b8ff 100%);
@@ -630,7 +654,7 @@
 }
 
 .storyboard-prompt-panel__secondary {
-  height: 38px;
+  height: clamp(34px, 3.5185vh, 38px);
   border: 1px solid rgb(255 255 255 / 16%);
   border-radius: 8px;
   background: #232425;
@@ -774,20 +798,20 @@
 }
 
 .storyboard-canvas-toolbar {
-  flex: 0 0 78px;
+  flex: 0 0 clamp(66px, 7.2222vh, 78px);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: clamp(10px, 0.625vw, 12px);
   border-top: 1px solid #323232;
   background: #2d2e2f;
 }
 
 .storyboard-canvas-toolbar__button {
   position: relative;
-  width: 40px;
-  height: 40px;
-  flex: 0 0 40px;
+  width: clamp(36px, 2.0833vw, 40px);
+  height: clamp(36px, 2.0833vw, 40px);
+  flex: 0 0 clamp(36px, 2.0833vw, 40px);
   padding: 0;
   border: 0;
   background: transparent;
@@ -826,8 +850,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: clamp(36px, 2.0833vw, 40px);
+  height: clamp(36px, 2.0833vw, 40px);
   line-height: 1;
 }
 
@@ -911,8 +935,8 @@
 
 .storyboard-reference-rail__item {
   width: 100%;
-  height: 92px;
-  flex: 0 0 92px;
+  height: var(--storyboard-reference-item-height);
+  flex: 0 0 var(--storyboard-reference-item-height);
   border: 0;
   border-radius: 8px;
   padding: 0;
@@ -947,7 +971,10 @@
   gap: 10px;
   align-items: center;
   border-top: 0;
-  padding: 18px 20px 12px;
+  padding:
+    clamp(14px, 1.6667vh, 18px)
+    clamp(14px, 1.0417vw, 20px)
+    clamp(10px, 1.1111vh, 12px);
   margin: 0;
   background: #111213;
   overflow-x: hidden;
@@ -1018,7 +1045,7 @@
 
 .storyboard-timeline__track {
   display: flex;
-  gap: 14px;
+  gap: clamp(12px, 0.7292vw, 14px);
   overflow-x: hidden;
   overflow-y: visible;
   min-width: 0;
@@ -1076,8 +1103,9 @@
 }
 
 .storyboard-shot-card {
-  flex: 0 0 188px;
-  height: 138px;
+  flex: 0 0 var(--storyboard-shot-card-width);
+  width: var(--storyboard-shot-card-width);
+  height: var(--storyboard-shot-card-height);
   border: 1px solid #232425;
   border-radius: 12px;
   background: #0a0a0b;
@@ -1346,7 +1374,7 @@
   flex: 0 0 auto;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: clamp(10px, 0.625vw, 12px);
 }
 
 .storyboard-timeline__slot.is-drag-over .storyboard-shot-card {
@@ -1357,7 +1385,7 @@
 .storyboard-timeline__slot.has-insert-card {
   align-items: flex-start;
   padding-right: 0;
-  gap: 12px;
+  gap: clamp(10px, 0.625vw, 12px);
 }
 
 .storyboard-timeline__slot.has-insert-card .storyboard-shot-card {
@@ -1372,7 +1400,7 @@
 .storyboard-timeline__slot.has-insert-card::before {
   content: '';
   position: absolute;
-  left: 186px;
+  left: calc(var(--storyboard-shot-card-width) - 2px);
   top: 34px;
   width: 26px;
   height: 56px;
@@ -1386,7 +1414,7 @@
 .storyboard-timeline__link {
   flex: 0 0 28px;
   width: 28px;
-  height: 138px;
+  height: var(--storyboard-shot-card-height);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1479,8 +1507,9 @@
 }
 
 .create-blank-shot-card {
-  flex: 0 0 188px;
-  height: 138px;
+  flex: 0 0 var(--storyboard-shot-card-width);
+  width: var(--storyboard-shot-card-width);
+  height: var(--storyboard-shot-card-height);
   border: 1px dashed #4b4d4f;
   border-radius: 8px;
   background: #111213;
@@ -1492,11 +1521,11 @@
 }
 
 .insert-storyboard-shot-card {
-  flex: 0 0 74px;
-  width: 74px;
-  height: 110px;
+  flex: 0 0 var(--storyboard-insert-card-width);
+  width: var(--storyboard-insert-card-width);
+  height: var(--storyboard-insert-card-height);
   margin: 0;
-  margin-top: 20px;
+  margin-top: clamp(16px, 1.8519vh, 20px);
   padding: 10px 8px 10px;
   border: 0;
   border-radius: 14px;
@@ -1578,14 +1607,20 @@
 }
 
 @media (max-width: 1460px) {
-  .storyboard-main-card__body {
-    grid-template-columns: minmax(320px, 42%) minmax(0, 1fr);
+  .storyboard-step {
+    --storyboard-prompt-width: clamp(380px, 33.5938vw, 500px);
+    --storyboard-shot-card-width: clamp(156px, 10.8333vw, 176px);
+    --storyboard-shot-card-height: clamp(116px, 14.1667vh, 130px);
+    --storyboard-insert-card-width: clamp(58px, 3.8542vw, 66px);
+    --storyboard-insert-card-height: clamp(88px, 10.1852vh, 100px);
   }
 }
 
 @media (max-width: 1280px) {
   .storyboard-step {
     overflow: auto;
+    --storyboard-reference-width: 150px;
+    --storyboard-timeline-height: 170px;
   }
 
   .storyboard-layout {

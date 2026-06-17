@@ -189,7 +189,6 @@ import { buildStoryboardDraftSnapshot } from '@/features/editor/storyboardDirtyS
 import { resolveStoryboardTagOptions } from '@/features/editor/storyboardDraftState'
 import {
   buildStoryboardGenerateErrorMessage,
-  optimizeMockStoryboardPrompt,
 } from '@/features/editor/storyboardGenerationState'
 import { buildStoryboardLeaveDialogCopy, shouldInterceptStoryboardLeave } from '@/features/editor/storyboardLeaveConfirmState'
 import type { StoryboardMode } from '@/features/editor/storyboardModeState'
@@ -210,6 +209,7 @@ import { useEditorStore } from '@/stores/editor'
 import { useProjectStore } from '@/stores/project'
 import { useStoryboardStore } from '@/stores/storyboard'
 import { useUiFeedbackStore } from '@/stores/uiFeedback'
+import { storyboardPromptService } from '@/services/generation'
 import { API_ERROR_CODES } from '@/types/api-enums'
 import type { StoryboardInsertDraft, StoryboardTagType } from '@/types/storyboard'
 
@@ -477,8 +477,13 @@ const optimizePrompt = async (): Promise<void> => {
 
   optimizingPrompt.value = true
   try {
-    await new Promise((resolve) => window.setTimeout(resolve, 420))
-    store.updateActiveShotPrompt(optimizeMockStoryboardPrompt(shot.prompt))
+    const result = await storyboardPromptService.optimizePrompt({
+      projectId: projectId.value,
+      shotId: shot.id,
+      prompt: shot.prompt,
+      mode: 'active-shot',
+    })
+    store.updateActiveShotPrompt(result.prompt)
     showToast('画面描述已完成 AI 优化', 'success')
   } catch (error) {
     showToast(buildStoryboardGenerateErrorMessage(error), 'error')
@@ -502,8 +507,12 @@ const optimizeInsertPrompt = async (): Promise<void> => {
 
   optimizingPrompt.value = true
   try {
-    await new Promise((resolve) => window.setTimeout(resolve, 420))
-    insertDraft.value.prompt = optimizeMockStoryboardPrompt(insertDraft.value.prompt)
+    const result = await storyboardPromptService.optimizePrompt({
+      projectId: projectId.value,
+      prompt: insertDraft.value.prompt,
+      mode: 'insert-shot',
+    })
+    insertDraft.value.prompt = result.prompt
     showToast('画面描述已完成 AI 优化', 'success')
   } catch (error) {
     showToast(buildStoryboardGenerateErrorMessage(error), 'error')

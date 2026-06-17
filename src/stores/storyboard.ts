@@ -7,8 +7,8 @@ import {
   storyboardApi,
 } from '@/api/storyboard.api'
 import { normalizeStoryboardShotsWithTagOptions } from '@/features/editor/storyboardDraftState'
-import { shouldMockStoryboardGenerateFail } from '@/features/editor/storyboardGenerationState'
 import { shouldMockVideoGenerateFail } from '@/features/editor/videoGenerationState'
+import { storyboardGenerationService, storyboardPromptService } from '@/services/generation'
 import { useEditorStore } from '@/stores/editor'
 import { useGenerationStore } from '@/stores/generation'
 import { API_ERROR_CODES, GENERATION_TASK_STATUSES } from '@/types/api-enums'
@@ -444,40 +444,41 @@ export const useStoryboardStore = defineStore('storyboard', () => {
     const target = shots.value.find((item) => item.id === id)
     if (!target || target.isLocked) return
 
-    const task = await generationStore.createTask({
+    patchShotById(id, { status: 'generating' })
+
+    try {
+      const result = await storyboardGenerationService.generateShotImage({
+        projectId: editorStore.currentProjectId ?? 'mock-project',
+        shot: target,
+      })
+
+      replaceShotById(id, result.shot)
+    } catch (error) {
+      patchShotById(id, { status: 'failed' })
+      throw error
+    }
+  }
+
+  const optimizeShotPromptsByIds = async (ids: string[]): Promise<void> => {
+    const idSet = new Set(ids)
+    const targets = shots.value.filter(
+      (shot) => idSet.has(shot.id) && !shot.isLocked && shot.prompt.trim(),
+    )
+
+    if (targets.length === 0) return
+
+    const result = await storyboardPromptService.optimizePrompts({
       projectId: editorStore.currentProjectId ?? 'mock-project',
-      type: 'storyboard',
-      shotId: id,
-      payload: {
-        title: target.title,
-      },
+      items: targets.map((shot) => ({
+        shotId: shot.id,
+        prompt: shot.prompt,
+      })),
     })
 
-    patchShotById(id, { status: 'generating' })
-    if (task) {
-      await generationStore.setTaskStatus(task.id, GENERATION_TASK_STATUSES.running, 10)
-    }
-
-    if (shouldMockStoryboardGenerateFail({ title: target.title, prompt: target.prompt })) {
-      patchShotById(id, { status: 'failed' })
-      if (task) {
-        await generationStore.setTaskStatus(task.id, GENERATION_TASK_STATUSES.failed, 100, {
-          errorMessage: API_ERROR_CODES.storyboardGenerateFailed,
-        })
+    for (const item of result.items) {
+      if (item.success) {
+        patchShotById(item.shotId, { prompt: item.prompt })
       }
-      throw new Error(API_ERROR_CODES.storyboardGenerateFailed)
-    }
-
-    const result = await storyboardApi.generateShotImage(target)
-    replaceShotById(id, result.shot)
-
-    if (task) {
-      await generationStore.setTaskStatus(task.id, GENERATION_TASK_STATUSES.success, 100, {
-        result: {
-          shotId: id,
-          imageUrl: result.imageUrl,
-        },
-      })
     }
   }
 
@@ -545,30 +546,18 @@ export const useStoryboardStore = defineStore('storyboard', () => {
       throw new Error(API_ERROR_CODES.storyboardUpscaleImageRequired)
     }
 
-    const task = await generationStore.createTask({
-      projectId: editorStore.currentProjectId ?? 'mock-project',
-      type: 'storyboard_upscale',
-      shotId: id,
-      payload: {
-        title: target.title,
-      },
-    })
-
     patchShotById(id, { status: 'generating' })
-    if (task) {
-      await generationStore.setTaskStatus(task.id, GENERATION_TASK_STATUSES.running, 10)
-    }
 
-    const result = await storyboardApi.upscaleShotImage(target)
-    replaceShotById(id, result.shot)
-
-    if (task) {
-      await generationStore.setTaskStatus(task.id, GENERATION_TASK_STATUSES.success, 100, {
-        result: {
-          shotId: id,
-          imageUrl: result.imageUrl,
-        },
+    try {
+      const result = await storyboardGenerationService.upscaleShotImage({
+        projectId: editorStore.currentProjectId ?? 'mock-project',
+        shot: target,
       })
+
+      replaceShotById(id, result.shot)
+    } catch (error) {
+      patchShotById(id, { status: 'failed' })
+      throw error
     }
   }
 
@@ -613,6 +602,7 @@ export const useStoryboardStore = defineStore('storyboard', () => {
     markShotsGenerating,
     addTagToActiveShot,
     removeTagFromActiveShot,
+    optimizeShotPromptsByIds,
     generateShotById,
     generateActiveShot,
     generateVideoById,

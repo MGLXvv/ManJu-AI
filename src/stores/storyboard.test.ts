@@ -1,11 +1,14 @@
-﻿import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
+import { resetLocalState } from '@/api/local'
+import { API_ERROR_CODES } from '@/types/api-enums'
 import { useEditorStore } from './editor'
 import { useGenerationStore } from './generation'
 import { useStoryboardStore } from './storyboard'
 
 describe('storyboard store', () => {
   beforeEach(() => {
+    resetLocalState()
     setActivePinia(createPinia())
   })
 
@@ -32,29 +35,103 @@ describe('storyboard store', () => {
       afterId: firstAssignment!.id,
     })
 
-    const duplicateRows = store.activeShot!.voiceAssignments!.filter((item) => item.characterId === firstAssignment!.characterId)
+    const duplicateRows = store.activeShot!.voiceAssignments!.filter(
+      (item) => item.characterId === firstAssignment!.characterId,
+    )
     expect(duplicateRows).toHaveLength(2)
 
     store.removeActiveShotVoice(duplicateRows[0].id)
 
-    const remainingRows = store.activeShot!.voiceAssignments!.filter((item) => item.characterId === firstAssignment!.characterId)
+    const remainingRows = store.activeShot!.voiceAssignments!.filter(
+      (item) => item.characterId === firstAssignment!.characterId,
+    )
     expect(remainingRows).toHaveLength(1)
     expect(remainingRows[0].id).toBe(duplicateRows[1].id)
   })
 
-  it('creates a central generation task when generating a storyboard shot', async () => {
+  it('replaces the shot with a generated image when storyboard generation succeeds', async () => {
     const editorStore = useEditorStore()
-    const generationStore = useGenerationStore()
     const store = useStoryboardStore()
     editorStore.currentProjectId = 'project-storyboard'
 
     const target = store.shots[0]
     await store.generateShotById(target.id)
 
-    const task = generationStore.tasks.find((item) => item.projectId === 'project-storyboard' && item.shotId === target.id)
-    expect(task?.type).toBe('storyboard')
-    expect(task?.status).toBe('success')
     expect(store.shots.find((shot) => shot.id === target.id)?.status).toBe('success')
+    expect(store.shots.find((shot) => shot.id === target.id)?.imageUrl).toContain('data:image/svg+xml')
+  })
+
+  it('marks the shot as failed when storyboard generation fails', async () => {
+    const editorStore = useEditorStore()
+    const store = useStoryboardStore()
+    editorStore.currentProjectId = 'project-storyboard-fail'
+
+    const target = store.shots[0]
+    store.updateActiveShotPrompt('#mock-shot-fail')
+
+    await expect(store.generateShotById(target.id)).rejects.toThrow('STORYBOARD_GENERATE_FAILED')
+    expect(store.shots.find((shot) => shot.id === target.id)?.status).toBe('failed')
+  })
+
+  it('does not generate a locked storyboard shot', async () => {
+    const editorStore = useEditorStore()
+    const generationStore = useGenerationStore()
+    const store = useStoryboardStore()
+    editorStore.currentProjectId = 'project-storyboard-locked'
+
+    const target = store.shots[0]
+    const originalStatus = target.status
+    store.toggleLock(target.id)
+
+    await expect(store.generateShotById(target.id)).resolves.toBeUndefined()
+
+    expect(generationStore.tasks.find((task) => task.shotId === target.id)).toBeUndefined()
+    expect(store.shots.find((shot) => shot.id === target.id)?.status).toBe(originalStatus)
+  })
+
+  it('optimizes shot prompts in batch and keeps failed prompts unchanged', async () => {
+    const editorStore = useEditorStore()
+    const store = useStoryboardStore()
+    editorStore.currentProjectId = 'project-storyboard-batch-optimize'
+
+    const [firstShot, secondShot] = store.shots
+    const firstPrompt = '夜晚街道霓虹灯闪烁，角色在雨中停步回头'
+    const secondPrompt = '#mock-optimize-fail'
+
+    store.selectShot(firstShot.id)
+    store.updateActiveShotPrompt(firstPrompt)
+    store.selectShot(secondShot.id)
+    store.updateActiveShotPrompt(secondPrompt)
+
+    await store.optimizeShotPromptsByIds([firstShot.id, secondShot.id])
+
+    expect(store.shots.find((shot) => shot.id === firstShot.id)?.prompt).toContain('镜头')
+    expect(store.shots.find((shot) => shot.id === secondShot.id)?.prompt).toBe(secondPrompt)
+  })
+
+  it('skips locked and empty prompts during batch optimization', async () => {
+    const editorStore = useEditorStore()
+    const store = useStoryboardStore()
+    editorStore.currentProjectId = 'project-storyboard-batch-filter'
+
+    const [firstShot, secondShot, thirdShot] = store.shots
+    const firstPrompt = '雨夜车站，角色独自等待列车进站'
+    const secondPrompt = '   '
+    const thirdPrompt = '清晨天台逆光特写，角色转身微笑'
+
+    store.selectShot(firstShot.id)
+    store.updateActiveShotPrompt(firstPrompt)
+    store.selectShot(secondShot.id)
+    store.updateActiveShotPrompt(secondPrompt)
+    store.selectShot(thirdShot.id)
+    store.updateActiveShotPrompt(thirdPrompt)
+    store.toggleLock(thirdShot.id)
+
+    await store.optimizeShotPromptsByIds([firstShot.id, secondShot.id, thirdShot.id])
+
+    expect(store.shots.find((shot) => shot.id === firstShot.id)?.prompt).toContain('镜头')
+    expect(store.shots.find((shot) => shot.id === secondShot.id)?.prompt).toBe(secondPrompt)
+    expect(store.shots.find((shot) => shot.id === thirdShot.id)?.prompt).toBe(thirdPrompt)
   })
 
   it('uploads a shot image through the storyboard api boundary', async () => {
@@ -68,6 +145,7 @@ describe('storyboard store', () => {
     expect(updated?.imageUrl).toBe(imageUrl)
     expect(updated?.referenceImages[0]?.label).toBe('上传图片')
   })
+
   it('uploads a shot video through the storyboard api boundary', async () => {
     const store = useStoryboardStore()
     const target = store.shots[0]
@@ -78,6 +156,61 @@ describe('storyboard store', () => {
     const updated = store.shots.find((shot) => shot.id === target.id)
     expect(updated?.videoUrl).toBe(videoUrl)
   })
+
+  it('replaces the shot with an upscaled image when storyboard upscale succeeds', async () => {
+    const editorStore = useEditorStore()
+    const store = useStoryboardStore()
+    editorStore.currentProjectId = 'project-storyboard-upscale'
+
+    const target = store.shots[0]
+    const originalImageUrl = target.imageUrl
+
+    await store.upscaleShotById(target.id)
+
+    const updated = store.shots.find((shot) => shot.id === target.id)
+    expect(updated?.status).toBe('success')
+    expect(updated?.imageUrl).not.toBe(originalImageUrl)
+    expect(updated?.referenceImages[0]?.sourceShotId).toBe(target.id)
+  })
+
+  it('requires an existing image before storyboard upscale', async () => {
+    const store = useStoryboardStore()
+    const target = store.shots[0]
+
+    store.selectShot(target.id)
+    store.updateActiveShot({ imageUrl: '' })
+
+    await expect(store.upscaleShotById(target.id)).rejects.toThrow(API_ERROR_CODES.storyboardUpscaleImageRequired)
+  })
+
+  it('marks the shot as failed when storyboard upscale fails', async () => {
+    const editorStore = useEditorStore()
+    const store = useStoryboardStore()
+    editorStore.currentProjectId = 'project-storyboard-upscale-fail'
+
+    const target = store.shots[0]
+    store.selectShot(target.id)
+    store.updateActiveShot({ title: '#mock-upscale-fail' })
+
+    await expect(store.upscaleShotById(target.id)).rejects.toThrow(API_ERROR_CODES.storyboardUpscaleFailed)
+    expect(store.shots.find((shot) => shot.id === target.id)?.status).toBe('failed')
+  })
+
+  it('does not upscale a locked storyboard shot', async () => {
+    const editorStore = useEditorStore()
+    const generationStore = useGenerationStore()
+    const store = useStoryboardStore()
+    editorStore.currentProjectId = 'project-storyboard-upscale-locked'
+
+    const target = store.shots[0]
+    const originalImageUrl = target.imageUrl
+    const originalStatus = target.status
+    store.toggleLock(target.id)
+
+    await expect(store.upscaleShotById(target.id)).resolves.toBeUndefined()
+
+    expect(generationStore.tasks.find((task) => task.shotId === target.id && task.type === 'storyboard_upscale')).toBeUndefined()
+    expect(store.shots.find((shot) => shot.id === target.id)?.imageUrl).toBe(originalImageUrl)
+    expect(store.shots.find((shot) => shot.id === target.id)?.status).toBe(originalStatus)
+  })
 })
-
-

@@ -1,11 +1,10 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { settingApi } from '@/api/setting.api'
-import { hasAnyMockFailureToken } from '@/features/shared/mockFailureState'
 import { cloneSettingAsset, createDefaultSettingAssets } from '@/mocks/setting.mock'
+import { settingAssetGenerationService } from '@/services/generation'
 import { useEditorStore } from '@/stores/editor'
-import { useGenerationStore } from '@/stores/generation'
-import { API_ERROR_CODES, GENERATION_TASK_STATUSES } from '@/types/api-enums'
+import { API_ERROR_CODES } from '@/types/api-enums'
 import type { SettingAsset, SettingAssetType, SettingAssetTypeFilter } from '@/types/settingAsset'
 
 const normalizeKeyword = (value: string): string => value.trim().toLocaleLowerCase()
@@ -17,7 +16,6 @@ export const useSettingAssetsStore = defineStore('setting-assets', () => {
   const keyword = ref('')
   const activeType = ref<SettingAssetTypeFilter>('all')
   const editorStore = useEditorStore()
-  const generationStore = useGenerationStore()
 
   const filteredAssets = computed(() => {
     const word = normalizeKeyword(keyword.value)
@@ -121,40 +119,18 @@ export const useSettingAssetsStore = defineStore('setting-assets', () => {
       return
     }
 
-    const task = await generationStore.createTask({
-      projectId: editorStore.currentProjectId ?? 'mock-project',
-      type: 'setting_asset',
-      payload: {
-        assetId: id,
-        assetType: target.type,
-      },
-    })
-
     assets.value = assets.value.map((asset) => (asset.id === id ? { ...asset, status: 'generating' } : asset))
-    if (task) {
-      await generationStore.setTaskStatus(task.id, GENERATION_TASK_STATUSES.running, 15)
-    }
 
-    if (hasAnyMockFailureToken([target.title, target.prompt], ['#mock-image-fail'])) {
-      assets.value = assets.value.map((asset) => (asset.id === id ? { ...asset, status: 'failed' } : asset))
-      if (task) {
-        await generationStore.setTaskStatus(task.id, GENERATION_TASK_STATUSES.failed, 100, {
-          errorMessage: API_ERROR_CODES.settingImageGenerateFailed,
-        })
-      }
-      throw new Error(API_ERROR_CODES.settingImageGenerateFailed)
-    }
-
-    const result = await settingApi.generateAssetImage(target)
-    assets.value = assets.value.map((asset) => (asset.id === id ? result.asset : asset))
-
-    if (task) {
-      await generationStore.setTaskStatus(task.id, GENERATION_TASK_STATUSES.success, 100, {
-        result: {
-          assetId: id,
-          imageUrl: result.imageUrl,
-        },
+    try {
+      const result = await settingAssetGenerationService.generateAssetImage({
+        projectId: editorStore.currentProjectId ?? 'mock-project',
+        asset: target,
       })
+
+      assets.value = assets.value.map((asset) => (asset.id === id ? result.asset : asset))
+    } catch (error) {
+      assets.value = assets.value.map((asset) => (asset.id === id ? { ...asset, status: 'failed' } : asset))
+      throw error
     }
   }
 

@@ -1,4 +1,13 @@
 import { GENERATION_TASK_TYPES } from '@/types/api-enums'
+import {
+  type ScriptGeneratePayload,
+  type ScriptOptimizePayload,
+} from './generationPayload.types'
+import {
+  assertScriptGenerateResult,
+  assertScriptOptimizeResult,
+} from './generationResultGuards'
+import type { ScriptGenerateResult, ScriptOptimizeResult } from './generationResult.types'
 import { createAndWaitGenerationTask } from './generationTaskRunner'
 
 export interface GenerateScriptInput {
@@ -14,59 +23,45 @@ export interface OptimizeScriptInput {
   modelId: string
 }
 
-export interface GenerateScriptResult {
-  script: string
-}
-
-export interface OptimizeScriptResult {
-  script: string
-}
-
 export const scriptGenerationService = {
-  async generateScript(input: GenerateScriptInput): Promise<GenerateScriptResult> {
+  async generateScript(input: GenerateScriptInput): Promise<ScriptGenerateResult> {
+    const payload: ScriptGeneratePayload = {
+      sourceText: input.sourceText,
+      promptText: input.promptText,
+      modelId: input.modelId,
+    }
+
     const task = await createAndWaitGenerationTask(
       {
         projectId: input.projectId,
         type: GENERATION_TASK_TYPES.script,
-        payload: {
-          sourceText: input.sourceText,
-          promptText: input.promptText,
-          modelId: input.modelId,
-        },
+        payload: payload as Record<string, unknown>,
       },
       {
         interval: 100,
       },
     )
 
-    const result = task.result as Partial<GenerateScriptResult> | undefined
-    if (!result?.script) {
-      throw new Error('SCRIPT_GENERATE_FAILED')
-    }
-
-    return { script: result.script }
+    return assertScriptGenerateResult(task.result as Partial<ScriptGenerateResult> | undefined)
   },
 
-  async optimizeScript(input: OptimizeScriptInput): Promise<OptimizeScriptResult> {
+  async optimizeScript(input: OptimizeScriptInput): Promise<ScriptOptimizeResult> {
+    const payload: ScriptOptimizePayload = {
+      scriptText: input.scriptText,
+      modelId: input.modelId,
+    }
+
     const task = await createAndWaitGenerationTask(
       {
         projectId: input.projectId,
         type: GENERATION_TASK_TYPES.scriptOptimize,
-        payload: {
-          scriptText: input.scriptText,
-          modelId: input.modelId,
-        },
+        payload: payload as Record<string, unknown>,
       },
       {
         interval: 100,
       },
     )
 
-    const result = task.result as Partial<OptimizeScriptResult> | undefined
-    if (!result?.script) {
-      throw new Error('SCRIPT_OPTIMIZE_FAILED')
-    }
-
-    return { script: result.script }
+    return assertScriptOptimizeResult(task.result as Partial<ScriptOptimizeResult> | undefined)
   },
 }

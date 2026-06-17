@@ -1,5 +1,4 @@
-import { GENERATION_TASK_STATUSES } from '@/types/api-enums'
-import { generateMockScript, optimizeMockScript } from '@/features/editor/scriptGenerationState'
+import { API_ERROR_CODES, GENERATION_TASK_STATUSES } from '@/types/api-enums'
 import type {
   GenerationCancelTaskRequestDTO,
   GenerationCancelTaskResponseDTO,
@@ -13,6 +12,7 @@ import type {
   GenerationUpdateTaskStatusResponseDTO,
 } from '@/types/api-dto'
 import { delay, readLocal, writeLocal } from '@/api/local'
+import { resolveMockGenerationTask } from './mock-resolvers'
 import type { GenerationApiContract, GenerationTask } from './generation.types'
 
 const GENERATION_KEY = 'amd.generation.tasks'
@@ -37,8 +37,15 @@ const updateTaskInStorage = (id: string, patch: Partial<GenerationTask>): Genera
   return next
 }
 
-const scheduleScriptTaskSettlement = (task: GenerationTask): void => {
-  if (task.type !== 'script' && task.type !== 'script_optimize') {
+const scheduleTaskSettlement = (task: GenerationTask): void => {
+  if (
+    task.type !== 'script' &&
+    task.type !== 'script_optimize' &&
+    task.type !== 'setting_asset' &&
+    task.type !== 'storyboard' &&
+    task.type !== 'storyboard_optimize' &&
+    task.type !== 'storyboard_upscale'
+  ) {
     return
   }
 
@@ -49,22 +56,12 @@ const scheduleScriptTaskSettlement = (task: GenerationTask): void => {
     })
   }, 20)
 
-  globalThis.setTimeout(() => {
+  globalThis.setTimeout(async () => {
     try {
-      const script =
-        task.type === 'script'
-          ? generateMockScript({
-              sourceText: String(task.payload?.sourceText ?? ''),
-              promptText: String(task.payload?.promptText ?? ''),
-            })
-          : optimizeMockScript(String(task.payload?.scriptText ?? ''))
-
-      updateTaskInStorage(task.id, {
-        status: GENERATION_TASK_STATUSES.success,
-        progress: 100,
-        result: { script },
-        errorMessage: undefined,
-      })
+      const settlement = await resolveMockGenerationTask(task)
+      if (settlement) {
+        updateTaskInStorage(task.id, settlement)
+      }
     } catch (error) {
       updateTaskInStorage(task.id, {
         status: GENERATION_TASK_STATUSES.failed,
@@ -108,7 +105,7 @@ export const generationMockApi: GenerationApiContract = {
       updatedAt: now,
     }
     setTasks([task, ...getTasks()])
-    scheduleScriptTaskSettlement(task)
+    scheduleTaskSettlement(task)
     const response: GenerationCreateTaskResponseDTO = { task }
     return response.task
   },
@@ -168,7 +165,7 @@ export const generationMockApi: GenerationApiContract = {
 
     tasks[index] = next
     setTasks(tasks)
-    scheduleScriptTaskSettlement(next)
+    scheduleTaskSettlement(next)
     const response: GenerationRetryTaskResponseDTO = { task: next }
     return response.task
   },

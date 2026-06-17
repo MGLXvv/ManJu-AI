@@ -1,0 +1,54 @@
+import { generationApi } from '@/api/modules/generation'
+import { GENERATION_TASK_STATUSES } from '@/types/api-enums'
+import type { CreateGenerationTaskInput, GenerationTask } from '@/types/generation'
+
+export interface WaitForTaskOptions {
+  interval?: number
+  timeout?: number
+}
+
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => {
+    globalThis.setTimeout(resolve, ms)
+  })
+
+export const waitForGenerationTask = async (
+  taskId: string,
+  options: WaitForTaskOptions = {},
+): Promise<GenerationTask> => {
+  const interval = options.interval ?? 600
+  const timeout = options.timeout ?? 30000
+  const startedAt = Date.now()
+
+  while (Date.now() - startedAt < timeout) {
+    const latest = await generationApi.getById(taskId)
+
+    if (!latest) {
+      throw new Error('GENERATION_TASK_NOT_FOUND')
+    }
+
+    if (latest.status === GENERATION_TASK_STATUSES.success) {
+      return latest
+    }
+
+    if (latest.status === GENERATION_TASK_STATUSES.failed) {
+      throw new Error(latest.errorMessage || 'GENERATION_TASK_FAILED')
+    }
+
+    if (latest.status === GENERATION_TASK_STATUSES.cancelled) {
+      throw new Error('GENERATION_TASK_CANCELLED')
+    }
+
+    await sleep(interval)
+  }
+
+  throw new Error('GENERATION_TASK_TIMEOUT')
+}
+
+export const createAndWaitGenerationTask = async (
+  input: CreateGenerationTaskInput,
+  options: WaitForTaskOptions = {},
+): Promise<GenerationTask> => {
+  const created = await generationApi.create(input)
+  return waitForGenerationTask(created.id, options)
+}

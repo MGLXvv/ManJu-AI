@@ -121,7 +121,6 @@ import ScriptResultPanel from '@/components/editor/script/ScriptResultPanel.vue'
 import ScriptTemplatePopover from '@/components/editor/script/ScriptTemplatePopover.vue'
 import { buildScriptDraftSnapshot, hasUnsavedScriptChanges } from '@/features/editor/scriptDraftState'
 import { validateEditorAdvance } from '@/features/editor/editorCompletionState'
-import { generateMockScript, optimizeMockScript } from '@/features/editor/scriptGenerationState'
 import { buildScriptLeaveDialogCopy, shouldInterceptScriptLeave } from '@/features/editor/scriptLeaveConfirmState'
 import {
   buildScriptTemplateInput,
@@ -134,6 +133,7 @@ import { useEditorStore } from '@/stores/editor'
 import { useProjectStore } from '@/stores/project'
 import { useScriptTemplateStore } from '@/stores/scriptTemplates'
 import { useUiFeedbackStore } from '@/stores/uiFeedback'
+import { scriptGenerationService } from '@/services/generation'
 import { API_ERROR_CODES } from '@/types/api-enums'
 import type { ScriptTemplateInput } from '@/types/scriptTemplate'
 
@@ -174,7 +174,7 @@ const pendingLeaveTarget = ref<RouteLocationRaw | null>(null)
 const bypassLeaveGuard = ref(false)
 
 const projectId = computed(() => String(route.params.projectId ?? ''))
-const canGenerate = computed(() => Boolean(sourceText.value.trim() || promptText.value.trim()))
+const canGenerate = computed(() => Boolean(sourceText.value.trim()))
 const canEnterNext = computed(() => Boolean(generatedScript.value.trim()))
 const isBusy = computed(() => generating.value || optimizing.value || submitting.value)
 const actionState = computed<'idle' | 'saving' | 'generating' | 'optimizing'>(() => {
@@ -420,11 +420,13 @@ const handleGenerate = async (): Promise<void> => {
 
   generating.value = true
   try {
-    await new Promise((resolve) => window.setTimeout(resolve, 650))
-    generatedScript.value = generateMockScript({
+    const result = await scriptGenerationService.generateScript({
+      projectId: projectId.value,
       sourceText: sourceText.value,
       promptText: promptText.value,
+      modelId: selectedModelId.value,
     })
+    generatedScript.value = result.script
     const saved = await persistDraft()
     if (saved) {
       showToast('剧本生成完成', 'success')
@@ -443,8 +445,12 @@ const handleOptimize = async (): Promise<void> => {
 
   optimizing.value = true
   try {
-    await new Promise((resolve) => window.setTimeout(resolve, 420))
-    generatedScript.value = optimizeMockScript(generatedScript.value)
+    const result = await scriptGenerationService.optimizeScript({
+      projectId: projectId.value,
+      scriptText: generatedScript.value,
+      modelId: selectedModelId.value,
+    })
+    generatedScript.value = result.script
     const saved = await persistDraft()
     if (saved) {
       showToast('剧本已完成 AI 优化', 'success')

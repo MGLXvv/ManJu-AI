@@ -93,10 +93,14 @@ const formatDuration = (duration?: string): string => {
   return duration?.trim() || '00:45:00'
 }
 
+const openProjectEditor = (): void => {
+  void router.push(`/projects/${props.project.id}/editor/${props.project.currentStep}`)
+}
+
 const handleActionClick = (): void => {}
 
 const handleEditClick = (): void => {
-  void router.push(`/projects/${props.project.id}/editor/${props.project.currentStep}`)
+  openProjectEditor()
 }
 
 const handleDeleteClick = (): void => {
@@ -110,6 +114,9 @@ const handleExportClick = (): void => {
 const handleCardClick = (): void => {
   if (props.batchMode) {
     emit('toggle-select', props.project.id)
+    return
   }
+
+  openProjectEditor()
 }
 </script>

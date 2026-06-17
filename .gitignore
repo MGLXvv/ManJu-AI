@@ -25,7 +25,10 @@ yarn-debug.log*
 yarn-error.log*
 
 # Local analysis, design references, and generated artifacts
-docs/
+docs/*
+!docs/generation-task-contract.md
+!docs/api-integration.md
+!docs/remaining-mock-coupling.md
 outputs/
 tools/
 原型/

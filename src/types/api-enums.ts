@@ -1,5 +1,7 @@
 export const API_ERROR_CODES = {
   editorSaveFailed: 'EDITOR_SAVE_FAILED',
+  scriptGenerateFailed: 'SCRIPT_GENERATE_FAILED',
+  scriptOptimizeFailed: 'SCRIPT_OPTIMIZE_FAILED',
   settingImageGenerateFailed: 'SETTING_IMAGE_GENERATE_FAILED',
   storyboardGenerateFailed: 'STORYBOARD_GENERATE_FAILED',
   storyboardOptimizeFailed: 'STORYBOARD_OPTIMIZE_FAILED',

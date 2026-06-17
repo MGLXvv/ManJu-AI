@@ -63,6 +63,11 @@ const makeGuardAsset = (overrides: Partial<SettingAsset> = {}): SettingAsset =>
   }) as SettingAsset
 
 describe('generationResultGuards', () => {
+  it('exposes script error codes through API_ERROR_CODES', () => {
+    expect(API_ERROR_CODES.scriptGenerateFailed).toBe('SCRIPT_GENERATE_FAILED')
+    expect(API_ERROR_CODES.scriptOptimizeFailed).toBe('SCRIPT_OPTIMIZE_FAILED')
+  })
+
   it('returns script results when script content exists', () => {
     const result = assertScriptGenerateResult({ script: '第一幕：角色出场' })
 
@@ -70,8 +75,8 @@ describe('generationResultGuards', () => {
   })
 
   it('throws stable script generation and optimization errors for missing script results', () => {
-    expect(() => assertScriptGenerateResult({})).toThrow('SCRIPT_GENERATE_FAILED')
-    expect(() => assertScriptOptimizeResult(undefined)).toThrow('SCRIPT_OPTIMIZE_FAILED')
+    expect(() => assertScriptGenerateResult({})).toThrow(API_ERROR_CODES.scriptGenerateFailed)
+    expect(() => assertScriptOptimizeResult(undefined)).toThrow(API_ERROR_CODES.scriptOptimizeFailed)
   })
 
   it('returns storyboard image result when image and shot exist', () => {

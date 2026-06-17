@@ -12,7 +12,7 @@ export const assertScriptGenerateResult = (
   result: Partial<ScriptGenerateResult> | undefined,
 ): ScriptGenerateResult => {
   if (!result?.script) {
-    throw new Error('SCRIPT_GENERATE_FAILED')
+    throw new Error(API_ERROR_CODES.scriptGenerateFailed)
   }
 
   return { script: result.script }
@@ -22,7 +22,7 @@ export const assertScriptOptimizeResult = (
   result: Partial<ScriptOptimizeResult> | undefined,
 ): ScriptOptimizeResult => {
   if (!result?.script) {
-    throw new Error('SCRIPT_OPTIMIZE_FAILED')
+    throw new Error(API_ERROR_CODES.scriptOptimizeFailed)
   }
 
   return { script: result.script }

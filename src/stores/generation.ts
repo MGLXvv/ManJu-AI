@@ -1,14 +1,32 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
-import { generationApi } from '@/api/generation.api'
-import type { GenerationTask, GenerationTaskStatus, GenerationTaskType } from '@/types/generation'
+import { computed, ref } from 'vue'
+import { taskApi } from '@/api/task.api'
+import { pollTaskUntilSettled } from '@/services/taskPolling'
+import { GENERATION_TASK_STATUSES } from '@/types/api-enums'
+import type { CreateGenerationTaskInput, GenerationTask, GenerationTaskStatus } from '@/types/generation'
 
 export const useGenerationStore = defineStore('generation', () => {
   const projectId = ref<string | null>(null)
   const tasks = ref<GenerationTask[]>([])
   const loading = ref(false)
 
-  const loadTasks = async (nextProjectId: string): Promise<void> => {
+  const activeTasks = computed(() =>
+    tasks.value.filter(
+      (task) => task.status === GENERATION_TASK_STATUSES.queued || task.status === GENERATION_TASK_STATUSES.running,
+    ),
+  )
+
+  const upsertTask = (next: GenerationTask): void => {
+    const index = tasks.value.findIndex((task) => task.id === next.id)
+    if (index < 0) {
+      tasks.value = [next, ...tasks.value]
+      return
+    }
+
+    tasks.value = tasks.value.map((task) => (task.id === next.id ? next : task))
+  }
+
+  const hydrate = async (nextProjectId: string): Promise<void> => {
     if (loading.value) {
       return
     }
@@ -16,31 +34,100 @@ export const useGenerationStore = defineStore('generation', () => {
     loading.value = true
     try {
       projectId.value = nextProjectId
-      tasks.value = await generationApi.list(nextProjectId)
+      tasks.value = await taskApi.listByProject(nextProjectId)
     } finally {
       loading.value = false
     }
   }
 
-  const createTask = async (type: GenerationTaskType, shotId?: string): Promise<void> => {
-    if (!projectId.value) {
-      return
+  const loadTasks = hydrate
+
+  const createTask = async (
+    input: Omit<CreateGenerationTaskInput, 'projectId'> & { projectId?: string },
+  ): Promise<GenerationTask | null> => {
+    const resolvedProjectId = input.projectId ?? projectId.value
+    if (!resolvedProjectId) {
+      return null
     }
-    const created = await generationApi.create({
-      projectId: projectId.value,
-      type,
-      shotId,
+
+    if (projectId.value !== resolvedProjectId) {
+      projectId.value = resolvedProjectId
+      tasks.value = await taskApi.listByProject(resolvedProjectId)
+    }
+
+    const created = await taskApi.create({
+      projectId: resolvedProjectId,
+      ...input,
     })
-    tasks.value = [created, ...tasks.value]
+    upsertTask(created)
+    return created
   }
 
-  const setTaskStatus = async (id: string, status: GenerationTaskStatus, progress = 0): Promise<void> => {
-    const next = await generationApi.updateStatus(id, status, progress)
+  const syncTask = async (id: string): Promise<GenerationTask | null> => {
+    const next = await taskApi.getById(id)
     if (!next) {
-      return
+      return null
     }
-    tasks.value = tasks.value.map((task) => (task.id === id ? next : task))
+
+    upsertTask(next)
+    return next
   }
 
-  return { projectId, tasks, loading, loadTasks, createTask, setTaskStatus }
+  const setTaskStatus = async (
+    id: string,
+    status: GenerationTaskStatus,
+    progress = 0,
+    extras?: Pick<GenerationTask, 'result' | 'errorMessage'>,
+  ): Promise<GenerationTask | null> => {
+    const next = await taskApi.updateStatus(id, status, progress, extras)
+    if (!next) {
+      return null
+    }
+
+    upsertTask(next)
+    return next
+  }
+
+  const cancelTask = async (id: string): Promise<GenerationTask | null> => {
+    const next = await taskApi.cancel(id)
+    if (!next) {
+      return null
+    }
+
+    upsertTask(next)
+    return next
+  }
+
+  const retryTask = async (id: string): Promise<GenerationTask | null> => {
+    const next = await taskApi.retry(id)
+    if (!next) {
+      return null
+    }
+
+    upsertTask(next)
+    return next
+  }
+
+  const pollTask = async (id: string, intervalMs?: number): Promise<GenerationTask | null> => {
+    const next = await pollTaskUntilSettled(id, taskApi.getById, intervalMs)
+    if (next) {
+      upsertTask(next)
+    }
+    return next
+  }
+
+  return {
+    projectId,
+    tasks,
+    activeTasks,
+    loading,
+    hydrate,
+    loadTasks,
+    createTask,
+    syncTask,
+    setTaskStatus,
+    cancelTask,
+    retryTask,
+    pollTask,
+  }
 })

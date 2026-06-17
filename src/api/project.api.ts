@@ -1,5 +1,22 @@
 import { mockProjects } from '@/mocks/projects.mock'
-import type { Project, ProjectStatus, WorkflowStep } from '@/types/project'
+import type {
+  ProjectCreateRequestDTO,
+  ProjectCreateResponseDTO,
+  ProjectExportRequestDTO,
+  ProjectExportResponseDTO,
+  ProjectGetByIdRequestDTO,
+  ProjectGetByIdResponseDTO,
+  ProjectImportItemDTO,
+  ProjectImportRequestDTO,
+  ProjectImportResponseDTO,
+  ProjectListRequestDTO,
+  ProjectListResponseDTO,
+  ProjectRemoveRequestDTO,
+  ProjectRemoveResponseDTO,
+  ProjectUpdateRequestDTO,
+  ProjectUpdateResponseDTO,
+} from '@/types/api-dto'
+import type { Project, ProjectListQuery, ProjectStatus, WorkflowStep } from '@/types/project'
 import { delay, readLocal, writeLocal } from './local'
 
 const PROJECTS_KEY = 'amd.projects'
@@ -47,7 +64,7 @@ export interface ImportProjectInput {
   favorite?: boolean
 }
 
-const createProjectRecord = (input: ImportProjectInput): Project => {
+const createProjectRecord = (input: ImportProjectInput | ProjectImportItemDTO): Project => {
   const now = new Date().toLocaleString('zh-CN', { hour12: false })
   return {
     id: `project-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -64,35 +81,66 @@ const createProjectRecord = (input: ImportProjectInput): Project => {
 }
 
 export const projectApi = {
-  async list(): Promise<Project[]> {
+  async list(query?: ProjectListQuery): Promise<Project[]> {
     await delay()
-    return getProjects()
+    const request: ProjectListRequestDTO = query ?? {}
+    let projects = getProjects()
+
+    if (request.status && request.status !== 'all') {
+      projects = projects.filter((project) => project.status === request.status)
+    }
+
+    if (request.keyword?.trim()) {
+      const keyword = request.keyword.trim().toLocaleLowerCase()
+      projects = projects.filter((project) => project.name.toLocaleLowerCase().includes(keyword))
+    }
+
+    const response: ProjectListResponseDTO = { projects }
+    return response.projects
+  },
+
+  async getById(id: string): Promise<Project | null> {
+    await delay(60)
+    const request: ProjectGetByIdRequestDTO = { id }
+    const response: ProjectGetByIdResponseDTO = {
+      project: getProjects().find((project) => project.id === request.id) ?? null,
+    }
+    return response.project
   },
 
   async create(input: CreateProjectInput): Promise<Project> {
     await delay()
-    const created = createProjectRecord(input)
+    const request: ProjectCreateRequestDTO = input
+    const created = createProjectRecord(request)
     const next = [created, ...getProjects()]
     setProjects(next)
-    return created
+    const response: ProjectCreateResponseDTO = { project: created }
+    return response.project
   },
 
   async importProjects(inputs: ImportProjectInput[]): Promise<Project[]> {
     await delay(120)
-    const imported = inputs.map((item) => createProjectRecord(item))
+    const request: ProjectImportRequestDTO = { projects: inputs }
+    const imported = request.projects.map((item) => createProjectRecord(item))
     setProjects([...imported, ...getProjects()])
-    return imported
+    const response: ProjectImportResponseDTO = { projects: imported }
+    return response.projects
   },
 
   async exportProject(id: string): Promise<Project | null> {
     await delay(60)
-    return getProjects().find((project) => project.id === id) ?? null
+    const request: ProjectExportRequestDTO = { id }
+    const response: ProjectExportResponseDTO = {
+      project: getProjects().find((project) => project.id === request.id) ?? null,
+    }
+    return response.project
   },
 
   async update(input: UpdateProjectInput): Promise<Project | null> {
     await delay()
+    const request: ProjectUpdateRequestDTO = input
     const projects = getProjects()
-    const index = projects.findIndex((project) => project.id === input.id)
+    const index = projects.findIndex((project) => project.id === request.id)
     if (index < 0) {
       return null
     }
@@ -100,16 +148,20 @@ export const projectApi = {
     const now = new Date().toLocaleString('zh-CN', { hour12: false })
     const merged: Project = {
       ...projects[index],
-      ...input,
+      ...request,
       updatedAt: now,
     }
     projects[index] = merged
     setProjects(projects)
-    return merged
+    const response: ProjectUpdateResponseDTO = { project: merged }
+    return response.project
   },
 
   async remove(id: string): Promise<void> {
     await delay(80)
-    setProjects(getProjects().filter((project) => project.id !== id))
+    const request: ProjectRemoveRequestDTO = { id }
+    setProjects(getProjects().filter((project) => project.id !== request.id))
+    const response: ProjectRemoveResponseDTO = { removed: true }
+    void response
   },
 }

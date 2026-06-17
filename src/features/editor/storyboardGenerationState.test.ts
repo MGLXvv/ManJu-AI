@@ -1,4 +1,5 @@
 ﻿import { describe, expect, it } from 'vitest'
+import { API_ERROR_CODES } from '@/types/api-enums'
 import {
   buildStoryboardGenerateErrorMessage,
   optimizeMockStoryboardPrompt,
@@ -13,8 +14,8 @@ describe('storyboardGenerationState', () => {
   })
 
   it('maps stable generate errors to user-facing copy', () => {
-    expect(buildStoryboardGenerateErrorMessage('STORYBOARD_GENERATE_FAILED')).toBe('分镜生成失败，请调整提示词后重试')
-    expect(buildStoryboardGenerateErrorMessage('STORYBOARD_OPTIMIZE_FAILED')).toBe('AI优化失败，请稍后再试')
+    expect(buildStoryboardGenerateErrorMessage(API_ERROR_CODES.storyboardGenerateFailed)).toBe('分镜生成失败，请调整提示词后重试')
+    expect(buildStoryboardGenerateErrorMessage(API_ERROR_CODES.storyboardOptimizeFailed)).toBe('AI优化失败，请稍后再试')
     expect(buildStoryboardGenerateErrorMessage('UNKNOWN_ERROR')).toBe('分镜生成失败，请稍后再试')
   })
 
@@ -27,6 +28,6 @@ describe('storyboardGenerationState', () => {
   })
 
   it('throws a stable error code when mocked optimization should fail', () => {
-    expect(() => optimizeMockStoryboardPrompt('#mock-optimize-fail')).toThrowError('STORYBOARD_OPTIMIZE_FAILED')
+    expect(() => optimizeMockStoryboardPrompt('#mock-optimize-fail')).toThrowError(API_ERROR_CODES.storyboardOptimizeFailed)
   })
 })

@@ -136,12 +136,16 @@ import { validateEditorAdvance } from '@/features/editor/editorCompletionState'
 import { buildSettingAssetsSnapshot, resolveSettingAssets } from '@/features/editor/settingDraftState'
 import { buildSettingDeleteDialogCopy, buildSettingDeleteToastMessage } from '@/features/editor/settingDeleteState'
 import { buildSettingLeaveDialogCopy, shouldInterceptSettingLeave } from '@/features/editor/settingLeaveConfirmState'
-import { buildSettingExportPayload } from '@/features/editor/settingTransferState'
-import { buildProjectArtifactEnvelope, buildProjectArtifactFileName } from '@/features/shared/projectArtifactState'
+import {
+  buildSettingArtifact,
+  buildSettingBatchExportFileName,
+  buildSettingExportFileName,
+} from '@/features/editor/settingTransferState'
 import { useEditorStore } from '@/stores/editor'
 import { useProjectStore } from '@/stores/project'
 import { createDefaultSettingAssets, useSettingAssetsStore } from '@/stores/settingAssets'
 import { useUiFeedbackStore } from '@/stores/uiFeedback'
+import { API_ERROR_CODES } from '@/types/api-enums'
 import type { SettingAsset, SettingAssetTypeFilter } from '@/types/settingAsset'
 
 const router = useRouter()
@@ -261,8 +265,10 @@ const openCreateModal = (): void => {
   createModalOpen.value = true
 }
 
-const createAsset = (payload: { type: Exclude<SettingAssetTypeFilter, 'all'>; title: string; prompt: string }): void => {
-  assetsStore.createAsset(payload)
+const createAsset = async (
+  payload: { type: Exclude<SettingAssetTypeFilter, 'all'>; title: string; prompt: string },
+): Promise<void> => {
+  await assetsStore.createAsset(payload)
   createModalOpen.value = false
 }
 
@@ -290,7 +296,7 @@ const handleGenerate = async (id: string): Promise<void> => {
     showToast('素材已生成', 'success')
   } catch (error) {
     const message = error instanceof Error ? error.message : ''
-    if (message === 'SETTING_IMAGE_GENERATE_FAILED') {
+    if (message === API_ERROR_CODES.settingImageGenerateFailed) {
       showToast('素材生成失败，请调整提示词后重试', 'error')
       return
     }
@@ -298,18 +304,18 @@ const handleGenerate = async (id: string): Promise<void> => {
   }
 }
 
-const handleUpload = (payload: { id: string; imageUrl: string }): void => {
-  assetsStore.uploadAssetImage(payload.id, payload.imageUrl)
+const handleUpload = async (payload: { id: string; imageUrl: string }): Promise<void> => {
+  await assetsStore.uploadAssetImage(payload.id, payload.imageUrl)
   showToast('素材图片已上传', 'success')
 }
 
-const handleSelectCandidate = (payload: { id: string; imageUrl: string }): void => {
-  assetsStore.selectCandidateImage(payload.id, payload.imageUrl)
+const handleSelectCandidate = async (payload: { id: string; imageUrl: string }): Promise<void> => {
+  await assetsStore.selectCandidateImage(payload.id, payload.imageUrl)
   showToast('候选图已应用到当前素材', 'success')
 }
 
-const handleUpdateAsset = (payload: { id: string; patch: Partial<SettingAsset> }): void => {
-  assetsStore.updateAsset(payload.id, payload.patch)
+const handleUpdateAsset = async (payload: { id: string; patch: Partial<SettingAsset> }): Promise<void> => {
+  await assetsStore.updateAsset(payload.id, payload.patch)
 }
 
 const handleSelectAsset = (id: string): void => {
@@ -401,27 +407,13 @@ const handleBatchExport = (): void => {
   }
 
   const selectedAssets = assetsStore.assets.filter((asset) => selectedBatchIds.value.includes(asset.id))
-  const payload = {
-    type: 'setting-batch-export-placeholder',
-    projectId: projectId.value || 'setting',
-    exportedAt: new Date().toISOString(),
-    count: selectedAssets.length,
-    items: selectedAssets.map((asset) => ({
-      id: asset.id,
-      type: asset.type,
-      title: asset.title,
-      prompt: asset.prompt,
-      favorite: Boolean(asset.favorite),
-      imageCount: asset.imageUrls.length,
-      candidateCount: asset.candidateImages?.length ?? 0,
-    })),
-  }
+  const payload = buildSettingArtifact(projectId.value || 'setting', selectedAssets)
 
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' })
   const objectUrl = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = objectUrl
-  link.download = `${projectId.value || 'setting'}-batch-export-placeholder.json`
+  link.download = buildSettingBatchExportFileName(projectId.value || 'setting')
   link.click()
   URL.revokeObjectURL(objectUrl)
 
@@ -458,16 +450,12 @@ const handleSaveExport = async (): Promise<void> => {
     return
   }
 
-  const payload = buildProjectArtifactEnvelope({
-    artifact: 'setting',
-    projectId: projectId.value || 'setting',
-    payload: buildSettingExportPayload(assetsStore.assets),
-  })
+  const payload = buildSettingArtifact(projectId.value || 'setting', assetsStore.assets)
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' })
   const objectUrl = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = objectUrl
-  link.download = buildProjectArtifactFileName(projectId.value || 'setting', 'setting')
+  link.download = buildSettingExportFileName(projectId.value || 'setting')
   link.click()
   URL.revokeObjectURL(objectUrl)
 

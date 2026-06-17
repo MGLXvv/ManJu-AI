@@ -1,9 +1,13 @@
 ﻿import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { editorApi } from '@/api/editor.api'
-import { buildDubbingDraftPatch } from '@/features/editor/dubbingDraftState'
-import { buildSettingDraftPatch } from '@/features/editor/settingDraftState'
-import { buildStoryboardDraftShots } from '@/features/editor/storyboardPersistState'
+import {
+  buildDubbingDraftPatch,
+  buildScriptDraftPatch,
+  buildSettingDraftPatch,
+  buildStoryboardDraftPatch,
+} from '@/features/editor/editorDraftMapper'
+import { EDITOR_SAVE_STATES, type EditorSaveState } from '@/types/api-enums'
 import type { DubbingRoleCardModel } from '@/types/dubbing'
 import type { EditorDraft } from '@/types/editor'
 import type { WorkflowStep } from '@/types/project'
@@ -24,6 +28,8 @@ export const useEditorStore = defineStore('editor', () => {
   const currentStep = ref<WorkflowStep>('script')
   const loading = ref(false)
   const draft = ref<EditorDraft | null>(null)
+  const saveState = ref<EditorSaveState>(EDITOR_SAVE_STATES.idle)
+  const lastSavedAt = ref<string | null>(null)
 
   const activeStepIndex = computed(() => editorSteps.findIndex((step) => step.key === currentStep.value))
 
@@ -50,7 +56,16 @@ export const useEditorStore = defineStore('editor', () => {
       return
     }
 
-    draft.value = await editorApi.saveDraft(currentProjectId.value, draft.value)
+    saveState.value = EDITOR_SAVE_STATES.saving
+    try {
+      const result = await editorApi.saveDraft(currentProjectId.value, draft.value)
+      draft.value = result.draft
+      lastSavedAt.value = result.savedAt
+      saveState.value = EDITOR_SAVE_STATES.saved
+    } catch (error) {
+      saveState.value = EDITOR_SAVE_STATES.error
+      throw error
+    }
   }
 
   const updateScriptContent = (content: string): void => {
@@ -60,10 +75,7 @@ export const useEditorStore = defineStore('editor', () => {
 
     draft.value = {
       ...draft.value,
-      script: {
-        ...draft.value.script,
-        content,
-      },
+      ...buildScriptDraftPatch(draft.value.script, { content }),
     }
   }
 
@@ -74,10 +86,7 @@ export const useEditorStore = defineStore('editor', () => {
 
     draft.value = {
       ...draft.value,
-      script: {
-        ...draft.value.script,
-        prompt,
-      },
+      ...buildScriptDraftPatch(draft.value.script, { prompt }),
     }
   }
 
@@ -88,10 +97,7 @@ export const useEditorStore = defineStore('editor', () => {
 
     draft.value = {
       ...draft.value,
-      script: {
-        ...draft.value.script,
-        generated,
-      },
+      ...buildScriptDraftPatch(draft.value.script, { generated }),
     }
   }
 
@@ -124,7 +130,7 @@ export const useEditorStore = defineStore('editor', () => {
 
     draft.value = {
       ...draft.value,
-      shots: buildStoryboardDraftShots(shots),
+      ...buildStoryboardDraftPatch(shots),
     }
   }
 
@@ -145,6 +151,8 @@ export const useEditorStore = defineStore('editor', () => {
     activeStepIndex,
     loading,
     draft,
+    saveState,
+    lastSavedAt,
     setCurrentStep,
     loadDraft,
     saveDraft,

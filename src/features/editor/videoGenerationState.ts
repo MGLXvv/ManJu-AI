@@ -1,4 +1,5 @@
 ﻿import { hasAnyMockFailureToken } from '@/features/shared/mockFailureState'
+import { API_ERROR_CODES } from '@/types/api-enums'
 
 export const shouldMockVideoGenerateFail = (input: {
   title: string
@@ -15,7 +16,7 @@ const appendOptimizeSuffix = (value: string, suffix: string): string => {
 export const optimizeMockVideoPrompt = async (prompt: string): Promise<string> => {
   await new Promise((resolve) => globalThis.setTimeout(resolve, 420))
   if (prompt.includes('#mock-optimize-fail')) {
-    throw new Error('VIDEO_OPTIMIZE_FAILED')
+    throw new Error(API_ERROR_CODES.videoOptimizeFailed)
   }
 
   return appendOptimizeSuffix(prompt, ' 镜头运动更明确，主体层次更清晰，氛围光影更聚焦。')
@@ -24,7 +25,7 @@ export const optimizeMockVideoPrompt = async (prompt: string): Promise<string> =
 export const optimizeMockVideoDialogue = async (dialogue: string): Promise<string> => {
   await new Promise((resolve) => globalThis.setTimeout(resolve, 420))
   if (dialogue.includes('#mock-optimize-fail')) {
-    throw new Error('VIDEO_OPTIMIZE_FAILED')
+    throw new Error(API_ERROR_CODES.videoOptimizeFailed)
   }
 
   return appendOptimizeSuffix(dialogue, ' 情绪更集中，语气更自然，停顿节奏更适合配音。')
@@ -33,11 +34,11 @@ export const optimizeMockVideoDialogue = async (dialogue: string): Promise<strin
 export const buildVideoGenerateErrorMessage = (error: unknown): string => {
   const code = error instanceof Error ? error.message : String(error ?? '')
 
-  if (code === 'VIDEO_GENERATE_FAILED') {
+  if (code === API_ERROR_CODES.videoGenerateFailed) {
     return '视频生成失败，请调整提示词后重试'
   }
 
-  if (code === 'VIDEO_OPTIMIZE_FAILED') {
+  if (code === API_ERROR_CODES.videoOptimizeFailed) {
     return 'AI优化失败，请稍后再试'
   }
 

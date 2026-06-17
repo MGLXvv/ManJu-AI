@@ -43,7 +43,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import SystemMessageDetailModal from '@/components/system/SystemMessageDetailModal.vue'
 import SystemMessagePanel from '@/components/system/SystemMessagePanel.vue'
 import SystemPermissionPanel from '@/components/system/SystemPermissionPanel.vue'
@@ -54,6 +54,10 @@ import type { SystemPermissionItem } from '@/types/system'
 
 const store = useSystemStore()
 const selectedMessageId = ref('')
+
+onMounted(() => {
+  void store.hydrate()
+})
 
 const activePanel = computed({
   get: () => store.activePanel,
@@ -84,50 +88,53 @@ const messagePage = computed(() => store.messagePage)
 const messagePageCount = computed(() => store.messagePageCount)
 const selectedMessage = computed(() => store.messages.find((item) => item.id === selectedMessageId.value) ?? null)
 
-const createStyle = (payload: { name: string; category: string; prompt: string }): void => {
-  store.createStyle(payload)
+const createStyle = async (payload: { name: string; category: string; prompt: string }): Promise<void> => {
+  await store.createStyle(payload)
 }
 
-const updateStyle = (id: string, payload: { name: string; category: string; prompt: string }): void => {
-  store.updateStyle(id, payload)
+const updateStyle = async (
+  id: string,
+  payload: { name: string; category: string; prompt: string },
+): Promise<void> => {
+  await store.updateStyle(id, payload)
 }
 
-const deleteStyle = (id: string): void => {
-  store.deleteStyle(id)
+const deleteStyle = async (id: string): Promise<void> => {
+  await store.deleteStyle(id)
 }
 
-const createPermission = (
+const createPermission = async (
   payload: { role: string; members: number; permissions: SystemPermissionItem['permissions'] },
-): void => {
-  store.createPermission(payload)
+): Promise<void> => {
+  await store.createPermission(payload)
 }
 
-const updatePermission = (
+const updatePermission = async (
   id: string,
   payload: { role: string; members: number; permissions: SystemPermissionItem['permissions'] },
-): void => {
-  store.updatePermission(id, payload)
+): Promise<void> => {
+  await store.updatePermission(id, payload)
 }
 
-const deletePermission = (id: string): void => {
-  store.deletePermission(id)
+const deletePermission = async (id: string): Promise<void> => {
+  await store.deletePermission(id)
 }
 
 const setMessagePage = (page: number): void => {
   store.setMessagePage(page)
 }
 
-const markAllRead = (): void => {
-  store.markAllRead()
+const markAllRead = async (): Promise<void> => {
+  await store.markAllRead()
 }
 
-const clearMessages = (): void => {
-  store.clearMessages()
+const clearMessages = async (): Promise<void> => {
+  await store.clearMessages()
   selectedMessageId.value = ''
 }
 
-const openMessageDetail = (id: string): void => {
-  store.markMessageRead(id)
+const openMessageDetail = async (id: string): Promise<void> => {
+  await store.markMessageRead(id)
   selectedMessageId.value = id
 }
 </script>

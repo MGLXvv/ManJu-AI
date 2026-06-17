@@ -1,15 +1,11 @@
-﻿import { buildProjectArtifactFileName } from '@/features/shared/projectArtifactState'
+import { buildStoryboardExportFileName, buildStoryboardExportPayload } from '@/features/editor/editorArtifactMapper'
+import { buildStoryboardDraftShots } from '@/features/editor/editorDraftMapper'
 import type { Shot } from '@/types/editor'
 import type { StoryboardReferenceImage, StoryboardShot, StoryboardTag, StoryboardTagOptions } from '@/types/storyboard'
 
 export interface StoryboardVideoValidationResult {
   ok: boolean
   message: string
-}
-
-export interface ExportedStoryboardPayload {
-  exportedAt: string
-  shots: Shot[]
 }
 
 type LegacyStoryboardShotStatus = Shot['status'] | 'idle' | 'pending'
@@ -28,30 +24,7 @@ const normalizeLegacyStoryboardStatus = (status: LegacyStoryboardShotStatus): Sh
   return status
 }
 
-export const buildStoryboardDraftShots = (shots: StoryboardShot[]): Shot[] =>
-  shots.map((shot) => ({
-    id: shot.id,
-    index: shot.index,
-    title: shot.title,
-    description: shot.prompt,
-    characterIds: shot.characters.map((item) => item.id),
-    sceneIds: shot.scenes.map((item) => item.id),
-    propIds: shot.props.map((item) => item.id),
-    imageUrl: shot.imageUrl,
-    videoUrl: shot.videoUrl,
-    videoPrompt: shot.videoPrompt,
-    dialogue: shot.dialogue,
-    durationSeconds: shot.durationSeconds,
-    voiceAssignments: shot.voiceAssignments?.map((item) => ({ ...item })) ?? [],
-    status: shot.status,
-    style: shot.style,
-    ratio: shot.ratio,
-    isHidden: shot.isHidden ?? false,
-    isLocked: shot.isLocked ?? false,
-    isFavorite: shot.isFavorite ?? false,
-    referenceImages: shot.referenceImages.map(cloneReferenceImage),
-    createdAt: shot.createdAt ?? '2026年3月12日 17:16',
-  }))
+export { buildStoryboardDraftShots, buildStoryboardExportPayload, buildStoryboardExportFileName }
 
 export const resolveStoryboardShots = (shots: LegacyPersistedStoryboardShot[], options: StoryboardTagOptions): StoryboardShot[] => {
   const characterMap = buildTagMap(options.characters)
@@ -81,15 +54,6 @@ export const resolveStoryboardShots = (shots: LegacyPersistedStoryboardShot[], o
     referenceImages: (shot.referenceImages ?? []).map(cloneReferenceImage),
     createdAt: shot.createdAt ?? '2026年3月12日 17:16',
   }))
-}
-
-export const buildStoryboardExportPayload = (shots: StoryboardShot[]): ExportedStoryboardPayload => ({
-  exportedAt: new Date().toISOString(),
-  shots: buildStoryboardDraftShots(shots),
-})
-
-export const buildStoryboardExportFileName = (projectId: string): string => {
-  return buildProjectArtifactFileName(projectId || 'storyboard', 'storyboard')
 }
 
 export const validateStoryboardBeforeVideo = (shots: StoryboardShot[]): StoryboardVideoValidationResult => {

@@ -1,43 +1,20 @@
 ﻿import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
+import {
+  cloneStoryboardShot,
+  cloneStoryboardTagOptions,
+  createDefaultStoryboardState,
+  storyboardApi,
+} from '@/api/storyboard.api'
 import { normalizeStoryboardShotsWithTagOptions } from '@/features/editor/storyboardDraftState'
 import { shouldMockStoryboardGenerateFail } from '@/features/editor/storyboardGenerationState'
-import { buildStoryboardUpscaledImage } from '@/features/editor/storyboardPreviewState'
 import { shouldMockVideoGenerateFail } from '@/features/editor/videoGenerationState'
-import { storyboardShotsMock, storyboardStylesMock, storyboardTagOptions } from '@/mocks/storyboard.mock'
+import { useEditorStore } from '@/stores/editor'
+import { useGenerationStore } from '@/stores/generation'
+import { API_ERROR_CODES, GENERATION_TASK_STATUSES } from '@/types/api-enums'
 import type { StoryboardRatio, StoryboardShot, StoryboardTag, StoryboardTagOptions, StoryboardVoiceAssignment } from '@/types/storyboard'
 
-const cloneShot = (shot: StoryboardShot): StoryboardShot => ({
-  ...shot,
-  characters: shot.characters.map((item) => ({ ...item })),
-  scenes: shot.scenes.map((item) => ({ ...item })),
-  props: shot.props.map((item) => ({ ...item })),
-  referenceImages: shot.referenceImages.map((item) => ({ ...item })),
-  voiceAssignments: shot.voiceAssignments?.map((item) => ({ ...item })) ?? [],
-  attachments: shot.attachments?.map((item) => ({ ...item })) ?? [],
-})
-
-const prependReferenceImage = (
-  shot: StoryboardShot,
-  image: { url: string; label?: string; sourceShotId?: string },
-): StoryboardShot['referenceImages'] => [
-  {
-    id: `ref-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    url: image.url,
-    label: image.label,
-    sourceShotId: image.sourceShotId,
-  },
-  ...shot.referenceImages,
-].slice(0, 8)
-
-const cloneTagOptions = (options: StoryboardTagOptions): StoryboardTagOptions => ({
-  characters: options.characters.map((item) => ({ ...item })),
-  scenes: options.scenes.map((item) => ({ ...item })),
-  props: options.props.map((item) => ({ ...item })),
-})
-
-const createInitialShots = (): StoryboardShot[] => storyboardShotsMock.map(cloneShot)
-const SHOT_TITLE_PATTERN = /^镜头\s*(\d+)([A-Z]+)?$/
+const SHOT_TITLE_PATTERN = /^\u955C\u5934\s*(\d+)([A-Z]+)?$/
 
 const parseShotTitle = (title: string, fallbackBase: number): { base: number; isPrimary: boolean } => {
   const match = title.match(SHOT_TITLE_PATTERN)
@@ -54,7 +31,7 @@ const parseShotTitle = (title: string, fallbackBase: number): { base: number; is
   }
 }
 
-const buildShotTitle = (base: number, suffix = ''): string => `镜头 ${base}${suffix}`
+const buildShotTitle = (base: number, suffix = ''): string => `\u955C\u5934 ${base}${suffix}`
 
 const buildAlphaSuffix = (index: number): string => {
   let current = index
@@ -70,13 +47,19 @@ const buildAlphaSuffix = (index: number): string => {
 
 const buildVoiceAssignmentId = (): string => `voice-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 
+const createStoreDefaults = () => createDefaultStoryboardState()
+
 export const useStoryboardStore = defineStore('storyboard', () => {
-  const shots = ref<StoryboardShot[]>(createInitialShots())
+  const defaultState = createStoreDefaults()
+  const shots = ref<StoryboardShot[]>(defaultState.shots)
   const activeShotId = ref(shots.value[0]?.id ?? '')
-  const tagOptionsState = ref<StoryboardTagOptions>(cloneTagOptions(storyboardTagOptions))
+  const tagOptionsState = ref<StoryboardTagOptions>(defaultState.tagOptions)
+  const styleOptionsState = ref<string[]>(defaultState.styleOptions)
+  const editorStore = useEditorStore()
+  const generationStore = useGenerationStore()
 
   const tagOptions = computed(() => tagOptionsState.value)
-  const styleOptions = computed(() => storyboardStylesMock)
+  const styleOptions = computed(() => styleOptionsState.value)
 
   const activeShot = computed(() => shots.value.find((item) => item.id === activeShotId.value) ?? null)
   const referenceImages = computed(() => activeShot.value?.referenceImages ?? [])
@@ -90,22 +73,36 @@ export const useStoryboardStore = defineStore('storyboard', () => {
   const isShotLocked = (id: string): boolean => Boolean(getShotById(id)?.isLocked)
 
   const setTagOptions = (options: StoryboardTagOptions): void => {
-    tagOptionsState.value = cloneTagOptions(options)
+    tagOptionsState.value = cloneStoryboardTagOptions(options)
     shots.value = normalizeStoryboardShotsWithTagOptions(shots.value, tagOptionsState.value)
   }
 
   const replaceShots = (nextShots: StoryboardShot[]): void => {
-    shots.value = normalizeStoryboardShotsWithTagOptions(nextShots.map(cloneShot), tagOptionsState.value)
+    shots.value = normalizeStoryboardShotsWithTagOptions(nextShots.map(cloneStoryboardShot), tagOptionsState.value)
     activeShotId.value = shots.value[0]?.id ?? ''
   }
 
   const resetShots = (): void => {
-    shots.value = normalizeStoryboardShotsWithTagOptions(createInitialShots(), tagOptionsState.value)
+    const defaults = createStoreDefaults()
+    styleOptionsState.value = defaults.styleOptions
+    shots.value = normalizeStoryboardShotsWithTagOptions(defaults.shots, tagOptionsState.value)
+    activeShotId.value = shots.value[0]?.id ?? ''
+  }
+
+  const loadDefaults = async (): Promise<void> => {
+    const defaults = await storyboardApi.listDefaults()
+    styleOptionsState.value = defaults.styleOptions
+    tagOptionsState.value = defaults.tagOptions
+    shots.value = normalizeStoryboardShotsWithTagOptions(defaults.shots, defaults.tagOptions)
     activeShotId.value = shots.value[0]?.id ?? ''
   }
 
   const patchShotById = (id: string, patch: Partial<StoryboardShot>): void => {
     shots.value = shots.value.map((shot) => (shot.id === id ? { ...shot, ...patch } : shot))
+  }
+
+  const replaceShotById = (id: string, nextShot: StoryboardShot): void => {
+    shots.value = shots.value.map((shot) => (shot.id === id ? nextShot : shot))
   }
 
   const patchShotsByIds = (ids: string[], patch: Partial<StoryboardShot>): void => {
@@ -155,30 +152,19 @@ export const useStoryboardStore = defineStore('storyboard', () => {
     characters: [],
     scenes: [],
     props: [],
-    style: styleOptions.value[0] ?? '国风漫画',
+    style: styleOptions.value[0] ?? '????',
     ratio: '16:9',
     status: 'pending-review',
     isHidden: false,
     isFavorite: false,
     isLocked: false,
-    createdAt: '2026年3月12日 17:16',
+    createdAt: '2026?3?12? 17:16',
     referenceImages: [],
   })
 
   const updateActiveShot = (patch: Partial<StoryboardShot>): void => {
     if (!activeShot.value) return
     patchShotById(activeShot.value.id, patch)
-  }
-
-  const updateShotImage = (id: string, image: { url: string; label?: string; sourceShotId?: string }): void => {
-    const shot = shots.value.find((item) => item.id === id)
-    if (!shot) return
-
-    patchShotById(id, {
-      imageUrl: image.url,
-      status: 'success',
-      referenceImages: prependReferenceImage(shot, image),
-    })
   }
 
   const updateActiveShotPrompt = (prompt: string): void => {
@@ -355,12 +341,12 @@ export const useStoryboardStore = defineStore('storyboard', () => {
     if (sourceIndex < 0) return
     const source = shots.value[sourceIndex]
     const sourceBase = parseShotTitle(source.title, source.index).base
-    const duplicated = cloneShot({
+    const duplicated = cloneStoryboardShot({
       ...source,
       id: `shot-${Date.now()}`,
       index: sourceIndex + 2,
       title: buildShotTitle(sourceBase, 'A'),
-      createdAt: '2026年3月12日 17:16',
+    createdAt: '2026?3?12? 17:16',
     })
     const nextShots = [...shots.value]
     nextShots.splice(sourceIndex + 1, 0, duplicated)
@@ -388,27 +374,30 @@ export const useStoryboardStore = defineStore('storyboard', () => {
     shots.value = resequenceShots(nextShots)
   }
 
-  const applyReferenceImageToShot = (shotId: string, referenceImageId: string): void => {
+  const applyReferenceImageToShot = async (shotId: string, referenceImageId: string): Promise<void> => {
     if (isShotLocked(shotId)) return
     const shot = shots.value.find((item) => item.id === shotId)
     if (!shot) return
 
-    const target = shot.referenceImages.find((item) => item.id === referenceImageId)
-    if (!target) return
-
-    patchShotById(shotId, {
-      imageUrl: target.url,
-      status: 'success',
-    })
+    const updated = await storyboardApi.applyReferenceImage(shot, referenceImageId)
+    if (!updated) return
+    replaceShotById(shotId, updated)
   }
 
-  const uploadShotImage = (shotId: string, imageUrl: string): void => {
+  const uploadShotImage = async (shotId: string, imageUrl: string): Promise<void> => {
     if (isShotLocked(shotId)) return
-    updateShotImage(shotId, {
-      url: imageUrl,
-      label: '上传图片',
-      sourceShotId: shotId,
-    })
+    const shot = shots.value.find((item) => item.id === shotId)
+    if (!shot) return
+    const updated = await storyboardApi.uploadShotImage(shot, imageUrl)
+    replaceShotById(shotId, updated)
+  }
+
+  const uploadShotVideo = async (shotId: string, videoUrl: string): Promise<void> => {
+    if (isShotLocked(shotId)) return
+    const shot = shots.value.find((item) => item.id === shotId)
+    if (!shot) return
+    const updated = await storyboardApi.uploadShotVideo(shot, videoUrl)
+    replaceShotById(shotId, updated)
   }
 
   const markShotsGenerating = (ids: string[]): void => {
@@ -421,13 +410,12 @@ export const useStoryboardStore = defineStore('storyboard', () => {
     )
   }
 
-  const applyEditedImageToShot = (shotId: string, imageUrl: string): void => {
+  const applyEditedImageToShot = async (shotId: string, imageUrl: string): Promise<void> => {
     if (isShotLocked(shotId)) return
-    updateShotImage(shotId, {
-      url: imageUrl,
-      label: '编辑结果',
-      sourceShotId: shotId,
-    })
+    const shot = shots.value.find((item) => item.id === shotId)
+    if (!shot) return
+    const updated = await storyboardApi.applyEditedImage(shot, imageUrl)
+    replaceShotById(shotId, updated)
   }
 
   const addTagToActiveShot = (type: StoryboardTag['type'], tag: StoryboardTag): void => {
@@ -438,7 +426,6 @@ export const useStoryboardStore = defineStore('storyboard', () => {
     updateActiveShot({
       [key]: [...current, tag],
     } as Partial<StoryboardShot>)
-
   }
 
   const removeTagFromActiveShot = (type: StoryboardTag['type'], tagId: string): void => {
@@ -457,33 +444,41 @@ export const useStoryboardStore = defineStore('storyboard', () => {
     const target = shots.value.find((item) => item.id === id)
     if (!target || target.isLocked) return
 
+    const task = await generationStore.createTask({
+      projectId: editorStore.currentProjectId ?? 'mock-project',
+      type: 'storyboard',
+      shotId: id,
+      payload: {
+        title: target.title,
+      },
+    })
+
     patchShotById(id, { status: 'generating' })
-    await new Promise((resolve) => globalThis.setTimeout(resolve, 1200))
+    if (task) {
+      await generationStore.setTaskStatus(task.id, GENERATION_TASK_STATUSES.running, 10)
+    }
 
     if (shouldMockStoryboardGenerateFail({ title: target.title, prompt: target.prompt })) {
       patchShotById(id, { status: 'failed' })
-      throw new Error('STORYBOARD_GENERATE_FAILED')
+      if (task) {
+        await generationStore.setTaskStatus(task.id, GENERATION_TASK_STATUSES.failed, 100, {
+          errorMessage: API_ERROR_CODES.storyboardGenerateFailed,
+        })
+      }
+      throw new Error(API_ERROR_CODES.storyboardGenerateFailed)
     }
 
-    const now = Date.now()
-    const newImage = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
-      `<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
-        <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#3b4f77"/><stop offset="100%" stop-color="#8254c8"/></linearGradient></defs>
-        <rect width="1280" height="720" fill="url(#g)" />
-        <rect x="0" y="612" width="1280" height="108" fill="rgba(0,0,0,0.42)" />
-        <text x="30" y="680" fill="white" font-family="Segoe UI, PingFang SC, Microsoft YaHei, sans-serif" font-size="54" font-weight="700">镜头生成 ${now % 10000}</text>
-      </svg>`,
-    )}`
+    const result = await storyboardApi.generateShotImage(target)
+    replaceShotById(id, result.shot)
 
-    shots.value = shots.value.map((shot) => {
-      if (shot.id !== id) return shot
-      return {
-        ...shot,
-        status: 'success',
-        imageUrl: newImage,
-        referenceImages: prependReferenceImage(shot, { url: newImage, label: '生成结果', sourceShotId: id }),
-      }
-    })
+    if (task) {
+      await generationStore.setTaskStatus(task.id, GENERATION_TASK_STATUSES.success, 100, {
+        result: {
+          shotId: id,
+          imageUrl: result.imageUrl,
+        },
+      })
+    }
   }
 
   const generateActiveShot = async (): Promise<void> => {
@@ -495,8 +490,19 @@ export const useStoryboardStore = defineStore('storyboard', () => {
     const target = shots.value.find((item) => item.id === id)
     if (!target || target.isLocked) return
 
+    const task = await generationStore.createTask({
+      projectId: editorStore.currentProjectId ?? 'mock-project',
+      type: 'video',
+      shotId: id,
+      payload: {
+        title: target.title,
+      },
+    })
+
     patchShotById(id, { status: 'generating' })
-    await new Promise((resolve) => globalThis.setTimeout(resolve, 980))
+    if (task) {
+      await generationStore.setTaskStatus(task.id, GENERATION_TASK_STATUSES.running, 10)
+    }
 
     if (
       shouldMockVideoGenerateFail({
@@ -506,18 +512,25 @@ export const useStoryboardStore = defineStore('storyboard', () => {
       })
     ) {
       patchShotById(id, { status: 'failed' })
-      throw new Error('VIDEO_GENERATE_FAILED')
+      if (task) {
+        await generationStore.setTaskStatus(task.id, GENERATION_TASK_STATUSES.failed, 100, {
+          errorMessage: API_ERROR_CODES.videoGenerateFailed,
+        })
+      }
+      throw new Error(API_ERROR_CODES.videoGenerateFailed)
     }
 
-    shots.value = shots.value.map((shot) =>
-      shot.id === id
-        ? {
-            ...shot,
-            status: 'success',
-            videoUrl: `mock-video://${id}/${Date.now()}`,
-          }
-        : shot,
-    )
+    const result = await storyboardApi.generateVideo(target)
+    replaceShotById(id, result.shot)
+
+    if (task) {
+      await generationStore.setTaskStatus(task.id, GENERATION_TASK_STATUSES.success, 100, {
+        result: {
+          shotId: id,
+          videoUrl: result.videoUrl,
+        },
+      })
+    }
   }
 
   const generateActiveVideo = async (): Promise<void> => {
@@ -529,22 +542,34 @@ export const useStoryboardStore = defineStore('storyboard', () => {
     const target = shots.value.find((item) => item.id === id)
     if (!target || target.isLocked) return
     if (!target.imageUrl) {
-      throw new Error('STORYBOARD_UPSCALE_IMAGE_REQUIRED')
+      throw new Error(API_ERROR_CODES.storyboardUpscaleImageRequired)
     }
 
+    const task = await generationStore.createTask({
+      projectId: editorStore.currentProjectId ?? 'mock-project',
+      type: 'storyboard_upscale',
+      shotId: id,
+      payload: {
+        title: target.title,
+      },
+    })
+
     patchShotById(id, { status: 'generating' })
-    await new Promise((resolve) => globalThis.setTimeout(resolve, 900))
+    if (task) {
+      await generationStore.setTaskStatus(task.id, GENERATION_TASK_STATUSES.running, 10)
+    }
 
-    const result = buildStoryboardUpscaledImage({
-      sourceUrl: target.imageUrl,
-      title: target.title,
-    })
+    const result = await storyboardApi.upscaleShotImage(target)
+    replaceShotById(id, result.shot)
 
-    updateShotImage(id, {
-      url: result.imageUrl,
-      label: result.referenceLabel,
-      sourceShotId: id,
-    })
+    if (task) {
+      await generationStore.setTaskStatus(task.id, GENERATION_TASK_STATUSES.success, 100, {
+        result: {
+          shotId: id,
+          imageUrl: result.imageUrl,
+        },
+      })
+    }
   }
 
   return {
@@ -558,6 +583,7 @@ export const useStoryboardStore = defineStore('storyboard', () => {
     setTagOptions,
     replaceShots,
     resetShots,
+    loadDefaults,
     updateActiveShot,
     updateActiveShotPrompt,
     updateActiveShotStyle,
@@ -582,6 +608,7 @@ export const useStoryboardStore = defineStore('storyboard', () => {
     moveShot,
     applyReferenceImageToShot,
     uploadShotImage,
+    uploadShotVideo,
     applyEditedImageToShot,
     markShotsGenerating,
     addTagToActiveShot,
@@ -593,3 +620,5 @@ export const useStoryboardStore = defineStore('storyboard', () => {
     upscaleShotById,
   }
 })
+
+

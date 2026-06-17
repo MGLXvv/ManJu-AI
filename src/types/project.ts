@@ -1,4 +1,4 @@
-﻿export type ProjectStatus = 'in_progress' | 'completed'
+export type ProjectStatus = 'in_progress' | 'completed'
 
 export type WorkflowStep = 'script' | 'settings' | 'storyboard' | 'video' | 'dubbing' | 'complete'
 
@@ -15,4 +15,11 @@ export interface Project {
   duration?: string
   coverUrl?: string
   favorite?: boolean
+}
+
+export interface ProjectListQuery {
+  page?: number
+  pageSize?: number
+  keyword?: string
+  status?: ProjectStatus | 'all'
 }

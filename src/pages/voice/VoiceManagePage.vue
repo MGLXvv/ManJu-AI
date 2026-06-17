@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <section class="voice-manage-page">
     <div class="voice-manage-page__bg" aria-hidden="true"></div>
 
@@ -10,7 +10,7 @@
         </label>
 
         <div class="voice-manage-page__toolbar-right">
-          <p class="voice-manage-page__summary">共{{ filteredVoices.length }}个音色文件</p>
+          <p class="voice-manage-page__summary">共 {{ filteredVoices.length }} 个音色文件</p>
           <button class="voice-manage-page__batch-btn" type="button" @click="toggleBatchMode">
             {{ batchMode ? '退出批量' : '批量操作' }}
           </button>
@@ -70,7 +70,7 @@
       </div>
 
       <footer class="project-pagination">
-        <span class="voice-manage-page__pagination-total">共{{ totalPages }}页</span>
+        <span class="voice-manage-page__pagination-total">共 {{ totalPages }} 页</span>
         <button
           type="button"
           class="project-pagination__arrow is-plain"
@@ -110,7 +110,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import BatchSelectionToolbar from '@/components/editor/common/BatchSelectionToolbar.vue'
 import FigmaIcon from '@/components/icons/FigmaIcon.vue'
 import VoiceCard from '@/components/voice/VoiceCard.vue'
@@ -149,6 +149,10 @@ const visiblePages = computed(() => {
   return pages.slice(0, 5)
 })
 
+onMounted(() => {
+  void store.hydrate()
+})
+
 watch(filteredVoices, (value) => {
   if (currentPage.value > totalPages.value) {
     currentPage.value = totalPages.value
@@ -173,8 +177,8 @@ const cancelAdd = (): void => {
   resetDraft()
 }
 
-const saveNewVoice = (payload: { name: string; audioUrl: string; duration: number }): void => {
-  store.createVoice(payload)
+const saveNewVoice = async (payload: { name: string; audioUrl: string; duration: number }): Promise<void> => {
+  await store.createVoice(payload)
   adding.value = false
   resetDraft()
   currentPage.value = 1
@@ -194,13 +198,16 @@ const cancelEdit = (): void => {
   resetDraft()
 }
 
-const saveEditingVoice = (id: string, payload: { name: string; audioUrl: string; duration: number }): void => {
-  store.updateVoice(id, payload)
+const saveEditingVoice = async (
+  id: string,
+  payload: { name: string; audioUrl: string; duration: number },
+): Promise<void> => {
+  await store.updateVoice(id, payload)
   cancelEdit()
 }
 
-const deleteVoice = (id: string): void => {
-  store.deleteVoice(id)
+const deleteVoice = async (id: string): Promise<void> => {
+  await store.deleteVoice(id)
   selectedIds.value = selectedIds.value.filter((item) => item !== id)
   if (editingId.value === id) {
     cancelEdit()
@@ -238,9 +245,9 @@ const toggleSelectCurrentPage = (): void => {
   selectedIds.value = Array.from(new Set([...selectedIds.value, ...currentPageIds.value]))
 }
 
-const deleteSelected = (): void => {
+const deleteSelected = async (): Promise<void> => {
   for (const id of [...selectedIds.value]) {
-    store.deleteVoice(id)
+    await store.deleteVoice(id)
   }
   exitBatchMode()
 }

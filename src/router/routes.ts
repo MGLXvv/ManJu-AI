@@ -4,11 +4,13 @@ export const routes: RouteRecordRaw[] = [
   {
     path: '/login',
     component: () => import('@/layouts/AuthLayout.vue'),
+    meta: { guestOnly: true },
     children: [{ path: '', name: 'login', component: () => import('@/pages/auth/LoginPage.vue') }],
   },
   {
     path: '/',
     component: () => import('@/layouts/MainLayout.vue'),
+    meta: { requiresAuth: true },
     children: [
       { path: '', name: 'projects', component: () => import('@/pages/dashboard/ProjectListPage.vue') },
       { path: 'resources', name: 'resources', component: () => import('@/pages/resource/ResourceLibraryPage.vue') },
@@ -23,6 +25,7 @@ export const routes: RouteRecordRaw[] = [
   {
     path: '/projects/:projectId/editor',
     component: () => import('@/layouts/EditorLayout.vue'),
+    meta: { requiresAuth: true },
     children: [
       { path: '', redirect: { name: 'editor-script' } },
       { path: 'script', name: 'editor-script', component: () => import('@/pages/editor/steps/ScriptStep.vue') },

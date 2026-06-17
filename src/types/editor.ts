@@ -67,3 +67,8 @@ export interface EditorDraft {
   shots: Shot[]
   dubbing: DubbingDraft
 }
+
+export interface SaveDraftResult {
+  draft: EditorDraft
+  savedAt: string
+}

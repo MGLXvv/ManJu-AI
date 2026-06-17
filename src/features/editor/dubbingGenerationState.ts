@@ -1,4 +1,5 @@
 ﻿import { hasAnyMockFailureToken } from '@/features/shared/mockFailureState'
+import { API_ERROR_CODES } from '@/types/api-enums'
 
 export const shouldMockDubbingGenerateFail = (input: { title: string; lines: string[] }): boolean => {
   return hasAnyMockFailureToken([input.title, ...input.lines], ['#mock-dubbing-fail'])
@@ -7,7 +8,7 @@ export const shouldMockDubbingGenerateFail = (input: { title: string; lines: str
 export const buildDubbingGenerateErrorMessage = (error: unknown): string => {
   const code = error instanceof Error ? error.message : String(error ?? '')
 
-  if (code === 'DUBBING_GENERATE_FAILED') {
+  if (code === API_ERROR_CODES.dubbingGenerateFailed) {
     return '配音生成失败，请调整对白后重试'
   }
 

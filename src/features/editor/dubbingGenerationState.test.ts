@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+﻿import { describe, expect, it } from 'vitest'
+import { API_ERROR_CODES } from '@/types/api-enums'
 import {
   buildDubbingBatchGenerateMessage,
   buildDubbingGenerateErrorMessage,
@@ -13,7 +14,7 @@ describe('dubbingGenerationState', () => {
   })
 
   it('maps stable generate errors to user-facing copy', () => {
-    expect(buildDubbingGenerateErrorMessage('DUBBING_GENERATE_FAILED')).toBe('配音生成失败，请调整对白后重试')
+    expect(buildDubbingGenerateErrorMessage(API_ERROR_CODES.dubbingGenerateFailed)).toBe('配音生成失败，请调整对白后重试')
     expect(buildDubbingGenerateErrorMessage('UNKNOWN_ERROR')).toBe('配音生成失败，请稍后再试')
   })
 

@@ -1,55 +1,68 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import type { VoiceAsset } from '@/types/voice'
-
-const seedVoices: VoiceAsset[] = [
-  { id: 'voice-1', name: '浑厚男中音', audioUrl: '', duration: 0, createdAt: '2026-03-12 17:16' },
-  { id: 'voice-2', name: '温柔女中音', audioUrl: '', duration: 0, createdAt: '2026-03-12 17:16' },
-  { id: 'voice-3', name: '童音女', audioUrl: '', duration: 0, createdAt: '2026-03-12 17:16' },
-  { id: 'voice-4', name: '童音男', audioUrl: '', duration: 0, createdAt: '2026-03-12 17:16' },
-  { id: 'voice-5', name: '清亮青年音', audioUrl: '', duration: 0, createdAt: '2026-03-12 17:16' },
-  { id: 'voice-6', name: '磁性旁白', audioUrl: '', duration: 0, createdAt: '2026-03-12 17:16' },
-  { id: 'voice-7', name: '活泼少女音', audioUrl: '', duration: 0, createdAt: '2026-03-12 17:16' },
-  { id: 'voice-8', name: '冷静御姐音', audioUrl: '', duration: 0, createdAt: '2026-03-12 17:16' },
-  { id: 'voice-9', name: '少年热血音', audioUrl: '', duration: 0, createdAt: '2026-03-12 17:16' },
-]
+import { voiceApi } from '@/api/voice.api'
+import type { CreateVoiceAssetInput, UpdateVoiceAssetInput, VoiceAsset } from '@/types/voice'
 
 export const useVoicesStore = defineStore('voices', () => {
-  const voices = ref<VoiceAsset[]>(seedVoices)
+  const voices = ref<VoiceAsset[]>([])
   const keyword = ref('')
+  const loading = ref(false)
+  const hydrated = ref(false)
 
   const filteredVoices = computed(() => {
-    const text = keyword.value.trim()
-    if (!text) return voices.value
-    return voices.value.filter((voice) => voice.name.includes(text))
+    const text = keyword.value.trim().toLocaleLowerCase()
+    if (!text) {
+      return voices.value
+    }
+    return voices.value.filter((voice) => voice.name.toLocaleLowerCase().includes(text))
   })
+
+  const hydrate = async (): Promise<void> => {
+    if (loading.value) {
+      return
+    }
+
+    loading.value = true
+    try {
+      voices.value = await voiceApi.list()
+      hydrated.value = true
+    } finally {
+      loading.value = false
+    }
+  }
 
   const setKeyword = (value: string): void => {
     keyword.value = value
   }
 
-  const createVoice = (payload: { name: string; audioUrl: string; duration: number }): void => {
-    voices.value.unshift({
-      id: `voice-${Date.now()}`,
-      name: payload.name,
-      audioUrl: payload.audioUrl,
-      duration: payload.duration,
-      createdAt: '2026-03-12 17:16',
-    })
+  const createVoice = async (payload: CreateVoiceAssetInput): Promise<VoiceAsset> => {
+    const created = await voiceApi.create(payload)
+    voices.value.unshift(created)
+    return created
   }
 
-  const updateVoice = (id: string, patch: Partial<VoiceAsset>): void => {
-    voices.value = voices.value.map((voice) => (voice.id === id ? { ...voice, ...patch } : voice))
+  const updateVoice = async (id: string, patch: UpdateVoiceAssetInput): Promise<VoiceAsset | null> => {
+    const updated = await voiceApi.update(id, patch)
+    if (!updated) {
+      return null
+    }
+
+    voices.value = voices.value.map((voice) => (voice.id === id ? updated : voice))
+    return updated
   }
 
-  const deleteVoice = (id: string): void => {
+  const deleteVoice = async (id: string): Promise<void> => {
+    await voiceApi.remove(id)
     voices.value = voices.value.filter((voice) => voice.id !== id)
   }
 
   return {
     voices,
     keyword,
+    loading,
+    hydrated,
     filteredVoices,
+    hydrate,
     setKeyword,
     createVoice,
     updateVoice,

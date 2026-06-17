@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <section class="storyboard-timeline" :class="{ 'is-collapsed': collapsed }">
     <button type="button" class="storyboard-timeline__nav" aria-label="向左滚动" @click="scrollTrack(-280)">
       <span class="storyboard-timeline__nav-frame" aria-hidden="true"></span>

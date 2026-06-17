@@ -1,7 +1,9 @@
+import { PROJECT_ARTIFACT_VERSION } from '@/types/api-enums'
+
 export type ProjectArtifactKind = 'project' | 'setting' | 'storyboard' | 'video' | 'dubbing'
 
 export interface ProjectArtifactEnvelope<TPayload> {
-  version: 'mock-v1'
+  version: typeof PROJECT_ARTIFACT_VERSION
   artifact: ProjectArtifactKind
   projectId: string
   exportedAt: string
@@ -24,7 +26,7 @@ export const buildProjectArtifactEnvelope = <TPayload>(input: {
   projectId: string
   payload: TPayload
 }): ProjectArtifactEnvelope<TPayload> => ({
-  version: 'mock-v1',
+  version: PROJECT_ARTIFACT_VERSION,
   artifact: input.artifact,
   projectId: input.projectId,
   exportedAt: new Date().toISOString(),

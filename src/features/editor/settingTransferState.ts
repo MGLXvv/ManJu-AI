@@ -1,5 +1,9 @@
 ﻿import { buildSettingDraftPatch } from '@/features/editor/settingDraftState'
-import { buildProjectArtifactFileName } from '@/features/shared/projectArtifactState'
+import {
+  buildProjectArtifactEnvelope,
+  buildProjectArtifactFileName,
+  sanitizeProjectArtifactId,
+} from '@/features/shared/projectArtifactState'
 import type { SettingAsset } from '@/types/settingAsset'
 
 export interface ExportedSettingPayload {
@@ -21,6 +25,18 @@ export const buildSettingExportPayload = (assets: SettingAsset[]): ExportedSetti
   }
 }
 
+export const buildSettingArtifact = (projectId: string, assets: SettingAsset[]) =>
+  buildProjectArtifactEnvelope({
+    artifact: 'setting',
+    projectId: projectId || 'setting',
+    payload: buildSettingExportPayload(assets),
+  })
+
 export const buildSettingExportFileName = (projectId: string): string => {
   return buildProjectArtifactFileName(projectId || 'setting', 'setting')
+}
+
+export const buildSettingBatchExportFileName = (projectId: string): string => {
+  const sanitized = sanitizeProjectArtifactId(projectId || 'setting', 'setting')
+  return `${sanitized}-setting-batch.json`
 }

@@ -134,6 +134,7 @@ import { useEditorStore } from '@/stores/editor'
 import { useProjectStore } from '@/stores/project'
 import { useScriptTemplateStore } from '@/stores/scriptTemplates'
 import { useUiFeedbackStore } from '@/stores/uiFeedback'
+import { API_ERROR_CODES } from '@/types/api-enums'
 import type { ScriptTemplateInput } from '@/types/scriptTemplate'
 
 const router = useRouter()
@@ -297,7 +298,7 @@ const resolveEditorError = (error: unknown, fallback: string): string => {
   const message = error instanceof Error ? error.message : ''
 
   switch (message) {
-    case 'EDITOR_SAVE_FAILED':
+    case API_ERROR_CODES.editorSaveFailed:
       return '保存失败，请检查内容后重试'
     case 'SCRIPT_GENERATE_FAILED':
       return '剧本生成失败，请调整文案或提示词后重试'

@@ -196,9 +196,9 @@ import type { StoryboardMode } from '@/features/editor/storyboardModeState'
 import { loadStoryboardPromptCollapsed, saveStoryboardPromptCollapsed } from '@/features/editor/storyboardPanelState'
 import {
   buildStoryboardExportFileName,
-  buildStoryboardExportPayload,
   resolveStoryboardShots,
 } from '@/features/editor/storyboardPersistState'
+import { buildStoryboardArtifact } from '@/features/editor/editorArtifactMapper'
 import {
   buildStoryboardEditedImage,
   buildStoryboardSaveState,
@@ -206,11 +206,11 @@ import {
   type StoryboardSelectionRect,
 } from '@/features/editor/storyboardPreviewState'
 import { validateEditorAdvance } from '@/features/editor/editorCompletionState'
-import { buildProjectArtifactEnvelope } from '@/features/shared/projectArtifactState'
 import { useEditorStore } from '@/stores/editor'
 import { useProjectStore } from '@/stores/project'
 import { useStoryboardStore } from '@/stores/storyboard'
 import { useUiFeedbackStore } from '@/stores/uiFeedback'
+import { API_ERROR_CODES } from '@/types/api-enums'
 import type { StoryboardInsertDraft, StoryboardTagType } from '@/types/storyboard'
 
 const store = useStoryboardStore()
@@ -292,7 +292,7 @@ watch(
   projectId,
   async (nextProjectId) => {
     if (!nextProjectId) {
-      store.resetShots()
+      await store.loadDefaults()
       lastSavedSnapshot.value = buildStoryboardDraftSnapshot(store.shots)
       return
     }
@@ -304,7 +304,7 @@ watch(
     if (editorStore.draft?.shots.length) {
       store.replaceShots(resolveStoryboardShots(editorStore.draft.shots, nextTagOptions))
     } else {
-      store.resetShots()
+      await store.loadDefaults()
     }
 
     lastSavedSnapshot.value = buildStoryboardDraftSnapshot(store.shots)
@@ -590,7 +590,7 @@ const toggleHidden = (id: string): void => {
   showToast(target?.isHidden ? '当前镜头已隐藏，不会进入下一步' : '当前镜头已恢复显示', 'info')
 }
 
-const selectReference = (id: string): void => {
+const selectReference = async (id: string): Promise<void> => {
   const shot = currentShot.value
   if (!shot) {
     return
@@ -601,7 +601,7 @@ const selectReference = (id: string): void => {
     return
   }
 
-  store.applyReferenceImageToShot(shot.id, id)
+  await store.applyReferenceImageToShot(shot.id, id)
   showToast('参考图已应用到当前分镜', 'success')
 }
 
@@ -761,11 +761,7 @@ const handleSaveExport = async (): Promise<void> => {
     return
   }
 
-  const payload = buildProjectArtifactEnvelope({
-    artifact: 'storyboard',
-    projectId: projectId.value || 'storyboard',
-    payload: buildStoryboardExportPayload(shots.value),
-  })
+  const payload = buildStoryboardArtifact(projectId.value, shots.value)
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' })
   const objectUrl = URL.createObjectURL(blob)
   const link = document.createElement('a')
@@ -848,7 +844,7 @@ const upscaleShot = async (): Promise<void> => {
     await store.upscaleShotById(shot.id)
     showToast('当前分镜已完成高清放大', 'success')
   } catch (error) {
-    if (error instanceof Error && error.message === 'STORYBOARD_UPSCALE_IMAGE_REQUIRED') {
+    if (error instanceof Error && error.message === API_ERROR_CODES.storyboardUpscaleImageRequired) {
       showToast('请先生成或上传分镜图后再进行放大', 'error')
       return
     }
@@ -879,7 +875,7 @@ const applyImageEdit = async ({
       title: shot.title,
       selection,
     })
-    store.applyEditedImageToShot(shot.id, result.imageUrl)
+    await store.applyEditedImageToShot(shot.id, result.imageUrl)
     editDialogOpen.value = false
     showToast('编辑结果已应用到当前分镜', 'success')
   } finally {
@@ -920,7 +916,7 @@ const handleUploadFileChange = async (event: Event): Promise<void> => {
       reader.readAsDataURL(file)
     })
 
-    store.uploadShotImage(shotId, imageUrl)
+    await store.uploadShotImage(shotId, imageUrl)
     showToast('分镜图片已上传', 'success')
   } catch {
     showToast('图片上传失败，请稍后再试', 'error')

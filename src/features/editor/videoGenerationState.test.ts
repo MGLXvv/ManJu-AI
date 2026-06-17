@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+﻿import { describe, expect, it } from 'vitest'
+import { API_ERROR_CODES } from '@/types/api-enums'
 import {
   buildVideoBatchGenerateMessage,
   buildVideoGenerateErrorMessage,
@@ -16,8 +17,8 @@ describe('videoGenerationState', () => {
   })
 
   it('maps stable generate errors to user-facing copy', () => {
-    expect(buildVideoGenerateErrorMessage('VIDEO_GENERATE_FAILED')).toBe('视频生成失败，请调整提示词后重试')
-    expect(buildVideoGenerateErrorMessage('VIDEO_OPTIMIZE_FAILED')).toBe('AI优化失败，请稍后再试')
+    expect(buildVideoGenerateErrorMessage(API_ERROR_CODES.videoGenerateFailed)).toBe('视频生成失败，请调整提示词后重试')
+    expect(buildVideoGenerateErrorMessage(API_ERROR_CODES.videoOptimizeFailed)).toBe('AI优化失败，请稍后再试')
     expect(buildVideoGenerateErrorMessage('UNKNOWN_ERROR')).toBe('视频生成失败，请稍后再试')
   })
 
@@ -33,7 +34,7 @@ describe('videoGenerationState', () => {
   })
 
   it('surfaces stable optimize failure code for prompt and dialogue', async () => {
-    await expect(optimizeMockVideoPrompt('#mock-optimize-fail')).rejects.toThrow('VIDEO_OPTIMIZE_FAILED')
-    await expect(optimizeMockVideoDialogue('#mock-optimize-fail')).rejects.toThrow('VIDEO_OPTIMIZE_FAILED')
+    await expect(optimizeMockVideoPrompt('#mock-optimize-fail')).rejects.toThrow(API_ERROR_CODES.videoOptimizeFailed)
+    await expect(optimizeMockVideoDialogue('#mock-optimize-fail')).rejects.toThrow(API_ERROR_CODES.videoOptimizeFailed)
   })
 })

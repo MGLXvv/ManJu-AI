@@ -1,4 +1,5 @@
-﻿import { hasAnyMockFailureToken } from '@/features/shared/mockFailureState'
+import { hasAnyMockFailureToken } from '@/features/shared/mockFailureState'
+import { API_ERROR_CODES } from '@/types/api-enums'
 
 export const shouldMockStoryboardGenerateFail = (input: { title: string; prompt: string }): boolean => {
   return hasAnyMockFailureToken([input.title, input.prompt], ['#mock-shot-fail'])
@@ -6,7 +7,7 @@ export const shouldMockStoryboardGenerateFail = (input: { title: string; prompt:
 
 export const optimizeMockStoryboardPrompt = (prompt: string): string => {
   if (hasAnyMockFailureToken([prompt], ['#mock-optimize-fail'])) {
-    throw new Error('STORYBOARD_OPTIMIZE_FAILED')
+    throw new Error(API_ERROR_CODES.storyboardOptimizeFailed)
   }
 
   const normalized = prompt.trim().replace(/\s+/g, ' ')
@@ -24,11 +25,11 @@ export const optimizeMockStoryboardPrompt = (prompt: string): string => {
 export const buildStoryboardGenerateErrorMessage = (error: unknown): string => {
   const code = error instanceof Error ? error.message : String(error ?? '')
 
-  if (code === 'STORYBOARD_GENERATE_FAILED') {
+  if (code === API_ERROR_CODES.storyboardGenerateFailed) {
     return '分镜生成失败，请调整提示词后重试'
   }
 
-  if (code === 'STORYBOARD_OPTIMIZE_FAILED') {
+  if (code === API_ERROR_CODES.storyboardOptimizeFailed) {
     return 'AI优化失败，请稍后再试'
   }
 

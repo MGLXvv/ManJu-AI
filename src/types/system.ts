@@ -30,3 +30,9 @@ export interface SystemMessageItem {
   location: string
   loginTime: string
 }
+
+export interface SystemState {
+  styles: SystemStyleItem[]
+  permissions: SystemPermissionItem[]
+  messages: SystemMessageItem[]
+}

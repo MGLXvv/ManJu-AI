@@ -1,4 +1,4 @@
-﻿import { buildProjectArtifactFileName } from '@/features/shared/projectArtifactState'
+import { buildVideoExportFileName } from '@/features/editor/editorArtifactMapper'
 import type { StoryboardShot } from '@/types/storyboard'
 
 export interface VideoDubbingValidationResult {
@@ -6,9 +6,7 @@ export interface VideoDubbingValidationResult {
   message: string
 }
 
-export const buildVideoExportFileName = (projectId: string): string => {
-  return buildProjectArtifactFileName(projectId || 'video', 'video')
-}
+export { buildVideoExportFileName }
 
 export const validateVideoBeforeDubbing = (shots: StoryboardShot[]): VideoDubbingValidationResult => {
   const hasGeneratedVideo = shots.some((shot) => Boolean(shot.videoUrl))

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <aside class="storyboard-prompt-panel" :class="{ 'is-collapsed': collapsed }">
     <div class="storyboard-prompt-panel__card" :class="{ 'is-insert-mode': insertMode }">
       <button

@@ -28,7 +28,10 @@ export const useProjectStore = defineStore('project', () => {
 
     loading.value = true
     try {
-      projects.value = await projectApi.list()
+      projects.value = await projectApi.list({
+        keyword: keyword.value,
+        status: statusFilter.value,
+      })
       initialized.value = true
     } finally {
       loading.value = false

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <section class="resource-page">
     <div class="resource-page__bg" aria-hidden="true"></div>
 
@@ -58,7 +58,7 @@
       </div>
 
       <footer class="project-pagination">
-        <span class="resource-page__pagination-total">共{{ totalPages }}页</span>
+        <span class="resource-page__pagination-total">共 {{ totalPages }} 页</span>
         <button
           type="button"
           class="project-pagination__arrow is-plain"
@@ -98,7 +98,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import BatchSelectionToolbar from '@/components/editor/common/BatchSelectionToolbar.vue'
 import FigmaIcon from '@/components/icons/FigmaIcon.vue'
 import ResourceAssetGrid from '@/components/resource/ResourceAssetGrid.vue'
@@ -168,6 +168,10 @@ watch([filteredAssets, activeTab], ([assets]) => {
   editingId.value = ''
 })
 
+onMounted(() => {
+  void store.hydrate()
+})
+
 const handleSelectFolder = (id: string): void => {
   store.setActiveFolder(id)
 }
@@ -181,14 +185,14 @@ const cancelCreate = (): void => {
   creating.value = false
 }
 
-const saveCreate = (payload: {
+const saveCreate = async (payload: {
   type: 'character' | 'scene'
   name: string
   prompt: string
   imageUrl: string
   selectedVoiceId?: string
-}): void => {
-  store.createAsset({
+}): Promise<void> => {
+  await store.createAsset({
     tab: activeTab.value,
     source: activeFolderSource.value,
     ...payload,
@@ -206,7 +210,7 @@ const cancelEdit = (): void => {
   editingId.value = ''
 }
 
-const saveEdit = (payload: {
+const saveEdit = async (payload: {
   id: string
   payload: {
     type: 'character' | 'scene'
@@ -215,13 +219,13 @@ const saveEdit = (payload: {
     imageUrl: string
     selectedVoiceId?: string
   }
-}): void => {
-  store.updateAsset(payload.id, payload.payload)
+}): Promise<void> => {
+  await store.updateAsset(payload.id, payload.payload)
   editingId.value = ''
 }
 
-const deleteAsset = (id: string): void => {
-  store.deleteAsset(id)
+const deleteAsset = async (id: string): Promise<void> => {
+  await store.deleteAsset(id)
   selectedIds.value = selectedIds.value.filter((item) => item !== id)
   if (editingId.value === id) {
     editingId.value = ''
@@ -257,9 +261,9 @@ const toggleSelectCurrentPage = (): void => {
   selectedIds.value = Array.from(new Set([...selectedIds.value, ...currentPageIds.value]))
 }
 
-const deleteSelected = (): void => {
+const deleteSelected = async (): Promise<void> => {
   for (const id of [...selectedIds.value]) {
-    store.deleteAsset(id)
+    await store.deleteAsset(id)
   }
   exitBatchMode()
 }

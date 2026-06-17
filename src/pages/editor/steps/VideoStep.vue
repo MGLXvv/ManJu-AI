@@ -72,7 +72,7 @@
         :batch-mode="batchMode"
         :batch-selected-ids="selectedShotIds"
         @select="handleTimelineSelect"
-        @upload="noop"
+        @upload="triggerUploadForShot"
         @copy="copyShot"
         @delete="deleteShot"
         @favorite="toggleFavorite"
@@ -177,6 +177,14 @@
       @apply="applyImageEdit"
     />
   </section>
+
+  <input
+    ref="uploadInputRef"
+    class="storyboard-step__upload-input"
+    type="file"
+    accept="video/mp4,video/webm,video/ogg"
+    @change="handleUploadFileChange"
+  />
 </template>
 
 <script setup lang="ts">
@@ -207,8 +215,7 @@ import {
   optimizeMockVideoDialogue,
   optimizeMockVideoPrompt,
 } from '@/features/editor/videoGenerationState'
-import { buildVideoExportFileName } from '@/features/editor/videoPersistState'
-import { buildProjectArtifactEnvelope } from '@/features/shared/projectArtifactState'
+import { buildVideoArtifact, buildVideoExportFileName } from '@/features/editor/editorArtifactMapper'
 import { useEditorStore } from '@/stores/editor'
 import { useProjectStore } from '@/stores/project'
 import { useStoryboardStore } from '@/stores/storyboard'
@@ -246,6 +253,8 @@ const editDialogOpen = ref(false)
 const editingImage = ref(false)
 const optimizingVideoPrompt = ref(false)
 const optimizingDialogue = ref(false)
+const pendingUploadShotId = ref<string | null>(null)
+const uploadInputRef = ref<HTMLInputElement | null>(null)
 let scheduledBatchGenerateTimer: number | null = null
 
 const isAllShotsSelected = computed(
@@ -263,7 +272,7 @@ watch(
   projectId,
   async (nextProjectId) => {
     if (!nextProjectId) {
-      store.resetShots()
+      await store.loadDefaults()
       lastSavedSnapshot.value = buildStoryboardDraftSnapshot(store.shots)
       return
     }
@@ -275,7 +284,7 @@ watch(
     if (editorStore.draft?.shots.length) {
       store.replaceShots(resolveStoryboardShots(editorStore.draft.shots, nextTagOptions))
     } else {
-      store.resetShots()
+      await store.loadDefaults()
     }
 
     lastSavedSnapshot.value = buildStoryboardDraftSnapshot(store.shots)
@@ -519,14 +528,7 @@ const handleSaveExport = async (): Promise<void> => {
     return
   }
 
-  const payload = buildProjectArtifactEnvelope({
-    artifact: 'video',
-    projectId: projectId.value || 'video',
-    payload: {
-      exportedAt: new Date().toISOString(),
-      shots: editorStore.draft?.shots ?? [],
-    },
-  })
+  const payload = buildVideoArtifact(projectId.value, editorStore.draft?.shots ?? [])
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' })
   const objectUrl = URL.createObjectURL(blob)
   const link = document.createElement('a')
@@ -662,7 +664,7 @@ const applyImageEdit = async ({
       title: shot.title,
       selection,
     })
-    store.applyEditedImageToShot(shot.id, result.imageUrl)
+    await store.applyEditedImageToShot(shot.id, result.imageUrl)
     editDialogOpen.value = false
     showToast('视频封面编辑结果已应用', 'success')
   } finally {
@@ -670,7 +672,40 @@ const applyImageEdit = async ({
   }
 }
 
-const noop = (_id?: string): void => {}
+const triggerUploadForShot = (id: string): void => {
+  const shot = shots.value.find((item) => item.id === id)
+  if (shot?.isLocked) {
+    showToast('当前镜头已锁定，无法上传视频', 'error')
+    return
+  }
+
+  pendingUploadShotId.value = id
+  store.selectShot(id)
+  uploadInputRef.value?.click()
+}
+
+const handleUploadFileChange = async (event: Event): Promise<void> => {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  const shotId = pendingUploadShotId.value
+
+  if (!file || !shotId) {
+    input.value = ''
+    pendingUploadShotId.value = null
+    return
+  }
+
+  try {
+    const videoUrl = URL.createObjectURL(file)
+    await store.uploadShotVideo(shotId, videoUrl)
+    showToast('视频文件已上传', 'success')
+  } catch {
+    showToast('视频上传失败，请稍后再试', 'error')
+  } finally {
+    input.value = ''
+    pendingUploadShotId.value = null
+  }
+}
 
 const goDubbingStep = async (): Promise<void> => {
   const validation = validateEditorAdvance('videoToDubbing', { shots: shots.value })

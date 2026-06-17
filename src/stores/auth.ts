@@ -1,7 +1,7 @@
-﻿import { defineStore } from 'pinia'
+import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { authApi, authStorageKeys } from '@/api/auth.api'
-import { readLocal } from '@/api/local'
+import { readLocal, removeLocal } from '@/api/local'
 import type {
   AuthUser,
   CodeLoginPayload,
@@ -13,9 +13,28 @@ import type {
   ThirdPartyLoginResult,
 } from '@/types/auth'
 
+const tokenState = ref<string | null>(readLocal<string | null>(authStorageKeys.token, null))
+const userState = ref<AuthUser | null>(readLocal<AuthUser | null>(authStorageKeys.user, null))
+const forbiddenState = ref(false)
+
+export const authSessionBridge = {
+  getToken: (): string | null => tokenState.value,
+  clear: (): void => {
+    tokenState.value = null
+    userState.value = null
+    forbiddenState.value = false
+    removeLocal(authStorageKeys.token)
+    removeLocal(authStorageKeys.user)
+  },
+  markForbidden: (): void => {
+    forbiddenState.value = true
+  },
+}
+
 export const useAuthStore = defineStore('auth', () => {
-  const token = ref<string | null>(readLocal<string | null>(authStorageKeys.token, null))
-  const user = ref<AuthUser | null>(readLocal<AuthUser | null>(authStorageKeys.user, null))
+  const token = tokenState
+  const user = userState
+  const forbidden = forbiddenState
   const loading = ref(false)
 
   const isAuthenticated = computed(() => Boolean(token.value))
@@ -27,6 +46,7 @@ export const useAuthStore = defineStore('auth', () => {
       const session = await authApi.login(payload)
       token.value = session.token
       user.value = session.user
+      forbidden.value = false
     } finally {
       loading.value = false
     }
@@ -38,6 +58,7 @@ export const useAuthStore = defineStore('auth', () => {
       const session = await authApi.loginByPassword(payload)
       token.value = session.token
       user.value = session.user
+      forbidden.value = false
     } finally {
       loading.value = false
     }
@@ -49,6 +70,7 @@ export const useAuthStore = defineStore('auth', () => {
       const session = await authApi.loginByCode(payload)
       token.value = session.token
       user.value = session.user
+      forbidden.value = false
     } finally {
       loading.value = false
     }
@@ -60,6 +82,7 @@ export const useAuthStore = defineStore('auth', () => {
       const session = await authApi.register(payload)
       token.value = session.token
       user.value = session.user
+      forbidden.value = false
     } finally {
       loading.value = false
     }
@@ -90,6 +113,7 @@ export const useAuthStore = defineStore('auth', () => {
       if (result.session) {
         token.value = result.session.token
         user.value = result.session.user
+        forbidden.value = false
       }
       return result
     } finally {
@@ -101,8 +125,7 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true
     try {
       await authApi.logout()
-      token.value = null
-      user.value = null
+      authSessionBridge.clear()
     } finally {
       loading.value = false
     }
@@ -111,6 +134,7 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     token,
     user,
+    forbidden,
     userName,
     loading,
     isAuthenticated,

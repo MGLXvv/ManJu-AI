@@ -24,3 +24,20 @@ export interface ResourceAsset {
   selectedVoiceId?: string
   voiceOptions?: VoiceOption[]
 }
+
+export interface ResourceLibraryState {
+  folders: ResourceFolder[]
+  assets: ResourceAsset[]
+}
+
+export interface CreateResourceAssetInput {
+  tab: ResourceLibraryTab
+  type: ResourceAssetType
+  source: ResourceAssetSource
+  name: string
+  prompt: string
+  imageUrl: string
+  selectedVoiceId?: string
+}
+
+export interface UpdateResourceAssetInput extends Partial<CreateResourceAssetInput> {}

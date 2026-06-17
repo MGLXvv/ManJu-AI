@@ -1,8 +1,16 @@
-import { describe, expect, it } from 'vitest'
+﻿import { describe, expect, it } from 'vitest'
 import { createDefaultEditorDraft } from '@/mocks/editor.mock'
+import { API_ERROR_CODES } from '@/types/api-enums'
+import { projectApi } from './project.api'
 import { editorApi } from './editor.api'
 
-describe('editorApi.saveDraft', () => {
+describe('project and editor contracts', () => {
+  it('returns a project detail payload shape', async () => {
+    const project = await projectApi.create({ name: '新项目', ratio: '16:9', style: '默认' })
+
+    expect(project.id).toMatch(/^project-/)
+  })
+
   it('fails when a video shot contains the save fail token', async () => {
     const draft = createDefaultEditorDraft('video-project')
     draft.shots = [
@@ -30,6 +38,9 @@ describe('editorApi.saveDraft', () => {
       },
     ]
 
-    await expect(editorApi.saveDraft('video-project', draft)).rejects.toThrow('EDITOR_SAVE_FAILED')
+    await expect(editorApi.saveDraft('video-project', draft)).rejects.toHaveProperty(
+      'code',
+      API_ERROR_CODES.editorSaveFailed,
+    )
   })
 })

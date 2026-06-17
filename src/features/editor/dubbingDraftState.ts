@@ -1,8 +1,7 @@
 import type { EditorDraft } from '@/types/editor'
 import type { DubbingDraft, DubbingRoleCardDraft, DubbingRoleCardModel, DubbingRoleLineDraft } from '@/types/dubbing'
 import type { SettingAsset } from '@/types/settingAsset'
-
-const DEFAULT_MODEL_ID = 'index-tts'
+import { buildDubbingDraftPatch as buildSharedDubbingDraftPatch } from './editorDraftMapper'
 
 const cloneLine = (line: DubbingRoleLineDraft): DubbingRoleLineDraft => ({ ...line })
 
@@ -44,13 +43,5 @@ export const resolveDubbingCards = (draft: EditorDraft): DubbingRoleCardModel[] 
 }
 
 export const buildDubbingDraftPatch = (input: { modelId: string; cards: DubbingRoleCardModel[] }): { dubbing: DubbingDraft } => ({
-  dubbing: {
-    modelId: input.modelId || DEFAULT_MODEL_ID,
-    cards: input.cards.map<DubbingRoleCardDraft>((card) => ({
-      id: card.id,
-      selectedVoiceId: card.selectedVoiceId,
-      hidden: card.hidden,
-      lines: card.lines.map(cloneLine),
-    })),
-  },
+  dubbing: buildSharedDubbingDraftPatch(input).dubbing,
 })

@@ -108,6 +108,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter, type RouteLocationNormalizedLoadedGeneric, type RouteLocationRaw } from 'vue-router'
+import { delay } from '@/api/local'
 import AppConfirmDialog from '@/components/common/AppConfirmDialog.vue'
 import EditorModelSelect, { type EditorModelOption } from '@/components/editor/common/EditorModelSelect.vue'
 import DubbingRoleCard from '@/components/editor/dubbing/DubbingRoleCard.vue'
@@ -122,18 +123,20 @@ import {
   shouldMockDubbingGenerateFail,
 } from '@/features/editor/dubbingGenerationState'
 import { resolveDubbingPlaybackTransition } from '@/features/editor/dubbingPlaybackState'
-import { buildDubbingExportFileName } from '@/features/editor/dubbingPersistState'
+import { buildDubbingArtifact, buildDubbingExportFileName } from '@/features/editor/editorArtifactMapper'
 import { shouldInterceptStoryboardLeave } from '@/features/editor/storyboardLeaveConfirmState'
 import { buildStoryboardSaveState } from '@/features/editor/storyboardPreviewState'
-import { buildProjectArtifactEnvelope } from '@/features/shared/projectArtifactState'
 import { useEditorStore } from '@/stores/editor'
+import { useGenerationStore } from '@/stores/generation'
 import { useProjectStore } from '@/stores/project'
 import { useUiFeedbackStore } from '@/stores/uiFeedback'
+import { API_ERROR_CODES, GENERATION_TASK_STATUSES } from '@/types/api-enums'
 import type { DubbingRoleCardModel, DubbingRoleLineDraft } from '@/types/dubbing'
 
 const router = useRouter()
 const route = useRoute()
 const editorStore = useEditorStore()
+const generationStore = useGenerationStore()
 const projectStore = useProjectStore()
 const uiFeedback = useUiFeedbackStore()
 
@@ -204,6 +207,72 @@ const setCardLines = (cardId: string, updater: (line: DubbingRoleLineDraft) => D
         }
       : card,
   )
+}
+
+const runGenerateCard = async (
+  id: string,
+  options: {
+    silent?: boolean
+  } = {},
+): Promise<boolean> => {
+  const card = cards.value.find((item) => item.id === id)
+  if (!card) {
+    return false
+  }
+
+  const task = await generationStore.createTask({
+    projectId: projectId.value || editorStore.currentProjectId || 'mock-project',
+    type: 'dubbing',
+    payload: {
+      cardId: card.id,
+      title: card.title,
+      modelId: selectedModelId.value,
+    },
+  })
+
+  setCardLines(id, (line) => ({ ...line, status: 'pending' }))
+  await delay(260)
+  setCardLines(id, (line) => ({ ...line, status: 'generating' }))
+  if (task) {
+    await generationStore.setTaskStatus(task.id, GENERATION_TASK_STATUSES.running, 15)
+  }
+  await delay(920)
+
+  if (shouldMockDubbingGenerateFail({ title: card.title, lines: card.lines.map((line) => line.text) })) {
+    setCardLines(id, (line) => ({ ...line, status: 'failed' }))
+    if (task) {
+      await generationStore.setTaskStatus(task.id, GENERATION_TASK_STATUSES.failed, 100, {
+        errorMessage: API_ERROR_CODES.dubbingGenerateFailed,
+      })
+    }
+    if (!options.silent) {
+      showToast(buildDubbingGenerateErrorMessage(API_ERROR_CODES.dubbingGenerateFailed), 'error')
+    }
+    return false
+  }
+
+  const nextLines = card.lines.map((line) => ({
+    ...line,
+    status: 'success' as const,
+    audioUrl: buildMockAudioDataUrl({
+      seed: `${card.title}-${line.shotId}-${selectedModelId.value}`,
+      durationMs: 720,
+    }),
+  }))
+
+  patchCard(id, { lines: nextLines })
+  if (task) {
+    await generationStore.setTaskStatus(task.id, GENERATION_TASK_STATUSES.success, 100, {
+      result: {
+        cardId: card.id,
+        lineIds: nextLines.map((line) => line.id),
+      },
+    })
+  }
+  if (!options.silent) {
+    showToast(`已完成 ${card.title} 的配音生成`, 'success')
+  }
+  return true
 }
 
 const persistDubbingDraft = async (): Promise<boolean> => {
@@ -316,31 +385,7 @@ const previewLine = (lineId: string): void => {
 }
 
 const generateCard = async (id: string): Promise<void> => {
-  const card = cards.value.find((item) => item.id === id)
-  if (!card) {
-    return
-  }
-
-  setCardLines(id, (line) => ({ ...line, status: 'pending' }))
-  await new Promise((resolve) => window.setTimeout(resolve, 260))
-  setCardLines(id, (line) => ({ ...line, status: 'generating' }))
-  await new Promise((resolve) => window.setTimeout(resolve, 920))
-
-  if (shouldMockDubbingGenerateFail({ title: card.title, lines: card.lines.map((line) => line.text) })) {
-    setCardLines(id, (line) => ({ ...line, status: 'failed' }))
-    showToast(buildDubbingGenerateErrorMessage('DUBBING_GENERATE_FAILED'), 'error')
-    return
-  }
-
-  setCardLines(id, (line) => ({
-    ...line,
-    status: 'success',
-    audioUrl: buildMockAudioDataUrl({
-      seed: `${card.title}-${line.shotId}-${selectedModelId.value}`,
-      durationMs: 720,
-    }),
-  }))
-  showToast(`已完成 ${card.title} 的配音生成`, 'success')
+  await runGenerateCard(id)
 }
 
 const requestDeleteCard = (id: string): void => {
@@ -376,26 +421,11 @@ const handleGenerateAll = async (): Promise<void> => {
   let failedCount = 0
 
   for (const card of targets) {
-    setCardLines(card.id, (line) => ({ ...line, status: 'pending' }))
-    await new Promise((resolve) => window.setTimeout(resolve, 180))
-    setCardLines(card.id, (line) => ({ ...line, status: 'generating' }))
-    await new Promise((resolve) => window.setTimeout(resolve, 420))
-
-    if (shouldMockDubbingGenerateFail({ title: card.title, lines: card.lines.map((line) => line.text) })) {
-      setCardLines(card.id, (line) => ({ ...line, status: 'failed' }))
+    if (await runGenerateCard(card.id, { silent: true })) {
+      successCount += 1
+    } else {
       failedCount += 1
-      continue
     }
-
-    setCardLines(card.id, (line) => ({
-      ...line,
-      status: 'success',
-      audioUrl: buildMockAudioDataUrl({
-        seed: `${card.title}-${line.shotId}-${selectedModelId.value}`,
-        durationMs: 720,
-      }),
-    }))
-    successCount += 1
   }
 
   showToast(buildDubbingBatchGenerateMessage({ successCount, failedCount }), failedCount > 0 ? 'error' : 'success')
@@ -407,13 +437,10 @@ const handleSaveExport = async (): Promise<void> => {
     return
   }
 
-  const payload = buildProjectArtifactEnvelope({
-    artifact: 'dubbing',
-    projectId: projectId.value || 'dubbing',
-    payload: {
-      dubbing: editorStore.draft?.dubbing ?? { modelId: selectedModelId.value, cards: [] },
-    },
-  })
+  const payload = buildDubbingArtifact(
+    projectId.value,
+    editorStore.draft?.dubbing ?? { modelId: selectedModelId.value, cards: [] },
+  )
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' })
   const objectUrl = URL.createObjectURL(blob)
   const link = document.createElement('a')

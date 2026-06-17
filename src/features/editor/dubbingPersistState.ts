@@ -1,4 +1,4 @@
-﻿import { buildProjectArtifactFileName } from '@/features/shared/projectArtifactState'
+﻿import { buildDubbingExportFileName } from '@/features/editor/editorArtifactMapper'
 import type { DubbingRoleCardModel } from '@/types/dubbing'
 
 export interface DubbingCompleteValidationResult {
@@ -6,9 +6,7 @@ export interface DubbingCompleteValidationResult {
   message: string
 }
 
-export const buildDubbingExportFileName = (projectId: string): string => {
-  return buildProjectArtifactFileName(projectId || 'dubbing', 'dubbing')
-}
+export { buildDubbingExportFileName }
 
 export const validateDubbingBeforeComplete = (cards: DubbingRoleCardModel[]): DubbingCompleteValidationResult => {
   const hasGeneratedAudio = cards.some((card) => !card.hidden && card.lines.some((line) => Boolean(line.audioUrl)))

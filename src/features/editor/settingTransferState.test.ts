@@ -1,4 +1,4 @@
-﻿import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   buildSettingArtifact,
   buildSettingBatchExportFileName,
@@ -17,8 +17,9 @@ describe('settingTransferState', () => {
         id: 'character-1',
         type: 'character',
         title: '林秋',
+        roleName: '冷面保镖',
+        description: '沉稳寡言的贴身保镖',
         prompt: '冷静，黑发，长风衣',
-        roleName: '角色音色',
         imageUrls: ['mock://character'],
         candidateImages: [],
         status: 'ready',
@@ -31,6 +32,7 @@ describe('settingTransferState', () => {
         id: 'scene-1',
         type: 'scene',
         title: '旧街巷',
+        description: '带霓虹反光的旧街巷',
         prompt: '夜色，小雨，青石路',
         imageUrls: ['mock://scene'],
         candidateImages: [],
@@ -42,8 +44,8 @@ describe('settingTransferState', () => {
 
     expect(buildSettingExportPayload(assets)).toMatchObject({
       exportedAt: '2026-06-06T12:00:00.000Z',
-      characters: [{ id: 'character-1', name: '林秋', description: '冷静，黑发，长风衣' }],
-      scenes: [{ id: 'scene-1', name: '旧街巷', description: '夜色，小雨，青石路' }],
+      characters: [{ id: 'character-1', name: '林秋', description: '沉稳寡言的贴身保镖' }],
+      scenes: [{ id: 'scene-1', name: '旧街巷', description: '带霓虹反光的旧街巷' }],
       props: [],
     })
 
@@ -59,8 +61,9 @@ describe('settingTransferState', () => {
         id: 'character-1',
         type: 'character',
         title: '林秋',
+        roleName: '冷面保镖',
+        description: '沉稳寡言的贴身保镖',
         prompt: '冷静，黑发，长风衣',
-        roleName: '角色音色',
         imageUrls: ['mock://character'],
         candidateImages: [],
         status: 'ready',
@@ -73,6 +76,7 @@ describe('settingTransferState', () => {
         id: 'scene-1',
         type: 'scene',
         title: '旧街巷',
+        description: '带霓虹反光的旧街巷',
         prompt: '夜色，小雨，青石路',
         imageUrls: ['mock://scene'],
         candidateImages: [],
@@ -90,7 +94,7 @@ describe('settingTransferState', () => {
         exportedAt: '2026-06-06T12:00:00.000Z',
         settingAssets: [assets[1]],
         characters: [],
-        scenes: [{ id: 'scene-1', name: '旧街巷', description: '夜色，小雨，青石路' }],
+        scenes: [{ id: 'scene-1', name: '旧街巷', description: '带霓虹反光的旧街巷' }],
         props: [],
       },
     })

@@ -56,7 +56,7 @@ const buildSummary = (assets: SettingAsset[], type: SettingAsset['type']): PropS
     .map((asset) => ({
       id: asset.id,
       name: asset.title,
-      description: asset.prompt,
+      description: asset.description || asset.prompt,
     }))
 
 export const buildScriptDraftPatch = (
@@ -103,7 +103,7 @@ export const buildStoryboardDraftShots = (shots: StoryboardShot[]): Shot[] =>
     isLocked: shot.isLocked ?? false,
     isFavorite: shot.isFavorite ?? false,
     referenceImages: shot.referenceImages.map(cloneReferenceImage),
-    createdAt: shot.createdAt ?? '2026年3月12日 17:16',
+    createdAt: shot.createdAt ?? '2026年03月12日 17:16',
   }))
 
 export const buildStoryboardDraftPatch = (shots: StoryboardShot[]): Pick<EditorDraft, 'shots'> => ({

@@ -30,6 +30,8 @@ describe('editorDraftMapper', () => {
       id: 'asset-1',
       type: 'character',
       title: '角色-男主',
+      roleName: '冷面保镖',
+      description: '沉稳寡言的贴身保镖',
       prompt: '沉稳克制',
       imageUrls: ['image-1'],
       candidateImages: ['image-1', 'image-2'],
@@ -37,7 +39,7 @@ describe('editorDraftMapper', () => {
       voiceOptions: [{ id: 'male-mid-deep', name: '浑厚男中音' }],
       status: 'ready',
       favorite: true,
-      createdAt: '2026年3月12日 17:16',
+      createdAt: '2026年03月12日 17:16',
     }
 
     const settingPatch = buildSettingDraftPatch([asset])
@@ -45,6 +47,7 @@ describe('editorDraftMapper', () => {
 
     expect(settingPatch.settingAssets[0]?.id).toBe('asset-1')
     expect(settingPatch.characters[0]?.name).toBe('角色-男主')
+    expect(settingPatch.characters[0]?.description).toBe('沉稳寡言的贴身保镖')
     expect(storyboardPatch.shots[0]?.characterIds[0]).toBe(storyboardTagOptions.characters[0]?.id)
     expect(storyboardPatch.shots[0]?.description).toBe(storyboardShotsMock[0]?.prompt)
   })
@@ -81,11 +84,11 @@ describe('editorDraftMapper', () => {
     const cards: DubbingRoleCardModel[] = [
       {
         id: 'role-1',
-        title: '许红豆',
+        title: '许红玉',
         imageUrl: 'image-1',
         selectedVoiceId: 'voice-1',
         voiceOptions: [{ id: 'voice-1', name: '温柔女中音' }],
-        createdAt: '2026年3月12日 17:16',
+        createdAt: '2026年03月12日 17:16',
         hidden: false,
         lines: [
           {

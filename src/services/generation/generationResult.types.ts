@@ -41,3 +41,13 @@ export interface SettingAssetImageResult {
   imageUrl: string
   asset: SettingAsset
 }
+
+export interface VideoGenerateResult {
+  shotId: string
+  videoUrl: string
+  shot: StoryboardShot
+}
+
+export interface VideoOptimizeResult {
+  value: string
+}

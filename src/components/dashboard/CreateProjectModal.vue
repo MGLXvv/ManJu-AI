@@ -62,18 +62,20 @@
             <span class="create-project-modal__label">整体风格</span>
 
             <div class="create-project-modal__select-wrap">
-              <select v-model="form.style" class="create-project-modal__select">
-                <option value="" disabled>请选择整体风格</option>
-                <option value="国漫">国漫</option>
-                <option value="写实">写实</option>
-                <option value="古风">古风</option>
-                <option value="二次元">二次元</option>
-                <option value="赛博朋克">赛博朋克</option>
+              <select v-model="form.style" class="create-project-modal__select" :disabled="!hasStyleOptions">
+                <option value="" disabled>{{ stylePlaceholder }}</option>
+                <option v-for="option in enabledStyleOptions" :key="option.id" :value="option.value">
+                  {{ option.label }}
+                </option>
               </select>
             </div>
+
+            <p v-if="!hasStyleOptions" class="create-project-modal__hint">
+              {{ emptyStyleMessage }}
+            </p>
           </label>
 
-          <button class="create-project-modal__submit" type="submit">创建项目</button>
+          <button class="create-project-modal__submit" type="submit" :disabled="!hasStyleOptions">创建项目</button>
         </form>
 
         <AppConfirmDialog
@@ -96,12 +98,23 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import AppConfirmDialog from '@/components/common/AppConfirmDialog.vue'
+import type { ProjectStyleOption } from '@/features/project/projectStyleState'
 import {
   createEmptyCreateProjectForm,
   getCreateProjectFieldErrors,
   isCreateProjectFormDirty,
   type CreateProjectFieldErrors,
 } from '@/features/dashboard/createProjectModalState'
+
+interface Props {
+  styleOptions?: ProjectStyleOption[]
+  emptyStyleMessage?: string
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  styleOptions: () => [],
+  emptyStyleMessage: '暂无可用风格，请先到系统管理中添加风格',
+})
 
 const open = defineModel<boolean>('open', { required: true })
 
@@ -113,6 +126,10 @@ const form = reactive(createEmptyCreateProjectForm())
 const fieldErrors = ref<CreateProjectFieldErrors>({})
 const invalidFlashNonce = ref(0)
 const showCancelConfirm = ref(false)
+
+const enabledStyleOptions = computed(() => props.styleOptions.filter((option) => !option.disabled))
+const hasStyleOptions = computed(() => enabledStyleOptions.value.length > 0)
+const stylePlaceholder = computed(() => (hasStyleOptions.value ? '请选择整体风格' : props.emptyStyleMessage))
 
 const resetForm = (): void => {
   Object.assign(form, createEmptyCreateProjectForm())
@@ -128,6 +145,18 @@ watch(open, (value) => {
     showCancelConfirm.value = false
   }
 })
+
+watch(
+  enabledStyleOptions,
+  (options) => {
+    if (options.some((option) => option.value === form.style)) {
+      return
+    }
+
+    form.style = ''
+  },
+  { immediate: true },
+)
 
 const close = (): void => {
   showCancelConfirm.value = false
@@ -152,6 +181,10 @@ const cancelCloseConfirm = (): void => {
 }
 
 const submit = (): void => {
+  if (!hasStyleOptions.value) {
+    return
+  }
+
   const nextErrors = getCreateProjectFieldErrors(form)
   fieldErrors.value = nextErrors
 

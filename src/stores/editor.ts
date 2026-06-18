@@ -2,11 +2,11 @@
 import { computed, ref } from 'vue'
 import { editorApi } from '@/api/editor.api'
 import {
-  buildDubbingDraftPatch,
   buildScriptDraftPatch,
   buildSettingDraftPatch,
   buildStoryboardDraftPatch,
 } from '@/features/editor/editorDraftMapper'
+import { buildDubbingDraftUpdate } from '@/features/editor/dubbingDraftState'
 import { EDITOR_SAVE_STATES, type EditorSaveState } from '@/types/api-enums'
 import type { DubbingRoleCardModel } from '@/types/dubbing'
 import type { EditorDraft } from '@/types/editor'
@@ -141,7 +141,7 @@ export const useEditorStore = defineStore('editor', () => {
 
     draft.value = {
       ...draft.value,
-      ...buildDubbingDraftPatch(input),
+      ...buildDubbingDraftUpdate(draft.value, input),
     }
   }
 

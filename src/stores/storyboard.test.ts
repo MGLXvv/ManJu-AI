@@ -89,6 +89,48 @@ describe('storyboard store', () => {
     expect(store.shots.find((shot) => shot.id === target.id)?.status).toBe(originalStatus)
   })
 
+  it('replaces the shot with a generated video when video generation succeeds', async () => {
+    const editorStore = useEditorStore()
+    const store = useStoryboardStore()
+    editorStore.currentProjectId = 'project-video'
+
+    const target = store.shots[0]
+    await store.generateVideoById(target.id)
+
+    expect(store.shots.find((shot) => shot.id === target.id)?.videoUrl).toContain('mock-video://')
+    expect(store.shots.find((shot) => shot.id === target.id)?.status).toBe('success')
+  })
+
+  it('marks the shot as failed when video generation fails', async () => {
+    const editorStore = useEditorStore()
+    const store = useStoryboardStore()
+    editorStore.currentProjectId = 'project-video-fail'
+
+    const target = store.shots[0]
+    store.updateActiveShot({ title: '#mock-video-fail' })
+
+    await expect(store.generateVideoById(target.id)).rejects.toThrow(API_ERROR_CODES.videoGenerateFailed)
+    expect(store.shots.find((shot) => shot.id === target.id)?.status).toBe('failed')
+  })
+
+  it('does not generate a locked storyboard video shot', async () => {
+    const editorStore = useEditorStore()
+    const generationStore = useGenerationStore()
+    const store = useStoryboardStore()
+    editorStore.currentProjectId = 'project-video-locked'
+
+    const target = store.shots[0]
+    const originalVideoUrl = target.videoUrl
+    const originalStatus = target.status
+    store.toggleLock(target.id)
+
+    await expect(store.generateVideoById(target.id)).resolves.toBeUndefined()
+
+    expect(generationStore.tasks.find((task) => task.shotId === target.id && task.type === 'video')).toBeUndefined()
+    expect(store.shots.find((shot) => shot.id === target.id)?.videoUrl).toBe(originalVideoUrl)
+    expect(store.shots.find((shot) => shot.id === target.id)?.status).toBe(originalStatus)
+  })
+
   it('optimizes shot prompts in batch and keeps failed prompts unchanged', async () => {
     const editorStore = useEditorStore()
     const store = useStoryboardStore()

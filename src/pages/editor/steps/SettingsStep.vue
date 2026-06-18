@@ -21,11 +21,9 @@
         :selected-count="selectedBatchIds.length"
         :total-count="assetsStore.assets.length"
         :primary-selected="isFilteredFullySelected"
-        :secondary-selected="isAllSelected"
         :actions="batchActions"
         @exit="exitBatchMode"
         @toggle-primary="toggleSelectFiltered"
-        @toggle-secondary="toggleSelectAll"
         @action="handleBatchAction"
       />
 
@@ -46,7 +44,7 @@
       />
     </div>
 
-    <CreateAssetModal v-model:open="createModalOpen" @submit="createAsset" />
+    <CreateAssetModal v-model:open="createModalOpen" :voice-options="voiceOptions" @submit="createAsset" />
     <AssetPreviewModal v-model:open="previewOpen" :asset="previewAsset" />
 
     <div v-if="generationModeDialogOpen" class="setting-generation-mode-dialog">
@@ -132,19 +130,23 @@ import AssetPreviewModal from '@/components/editor/setting/AssetPreviewModal.vue
 import CreateAssetModal from '@/components/editor/setting/CreateAssetModal.vue'
 import SettingTabs from '@/components/editor/setting/SettingTabs.vue'
 import SettingToolbar from '@/components/editor/setting/SettingToolbar.vue'
+import { getSettingBatchActionToast, toggleSelectVisibleAssets } from '@/features/editor/settingBatchState'
 import { validateEditorAdvance } from '@/features/editor/editorCompletionState'
+import { buildScopedProjectArtifact, buildScopedProjectExportFileName } from '@/features/editor/editorExportScopeState'
 import { buildSettingAssetsSnapshot, resolveSettingAssets } from '@/features/editor/settingDraftState'
-import { buildSettingDeleteDialogCopy, buildSettingDeleteToastMessage } from '@/features/editor/settingDeleteState'
+import { buildSettingDeleteDialogCopy } from '@/features/editor/settingDeleteState'
 import { buildSettingLeaveDialogCopy, shouldInterceptSettingLeave } from '@/features/editor/settingLeaveConfirmState'
+import { getStoryboardModeEntryState } from '@/features/editor/storyboardModeState'
+import { mapVoiceAssetsToOptions } from '@/features/voice/voiceOptionState'
 import {
   buildSettingArtifact,
   buildSettingBatchExportFileName,
-  buildSettingExportFileName,
 } from '@/features/editor/settingTransferState'
 import { useEditorStore } from '@/stores/editor'
 import { useProjectStore } from '@/stores/project'
 import { createDefaultSettingAssets, useSettingAssetsStore } from '@/stores/settingAssets'
 import { useUiFeedbackStore } from '@/stores/uiFeedback'
+import { useVoicesStore } from '@/stores/voices'
 import { API_ERROR_CODES } from '@/types/api-enums'
 import type { SettingAsset, SettingAssetTypeFilter } from '@/types/settingAsset'
 
@@ -154,6 +156,7 @@ const assetsStore = useSettingAssetsStore()
 const editorStore = useEditorStore()
 const projectStore = useProjectStore()
 const uiFeedback = useUiFeedbackStore()
+const voicesStore = useVoicesStore()
 
 const createModalOpen = ref(false)
 const previewOpen = ref(false)
@@ -183,14 +186,11 @@ const activeType = computed({
 const counts = computed(() => assetsStore.counts)
 const filteredAssets = computed(() => assetsStore.filteredAssets)
 const filteredAssetIds = computed(() => filteredAssets.value.map((item) => item.id))
-const allAssetIds = computed(() => assetsStore.assets.map((item) => item.id))
+const voiceOptions = computed(() => mapVoiceAssetsToOptions(voicesStore.voices))
 const currentSnapshot = computed(() => buildSettingAssetsSnapshot(assetsStore.assets))
 const isDirty = computed(() => currentSnapshot.value !== lastSavedSnapshot.value)
 const isFilteredFullySelected = computed(
   () => filteredAssetIds.value.length > 0 && filteredAssetIds.value.every((id) => selectedBatchIds.value.includes(id)),
-)
-const isAllSelected = computed(
-  () => allAssetIds.value.length > 0 && allAssetIds.value.every((id) => selectedBatchIds.value.includes(id)),
 )
 const leaveDialogCopy = buildSettingLeaveDialogCopy()
 const deleteDialogCopy = computed(() => buildSettingDeleteDialogCopy(Math.max(pendingDeleteIds.value.length, 1)))
@@ -266,7 +266,15 @@ const openCreateModal = (): void => {
 }
 
 const createAsset = async (
-  payload: { type: Exclude<SettingAssetTypeFilter, 'all'>; title: string; prompt: string },
+  payload: {
+    type: Exclude<SettingAssetTypeFilter, 'all'>
+    title: string
+    roleName?: string
+    description: string
+    prompt: string
+    voiceId?: string
+    voiceName?: string
+  },
 ): Promise<void> => {
   await assetsStore.createAsset(payload)
   createModalOpen.value = false
@@ -278,7 +286,12 @@ const openPreview = (asset: SettingAsset): void => {
 }
 
 const openGenerationModeDialog = (): void => {
-  pendingStoryboardMode.value = editorStore.draft?.storyboardGenerationMode ?? 'multi-param'
+  const entryState = getStoryboardModeEntryState(editorStore.draft?.storyboardGenerationMode ?? null)
+  pendingStoryboardMode.value = entryState.mode
+  if (entryState.locked) {
+    void proceedToStoryboard(entryState.mode)
+    return
+  }
   generationModeDialogOpen.value = true
 }
 
@@ -360,7 +373,8 @@ const confirmDelete = (): void => {
     exitBatchMode()
   }
 
-  showToast(buildSettingDeleteToastMessage(ids.length), 'success')
+  selectedBatchIds.value = []
+  showToast(getSettingBatchActionToast('delete'), 'success')
   pendingDeleteIds.value = []
   deleteConfirmOpen.value = false
 }
@@ -376,16 +390,7 @@ const exitBatchMode = (): void => {
 }
 
 const toggleSelectFiltered = (): void => {
-  if (isFilteredFullySelected.value) {
-    selectedBatchIds.value = selectedBatchIds.value.filter((id) => !filteredAssetIds.value.includes(id))
-    return
-  }
-
-  selectedBatchIds.value = Array.from(new Set([...selectedBatchIds.value, ...filteredAssetIds.value]))
-}
-
-const toggleSelectAll = (): void => {
-  selectedBatchIds.value = isAllSelected.value ? [] : [...allAssetIds.value]
+  selectedBatchIds.value = toggleSelectVisibleAssets(selectedBatchIds.value, filteredAssetIds.value)
 }
 
 const handleBatchDelete = (): void => {
@@ -398,7 +403,7 @@ const handleBatchFavorite = (): void => {
   }
 
   assetsStore.setFavoriteForAssets(selectedBatchIds.value, true)
-  showToast(`已收藏 ${selectedBatchIds.value.length} 项素材`, 'success')
+  showToast(getSettingBatchActionToast('favorite'), 'success')
 }
 
 const handleBatchExport = (): void => {
@@ -417,7 +422,7 @@ const handleBatchExport = (): void => {
   link.click()
   URL.revokeObjectURL(objectUrl)
 
-  showToast(`已导出 ${selectedAssets.length} 项素材`, 'success')
+  showToast(getSettingBatchActionToast('export'), 'success')
 }
 
 const handleBatchAction = (actionKey?: string): void => {
@@ -446,16 +451,16 @@ const handleBatch = (): void => {
 const handleSaveExport = async (): Promise<void> => {
   const hadChanges = isDirty.value
   const saved = await persistSettingDraft()
-  if (!saved) {
+  if (!saved || !editorStore.draft) {
     return
   }
 
-  const payload = buildSettingArtifact(projectId.value || 'setting', assetsStore.assets)
+  const payload = buildScopedProjectArtifact(projectId.value || 'setting', editorStore.draft, 'settings')
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' })
   const objectUrl = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = objectUrl
-  link.download = buildSettingExportFileName(projectId.value || 'setting')
+  link.download = buildScopedProjectExportFileName(projectId.value || 'setting')
   link.click()
   URL.revokeObjectURL(objectUrl)
 
@@ -491,6 +496,7 @@ const handleBeforeUnload = (event: BeforeUnloadEvent): void => {
 
 onMounted(() => {
   window.addEventListener('beforeunload', handleBeforeUnload)
+  void voicesStore.hydrate()
 })
 
 onBeforeUnmount(() => {
@@ -510,14 +516,14 @@ onBeforeRouteLeave((to) => {
   return false
 })
 
-const confirmGenerationMode = async (): Promise<void> => {
+const proceedToStoryboard = async (mode: 'multi-param' | 'image'): Promise<void> => {
   const validation = validateEditorAdvance('settingsToStoryboard', { assets: assetsStore.assets })
   if (!validation.ok) {
     showToast(validation.message, 'error')
     return
   }
 
-  editorStore.updateStoryboardGenerationMode(pendingStoryboardMode.value)
+  editorStore.updateStoryboardGenerationMode(mode)
   const saved = await persistSettingDraft()
   if (!saved) {
     return
@@ -534,5 +540,9 @@ const confirmGenerationMode = async (): Promise<void> => {
     name: validation.routeName,
     params: route.params,
   })
+}
+
+const confirmGenerationMode = async (): Promise<void> => {
+  await proceedToStoryboard(pendingStoryboardMode.value)
 }
 </script>

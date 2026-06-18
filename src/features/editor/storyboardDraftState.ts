@@ -18,19 +18,9 @@ const mapSummaryToTag =
   })
 
 const normalizeVoiceAssignments = (shot: StoryboardShot): StoryboardVoiceAssignment[] => {
-  const existing = (shot.voiceAssignments ?? []).map((item, index) => ({
+  return (shot.voiceAssignments ?? []).map((item, index) => ({
     ...item,
     id: item.id || `voice-${shot.id}-${index + 1}`,
-  }))
-
-  if (existing.length > 0) {
-    return existing
-  }
-
-  return shot.characters.map((character, index) => ({
-    id: `voice-${shot.id}-${index + 1}`,
-    characterId: character.id,
-    voice: '浑厚男中音',
   }))
 }
 

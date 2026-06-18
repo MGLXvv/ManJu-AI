@@ -56,7 +56,7 @@ import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import WorkflowStepper from '@/components/editor/WorkflowStepper.vue'
 import { buildDubbingArtifact, buildDubbingExportFileName } from '@/features/editor/editorArtifactMapper'
-import { buildProjectArtifactEnvelope, buildProjectArtifactFileName } from '@/features/shared/projectArtifactState'
+import { buildScopedProjectArtifact, buildScopedProjectExportFileName } from '@/features/editor/editorExportScopeState'
 import { useEditorStore } from '@/stores/editor'
 import { useProjectStore } from '@/stores/project'
 import { useUiFeedbackStore } from '@/stores/uiFeedback'
@@ -138,12 +138,8 @@ const exportProjectArtifact = async (): Promise<void> => {
 
   submitting.value = true
   try {
-    const artifact = buildProjectArtifactEnvelope({
-      artifact: 'project',
-      projectId: projectId.value || 'project',
-      payload: draft.value,
-    })
-    downloadJson(buildProjectArtifactFileName(projectId.value || 'project', 'project'), artifact)
+    const artifact = buildScopedProjectArtifact(projectId.value || 'project', draft.value, 'complete')
+    downloadJson(buildScopedProjectExportFileName(projectId.value || 'project'), artifact)
     showToast('项目草稿已导出', 'success')
   } finally {
     submitting.value = false

@@ -35,9 +35,19 @@ describe('project api', () => {
     expect(imported).toHaveLength(2)
 
     const keywordMatches = await projectApi.list({ keyword: 'alpha' })
-    expect(keywordMatches.some((project) => project.name === 'Alpha Story')).toBe(true)
+    expect(keywordMatches.some((project) => project.name === 'Alpha Story（导入）')).toBe(true)
 
     const completed = await projectApi.list({ status: 'completed' })
     expect(completed.every((project) => project.status === 'completed')).toBe(true)
+  })
+
+  it('imports projects as independent copies with new ids', async () => {
+    const imported = await projectApi.importProjects([
+      { name: 'Import Demo', ratio: '16:9', style: '默认', status: 'in_progress' },
+    ])
+
+    expect(imported).toHaveLength(1)
+    expect(imported[0]?.id).toMatch(/^project-/)
+    expect(imported[0]?.name).toBe('Import Demo（导入）')
   })
 })

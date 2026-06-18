@@ -1,5 +1,10 @@
 export type StoryboardMode = 'image' | 'multi-param' | null
 
+export interface StoryboardModeEntryState {
+  locked: boolean
+  mode: Exclude<StoryboardMode, null>
+}
+
 export type StoryboardToolAction =
   | 'edit'
   | 'view'
@@ -13,6 +18,11 @@ export interface StoryboardToolAvailability {
   enabled: boolean
   reason: string
 }
+
+export const getStoryboardModeEntryState = (mode: StoryboardMode): StoryboardModeEntryState => ({
+  locked: mode !== null,
+  mode: mode ?? 'multi-param',
+})
 
 export const resolveStoryboardToolAvailability = (input: {
   mode: StoryboardMode

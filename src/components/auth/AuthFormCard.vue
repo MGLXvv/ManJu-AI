@@ -28,6 +28,7 @@
       </div>
 
       <button
+        v-if="showRegisterEntry"
         type="button"
         class="auth-card__register-link"
         :class="{ 'is-active': mode === 'register' }"
@@ -56,7 +57,15 @@
       <label v-if="mode === 'password'" class="auth-card__field">
         <div class="auth-card__field-head">
           <span>{{ t('auth.field.password') }}</span>
-          <button type="button" class="auth-card__link" :disabled="loading" @click="$emit('forgot')">{{ t('auth.action.forgotPassword') }}</button>
+          <button
+            v-if="showForgotPassword"
+            type="button"
+            class="auth-card__link"
+            :disabled="loading"
+            @click="$emit('forgot')"
+          >
+            {{ t('auth.action.forgotPassword') }}
+          </button>
         </div>
         <div class="auth-card__input-wrap">
           <input
@@ -137,7 +146,7 @@
       <button class="auth-card__submit" type="submit" :disabled="loading">{{ submitButtonText }}</button>
     </form>
 
-    <AuthSocialRow :disabled="loading" @select="$emit('social-login', $event)" />
+    <AuthSocialRow v-if="showSocialLogin" :disabled="loading" @select="$emit('social-login', $event)" />
   </section>
 </template>
 
@@ -166,6 +175,9 @@ const props = withDefaults(
     bindProviderLabel?: string
     formMessage?: string
     formMessageTone?: 'default' | 'error'
+    showRegisterEntry?: boolean
+    showForgotPassword?: boolean
+    showSocialLogin?: boolean
     errors?: Partial<Record<AuthFieldKey, string>>
   }>(),
   {
@@ -177,6 +189,9 @@ const props = withDefaults(
     bindProviderLabel: '',
     formMessage: '',
     formMessageTone: 'default',
+    showRegisterEntry: true,
+    showForgotPassword: true,
+    showSocialLogin: true,
     errors: () => ({}),
   },
 )

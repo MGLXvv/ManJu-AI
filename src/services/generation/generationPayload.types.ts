@@ -54,3 +54,27 @@ export interface SettingAssetGeneratePayload {
   prompt: string
   asset: SettingAsset
 }
+
+export interface VideoGeneratePayload {
+  [key: string]: unknown
+  shotId: string
+  title: string
+  imageUrl?: string
+  videoPrompt: string
+  dialogue: string
+  durationSeconds: number
+  voiceAssignments: StoryboardShot['voiceAssignments']
+  characters: StoryboardShot['characters']
+  scenes: StoryboardShot['scenes']
+  props: StoryboardShot['props']
+  style: string
+  ratio: StoryboardShot['ratio']
+  shot: StoryboardShot
+}
+
+export interface VideoOptimizePayload {
+  [key: string]: unknown
+  shotId?: string
+  mode: 'videoPrompt' | 'dialogue'
+  value: string
+}

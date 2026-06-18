@@ -13,12 +13,48 @@ const createPermissionMatrix = (
 })
 
 export const mockSystemStyles: SystemStyleItem[] = [
-  { id: 'style-1', name: '真人写实', category: '写实', prompt: '真实皮肤质感、自然光影、电影级景深。' },
-  { id: 'style-2', name: '2D国风动漫', category: '国风', prompt: '细线勾勒、暖金光效、服饰纹样完整。' },
-  { id: 'style-3', name: '3D国风动漫', category: '3D', prompt: '角色立体层次更强，国风配色克制。' },
-  { id: 'style-4', name: '3D卡通', category: '3D', prompt: '块面明确、角色夸张、饱和度适中。' },
-  { id: 'style-5', name: '日系漫画', category: '漫画', prompt: '黑白线稿清晰，镜头切割感强。' },
-  { id: 'style-6', name: '美式漫画', category: '漫画', prompt: '高对比硬朗用光，轮廓和结构感突出。' },
+  {
+    id: 'style-1',
+    name: '真人写实',
+    category: '写实',
+    prompt: '真实皮肤质感、自然光影、电影级景深。',
+    enabled: true,
+  },
+  {
+    id: 'style-2',
+    name: '2D 国风动漫',
+    category: '国风',
+    prompt: '细线勾勒、暖金光效、服饰纹样完整。',
+    enabled: true,
+  },
+  {
+    id: 'style-3',
+    name: '3D 国风动漫',
+    category: '3D',
+    prompt: '角色立体层次更强，国风配色克制。',
+    enabled: true,
+  },
+  {
+    id: 'style-4',
+    name: '3D 卡通',
+    category: '3D',
+    prompt: '块面明确、角色夸张、饱和度适中。',
+    enabled: true,
+  },
+  {
+    id: 'style-5',
+    name: '日系漫画',
+    category: '漫画',
+    prompt: '黑白线稿清晰，镜头切割感强。',
+    enabled: true,
+  },
+  {
+    id: 'style-6',
+    name: '美式漫画',
+    category: '漫画',
+    prompt: '高对比硬朗用光，轮廓和结构感突出。',
+    enabled: true,
+  },
 ]
 
 export const mockSystemPermissions: SystemPermissionItem[] = [
@@ -49,11 +85,12 @@ export const mockSystemMessages: SystemMessageItem[] = [
   {
     id: 'msg-1',
     title: '登录操作通知',
-    summary: '你的账号（默认用户001）在平台登录成功，如非本人操作，请及时修改密码。',
-    content: '你的账号（默认用户001）在平台登录成功，如非本人操作，请及时修改密码（密码修改成功后，全平台清空登录状态）。',
+    summary: '你的账号（默认用户 01）在平台登录成功，如非本人操作，请及时修改密码。',
+    content:
+      '你的账号（默认用户 01）在平台登录成功，如非本人操作，请及时修改密码。密码修改成功后，平台会清空所有登录状态。',
     status: 'unread',
     level: 'high',
-    relativeTime: '12分钟前',
+    relativeTime: '12 分钟前',
     platform: '搜狗浏览器',
     loginMethod: '扫码登录',
     location: '中国湖南长沙',
@@ -62,11 +99,12 @@ export const mockSystemMessages: SystemMessageItem[] = [
   {
     id: 'msg-2',
     title: '登录操作通知',
-    summary: '你的账号（默认用户001）在平台登录成功，如非本人操作，请及时修改密码。',
-    content: '你的账号（默认用户001）在平台登录成功，如非本人操作，请及时修改密码（密码修改成功后，全平台清空登录状态）。',
+    summary: '你的账号（默认用户 01）在平台登录成功，如非本人操作，请及时修改密码。',
+    content:
+      '你的账号（默认用户 01）在平台登录成功，如非本人操作，请及时修改密码。密码修改成功后，平台会清空所有登录状态。',
     status: 'unread',
     level: 'high',
-    relativeTime: '1天前',
+    relativeTime: '1 天前',
     platform: 'Chrome',
     loginMethod: '账号密码',
     location: '中国上海',
@@ -76,10 +114,11 @@ export const mockSystemMessages: SystemMessageItem[] = [
     id: 'msg-3',
     title: '系统更新通知',
     summary: '风格管理模块已完成升级，新增风格筛选和批量导入能力。',
-    content: '系统已于 2026-03-16 22:00 完成升级，风格管理模块新增风格筛选和批量导入能力，请刷新页面后使用。',
+    content:
+      '系统已于 2026-03-16 22:00 完成升级，风格管理模块新增风格筛选和批量导入能力，请刷新页面后使用。',
     status: 'unread',
     level: 'normal',
-    relativeTime: '1天前',
+    relativeTime: '1 天前',
     platform: '系统消息',
     loginMethod: '站内通知',
     location: '服务端推送',
@@ -88,11 +127,12 @@ export const mockSystemMessages: SystemMessageItem[] = [
   {
     id: 'msg-4',
     title: '登录操作通知',
-    summary: '你的账号（默认用户001）在平台登录成功，如非本人操作，请及时修改密码。',
-    content: '你的账号（默认用户001）在平台登录成功，如非本人操作，请及时修改密码（密码修改成功后，全平台清空登录状态）。',
+    summary: '你的账号（默认用户 01）在平台登录成功，如非本人操作，请及时修改密码。',
+    content:
+      '你的账号（默认用户 01）在平台登录成功，如非本人操作，请及时修改密码。密码修改成功后，平台会清空所有登录状态。',
     status: 'read',
     level: 'normal',
-    relativeTime: '2天前',
+    relativeTime: '2 天前',
     platform: 'Edge',
     loginMethod: '扫码登录',
     location: '中国湖南长沙',
@@ -102,10 +142,11 @@ export const mockSystemMessages: SystemMessageItem[] = [
     id: 'msg-5',
     title: '音色管理通知',
     summary: '你上传的音色“浑厚男中音”已审核通过，可以在配音页直接使用。',
-    content: '你上传的音色“浑厚男中音”已审核通过，已同步到配音和设定页面的音色选择器。',
+    content:
+      '你上传的音色“浑厚男中音”已审核通过，已同步到配音和设定页面的音色选择器。',
     status: 'read',
     level: 'normal',
-    relativeTime: '2天前',
+    relativeTime: '2 天前',
     platform: '系统消息',
     loginMethod: '站内通知',
     location: '服务端推送',
@@ -114,11 +155,12 @@ export const mockSystemMessages: SystemMessageItem[] = [
   {
     id: 'msg-6',
     title: '登录操作通知',
-    summary: '你的账号（默认用户001）在平台登录成功，如非本人操作，请及时修改密码。',
-    content: '你的账号（默认用户001）在平台登录成功，如非本人操作，请及时修改密码（密码修改成功后，全平台清空登录状态）。',
+    summary: '你的账号（默认用户 01）在平台登录成功，如非本人操作，请及时修改密码。',
+    content:
+      '你的账号（默认用户 01）在平台登录成功，如非本人操作，请及时修改密码。密码修改成功后，平台会清空所有登录状态。',
     status: 'read',
     level: 'normal',
-    relativeTime: '3天前',
+    relativeTime: '3 天前',
     platform: 'Safari',
     loginMethod: '扫码登录',
     location: '中国北京',

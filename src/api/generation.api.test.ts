@@ -123,4 +123,22 @@ describe('generation task api', () => {
     const settled = await generationApi.getById(task.id)
     expect(settled?.projectId).toBe('p-setting-asset')
   })
+
+  it('supports video optimize results through task payloads', async () => {
+    const task = await generationApi.create({
+      projectId: 'p-video-optimize',
+      type: 'video_optimize',
+      shotId: 'shot-opt-1',
+      payload: {
+        shotId: 'shot-opt-1',
+        mode: 'videoPrompt',
+        value: 'night city scene',
+      },
+    })
+
+    expect(task.type).toBe('video_optimize')
+
+    const settled = await generationApi.getById(task.id)
+    expect(settled?.projectId).toBe('p-video-optimize')
+  })
 })

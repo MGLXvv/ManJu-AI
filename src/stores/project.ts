@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { projectApi } from '@/api/project.api'
-import type { ImportedProjectPayload } from '@/features/dashboard/projectTransferState'
+import { normalizeImportedProject, type ImportedProjectPayload } from '@/features/project/projectImportState'
 import type { Project, ProjectStatus } from '@/types/project'
 
 export const useProjectStore = defineStore('project', () => {
@@ -60,7 +60,7 @@ export const useProjectStore = defineStore('project', () => {
   }
 
   const importProjects = async (items: ImportedProjectPayload[]): Promise<Project[]> => {
-    const imported = await projectApi.importProjects(items)
+    const imported = await projectApi.importProjects(items.map(normalizeImportedProject))
     projects.value = [...imported, ...projects.value]
     return imported
   }

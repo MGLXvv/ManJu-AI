@@ -29,15 +29,51 @@ describe('videoPersistState', () => {
     expect(buildVideoExportFileName('project:demo/01')).toBe('project-demo-01-video.json')
   })
 
-  it('blocks entering dubbing when no generated video exists', () => {
+  it('blocks entering dubbing when visible shots are missing video urls', () => {
     expect(validateVideoBeforeDubbing([makeShot()])).toEqual({
       ok: false,
-      message: '请至少生成一个视频镜头后再进入配音',
+      message: '请先为所有可见镜头生成视频后再进入配音',
     })
   })
 
-  it('allows entering dubbing when at least one shot has video url', () => {
-    expect(validateVideoBeforeDubbing([makeShot({ videoUrl: 'mock-video://shot-1/2', status: 'success' })])).toEqual({
+  it('blocks entering dubbing when no visible shots remain', () => {
+    expect(validateVideoBeforeDubbing([makeShot({ isHidden: true })])).toEqual({
+      ok: false,
+      message: '请至少保留一个可见视频镜头后再进入配音',
+    })
+  })
+
+  it('blocks entering dubbing when any visible shot is missing a video url', () => {
+    expect(
+      validateVideoBeforeDubbing([
+        makeShot({ id: 'shot-1', videoUrl: 'mock-video://shot-1/2', status: 'success', isHidden: false }),
+        makeShot({ id: 'shot-2', videoUrl: '', status: 'pending-review', isHidden: false }),
+      ]),
+    ).toEqual({
+      ok: false,
+      message: '请先为所有可见镜头生成视频后再进入配音',
+    })
+  })
+
+  it('allows entering dubbing when every visible shot has video url', () => {
+    expect(
+      validateVideoBeforeDubbing([
+        makeShot({ id: 'shot-1', videoUrl: 'mock-video://shot-1/2', status: 'success', isHidden: false }),
+        makeShot({ id: 'shot-2', videoUrl: 'mock-video://shot-2/2', status: 'success', isHidden: false }),
+      ]),
+    ).toEqual({
+      ok: true,
+      message: '',
+    })
+  })
+
+  it('ignores hidden shots when validating before dubbing', () => {
+    expect(
+      validateVideoBeforeDubbing([
+        makeShot({ id: 'shot-1', videoUrl: 'mock-video://shot-1/2', status: 'success', isHidden: false }),
+        makeShot({ id: 'shot-2', videoUrl: '', status: 'pending-review', isHidden: true }),
+      ]),
+    ).toEqual({
       ok: true,
       message: '',
     })

@@ -18,6 +18,8 @@ export interface StoryboardReferenceImage {
 export interface StoryboardVoiceAssignment {
   id: string
   characterId: string
+  voiceId?: string
+  voiceName?: string
   voice: string
 }
 

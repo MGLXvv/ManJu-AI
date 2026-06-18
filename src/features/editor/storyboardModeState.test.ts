@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { resolveStoryboardToolAvailability } from './storyboardModeState'
+import {
+  getStoryboardModeEntryState,
+  resolveStoryboardToolAvailability,
+} from './storyboardModeState'
 
 describe('storyboardModeState', () => {
   it('always allows view across modes', () => {
@@ -106,6 +109,23 @@ describe('storyboardModeState', () => {
     ).toEqual({
       enabled: true,
       reason: '',
+    })
+  })
+
+  it('treats an existing storyboard mode as locked for re-entry', () => {
+    expect(getStoryboardModeEntryState(null)).toEqual({
+      locked: false,
+      mode: 'multi-param',
+    })
+
+    expect(getStoryboardModeEntryState('image')).toEqual({
+      locked: true,
+      mode: 'image',
+    })
+
+    expect(getStoryboardModeEntryState('multi-param')).toEqual({
+      locked: true,
+      mode: 'multi-param',
     })
   })
 })

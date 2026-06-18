@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <article
     class="asset-card"
     :class="[
@@ -69,6 +69,13 @@
             </div>
           </header>
 
+          <div v-if="asset.type === 'character' && asset.roleName" class="asset-card__meta">
+            {{ asset.roleName }}
+          </div>
+          <p v-if="asset.description" class="asset-card__description">
+            {{ asset.description }}
+          </p>
+
           <AssetImageStrip :images="displayImages" :title="asset.title" @preview="$emit('preview', asset)" />
 
           <AssetContentTabs v-if="isCharacter" v-model="activePanel" />
@@ -88,17 +95,15 @@
           </div>
         </div>
       </div>
-
-
     </div>
-      <AssetCandidateList
-        v-if="showCandidateLibrary"
-        class="asset-card__candidates"
-        :images="candidateImages"
-        :title="asset.title"
-        :selected-index="selectedCandidateIndex"
-        @select="onSelectCandidate"
-      />
+    <AssetCandidateList
+      v-if="showCandidateLibrary"
+      class="asset-card__candidates"
+      :images="candidateImages"
+      :title="asset.title"
+      :selected-index="selectedCandidateIndex"
+      @select="onSelectCandidate"
+    />
     <input ref="uploadRef" class="asset-card__upload-input" type="file" accept="image/*" @change="onFileChange" />
   </article>
 </template>
@@ -178,9 +183,14 @@ watch(
 )
 
 watch(selectedVoiceId, (value) => {
+  const selectedVoice = props.asset.voiceOptions?.find((item) => item.id === value)
   emit('update', {
     id: props.asset.id,
-    patch: { selectedVoiceId: value },
+    patch: {
+      selectedVoiceId: value,
+      voiceId: value || undefined,
+      voiceName: selectedVoice?.name,
+    },
   })
 })
 

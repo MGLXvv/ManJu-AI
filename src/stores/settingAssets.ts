@@ -64,7 +64,15 @@ export const useSettingAssetsStore = defineStore('setting-assets', () => {
     assets.value = await settingApi.listDefaults()
   }
 
-  const createAsset = async (payload: { type: SettingAssetType; title: string; prompt: string }): Promise<void> => {
+  const createAsset = async (payload: {
+    type: SettingAssetType
+    title: string
+    roleName?: string
+    description: string
+    prompt: string
+    voiceId?: string
+    voiceName?: string
+  }): Promise<void> => {
     const created = await settingApi.createAsset(payload)
     assets.value.unshift(created)
   }

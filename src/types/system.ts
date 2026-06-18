@@ -7,6 +7,8 @@ export interface SystemStyleItem {
   name: string
   category: string
   prompt: string
+  enabled?: boolean
+  previewUrl?: string
 }
 
 export interface SystemPermissionItem {

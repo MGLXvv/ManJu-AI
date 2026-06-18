@@ -1,16 +1,5 @@
-﻿import { buildProjectArtifactFileName, type ProjectArtifactEnvelope } from '@/features/shared/projectArtifactState'
-import type { Project } from '@/types/project'
-
-export interface ImportedProjectPayload {
-  name: string
-  ratio: Project['ratio']
-  style: string
-  status?: Project['status']
-  currentStep?: Project['currentStep']
-  duration?: string
-  coverUrl?: string
-  favorite?: boolean
-}
+import type { ImportedProjectPayload } from '@/features/project/projectImportState'
+import { buildProjectArtifactFileName, type ProjectArtifactEnvelope } from '@/features/shared/projectArtifactState'
 
 interface ProjectArtifactProjectPayload extends ImportedProjectPayload {
   id?: string

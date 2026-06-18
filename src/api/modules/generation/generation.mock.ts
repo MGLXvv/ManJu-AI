@@ -16,6 +16,16 @@ import { resolveMockGenerationTask } from './mock-resolvers'
 import type { GenerationApiContract, GenerationTask } from './generation.types'
 
 const GENERATION_KEY = 'amd.generation.tasks'
+const AUTO_SETTLE_TASK_TYPES = new Set([
+  'script',
+  'script_optimize',
+  'setting_asset',
+  'storyboard',
+  'storyboard_optimize',
+  'storyboard_upscale',
+  'video',
+  'video_optimize',
+])
 
 const getTasks = (): GenerationTask[] => readLocal<GenerationTask[]>(GENERATION_KEY, [])
 const setTasks = (tasks: GenerationTask[]): void => writeLocal(GENERATION_KEY, tasks)
@@ -38,14 +48,7 @@ const updateTaskInStorage = (id: string, patch: Partial<GenerationTask>): Genera
 }
 
 const scheduleTaskSettlement = (task: GenerationTask): void => {
-  if (
-    task.type !== 'script' &&
-    task.type !== 'script_optimize' &&
-    task.type !== 'setting_asset' &&
-    task.type !== 'storyboard' &&
-    task.type !== 'storyboard_optimize' &&
-    task.type !== 'storyboard_upscale'
-  ) {
+  if (!AUTO_SETTLE_TASK_TYPES.has(task.type)) {
     return
   }
 

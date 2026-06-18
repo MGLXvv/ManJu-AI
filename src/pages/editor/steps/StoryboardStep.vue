@@ -194,10 +194,9 @@ import { buildStoryboardLeaveDialogCopy, shouldInterceptStoryboardLeave } from '
 import type { StoryboardMode } from '@/features/editor/storyboardModeState'
 import { loadStoryboardPromptCollapsed, saveStoryboardPromptCollapsed } from '@/features/editor/storyboardPanelState'
 import {
-  buildStoryboardExportFileName,
   resolveStoryboardShots,
 } from '@/features/editor/storyboardPersistState'
-import { buildStoryboardArtifact } from '@/features/editor/editorArtifactMapper'
+import { buildScopedProjectArtifact, buildScopedProjectExportFileName } from '@/features/editor/editorExportScopeState'
 import {
   buildStoryboardEditedImage,
   buildStoryboardSaveState,
@@ -302,7 +301,7 @@ watch(
     store.setTagOptions(nextTagOptions)
 
     if (editorStore.draft?.shots.length) {
-      store.replaceShots(resolveStoryboardShots(editorStore.draft.shots, nextTagOptions))
+      store.replaceShots(resolveStoryboardShots(editorStore.draft.shots, nextTagOptions, editorStore.draft.settingAssets))
     } else {
       await store.loadDefaults()
     }
@@ -766,16 +765,16 @@ const confirmBatchGenerate = async ({
 
 const handleSaveExport = async (): Promise<void> => {
   const saved = await persistStoryboardDraft()
-  if (!saved) {
+  if (!saved || !editorStore.draft) {
     return
   }
 
-  const payload = buildStoryboardArtifact(projectId.value, shots.value)
+  const payload = buildScopedProjectArtifact(projectId.value, editorStore.draft, 'storyboard')
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' })
   const objectUrl = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = objectUrl
-  link.download = buildStoryboardExportFileName(projectId.value)
+  link.download = buildScopedProjectExportFileName(projectId.value)
   link.click()
   URL.revokeObjectURL(objectUrl)
 
@@ -966,7 +965,10 @@ onBeforeRouteLeave((to) => {
 })
 
 const goVideoStep = async (): Promise<void> => {
-  const validation = validateEditorAdvance('storyboardToVideo', { shots: shots.value })
+  const validation = validateEditorAdvance('storyboardToVideo', {
+    shots: shots.value,
+    storyboardMode: storyboardMode.value,
+  })
   if (!validation.ok) {
     showToast(validation.message, 'error')
     return

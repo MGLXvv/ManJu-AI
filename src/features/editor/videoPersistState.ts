@@ -9,12 +9,19 @@ export interface VideoDubbingValidationResult {
 export { buildVideoExportFileName }
 
 export const validateVideoBeforeDubbing = (shots: StoryboardShot[]): VideoDubbingValidationResult => {
-  const hasGeneratedVideo = shots.some((shot) => Boolean(shot.videoUrl))
+  const visibleShots = shots.filter((shot) => !shot.isHidden)
 
-  if (!hasGeneratedVideo) {
+  if (visibleShots.length === 0) {
     return {
       ok: false,
-      message: '请至少生成一个视频镜头后再进入配音',
+      message: '请至少保留一个可见视频镜头后再进入配音',
+    }
+  }
+
+  if (visibleShots.some((shot) => !shot.videoUrl)) {
+    return {
+      ok: false,
+      message: '请先为所有可见镜头生成视频后再进入配音',
     }
   }
 

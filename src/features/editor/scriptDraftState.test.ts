@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildScriptDraftSnapshot, hasUnsavedScriptChanges } from '@/features/editor/scriptDraftState'
+import { buildScriptDraftSnapshot, clearScriptPromptFields, hasUnsavedScriptChanges } from '@/features/editor/scriptDraftState'
 
 describe('scriptDraftState', () => {
   it('builds a stable snapshot from script fields', () => {
@@ -34,5 +34,19 @@ describe('scriptDraftState', () => {
         generatedScript: 'C',
       }),
     ).toBe(true)
+  })
+
+  it('clears only the prompt text while preserving source text and generated script', () => {
+    expect(
+      clearScriptPromptFields({
+        sourceText: '原始文案',
+        promptText: '提示词',
+        generatedScript: '已生成剧本',
+      }),
+    ).toEqual({
+      sourceText: '原始文案',
+      promptText: '',
+      generatedScript: '已生成剧本',
+    })
   })
 })

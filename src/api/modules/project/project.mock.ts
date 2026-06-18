@@ -1,4 +1,5 @@
 import { mockProjects } from '@/mocks/projects.mock'
+import { normalizeImportedProject } from '@/features/project/projectImportState'
 import type {
   ProjectCreateRequestDTO,
   ProjectCreateResponseDTO,
@@ -95,7 +96,7 @@ export const projectMockApi: ProjectApiContract = {
 
   async importProjects(inputs) {
     await delay(120)
-    const request: ProjectImportRequestDTO = { projects: inputs }
+    const request: ProjectImportRequestDTO = { projects: inputs.map(normalizeImportedProject) }
     const imported = request.projects.map((item) => createProjectRecord(item))
     setProjects([...imported, ...getProjects()])
     const response: ProjectImportResponseDTO = { projects: imported }

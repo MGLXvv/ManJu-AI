@@ -52,4 +52,33 @@ describe('storyboardDraftState', () => {
     expect(normalized[0].scenes).toEqual([{ id: 's1', name: '街道', type: 'scene' }])
     expect(normalized[0].props).toEqual([])
   })
+
+  it('does not inject hardcoded voice assignments when a shot has no saved assignments', () => {
+    const shots: StoryboardShot[] = [
+      {
+        id: 'shot-1',
+        index: 1,
+        title: '镜头 1',
+        imageUrl: '',
+        prompt: '',
+        characters: [{ id: 'c1', name: '男主', type: 'character' }],
+        scenes: [],
+        props: [],
+        voiceAssignments: [],
+        style: '国风漫画',
+        ratio: '16:9',
+        status: 'pending-review',
+        referenceImages: [],
+        createdAt: '2026-03-12 17:16',
+      },
+    ]
+
+    const normalized = normalizeStoryboardShotsWithTagOptions(shots, {
+      characters: [{ id: 'c1', name: '男主', type: 'character' }],
+      scenes: [],
+      props: [],
+    })
+
+    expect(normalized[0].voiceAssignments).toEqual([])
+  })
 })

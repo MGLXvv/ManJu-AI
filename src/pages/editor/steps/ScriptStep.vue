@@ -66,10 +66,10 @@
 
           <ScriptResultPanel
             v-model="generatedScript"
-            :loading="generating || optimizing"
+            :loading="generating"
             :disabled="isBusy"
             :placeholder-text="resultPlaceholderText"
-            @optimize="handleOptimize"
+            :show-optimize="false"
           />
         </div>
       </div>
@@ -119,7 +119,7 @@ import ScriptInputPanel from '@/components/editor/script/ScriptInputPanel.vue'
 import ScriptPromptPanel from '@/components/editor/script/ScriptPromptPanel.vue'
 import ScriptResultPanel from '@/components/editor/script/ScriptResultPanel.vue'
 import ScriptTemplatePopover from '@/components/editor/script/ScriptTemplatePopover.vue'
-import { buildScriptDraftSnapshot, hasUnsavedScriptChanges } from '@/features/editor/scriptDraftState'
+import { buildScriptDraftSnapshot, clearScriptPromptFields, hasUnsavedScriptChanges } from '@/features/editor/scriptDraftState'
 import { validateEditorAdvance } from '@/features/editor/editorCompletionState'
 import { buildScriptLeaveDialogCopy, shouldInterceptScriptLeave } from '@/features/editor/scriptLeaveConfirmState'
 import {
@@ -150,7 +150,6 @@ const sourceText = ref('')
 const promptText = ref(DEFAULT_PROMPT)
 const generatedScript = ref('')
 const generating = ref(false)
-const optimizing = ref(false)
 const submitting = ref(false)
 const selectedModelId = ref('gpt-4.0')
 const leaveConfirmOpen = ref(false)
@@ -176,11 +175,10 @@ const bypassLeaveGuard = ref(false)
 const projectId = computed(() => String(route.params.projectId ?? ''))
 const canGenerate = computed(() => Boolean(sourceText.value.trim()))
 const canEnterNext = computed(() => Boolean(generatedScript.value.trim()))
-const isBusy = computed(() => generating.value || optimizing.value || submitting.value)
-const actionState = computed<'idle' | 'saving' | 'generating' | 'optimizing'>(() => {
+const isBusy = computed(() => generating.value || submitting.value)
+const actionState = computed<'idle' | 'saving' | 'generating'>(() => {
   if (submitting.value) return 'saving'
   if (generating.value) return 'generating'
-  if (optimizing.value) return 'optimizing'
   return 'idle'
 })
 const statusText = computed(() => {
@@ -189,13 +187,11 @@ const statusText = computed(() => {
       return '正在保存当前文案内容'
     case 'generating':
       return '正在根据原始文案生成剧本'
-    case 'optimizing':
-      return '正在优化已生成的剧本'
     default:
       return isDirty.value ? '当前内容有修改，建议先保存' : '当前内容已同步到草稿'
   }
 })
-const resultPlaceholderText = computed(() => (optimizing.value ? '正在优化剧本内容...' : '正在生成剧本...'))
+const resultPlaceholderText = computed(() => '正在生成剧本...')
 const currentSnapshot = computed(() =>
   buildScriptDraftSnapshot({
     sourceText: sourceText.value,
@@ -302,8 +298,6 @@ const resolveEditorError = (error: unknown, fallback: string): string => {
       return '保存失败，请检查内容后重试'
     case 'SCRIPT_GENERATE_FAILED':
       return '剧本生成失败，请调整文案或提示词后重试'
-    case 'SCRIPT_OPTIMIZE_FAILED':
-      return 'AI优化失败，请稍后再试'
     default:
       return fallback
   }
@@ -404,17 +398,22 @@ const handleOpenTemplate = (): void => {
 }
 
 const handleDelete = async (): Promise<void> => {
-  sourceText.value = ''
-  promptText.value = DEFAULT_PROMPT
-  generatedScript.value = ''
+  const nextFields = clearScriptPromptFields({
+    sourceText: sourceText.value,
+    promptText: promptText.value,
+    generatedScript: generatedScript.value,
+  })
+  sourceText.value = nextFields.sourceText
+  promptText.value = nextFields.promptText
+  generatedScript.value = nextFields.generatedScript
   const saved = await persistDraft()
   if (saved) {
-    showToast('文案内容已清空', 'success')
+    showToast('提示词内容已清空', 'success')
   }
 }
 
 const handleGenerate = async (): Promise<void> => {
-  if (!canGenerate.value || generating.value || optimizing.value) {
+  if (!canGenerate.value || generating.value) {
     return
   }
 
@@ -438,29 +437,6 @@ const handleGenerate = async (): Promise<void> => {
   }
 }
 
-const handleOptimize = async (): Promise<void> => {
-  if (!generatedScript.value.trim() || generating.value || optimizing.value) {
-    return
-  }
-
-  optimizing.value = true
-  try {
-    const result = await scriptGenerationService.optimizeScript({
-      projectId: projectId.value,
-      scriptText: generatedScript.value,
-      modelId: selectedModelId.value,
-    })
-    generatedScript.value = result.script
-    const saved = await persistDraft()
-    if (saved) {
-      showToast('剧本已完成 AI 优化', 'success')
-    }
-  } catch (error) {
-    showToast(resolveEditorError(error, 'AI优化失败，请稍后再试'), 'error')
-  } finally {
-    optimizing.value = false
-  }
-}
 
 const handleNext = async (): Promise<void> => {
   const validation = validateEditorAdvance('scriptToSettings', { generatedScript: generatedScript.value })

@@ -44,4 +44,24 @@ describe('setting assets store', () => {
     await expect(store.generateAssetImage(target!.id)).rejects.toThrow(API_ERROR_CODES.settingImageGenerateFailed)
     expect(store.assets.find((asset) => asset.id === target!.id)?.status).toBe('failed')
   })
+
+  it('persists default voice fields when creating a character asset', async () => {
+    const store = useSettingAssetsStore()
+
+    await store.createAsset({
+      type: 'character',
+      title: '测试角色',
+      roleName: '冷面保镖',
+      description: '沉稳寡言的角色设定',
+      prompt: '测试提示词',
+      voiceId: 'voice-1',
+      voiceName: '浑厚男中音',
+    })
+
+    expect(store.assets[0]).toMatchObject({
+      type: 'character',
+      voiceId: 'voice-1',
+      voiceName: '浑厚男中音',
+    })
+  })
 })

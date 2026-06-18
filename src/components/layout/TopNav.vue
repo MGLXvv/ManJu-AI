@@ -16,15 +16,11 @@
 
 <script setup lang="ts">
 import FigmaIcon from '@/components/icons/FigmaIcon.vue'
-import type { AppIconName } from '@/components/icons/iconRegistry'
+import { buildAppTopNavItems } from '@/features/navigation/appNavigationState'
 
-const navItems: Array<{ label: string; to: string; icon: AppIconName }> = [
-  { label: '首页', to: '/', icon: 'topbar-home-default' },
-  { label: '资源库', to: '/resources', icon: 'topbar-resource-default' },
-  { label: '音色管理', to: '/voices', icon: 'topbar-voice-default' },
-  { label: '团队空间', to: '/team', icon: 'topbar-team-default' },
-  { label: '积分商城', to: '/points', icon: 'topbar-points-default' },
-  { label: '算力充值', to: '/billing', icon: 'topbar-credit-cart-default' },
-  { label: '系统管理', to: '/system', icon: 'topbar-system-default' },
-]
+const navItems = buildAppTopNavItems().map((item) => ({
+  label: item.label,
+  to: item.to,
+  icon: item.iconDefault,
+}))
 </script>

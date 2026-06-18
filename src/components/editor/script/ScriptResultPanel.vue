@@ -33,6 +33,7 @@
             <FigmaIcon name="result-fullscreen" :size="20" />
           </button>
           <button
+            v-if="showOptimize !== false"
             type="button"
             aria-label="AI优化"
             title="AI优化"
@@ -56,6 +57,7 @@ const props = defineProps<{
   loading?: boolean
   disabled?: boolean
   placeholderText?: string
+  showOptimize?: boolean
 }>()
 
 defineEmits<{

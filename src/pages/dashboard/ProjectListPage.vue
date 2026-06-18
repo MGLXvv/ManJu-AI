@@ -70,7 +70,11 @@
       @change="onImportFileChange"
     />
 
-    <CreateProjectModal v-model:open="createModalOpen" @submit="handleCreateProject" />
+    <CreateProjectModal
+      v-model:open="createModalOpen"
+      :style-options="projectStyleOptions"
+      @submit="handleCreateProject"
+    />
     <AppConfirmDialog
       :open="Boolean(deleteConfirm)"
       :title="deleteConfirm?.title ?? ''"
@@ -91,15 +95,18 @@ import { computed, onMounted, ref, watch } from 'vue'
 import AppConfirmDialog from '@/components/common/AppConfirmDialog.vue'
 import { buildDeleteDialogCopy, buildDeleteToastMessage } from '@/features/dashboard/projectDeleteState'
 import { buildProjectExportFileName, parseImportedProjects } from '@/features/dashboard/projectTransferState'
+import { mapSystemStylesToProjectStyleOptions } from '@/features/project/projectStyleState'
 import { buildProjectArtifactEnvelope } from '@/features/shared/projectArtifactState'
 import BatchSelectionToolbar from '@/components/editor/common/BatchSelectionToolbar.vue'
 import CreateProjectModal from '@/components/dashboard/CreateProjectModal.vue'
 import ProjectGrid from '@/components/dashboard/ProjectGrid.vue'
 import ProjectToolbar from '@/components/dashboard/ProjectToolbar.vue'
 import { useProjectStore } from '@/stores/project'
+import { useSystemStore } from '@/stores/system'
 import { useUiFeedbackStore } from '@/stores/uiFeedback'
 
 const store = useProjectStore()
+const systemStore = useSystemStore()
 const uiFeedback = useUiFeedbackStore()
 const createModalOpen = ref(false)
 const batchMode = ref(false)
@@ -113,6 +120,7 @@ const completed = computed(() => store.projects.filter((project) => project.stat
 const pageSize = computed(() => (batchMode.value ? 30 : 29))
 const totalPages = computed(() => Math.max(1, Math.ceil(store.filteredProjects.length / pageSize.value)))
 const pageNumbers = computed(() => Array.from({ length: totalPages.value }, (_, index) => index + 1))
+const projectStyleOptions = computed(() => mapSystemStylesToProjectStyleOptions(systemStore.styles))
 const pagedProjects = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   return store.filteredProjects.slice(start, start + pageSize.value)
@@ -147,6 +155,7 @@ watch([() => store.statusFilter, () => store.keyword], () => {
 
 onMounted(() => {
   void store.bootstrap()
+  void systemStore.hydrate()
 })
 
 const onCreateProject = (): void => {

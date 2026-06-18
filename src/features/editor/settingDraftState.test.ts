@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { createDefaultEditorDraft } from '@/mocks/editor.mock'
 import type { SettingAsset } from '@/types/settingAsset'
 import { buildSettingAssetsSnapshot, buildSettingDraftPatch, resolveSettingAssets } from './settingDraftState'
@@ -7,6 +7,8 @@ const sampleAsset = (id: string, type: SettingAsset['type']): SettingAsset => ({
   id,
   type,
   title: `${type}-${id}`,
+  roleName: type === 'character' ? `role-${id}` : undefined,
+  description: `description-${id}`,
   prompt: `prompt-${id}`,
   imageUrls: [`img-${id}`],
   candidateImages: [`cand-${id}`],
@@ -38,9 +40,9 @@ describe('settingDraftState', () => {
 
     expect(buildSettingDraftPatch(assets)).toEqual({
       settingAssets: assets,
-      characters: [{ id: 'c1', name: 'character-c1', description: 'prompt-c1' }],
-      scenes: [{ id: 's1', name: 'scene-s1', description: 'prompt-s1' }],
-      props: [{ id: 'p1', name: 'prop-p1', description: 'prompt-p1' }],
+      characters: [{ id: 'c1', name: 'character-c1', description: 'description-c1' }],
+      scenes: [{ id: 's1', name: 'scene-s1', description: 'description-s1' }],
+      props: [{ id: 'p1', name: 'prop-p1', description: 'description-p1' }],
     })
   })
 

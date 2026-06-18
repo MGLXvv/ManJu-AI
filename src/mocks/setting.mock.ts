@@ -1,4 +1,6 @@
 import type { SettingAsset, SettingAssetType, VoiceOption } from '@/types/settingAsset'
+import { mockVoices } from './voice.mock'
+import { mapVoiceAssetsToSettingVoiceOptions } from '@/features/voice/voiceOptionState'
 
 const createImage = (_label: string, colorA: string, colorB: string, seed: number): string => {
   const encoded = encodeURIComponent(
@@ -16,17 +18,11 @@ const createImage = (_label: string, colorA: string, colorB: string, seed: numbe
   return `data:image/svg+xml;charset=UTF-8,${encoded}`
 }
 
-const now = (): string => '2026年3月12日 17:16'
+const now = (): string => '2026-03-12 17:16'
 
-export const settingVoiceOptions: VoiceOption[] = [
-  { id: 'male-mid-deep', name: '浑厚男中音', duration: '00:30' },
-  { id: 'male-clear', name: '清亮青年音', duration: '00:28' },
-  { id: 'female-soft', name: '温柔女声', duration: '00:32' },
-  { id: 'narrator', name: '磁性旁白', duration: '00:35' },
-  { id: 'girl-lively', name: '活泼少女音', duration: '00:29' },
-]
+export const getDefaultVoiceOptions = (): VoiceOption[] => mapVoiceAssetsToSettingVoiceOptions(mockVoices)
 
-export const getDefaultVoiceOptions = (): VoiceOption[] => settingVoiceOptions.map((item) => ({ ...item }))
+const defaultCharacterVoice = mockVoices[0]
 
 export const cloneSettingAsset = (asset: SettingAsset): SettingAsset => ({
   ...asset,
@@ -40,6 +36,18 @@ export const cloneSettingAsset = (asset: SettingAsset): SettingAsset => ({
       }
     : undefined,
 })
+
+const buildDescription = (type: SettingAssetType, title: string): string => {
+  if (type === 'character') {
+    return `${title}的角色设定，包含基础性格和外观描述。`
+  }
+
+  if (type === 'scene') {
+    return `${title}的空间设定，用于分镜场景引用。`
+  }
+
+  return `${title}的道具设定，用于镜头内关键物件引用。`
+}
 
 const createSeedAsset = (index: number, type: SettingAssetType, title: string, status: SettingAsset['status']): SettingAsset => {
   const palettes: Record<SettingAssetType, [string, string]> = {
@@ -63,12 +71,15 @@ const createSeedAsset = (index: number, type: SettingAssetType, title: string, s
     id: `asset-${index + 1}`,
     type,
     title,
-    roleName: type === 'character' ? '角色音色' : undefined,
+    roleName: type === 'character' ? '角色设定' : undefined,
+    description: buildDescription(type, title),
     prompt:
-      'masterpiece, best quality, 1girl, long hair, beautiful girl, flipping hair, hand in hair, leaning on car, sleek sports car, urban street background, sunset, golden hour, cinematic lighting, vibrant colors, detailed outfit,',
+      'masterpiece, best quality, 1girl, long hair, beautiful girl, cinematic lighting, detailed outfit',
     imageUrls,
     candidateImages: [...imageUrls],
-    selectedVoiceId: type === 'character' ? 'male-mid-deep' : undefined,
+    voiceId: type === 'character' ? defaultCharacterVoice?.id : undefined,
+    voiceName: type === 'character' ? defaultCharacterVoice?.name : undefined,
+    selectedVoiceId: type === 'character' ? defaultCharacterVoice?.id : undefined,
     voiceOptions: type === 'character' ? getDefaultVoiceOptions() : undefined,
     status,
     favorite: index % 3 === 0,
@@ -80,12 +91,12 @@ export const createDefaultSettingAssets = (): SettingAsset[] =>
   [
     createSeedAsset(0, 'character', '角色-男主', 'ready'),
     createSeedAsset(1, 'character', '角色-女主', 'generating'),
-    createSeedAsset(2, 'character', '角色-男主', 'ready'),
+    createSeedAsset(2, 'character', '角色-反派', 'ready'),
     createSeedAsset(3, 'scene', '场景-沙地', 'ready'),
     createSeedAsset(4, 'prop', '道具-武器', 'ready'),
     createSeedAsset(5, 'character', '角色-男主', 'ready'),
     createSeedAsset(6, 'character', '角色-女主', 'generating'),
-    createSeedAsset(7, 'character', '角色-男主', 'ready'),
-    createSeedAsset(8, 'scene', '场景-沙地', 'ready'),
-    createSeedAsset(9, 'prop', '道具-武器', 'ready'),
+    createSeedAsset(7, 'character', '角色-护卫', 'ready'),
+    createSeedAsset(8, 'scene', '场景-夜街', 'ready'),
+    createSeedAsset(9, 'prop', '道具-古镜', 'ready'),
   ].map(cloneSettingAsset)

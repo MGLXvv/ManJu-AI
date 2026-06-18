@@ -123,7 +123,7 @@ import {
   shouldMockDubbingGenerateFail,
 } from '@/features/editor/dubbingGenerationState'
 import { resolveDubbingPlaybackTransition } from '@/features/editor/dubbingPlaybackState'
-import { buildDubbingArtifact, buildDubbingExportFileName } from '@/features/editor/editorArtifactMapper'
+import { buildScopedProjectArtifact, buildScopedProjectExportFileName } from '@/features/editor/editorExportScopeState'
 import { shouldInterceptStoryboardLeave } from '@/features/editor/storyboardLeaveConfirmState'
 import { buildStoryboardSaveState } from '@/features/editor/storyboardPreviewState'
 import { useEditorStore } from '@/stores/editor'
@@ -433,19 +433,16 @@ const handleGenerateAll = async (): Promise<void> => {
 
 const handleSaveExport = async (): Promise<void> => {
   const saved = await persistDubbingDraft()
-  if (!saved) {
+  if (!saved || !editorStore.draft) {
     return
   }
 
-  const payload = buildDubbingArtifact(
-    projectId.value,
-    editorStore.draft?.dubbing ?? { modelId: selectedModelId.value, cards: [] },
-  )
+  const payload = buildScopedProjectArtifact(projectId.value, editorStore.draft, 'dubbing')
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' })
   const objectUrl = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = objectUrl
-  link.download = buildDubbingExportFileName(projectId.value)
+  link.download = buildScopedProjectExportFileName(projectId.value)
   link.click()
   URL.revokeObjectURL(objectUrl)
 

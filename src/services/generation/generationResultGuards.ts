@@ -6,6 +6,8 @@ import type {
   StoryboardImageResult,
   StoryboardPromptOptimizeResult,
   StoryboardUpscaleResult,
+  VideoGenerateResult,
+  VideoOptimizeResult,
 } from './generationResult.types'
 
 export const assertScriptGenerateResult = (
@@ -78,4 +80,28 @@ export const assertSettingAssetResult = (
     imageUrl: result.imageUrl,
     asset: result.asset,
   }
+}
+
+export const assertVideoGenerateResult = (
+  result: Partial<VideoGenerateResult> | undefined,
+): VideoGenerateResult => {
+  if (!result?.videoUrl || !result?.shot) {
+    throw new Error(API_ERROR_CODES.videoGenerateFailed)
+  }
+
+  return {
+    shotId: result.shotId ?? result.shot.id,
+    videoUrl: result.videoUrl,
+    shot: result.shot,
+  }
+}
+
+export const assertVideoOptimizeResult = (
+  result: Partial<VideoOptimizeResult> | undefined,
+): VideoOptimizeResult => {
+  if (!result || typeof result.value !== 'string') {
+    throw new Error(API_ERROR_CODES.videoOptimizeFailed)
+  }
+
+  return { value: result.value }
 }

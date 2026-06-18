@@ -1,4 +1,4 @@
-﻿export type SettingAssetType = 'character' | 'scene' | 'prop'
+export type SettingAssetType = 'character' | 'scene' | 'prop'
 export type SettingAssetTypeFilter = 'all' | SettingAssetType
 export type SettingAssetStatus = 'ready' | 'generating' | 'empty' | 'failed'
 
@@ -22,9 +22,12 @@ export interface SettingAsset {
   type: SettingAssetType
   title: string
   roleName?: string
+  description: string
   prompt: string
   imageUrls: string[]
   candidateImages?: string[]
+  voiceId?: string
+  voiceName?: string
   selectedVoiceId?: string
   voiceOptions?: VoiceOption[]
   audio?: SettingAssetAudio
@@ -32,4 +35,3 @@ export interface SettingAsset {
   favorite?: boolean
   createdAt: string
 }
-

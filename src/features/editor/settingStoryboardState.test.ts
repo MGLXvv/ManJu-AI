@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import type { SettingAsset } from '@/types/settingAsset'
 import { validateSettingBeforeStoryboard } from './settingStoryboardState'
 
@@ -6,6 +6,8 @@ const sampleAsset = (id: string, type: SettingAsset['type']): SettingAsset => ({
   id,
   type,
   title: `${type}-${id}`,
+  roleName: type === 'character' ? `role-${id}` : undefined,
+  description: `description-${id}`,
   prompt: `prompt-${id}`,
   imageUrls: [`img-${id}`],
   candidateImages: [`cand-${id}`],

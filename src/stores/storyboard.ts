@@ -7,11 +7,9 @@ import {
   storyboardApi,
 } from '@/api/storyboard.api'
 import { normalizeStoryboardShotsWithTagOptions } from '@/features/editor/storyboardDraftState'
-import { shouldMockVideoGenerateFail } from '@/features/editor/videoGenerationState'
-import { storyboardGenerationService, storyboardPromptService } from '@/services/generation'
+import { storyboardGenerationService, storyboardPromptService, videoGenerationService } from '@/services/generation'
 import { useEditorStore } from '@/stores/editor'
-import { useGenerationStore } from '@/stores/generation'
-import { API_ERROR_CODES, GENERATION_TASK_STATUSES } from '@/types/api-enums'
+import { API_ERROR_CODES } from '@/types/api-enums'
 import type { StoryboardRatio, StoryboardShot, StoryboardTag, StoryboardTagOptions, StoryboardVoiceAssignment } from '@/types/storyboard'
 
 const SHOT_TITLE_PATTERN = /^\u955C\u5934\s*(\d+)([A-Z]+)?$/
@@ -56,7 +54,6 @@ export const useStoryboardStore = defineStore('storyboard', () => {
   const tagOptionsState = ref<StoryboardTagOptions>(defaultState.tagOptions)
   const styleOptionsState = ref<string[]>(defaultState.styleOptions)
   const editorStore = useEditorStore()
-  const generationStore = useGenerationStore()
 
   const tagOptions = computed(() => tagOptionsState.value)
   const styleOptions = computed(() => styleOptionsState.value)
@@ -491,46 +488,18 @@ export const useStoryboardStore = defineStore('storyboard', () => {
     const target = shots.value.find((item) => item.id === id)
     if (!target || target.isLocked) return
 
-    const task = await generationStore.createTask({
-      projectId: editorStore.currentProjectId ?? 'mock-project',
-      type: 'video',
-      shotId: id,
-      payload: {
-        title: target.title,
-      },
-    })
-
     patchShotById(id, { status: 'generating' })
-    if (task) {
-      await generationStore.setTaskStatus(task.id, GENERATION_TASK_STATUSES.running, 10)
-    }
 
-    if (
-      shouldMockVideoGenerateFail({
-        title: target.title,
-        videoPrompt: target.videoPrompt ?? '',
-        dialogue: target.dialogue ?? '',
+    try {
+      const result = await videoGenerationService.generateVideo({
+        projectId: editorStore.currentProjectId ?? 'mock-project',
+        shot: target,
       })
-    ) {
+
+      replaceShotById(id, result.shot)
+    } catch (error) {
       patchShotById(id, { status: 'failed' })
-      if (task) {
-        await generationStore.setTaskStatus(task.id, GENERATION_TASK_STATUSES.failed, 100, {
-          errorMessage: API_ERROR_CODES.videoGenerateFailed,
-        })
-      }
-      throw new Error(API_ERROR_CODES.videoGenerateFailed)
-    }
-
-    const result = await storyboardApi.generateVideo(target)
-    replaceShotById(id, result.shot)
-
-    if (task) {
-      await generationStore.setTaskStatus(task.id, GENERATION_TASK_STATUSES.success, 100, {
-        result: {
-          shotId: id,
-          videoUrl: result.videoUrl,
-        },
-      })
+      throw error
     }
   }
 

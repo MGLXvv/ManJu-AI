@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
   createEmptyCreateAssetForm,
   getCreateAssetFieldErrors,
@@ -6,11 +6,12 @@ import {
 } from './createAssetModalState'
 
 describe('createAssetModalState', () => {
-  it('flags every required field when create is triggered with an empty form', () => {
+  it('flags title and both content fields when create is triggered with an empty form', () => {
     const errors = getCreateAssetFieldErrors(createEmptyCreateAssetForm())
 
     expect(errors).toEqual({
       title: true,
+      description: true,
       prompt: true,
     })
   })
@@ -22,11 +23,11 @@ describe('createAssetModalState', () => {
     expect(isCreateAssetFormDirty(form)).toBe(true)
   })
 
-  it('returns no field errors when every required field is completed', () => {
+  it('returns no field errors when title and description are completed', () => {
     const form = createEmptyCreateAssetForm()
     form.type = 'scene'
     form.title = '夜晚街道'
-    form.prompt = '赛博街道，霓虹灯，潮湿地面'
+    form.description = '霓虹街道与潮湿地面'
 
     expect(getCreateAssetFieldErrors(form)).toEqual({})
   })

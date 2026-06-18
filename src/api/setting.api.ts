@@ -1,6 +1,8 @@
-import { cloneSettingAsset, createDefaultSettingAssets, getDefaultVoiceOptions } from '@/mocks/setting.mock'
-import type { SettingAsset, SettingAssetType } from '@/types/settingAsset'
 import { delay } from './local'
+import { cloneSettingAsset, createDefaultSettingAssets } from '@/mocks/setting.mock'
+import type { SettingAsset, SettingAssetType } from '@/types/settingAsset'
+import { mockVoices } from '@/mocks/voice.mock'
+import { mapVoiceAssetsToSettingVoiceOptions } from '@/features/voice/voiceOptionState'
 
 const createGeneratedImage = (title: string, type: SettingAssetType, seed: number): string => {
   const palettes: Record<SettingAssetType, [string, string]> = {
@@ -25,33 +27,83 @@ const createGeneratedImage = (title: string, type: SettingAssetType, seed: numbe
   return `data:image/svg+xml;charset=UTF-8,${encoded}`
 }
 
+const resolveAssetVoiceFields = (
+  input: Pick<SettingAsset, 'type' | 'voiceId' | 'voiceName' | 'selectedVoiceId'>,
+): Pick<SettingAsset, 'voiceId' | 'voiceName' | 'selectedVoiceId' | 'voiceOptions'> => {
+  if (input.type !== 'character') {
+    return {
+      voiceId: undefined,
+      voiceName: undefined,
+      selectedVoiceId: undefined,
+      voiceOptions: undefined,
+    }
+  }
+
+  const voiceOptions = mapVoiceAssetsToSettingVoiceOptions(mockVoices)
+  const selectedVoiceId = input.voiceId?.trim() || input.selectedVoiceId?.trim() || ''
+  const selectedVoice = mockVoices.find((voice) => voice.id === selectedVoiceId)
+  const fallbackVoiceName = input.voiceName?.trim() || undefined
+
+  return {
+    voiceId: selectedVoice?.id ?? (selectedVoiceId || undefined),
+    voiceName: selectedVoice?.name ?? fallbackVoiceName,
+    selectedVoiceId: selectedVoice?.id ?? (selectedVoiceId || undefined),
+    voiceOptions,
+  }
+}
+
 export const settingApi = {
   async listDefaults(): Promise<SettingAsset[]> {
     await delay()
     return createDefaultSettingAssets()
   },
 
-  async createAsset(input: { type: SettingAssetType; title: string; prompt: string }): Promise<SettingAsset> {
+  async createAsset(input: {
+    type: SettingAssetType
+    title: string
+    roleName?: string
+    description: string
+    prompt: string
+    voiceId?: string
+    voiceName?: string
+  }): Promise<SettingAsset> {
     await delay(80)
+    const voiceFields = resolveAssetVoiceFields({
+      type: input.type,
+      voiceId: input.voiceId,
+      voiceName: input.voiceName,
+      selectedVoiceId: input.voiceId,
+    })
+
     return {
       id: `asset-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       type: input.type,
       title: input.title,
-      roleName: input.type === 'character' ? '角色音色' : undefined,
+      roleName: input.type === 'character' ? input.roleName?.trim() || '' : undefined,
+      description: input.description,
       prompt: input.prompt,
       imageUrls: [],
       candidateImages: [],
-      selectedVoiceId: input.type === 'character' ? 'male-mid-deep' : undefined,
-      voiceOptions: input.type === 'character' ? getDefaultVoiceOptions() : undefined,
+      ...voiceFields,
       status: 'empty',
       favorite: false,
-      createdAt: '2026年3月12日 17:16',
+      createdAt: '2026-03-12 17:16',
     }
   },
 
   async updateAsset(asset: SettingAsset, patch: Partial<SettingAsset>): Promise<SettingAsset> {
     await delay(60)
-    return cloneSettingAsset({ ...asset, ...patch })
+    const merged = { ...asset, ...patch }
+    const voiceFields = resolveAssetVoiceFields({
+      type: merged.type,
+      voiceId: merged.voiceId,
+      voiceName: merged.voiceName,
+      selectedVoiceId: merged.selectedVoiceId,
+    })
+    return cloneSettingAsset({
+      ...merged,
+      ...voiceFields,
+    })
   },
 
   async uploadAssetImage(asset: SettingAsset, imageUrl: string): Promise<SettingAsset> {

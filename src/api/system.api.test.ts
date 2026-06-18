@@ -49,4 +49,14 @@ describe('system api', () => {
     expect(cleared.permissions.some((item) => item.id === permission.id)).toBe(false)
     expect(cleared.messages).toHaveLength(0)
   })
+
+  it('defaults newly created styles to enabled', async () => {
+    const style = await systemApi.createStyle({
+      name: '新风格',
+      category: '测试',
+      prompt: '测试风格提示词',
+    })
+
+    expect(style.enabled).toBe(true)
+  })
 })

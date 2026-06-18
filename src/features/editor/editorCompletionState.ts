@@ -1,6 +1,7 @@
 ﻿import { validateDubbingBeforeComplete } from '@/features/editor/dubbingPersistState'
 import { canEnterStoryboard } from '@/features/editor/scriptGenerationState'
 import { validateSettingBeforeStoryboard } from '@/features/editor/settingStoryboardState'
+import type { StoryboardMode } from '@/features/editor/storyboardModeState'
 import { validateStoryboardBeforeVideo } from '@/features/editor/storyboardPersistState'
 import { validateVideoBeforeDubbing } from '@/features/editor/videoPersistState'
 import type { DubbingRoleCardModel } from '@/types/dubbing'
@@ -37,6 +38,7 @@ export type EditorAdvancePayload = {
   assets?: SettingAsset[]
   shots?: StoryboardShot[]
   cards?: DubbingRoleCardModel[]
+  storyboardMode?: StoryboardMode
 }
 
 export type EditorAdvanceResult = EditorAdvanceSuccess | EditorAdvanceFailure
@@ -67,7 +69,7 @@ export function validateEditorAdvance(key: EditorAdvanceKey, payload: EditorAdva
       }
     }
     case 'storyboardToVideo': {
-      const result = validateStoryboardBeforeVideo(payload.shots ?? [])
+      const result = validateStoryboardBeforeVideo(payload.shots ?? [], payload.storyboardMode ?? null)
       if (!result.ok) {
         return { ok: false, message: result.message }
       }

@@ -11,3 +11,8 @@ export const buildScriptDraftSnapshot = (fields: ScriptDraftFields): string => {
 export const hasUnsavedScriptChanges = (lastSavedSnapshot: string, fields: ScriptDraftFields): boolean => {
   return lastSavedSnapshot !== buildScriptDraftSnapshot(fields)
 }
+
+export const clearScriptPromptFields = (fields: ScriptDraftFields): ScriptDraftFields => ({
+  ...fields,
+  promptText: '',
+})

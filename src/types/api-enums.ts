@@ -23,6 +23,7 @@ export const GENERATION_TASK_TYPES = {
   storyboardOptimize: 'storyboard_optimize',
   storyboardUpscale: 'storyboard_upscale',
   video: 'video',
+  videoOptimize: 'video_optimize',
   dubbing: 'dubbing',
 } as const
 

@@ -20,10 +20,10 @@
             v-if="batchMode"
             action-label="批量生成"
             primary-label="全选分镜"
-            :selected-count="selectedShotIds.length"
+            :selected-count="selectedBatchTargets.length"
             :total-count="shots.length"
             :primary-selected="isAllShotsSelected"
-            :action-disabled="selectedShotIds.length === 0"
+            :action-disabled="selectedBatchTargets.length === 0"
             @exit="exitBatchMode"
             @toggle-primary="toggleSelectAllShots"
             @action="openBatchGenerateDialog"
@@ -198,6 +198,11 @@ import StoryboardTimeline from '@/components/editor/storyboard/StoryboardTimelin
 import StoryboardTopActions from '@/components/editor/storyboard/StoryboardTopActions.vue'
 import VideoPreviewPanel from '@/components/editor/video/VideoPreviewPanel.vue'
 import VideoPromptPanel from '@/components/editor/video/VideoPromptPanel.vue'
+import {
+  canBatchGenerateVideoShot,
+  resolveSelectableVideoBatchShotIds,
+  resolveVideoBatchGenerateTargets,
+} from '@/features/editor/videoBatchState'
 import { validateEditorAdvance } from '@/features/editor/editorCompletionState'
 import { buildStoryboardDraftSnapshot } from '@/features/editor/storyboardDirtyState'
 import { resolveStoryboardTagOptions } from '@/features/editor/storyboardDraftState'
@@ -212,10 +217,9 @@ import {
 import {
   buildVideoBatchGenerateMessage,
   buildVideoGenerateErrorMessage,
-  optimizeMockVideoDialogue,
-  optimizeMockVideoPrompt,
 } from '@/features/editor/videoGenerationState'
-import { buildVideoArtifact, buildVideoExportFileName } from '@/features/editor/editorArtifactMapper'
+import { buildScopedProjectArtifact, buildScopedProjectExportFileName } from '@/features/editor/editorExportScopeState'
+import { videoPromptService } from '@/services/generation'
 import { useEditorStore } from '@/stores/editor'
 import { useProjectStore } from '@/stores/project'
 import { useStoryboardStore } from '@/stores/storyboard'
@@ -257,8 +261,12 @@ const pendingUploadShotId = ref<string | null>(null)
 const uploadInputRef = ref<HTMLInputElement | null>(null)
 let scheduledBatchGenerateTimer: number | null = null
 
+const batchSelectableShotIds = computed(() => resolveSelectableVideoBatchShotIds(shots.value))
+const selectedBatchTargets = computed(() => resolveVideoBatchGenerateTargets(shots.value, selectedShotIds.value))
 const isAllShotsSelected = computed(
-  () => shots.value.length > 0 && shots.value.every((shot) => selectedShotIds.value.includes(shot.id)),
+  () =>
+    batchSelectableShotIds.value.length > 0 &&
+    batchSelectableShotIds.value.every((id) => selectedShotIds.value.includes(id)),
 )
 const currentSnapshot = computed(() => buildStoryboardDraftSnapshot(shots.value))
 const isDirty = computed(() => currentSnapshot.value !== lastSavedSnapshot.value)
@@ -337,6 +345,12 @@ const selectShot = (id: string): void => {
 
 const handleTimelineSelect = (id: string): void => {
   if (batchMode.value) {
+    const shot = shots.value.find((item) => item.id === id)
+    if (!shot || !canBatchGenerateVideoShot(shot)) {
+      showToast('该镜头已生成或不可生成，不能加入批量生成', 'info')
+      return
+    }
+
     selectedShotIds.value = selectedShotIds.value.includes(id)
       ? selectedShotIds.value.filter((item) => item !== id)
       : [...selectedShotIds.value, id]
@@ -361,8 +375,12 @@ const optimizeVideoPrompt = async (): Promise<void> => {
 
   optimizingVideoPrompt.value = true
   try {
-    const optimized = await optimizeMockVideoPrompt(shot.videoPrompt ?? shot.prompt ?? '')
-    store.updateActiveShotVideoPrompt(optimized)
+    const result = await videoPromptService.optimizeVideoPrompt({
+      projectId: projectId.value,
+      shotId: shot.id,
+      prompt: shot.videoPrompt ?? shot.prompt ?? '',
+    })
+    store.updateActiveShotVideoPrompt(result.value)
     showToast('视频提示词已优化', 'success')
   } catch (error) {
     showToast(buildVideoGenerateErrorMessage(error), 'error')
@@ -377,8 +395,12 @@ const optimizeDialogue = async (): Promise<void> => {
 
   optimizingDialogue.value = true
   try {
-    const optimized = await optimizeMockVideoDialogue(shot.dialogue ?? '')
-    store.updateActiveShotDialogue(optimized)
+    const result = await videoPromptService.optimizeDialogue({
+      projectId: projectId.value,
+      shotId: shot.id,
+      dialogue: shot.dialogue ?? '',
+    })
+    store.updateActiveShotDialogue(result.value)
     showToast('对白已优化', 'success')
   } catch (error) {
     showToast(buildVideoGenerateErrorMessage(error), 'error')
@@ -470,7 +492,7 @@ const exitBatchMode = (): void => {
 }
 
 const toggleSelectAllShots = (): void => {
-  selectedShotIds.value = isAllShotsSelected.value ? [] : shots.value.map((shot) => shot.id)
+  selectedShotIds.value = isAllShotsSelected.value ? [] : [...batchSelectableShotIds.value]
 }
 
 const handleBatchTrigger = (): void => {
@@ -482,18 +504,25 @@ const handleBatchTrigger = (): void => {
   batchMode.value = true
 }
 
-const runBatchGenerate = async (): Promise<void> => {
-  if (selectedShotIds.value.length === 0) return
+const runBatchGenerate = async (ids = selectedShotIds.value): Promise<void> => {
+  const targets = resolveVideoBatchGenerateTargets(shots.value, ids)
+  if (targets.length === 0) {
+    showToast('暂无可批量生成的视频镜头', 'info')
+    return
+  }
 
-  const results = await Promise.allSettled(selectedShotIds.value.map((id) => store.generateVideoById(id)))
+  const results = await Promise.allSettled(targets.map((shot) => store.generateVideoById(shot.id)))
   const successCount = results.filter((item) => item.status === 'fulfilled').length
   const failedCount = results.length - successCount
 
   showToast(buildVideoBatchGenerateMessage({ successCount, failedCount }), failedCount > 0 ? 'error' : 'success')
+  selectedShotIds.value = selectedShotIds.value.filter((id) =>
+    shots.value.some((shot) => shot.id === id && canBatchGenerateVideoShot(shot)),
+  )
 }
 
 const openBatchGenerateDialog = (): void => {
-  if (selectedShotIds.value.length === 0) return
+  if (selectedBatchTargets.value.length === 0) return
   batchGenerateDialogOpen.value = true
 }
 
@@ -505,16 +534,21 @@ const confirmBatchGenerate = async (): Promise<void> => {
   batchGenerateDialogOpen.value = false
 
   if (batchGenerateMode.value === 'scheduled') {
+    const scheduledIds = resolveVideoBatchGenerateTargets(shots.value, selectedShotIds.value).map((shot) => shot.id)
+    if (scheduledIds.length === 0) {
+      showToast('暂无可批量生成的视频镜头', 'info')
+      return
+    }
     if (scheduledBatchGenerateTimer !== null) {
       window.clearTimeout(scheduledBatchGenerateTimer)
     }
     showToast(
-      `已安排${batchGenerateDay.value === 'today' ? '今天' : '明天'} ${batchGenerateTime.value} 自动生成 ${selectedShotIds.value.length} 个视频`,
+      `已安排${batchGenerateDay.value === 'today' ? '今天' : '明天'} ${batchGenerateTime.value} 自动生成 ${scheduledIds.length} 个视频`,
       'success',
     )
     scheduledBatchGenerateTimer = window.setTimeout(() => {
       scheduledBatchGenerateTimer = null
-      void runBatchGenerate()
+      void runBatchGenerate(scheduledIds)
     }, 800)
     return
   }
@@ -524,16 +558,16 @@ const confirmBatchGenerate = async (): Promise<void> => {
 
 const handleSaveExport = async (): Promise<void> => {
   const saved = await persistVideoDraft()
-  if (!saved) {
+  if (!saved || !editorStore.draft) {
     return
   }
 
-  const payload = buildVideoArtifact(projectId.value, editorStore.draft?.shots ?? [])
+  const payload = buildScopedProjectArtifact(projectId.value, editorStore.draft, 'video')
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' })
   const objectUrl = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = objectUrl
-  link.download = buildVideoExportFileName(projectId.value)
+  link.download = buildScopedProjectExportFileName(projectId.value)
   link.click()
   URL.revokeObjectURL(objectUrl)
 

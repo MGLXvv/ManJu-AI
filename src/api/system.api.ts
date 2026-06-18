@@ -15,7 +15,10 @@ const nowStamp = (): string => {
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`
 }
 
-const cloneStyle = (item: SystemStyleItem): SystemStyleItem => ({ ...item })
+const cloneStyle = (item: SystemStyleItem): SystemStyleItem => ({
+  ...item,
+  enabled: item.enabled ?? true,
+})
 const clonePermission = (item: SystemPermissionItem): SystemPermissionItem => ({
   ...item,
   permissions: { ...item.permissions },
@@ -63,6 +66,7 @@ export const systemApi = {
     const nextItem: SystemStyleItem = {
       id: `style-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       ...input,
+      enabled: input.enabled ?? true,
     }
     state.styles.push(nextItem)
     setSystemState(state)

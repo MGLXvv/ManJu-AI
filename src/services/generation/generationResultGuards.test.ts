@@ -8,6 +8,8 @@ import type {
   StoryboardImageResult,
   StoryboardPromptOptimizeResult,
   StoryboardUpscaleResult,
+  VideoGenerateResult,
+  VideoOptimizeResult,
 } from './generationResult.types'
 import {
   assertScriptGenerateResult,
@@ -16,6 +18,8 @@ import {
   assertStoryboardImageResult,
   assertStoryboardPromptResult,
   assertStoryboardUpscaleResult,
+  assertVideoGenerateResult,
+  assertVideoOptimizeResult,
 } from './generationResultGuards'
 
 const makeGuardShot = (overrides: Partial<StoryboardShot> = {}): StoryboardShot =>
@@ -132,5 +136,37 @@ describe('generationResultGuards', () => {
 
   it('throws setting image generate failed for incomplete asset results', () => {
     expect(() => assertSettingAssetResult({ imageUrl: 'x' })).toThrow(API_ERROR_CODES.settingImageGenerateFailed)
+  })
+
+  it('returns video result when video url and shot exist', () => {
+    const shot = makeGuardShot({ videoUrl: 'mock-video://shot-1' })
+
+    const result = assertVideoGenerateResult({
+      shotId: 'shot-1',
+      videoUrl: 'mock-video://shot-1',
+      shot,
+    })
+
+    expect(result).toEqual<VideoGenerateResult>({
+      shotId: 'shot-1',
+      videoUrl: 'mock-video://shot-1',
+      shot,
+    })
+  })
+
+  it('throws video generate failed for incomplete video results', () => {
+    expect(() => assertVideoGenerateResult({ shot: makeGuardShot() })).toThrow(API_ERROR_CODES.videoGenerateFailed)
+    expect(() => assertVideoGenerateResult({ videoUrl: 'mock-video://shot-1' })).toThrow(API_ERROR_CODES.videoGenerateFailed)
+  })
+
+  it('returns video optimize result when value exists', () => {
+    const result = assertVideoOptimizeResult({ value: 'optimized text' })
+
+    expect(result).toEqual<VideoOptimizeResult>({ value: 'optimized text' })
+  })
+
+  it('throws video optimize failed for missing optimize values', () => {
+    expect(() => assertVideoOptimizeResult(undefined)).toThrow(API_ERROR_CODES.videoOptimizeFailed)
+    expect(() => assertVideoOptimizeResult({})).toThrow(API_ERROR_CODES.videoOptimizeFailed)
   })
 })

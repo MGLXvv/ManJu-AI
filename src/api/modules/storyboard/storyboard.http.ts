@@ -27,16 +27,28 @@ export const storyboardHttpApi: StoryboardApiContract = {
     return data.shot
   },
 
+  /**
+   * Legacy-compatible direct generation endpoint.
+   * Primary image generation should use generation task APIs with type='storyboard'.
+   */
   async generateShotImage(shot: StoryboardShot) {
     const { data } = await http.post(`/storyboard/shots/${shot.id}/generate-image`)
     return data
   },
 
+  /**
+   * Legacy-compatible direct generation endpoint.
+   * Primary video generation should use generation task APIs with type='video'.
+   */
   async generateVideo(shot: StoryboardShot) {
     const { data } = await http.post(`/storyboard/shots/${shot.id}/generate-video`)
     return data
   },
 
+  /**
+   * Legacy-compatible direct generation endpoint.
+   * Primary upscale generation should use generation task APIs with type='storyboard_upscale'.
+   */
   async upscaleShotImage(shot: StoryboardShot) {
     const { data } = await http.post(`/storyboard/shots/${shot.id}/upscale-image`)
     return data

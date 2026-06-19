@@ -67,7 +67,8 @@ Global switch baseline:
   - `POST /storyboard/shots/:id/upscale-image`
 - Notes:
   - Upload/reference/edit endpoints are clearly storyboard-domain APIs.
-  - `generate-image / generate-video / upscale-image` now overlap with generation-task flows and should be treated as compatibility or legacy reservation points unless the backend intentionally keeps both entry styles.
+  - `generate-image / generate-video / upscale-image` are retained as legacy-compatible direct endpoints.
+  - Primary AI generation entrypoint should be the generation task API rather than storyboard direct generation endpoints.
 
 ### `voice`
 
@@ -231,7 +232,6 @@ Utility/support files:
 
 ## Recommended Next Steps
 
-1. `P4-6`: review storyboard direct-generation endpoints versus generation-task endpoints and document which entry style is canonical
-2. `P4-7`: add backend integration environment/setup instructions for mock/http switching
-3. `P4-8`: finalize delivery notes covering standardized modules versus remaining compatibility surfaces
-4. Keep `generation` as the preferred backend entry for generation flows and document any remaining storyboard direct-generation endpoints as compatibility-only unless product/backend intentionally require both
+1. `P4-7`: add backend integration environment/setup instructions for mock/http switching
+2. `P4-8`: finalize delivery notes covering standardized modules versus remaining compatibility surfaces
+3. Keep `generation` as the preferred backend entry for generation flows and document any remaining storyboard direct-generation endpoints as compatibility-only unless product/backend intentionally require both

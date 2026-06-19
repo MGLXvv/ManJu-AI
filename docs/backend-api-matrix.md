@@ -57,7 +57,8 @@ This matrix gives a backend-facing overview of which API domains are already rea
   - `generate-image / generate-video / upscale-image` overlap with generation-task flows
 - Recommendation:
   - Treat upload/reference/edit endpoints as storyboard-domain APIs
-  - Treat direct generation endpoints as compatibility/legacy unless backend explicitly decides to keep two generation entry styles
+  - Treat direct generation endpoints as legacy-compatible endpoints
+  - Use generation task APIs as the primary backend generation entrypoint
 
 ### Voice
 
@@ -148,9 +149,8 @@ This matrix gives a backend-facing overview of which API domains are already rea
 
 ## Recommended Order
 
-1. `storyboard` direct-generation endpoint audit versus `generation` task endpoints
-2. backend integration environment and startup instructions
-3. final delivery inventory and remaining unimplemented capability list
+1. backend integration environment and startup instructions
+2. final delivery inventory and remaining unimplemented capability list
 
 ## Boundary Reminder
 

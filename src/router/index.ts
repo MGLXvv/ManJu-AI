@@ -1,7 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { isEditorStepRouteName, resolveEditorRouteGuard } from '@/features/editor/editorRouteGuardState'
 import { pinia } from '@/stores'
 import { useAuthStore } from '@/stores/auth'
+import { useEditorStore } from '@/stores/editor'
 import { usePageLoadingStore } from '@/stores/pageLoading'
+import { useUiFeedbackStore } from '@/stores/uiFeedback'
 import { isGuestOnly, requiresAuth } from './routeMeta'
 import { routes } from './routes'
 
@@ -12,7 +15,7 @@ export const router = createRouter({
 
 const MIN_LOADING_MS = 420
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const auth = useAuthStore(pinia)
   if (to.fullPath !== from.fullPath) {
     const loading = usePageLoadingStore(pinia)
@@ -27,6 +30,30 @@ router.beforeEach((to, from, next) => {
   if (isGuestOnly(to) && auth.isAuthenticated) {
     next({ name: 'projects' })
     return
+  }
+
+  if (isEditorStepRouteName(to.name)) {
+    const projectId = String(to.params.projectId ?? '')
+    if (projectId) {
+      const editorStore = useEditorStore(pinia)
+      const uiFeedback = useUiFeedbackStore(pinia)
+
+      if (editorStore.currentProjectId !== projectId || !editorStore.draft) {
+        await editorStore.loadDraft(projectId)
+      }
+
+      const guardResult = resolveEditorRouteGuard(to.name, editorStore.draft)
+      if (!guardResult.ok) {
+        uiFeedback.showToast(guardResult.message, { tone: 'error' })
+        next({
+          name: guardResult.redirectRouteName,
+          params: to.params,
+          query: to.query,
+          replace: true,
+        })
+        return
+      }
+    }
   }
 
   next()

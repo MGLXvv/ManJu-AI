@@ -12,7 +12,7 @@
         ref="fileInputRef"
         class="script-input-panel__file-input"
         type="file"
-        accept=".txt,.md,.text"
+        accept=".txt,.md,.text,text/plain,text/markdown"
         :disabled="disabled"
         @change="onFileChange"
       />
@@ -36,6 +36,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref } from 'vue'
 import FigmaIcon from '@/components/icons/FigmaIcon.vue'
+import { validateScriptImportFile, validateScriptTextContent } from '@/features/editor/scriptInputState'
 import ScriptEmptyGuide from './ScriptEmptyGuide.vue'
 
 defineProps<{
@@ -46,6 +47,7 @@ const model = defineModel<string>({ required: true })
 
 const emit = defineEmits<{
   (e: 'import-text', text: string): void
+  (e: 'import-error', message: string): void
 }>()
 
 const manualMode = ref(false)
@@ -68,17 +70,37 @@ const triggerImport = (): void => {
 const onFileChange = async (event: Event): Promise<void> => {
   const target = event.target as HTMLInputElement | null
   const file = target?.files?.[0]
+
+  if (target) {
+    target.value = ''
+  }
+
   if (!file) {
     return
   }
 
-  const text = await file.text()
-  model.value = text
-  manualMode.value = true
-  emit('import-text', text)
+  const fileValidation = validateScriptImportFile(file)
+  if (!fileValidation.ok) {
+    emit('import-error', fileValidation.message ?? '文件格式不支持')
+    return
+  }
 
-  if (target) {
-    target.value = ''
+  try {
+    const text = await file.text()
+    const textValidation = validateScriptTextContent(text)
+
+    if (!textValidation.ok) {
+      emit('import-error', textValidation.message ?? '文件内容不符合要求')
+      return
+    }
+
+    const normalized = text.trim()
+    model.value = normalized
+    manualMode.value = true
+    emit('import-text', normalized)
+  } catch {
+    emit('import-error', '文件读取失败，请重新选择文件')
+    return
   }
 
   await nextTick()

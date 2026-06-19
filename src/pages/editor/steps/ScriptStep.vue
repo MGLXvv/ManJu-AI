@@ -20,7 +20,12 @@
       <div class="script-workbench-card__divider"></div>
 
       <div class="script-workbench-card__body">
-        <ScriptInputPanel v-model="sourceText" :disabled="isBusy" @import-text="handleImportText" />
+        <ScriptInputPanel
+          v-model="sourceText"
+          :disabled="isBusy"
+          @import-text="handleImportText"
+          @import-error="handleScriptImportError"
+        />
 
         <div class="script-workbench-card__right">
           <div
@@ -374,6 +379,10 @@ onBeforeRouteLeave((to) => {
 
 const handleImportText = (text: string): void => {
   sourceText.value = text
+}
+
+const handleScriptImportError = (message: string): void => {
+  showToast(message, 'error')
 }
 
 const handleSave = async (): Promise<void> => {

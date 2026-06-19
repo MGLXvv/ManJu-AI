@@ -48,6 +48,13 @@ const cloneScopedShots = (shots: Shot[], scope: EditorExportScope): Shot[] =>
       createdAt: shot.createdAt,
     }
 
+    if (shot.editHistory?.length) {
+      nextShot.editHistory = shot.editHistory.map((item) => ({
+        ...item,
+        selection: { ...item.selection },
+      }))
+    }
+
     if (scope === 'video' || scope === 'dubbing' || scope === 'complete') {
       nextShot.videoUrl = shot.videoUrl
       nextShot.videoPrompt = shot.videoPrompt

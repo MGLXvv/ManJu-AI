@@ -3,6 +3,7 @@ import { API_ERROR_CODES } from '@/types/api-enums'
 import type { SettingAsset } from '@/types/settingAsset'
 import type { StoryboardShot } from '@/types/storyboard'
 import type {
+  DubbingGenerateResult,
   ScriptGenerateResult,
   SettingAssetImageResult,
   StoryboardImageResult,
@@ -12,6 +13,7 @@ import type {
   VideoOptimizeResult,
 } from './generationResult.types'
 import {
+  assertDubbingGenerateResult,
   assertScriptGenerateResult,
   assertScriptOptimizeResult,
   assertSettingAssetResult,
@@ -168,5 +170,41 @@ describe('generationResultGuards', () => {
   it('throws video optimize failed for missing optimize values', () => {
     expect(() => assertVideoOptimizeResult(undefined)).toThrow(API_ERROR_CODES.videoOptimizeFailed)
     expect(() => assertVideoOptimizeResult({})).toThrow(API_ERROR_CODES.videoOptimizeFailed)
+  })
+
+  it('returns dubbing result when card id and lines exist', () => {
+    const result = assertDubbingGenerateResult({
+      cardId: 'card-1',
+      lines: [
+        {
+          id: 'line-1',
+          shotId: 'shot-1',
+          shotLabel: '镜头 1',
+          text: '第一句对白',
+          audioUrl: 'data:audio/wav;base64,mock',
+          status: 'success',
+        },
+      ],
+    })
+
+    expect(result).toEqual<DubbingGenerateResult>({
+      cardId: 'card-1',
+      lines: [
+        {
+          id: 'line-1',
+          shotId: 'shot-1',
+          shotLabel: '镜头 1',
+          text: '第一句对白',
+          audioUrl: 'data:audio/wav;base64,mock',
+          status: 'success',
+        },
+      ],
+      lineIds: ['line-1'],
+    })
+  })
+
+  it('throws dubbing generate failed for incomplete dubbing results', () => {
+    expect(() => assertDubbingGenerateResult({ lines: [] })).toThrow(API_ERROR_CODES.dubbingGenerateFailed)
+    expect(() => assertDubbingGenerateResult({ cardId: 'card-1' })).toThrow(API_ERROR_CODES.dubbingGenerateFailed)
   })
 })

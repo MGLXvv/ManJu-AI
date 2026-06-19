@@ -1,4 +1,5 @@
 import { buildProjectArtifactEnvelope, buildProjectArtifactFileName } from '@/features/shared/projectArtifactState'
+import { resolveVisibleDubbingCards } from './dubbingCardVisibilityState'
 import type { DubbingDraft } from '@/types/dubbing'
 import type { Shot } from '@/types/editor'
 import type { StoryboardShot } from '@/types/storyboard'
@@ -18,6 +19,10 @@ export interface ExportedDubbingPayload {
   dubbing: DubbingDraft
 }
 
+export interface BuildDubbingExportPayloadOptions {
+  includeHidden?: boolean
+}
+
 export const buildStoryboardExportPayload = (shots: StoryboardShot[]): ExportedStoryboardPayload => ({
   exportedAt: new Date().toISOString(),
   shots: buildStoryboardDraftShots(shots),
@@ -35,15 +40,22 @@ export const buildVideoExportPayload = (shots: Shot[]): ExportedVideoPayload => 
   })),
 })
 
-export const buildDubbingExportPayload = (dubbing: DubbingDraft): ExportedDubbingPayload => ({
-  dubbing: {
-    ...dubbing,
-    cards: dubbing.cards.map((card) => ({
-      ...card,
-      lines: card.lines.map((line) => ({ ...line })),
-    })),
-  },
-})
+export const buildDubbingExportPayload = (
+  dubbing: DubbingDraft,
+  options: BuildDubbingExportPayloadOptions = {},
+): ExportedDubbingPayload => {
+  const cards = options.includeHidden ? dubbing.cards : resolveVisibleDubbingCards(dubbing.cards)
+
+  return {
+    dubbing: {
+      ...dubbing,
+      cards: cards.map((card) => ({
+        ...card,
+        lines: card.lines.map((line) => ({ ...line })),
+      })),
+    },
+  }
+}
 
 export const buildStoryboardArtifact = (projectId: string, shots: StoryboardShot[]) =>
   buildProjectArtifactEnvelope({

@@ -1,5 +1,6 @@
 import { API_ERROR_CODES } from '@/types/api-enums'
 import type {
+  DubbingGenerateResult,
   ScriptGenerateResult,
   ScriptOptimizeResult,
   SettingAssetImageResult,
@@ -104,4 +105,18 @@ export const assertVideoOptimizeResult = (
   }
 
   return { value: result.value }
+}
+
+export const assertDubbingGenerateResult = (
+  result: Partial<DubbingGenerateResult> | undefined,
+): DubbingGenerateResult => {
+  if (!result?.cardId || !Array.isArray(result.lines)) {
+    throw new Error(API_ERROR_CODES.dubbingGenerateFailed)
+  }
+
+  return {
+    cardId: result.cardId,
+    lines: result.lines,
+    lineIds: result.lineIds ?? result.lines.map((line) => line.id),
+  }
 }

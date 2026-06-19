@@ -18,7 +18,7 @@
         <div class="dubbing-toolbar__actions">
           <span class="storyboard-top-actions__save-state-pill" :class="`is-${saveState.tone}`">{{ saveState.label }}</span>
           <button type="button" class="dubbing-toolbar__save" :disabled="submitting" @click="handleSaveExport">保存并导出</button>
-          <button type="button" class="dubbing-toolbar__batch" :disabled="submitting || visibleCards.length === 0" @click="handleGenerateAll">
+          <button type="button" class="dubbing-toolbar__batch" :disabled="submitting || batchGenerateTargets.length === 0" @click="handleGenerateAll">
             一键全部配音
           </button>
           <EditorModelSelect v-model="selectedModelId" :options="modelOptions" />
@@ -108,35 +108,32 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter, type RouteLocationNormalizedLoadedGeneric, type RouteLocationRaw } from 'vue-router'
-import { delay } from '@/api/local'
 import AppConfirmDialog from '@/components/common/AppConfirmDialog.vue'
 import EditorModelSelect, { type EditorModelOption } from '@/components/editor/common/EditorModelSelect.vue'
 import DubbingRoleCard from '@/components/editor/dubbing/DubbingRoleCard.vue'
 import WorkflowStepper from '@/components/editor/WorkflowStepper.vue'
 import FigmaIcon from '@/components/icons/FigmaIcon.vue'
-import { buildMockAudioDataUrl } from '@/features/editor/dubbingAudioState'
+import { resolveDubbingBatchGenerateTargets } from '@/features/editor/dubbingBatchState'
+import { hideDubbingCardById, resolveVisibleDubbingCards } from '@/features/editor/dubbingCardVisibilityState'
 import { validateEditorAdvance } from '@/features/editor/editorCompletionState'
 import { buildDubbingDraftPatch, resolveDubbingCards } from '@/features/editor/dubbingDraftState'
 import {
   buildDubbingBatchGenerateMessage,
   buildDubbingGenerateErrorMessage,
-  shouldMockDubbingGenerateFail,
 } from '@/features/editor/dubbingGenerationState'
 import { resolveDubbingPlaybackTransition } from '@/features/editor/dubbingPlaybackState'
 import { buildScopedProjectArtifact, buildScopedProjectExportFileName } from '@/features/editor/editorExportScopeState'
 import { shouldInterceptStoryboardLeave } from '@/features/editor/storyboardLeaveConfirmState'
 import { buildStoryboardSaveState } from '@/features/editor/storyboardPreviewState'
+import { dubbingGenerationService } from '@/services/generation'
 import { useEditorStore } from '@/stores/editor'
-import { useGenerationStore } from '@/stores/generation'
 import { useProjectStore } from '@/stores/project'
 import { useUiFeedbackStore } from '@/stores/uiFeedback'
-import { API_ERROR_CODES, GENERATION_TASK_STATUSES } from '@/types/api-enums'
 import type { DubbingRoleCardModel, DubbingRoleLineDraft } from '@/types/dubbing'
 
 const router = useRouter()
 const route = useRoute()
 const editorStore = useEditorStore()
-const generationStore = useGenerationStore()
 const projectStore = useProjectStore()
 const uiFeedback = useUiFeedbackStore()
 
@@ -164,11 +161,7 @@ const modelOptions: EditorModelOption[] = [
 const projectId = computed(() => String(route.params.projectId ?? ''))
 const visibleCards = computed(() => {
   const word = keyword.value.trim().toLocaleLowerCase()
-  return cards.value.filter((card) => {
-    if (card.hidden) {
-      return false
-    }
-
+  return resolveVisibleDubbingCards(cards.value).filter((card) => {
     if (!word) {
       return true
     }
@@ -178,6 +171,7 @@ const visibleCards = computed(() => {
 })
 const totalCount = computed(() => visibleCards.value.length)
 const totalPages = computed(() => Math.max(1, Math.ceil(totalCount.value / pageSize)))
+const batchGenerateTargets = computed(() => resolveDubbingBatchGenerateTargets(cards.value))
 const pagedCards = computed(() => {
   const start = (currentPage.value - 1) * pageSize
   return visibleCards.value.slice(start, start + pageSize)
@@ -220,59 +214,32 @@ const runGenerateCard = async (
     return false
   }
 
-  const task = await generationStore.createTask({
-    projectId: projectId.value || editorStore.currentProjectId || 'mock-project',
-    type: 'dubbing',
-    payload: {
-      cardId: card.id,
-      title: card.title,
-      modelId: selectedModelId.value,
-    },
-  })
-
   setCardLines(id, (line) => ({ ...line, status: 'pending' }))
-  await delay(260)
   setCardLines(id, (line) => ({ ...line, status: 'generating' }))
-  if (task) {
-    await generationStore.setTaskStatus(task.id, GENERATION_TASK_STATUSES.running, 15)
-  }
-  await delay(920)
 
-  if (shouldMockDubbingGenerateFail({ title: card.title, lines: card.lines.map((line) => line.text) })) {
-    setCardLines(id, (line) => ({ ...line, status: 'failed' }))
-    if (task) {
-      await generationStore.setTaskStatus(task.id, GENERATION_TASK_STATUSES.failed, 100, {
-        errorMessage: API_ERROR_CODES.dubbingGenerateFailed,
-      })
-    }
+  try {
+    const result = await dubbingGenerationService.generateCard({
+      projectId: projectId.value || editorStore.currentProjectId || 'mock-project',
+      modelId: selectedModelId.value,
+      card,
+    })
+
+    patchCard(id, { lines: result.lines })
+
     if (!options.silent) {
-      showToast(buildDubbingGenerateErrorMessage(API_ERROR_CODES.dubbingGenerateFailed), 'error')
+      showToast(`已完成 ${card.title} 的配音生成`, 'success')
     }
+
+    return true
+  } catch (error) {
+    setCardLines(id, (line) => ({ ...line, status: 'failed' }))
+
+    if (!options.silent) {
+      showToast(buildDubbingGenerateErrorMessage(error), 'error')
+    }
+
     return false
   }
-
-  const nextLines = card.lines.map((line) => ({
-    ...line,
-    status: 'success' as const,
-    audioUrl: buildMockAudioDataUrl({
-      seed: `${card.title}-${line.shotId}-${selectedModelId.value}`,
-      durationMs: 720,
-    }),
-  }))
-
-  patchCard(id, { lines: nextLines })
-  if (task) {
-    await generationStore.setTaskStatus(task.id, GENERATION_TASK_STATUSES.success, 100, {
-      result: {
-        cardId: card.id,
-        lineIds: nextLines.map((line) => line.id),
-      },
-    })
-  }
-  if (!options.silent) {
-    showToast(`已完成 ${card.title} 的配音生成`, 'success')
-  }
-  return true
 }
 
 const persistDubbingDraft = async (): Promise<boolean> => {
@@ -400,7 +367,7 @@ const confirmDelete = (): void => {
     return
   }
 
-  patchCard(cardId, { hidden: true })
+  cards.value = hideDubbingCardById(cards.value, cardId)
   pendingDeleteCardId.value = null
   deleteConfirmOpen.value = false
   showToast('角色配音卡片已删除', 'success')
@@ -412,8 +379,9 @@ const cancelDeleteConfirm = (): void => {
 }
 
 const handleGenerateAll = async (): Promise<void> => {
-  const targets = visibleCards.value
+  const targets = resolveDubbingBatchGenerateTargets(cards.value)
   if (targets.length === 0) {
+    showToast('暂无可批量生成的配音卡片', 'info')
     return
   }
 

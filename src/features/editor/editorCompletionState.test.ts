@@ -72,5 +72,55 @@ describe('editorCompletionState', () => {
       message: '请先选择分镜生成模式',
     })
   })
+
+  it('ignores hidden dubbing cards when validating complete-step entry', () => {
+    expect(
+      validateEditorAdvance('dubbingToComplete', {
+        cards: [
+          {
+            id: 'card-1',
+            title: '角色A',
+            imageUrl: 'image-1',
+            selectedVoiceId: 'voice-1',
+            voiceOptions: [{ id: 'voice-1', name: '温柔女声' }],
+            createdAt: '2026-03-12 17:16',
+            hidden: true,
+            lines: [
+              {
+                id: 'line-1',
+                shotId: 'shot-1',
+                shotLabel: '镜头 1',
+                text: '第一句对白',
+                status: 'failed',
+              },
+            ],
+          },
+          {
+            id: 'card-2',
+            title: '角色B',
+            imageUrl: 'image-2',
+            selectedVoiceId: 'voice-2',
+            voiceOptions: [{ id: 'voice-2', name: '沉稳男声' }],
+            createdAt: '2026-03-12 17:16',
+            hidden: false,
+            lines: [
+              {
+                id: 'line-2',
+                shotId: 'shot-2',
+                shotLabel: '镜头 2',
+                text: '第二句对白',
+                audioUrl: 'data:audio/wav;base64,mock',
+                status: 'success',
+              },
+            ],
+          },
+        ],
+      }),
+    ).toMatchObject({
+      ok: true,
+      nextStep: 'complete',
+      routeName: 'editor-complete',
+    })
+  })
 })
 

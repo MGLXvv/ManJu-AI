@@ -1,3 +1,4 @@
+import type { DubbingRoleCardModel, DubbingRoleLineDraft } from '@/types/dubbing'
 import type { SettingAsset } from '@/types/settingAsset'
 import type { StoryboardShot } from '@/types/storyboard'
 
@@ -77,4 +78,14 @@ export interface VideoOptimizePayload {
   shotId?: string
   mode: 'videoPrompt' | 'dialogue'
   value: string
+}
+
+export interface DubbingGeneratePayload {
+  [key: string]: unknown
+  cardId: string
+  title: string
+  modelId: string
+  selectedVoiceId?: string
+  lines: DubbingRoleLineDraft[]
+  card: DubbingRoleCardModel
 }

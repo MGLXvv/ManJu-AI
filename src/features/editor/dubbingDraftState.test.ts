@@ -211,6 +211,37 @@ describe('dubbingDraftState', () => {
     })
   })
 
+  it('preserves hidden card state inside dubbing draft patches', () => {
+    const patch = buildDubbingDraftPatch({
+      modelId: 'index-tts',
+      cards: [
+        {
+          id: 'asset-char-1',
+          title: 'Character A',
+          imageUrl: 'image-1',
+          selectedVoiceId: 'male-mid-deep',
+          voiceOptions: [{ id: 'male-mid-deep', name: 'Deep Male Voice' }],
+          createdAt: '2026-03-12 17:16',
+          hidden: true,
+          lines: [
+            {
+              id: 'asset-char-1-shot-1',
+              shotId: 'shot-1',
+              shotLabel: 'Shot 1',
+              text: 'This line needs dubbing',
+              status: 'failed',
+            },
+          ],
+        },
+      ],
+    })
+
+    expect(patch.dubbing.cards[0]).toMatchObject({
+      id: 'asset-char-1',
+      hidden: true,
+    })
+  })
+
   it('syncs the selected card voice to every matching shot assignment without touching other characters', () => {
     const nextShots = syncDubbingVoiceSelectionsToShots(
       [

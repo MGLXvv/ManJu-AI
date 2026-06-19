@@ -8,14 +8,12 @@ Confirmed task types:
 
 - `script`
 - `script_optimize`
+- `setting_asset`
 - `storyboard`
 - `storyboard_optimize`
 - `storyboard_upscale`
-- `setting_asset`
-
-Pending product confirmation:
-
 - `video`
+- `video_optimize`
 - `dubbing`
 
 ## Task Model
@@ -100,6 +98,23 @@ interface ScriptOptimizePayload {
 }
 ```
 
+### `setting_asset`
+
+```ts
+interface SettingAssetGeneratePayload {
+  assetId: string
+  type: 'character' | 'scene' | 'prop'
+  name: string
+  description: string
+  prompt: string
+}
+```
+
+Mock-only note:
+
+- The front-end mock currently carries `asset` for local mock reuse.
+- A real backend contract should not require the full `asset` object.
+
 ### `storyboard`
 
 ```ts
@@ -116,7 +131,7 @@ interface StoryboardGeneratePayload {
 }
 ```
 
-Note:
+Mock-only note:
 
 - The front-end mock currently carries `shot` for local mock reuse.
 - A real backend contract should not require the full `shot` object if the backend can reconstruct it from `shotId` plus payload fields.
@@ -143,25 +158,60 @@ interface StoryboardUpscalePayload {
 }
 ```
 
-Note:
+Mock-only note:
 
 - The front-end mock currently carries `shot` for local mock reuse.
 
-### `setting_asset`
+### `video`
 
 ```ts
-interface SettingAssetGeneratePayload {
-  assetId: string
-  type: 'character' | 'scene' | 'prop'
-  name: string
-  description: string
-  prompt: string
+interface VideoGeneratePayload {
+  shotId: string
+  title: string
+  imageUrl?: string
+  videoPrompt: string
+  dialogue: string
+  durationSeconds: number
+  voiceAssignments: StoryboardVoiceAssignment[]
+  characters: StoryboardTag[]
+  scenes: StoryboardTag[]
+  props: StoryboardTag[]
+  style: string
+  ratio: '16:9' | '9:16'
 }
 ```
 
-Note:
+Mock-only note:
 
-- The front-end mock currently carries `asset` for local mock reuse.
+- The front-end mock currently carries `shot` for local mock reuse.
+- A real backend contract should not require the full `shot` object.
+
+### `video_optimize`
+
+```ts
+interface VideoOptimizePayload {
+  shotId?: string
+  mode: 'videoPrompt' | 'dialogue'
+  value: string
+}
+```
+
+### `dubbing`
+
+```ts
+interface DubbingGeneratePayload {
+  cardId: string
+  title: string
+  modelId: string
+  selectedVoiceId?: string
+  lines: DubbingRoleLineDraft[]
+}
+```
+
+Mock-only note:
+
+- The front-end mock currently carries `card` for local mock reuse.
+- A real backend contract should not require the full `card` object.
 
 ## Result Contract
 
@@ -178,6 +228,16 @@ interface ScriptGenerateResult {
 ```ts
 interface ScriptOptimizeResult {
   script: string
+}
+```
+
+### `setting_asset`
+
+```ts
+interface SettingAssetImageResult {
+  assetId: string
+  imageUrl: string
+  asset: SettingAsset
 }
 ```
 
@@ -209,13 +269,31 @@ interface StoryboardUpscaleResult {
 }
 ```
 
-### `setting_asset`
+### `video`
 
 ```ts
-interface SettingAssetImageResult {
-  assetId: string
-  imageUrl: string
-  asset: SettingAsset
+interface VideoGenerateResult {
+  shotId: string
+  videoUrl: string
+  shot: StoryboardShot
+}
+```
+
+### `video_optimize`
+
+```ts
+interface VideoOptimizeResult {
+  value: string
+}
+```
+
+### `dubbing`
+
+```ts
+interface DubbingGenerateResult {
+  cardId: string
+  lines: DubbingRoleLineDraft[]
+  lineIds: string[]
 }
 ```
 
@@ -230,9 +308,6 @@ Confirmed current generation errors:
 - `STORYBOARD_OPTIMIZE_FAILED`
 - `STORYBOARD_UPSCALE_FAILED`
 - `STORYBOARD_UPSCALE_IMAGE_REQUIRED`
-
-Pending future task errors:
-
 - `VIDEO_GENERATE_FAILED`
 - `VIDEO_OPTIMIZE_FAILED`
 - `DUBBING_GENERATE_FAILED`
@@ -241,5 +316,6 @@ Pending future task errors:
 
 - Store/page layers should not directly create or advance generation tasks.
 - Service layers own task creation and waiting.
-- Store layers own local UI state transitions such as `generating`, `failed`, and replacing updated entities.
+- Store/page layers may still own local UI state transitions such as `generating`, `failed`, and replacing updated entities.
 - Result validation is centralized in `src/services/generation/generationResultGuards.ts`.
+- Front-end result guards assume the result shapes documented above and will throw stable error codes when required fields are missing.

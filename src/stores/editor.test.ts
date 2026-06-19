@@ -92,4 +92,30 @@ describe('editor store', () => {
       voice: '新音色',
     })
   })
+  it('preserves hidden dubbing cards when updating the dubbing draft', () => {
+    const store = useEditorStore()
+    const draft = createDefaultEditorDraft('project-editor')
+    store.draft = draft
+
+    store.updateDubbingDraft({
+      modelId: 'index-tts',
+      cards: [
+        {
+          id: 'character-1',
+          title: '角色 1',
+          imageUrl: 'image-1',
+          selectedVoiceId: 'voice-new',
+          voiceOptions: [{ id: 'voice-new', name: '新音色' }],
+          createdAt: '2026-03-12 17:16',
+          hidden: true,
+          lines: [],
+        },
+      ],
+    })
+
+    expect(store.draft?.dubbing.cards[0]).toMatchObject({
+      id: 'character-1',
+      hidden: true,
+    })
+  })
 })

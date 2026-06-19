@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createDefaultEditorDraft } from '@/mocks/editor.mock'
 import { storyboardShotsMock } from '@/mocks/storyboard.mock'
 import {
+  buildDubbingExportPayload,
   buildDubbingArtifact,
   buildDubbingExportFileName,
   buildStoryboardArtifact,
@@ -74,5 +75,49 @@ describe('editorArtifactMapper', () => {
     expect(buildStoryboardExportFileName('project-1')).toBe('project-1-storyboard.json')
     expect(buildVideoExportFileName('project-1')).toBe('project-1-video.json')
     expect(buildDubbingExportFileName('project-1')).toBe('project-1-dubbing.json')
+  })
+
+  it('excludes hidden dubbing cards from exported dubbing artifacts by default', () => {
+    const draft = createDefaultEditorDraft('project-dubbing')
+    draft.dubbing.cards = [
+      {
+        id: 'card-1',
+        selectedVoiceId: 'voice-1',
+        hidden: false,
+        lines: [],
+      },
+      {
+        id: 'card-2',
+        selectedVoiceId: 'voice-2',
+        hidden: true,
+        lines: [],
+      },
+    ]
+
+    const artifact = buildDubbingArtifact('project-dubbing', draft.dubbing)
+
+    expect(artifact.payload.dubbing.cards.map((card) => card.id)).toEqual(['card-1'])
+  })
+
+  it('can include hidden dubbing cards when explicitly requested', () => {
+    const draft = createDefaultEditorDraft('project-dubbing')
+    draft.dubbing.cards = [
+      {
+        id: 'card-1',
+        selectedVoiceId: 'voice-1',
+        hidden: false,
+        lines: [],
+      },
+      {
+        id: 'card-2',
+        selectedVoiceId: 'voice-2',
+        hidden: true,
+        lines: [],
+      },
+    ]
+
+    const payload = buildDubbingExportPayload(draft.dubbing, { includeHidden: true })
+
+    expect(payload.dubbing.cards.map((card) => card.id)).toEqual(['card-1', 'card-2'])
   })
 })

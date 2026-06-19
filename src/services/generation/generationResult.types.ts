@@ -1,3 +1,4 @@
+import type { DubbingRoleLineDraft } from '@/types/dubbing'
 import type { SettingAsset } from '@/types/settingAsset'
 import type { StoryboardShot } from '@/types/storyboard'
 
@@ -50,4 +51,10 @@ export interface VideoGenerateResult {
 
 export interface VideoOptimizeResult {
   value: string
+}
+
+export interface DubbingGenerateResult {
+  cardId: string
+  lines: DubbingRoleLineDraft[]
+  lineIds: string[]
 }

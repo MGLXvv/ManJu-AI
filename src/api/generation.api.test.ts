@@ -141,4 +141,49 @@ describe('generation task api', () => {
     const settled = await generationApi.getById(task.id)
     expect(settled?.projectId).toBe('p-video-optimize')
   })
+
+  it('supports dubbing generation results through task payloads', async () => {
+    const task = await generationApi.create({
+      projectId: 'p-dubbing',
+      type: 'dubbing',
+      payload: {
+        cardId: 'card-1',
+        title: '角色A',
+        modelId: 'index-tts',
+        selectedVoiceId: 'voice-1',
+        lines: [
+          {
+            id: 'line-1',
+            shotId: 'shot-1',
+            shotLabel: '镜头 1',
+            text: '第一句对白',
+            status: 'idle',
+          },
+        ],
+        card: {
+          id: 'card-1',
+          title: '角色A',
+          imageUrl: 'data:image/png;base64,mock',
+          selectedVoiceId: 'voice-1',
+          voiceOptions: [{ id: 'voice-1', name: '温柔女声' }],
+          createdAt: '2026-03-12 17:16',
+          hidden: false,
+          lines: [
+            {
+              id: 'line-1',
+              shotId: 'shot-1',
+              shotLabel: '镜头 1',
+              text: '第一句对白',
+              status: 'idle',
+            },
+          ],
+        },
+      },
+    })
+
+    expect(task.type).toBe('dubbing')
+
+    const settled = await generationApi.getById(task.id)
+    expect(settled?.projectId).toBe('p-dubbing')
+  })
 })

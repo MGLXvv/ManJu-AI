@@ -78,4 +78,28 @@ describe('editorExportScopeState', () => {
     expect(artifact.payload.steps).toEqual(['script', 'settings', 'storyboard', 'video'])
     expect(buildScopedProjectExportFileName('project-2')).toBe('project-2-project.json')
   })
+
+  it('keeps hidden dubbing cards in complete scoped project artifacts for draft recovery', () => {
+    const draft = createDefaultEditorDraft('project-complete')
+    draft.dubbing.cards = [
+      {
+        id: 'card-1',
+        selectedVoiceId: 'voice-1',
+        hidden: false,
+        lines: [],
+      },
+      {
+        id: 'card-2',
+        selectedVoiceId: 'voice-2',
+        hidden: true,
+        lines: [],
+      },
+    ]
+
+    const artifact = buildScopedProjectArtifact('project-complete', draft, 'complete')
+
+    expect(artifact.payload.currentStep).toBe('complete')
+    expect(artifact.payload.draft.dubbing?.cards.map((card) => card.id)).toEqual(['card-1', 'card-2'])
+    expect(artifact.payload.draft.dubbing?.cards[1]?.hidden).toBe(true)
+  })
 })

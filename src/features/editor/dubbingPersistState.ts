@@ -1,5 +1,6 @@
-﻿import { buildDubbingExportFileName } from '@/features/editor/editorArtifactMapper'
+import { buildDubbingExportFileName } from '@/features/editor/editorArtifactMapper'
 import type { DubbingRoleCardModel } from '@/types/dubbing'
+import { resolveVisibleDubbingCards } from './dubbingCardVisibilityState'
 
 export interface DubbingCompleteValidationResult {
   ok: boolean
@@ -9,7 +10,7 @@ export interface DubbingCompleteValidationResult {
 export { buildDubbingExportFileName }
 
 export const validateDubbingBeforeComplete = (cards: DubbingRoleCardModel[]): DubbingCompleteValidationResult => {
-  const hasGeneratedAudio = cards.some((card) => !card.hidden && card.lines.some((line) => Boolean(line.audioUrl)))
+  const hasGeneratedAudio = resolveVisibleDubbingCards(cards).some((card) => card.lines.some((line) => Boolean(line.audioUrl)))
 
   if (!hasGeneratedAudio) {
     return {

@@ -55,6 +55,7 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import WorkflowStepper from '@/components/editor/WorkflowStepper.vue'
+import { buildCompleteSummary } from '@/features/editor/completeSummaryState'
 import { buildDubbingArtifact, buildDubbingExportFileName } from '@/features/editor/editorArtifactMapper'
 import { buildScopedProjectArtifact, buildScopedProjectExportFileName } from '@/features/editor/editorExportScopeState'
 import { useEditorStore } from '@/stores/editor'
@@ -73,11 +74,10 @@ const draft = computed(() => editorStore.draft)
 const project = computed(() => projectStore.projects.find((item) => item.id === projectId.value) ?? null)
 const projectName = computed(() => project.value?.name ?? draft.value?.projectId ?? '当前项目')
 const projectStatusText = computed(() => (project.value?.status === 'completed' ? '已完成' : '进行中'))
-const shotCount = computed(() => draft.value?.shots.length ?? 0)
-const playableVideoCount = computed(() => draft.value?.shots.filter((shot) => Boolean(shot.videoUrl)).length ?? 0)
-const generatedAudioCount = computed(
-  () => draft.value?.dubbing.cards.reduce((count, card) => count + card.lines.filter((line) => Boolean(line.audioUrl)).length, 0) ?? 0,
-)
+const completeSummary = computed(() => buildCompleteSummary(draft.value))
+const shotCount = computed(() => completeSummary.value.shotCount)
+const playableVideoCount = computed(() => completeSummary.value.playableVideoCount)
+const generatedAudioCount = computed(() => completeSummary.value.generatedAudioCount)
 
 const showToast = (message: string, tone: 'info' | 'success' | 'error' = 'info'): void => {
   uiFeedback.showToast(message, { tone })

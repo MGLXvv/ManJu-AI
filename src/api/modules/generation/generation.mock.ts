@@ -25,6 +25,7 @@ const AUTO_SETTLE_TASK_TYPES = new Set([
   'storyboard_upscale',
   'video',
   'video_optimize',
+  'dubbing',
 ])
 
 const getTasks = (): GenerationTask[] => readLocal<GenerationTask[]>(GENERATION_KEY, [])

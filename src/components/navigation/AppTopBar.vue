@@ -36,25 +36,42 @@
           <FigmaIcon name="topbar-user-default" :size="24" />
         </button>
 
-        <UserProfilePopover v-if="showUserPopover" @select="handleUserMenuSelect" />
+        <UserProfilePopover v-if="showUserPopover" :active-key="activeUserMenuKey" @select="handleUserMenuSelect" />
       </div>
     </div>
   </header>
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import FigmaIcon from '@/components/icons/FigmaIcon.vue'
 import UserProfilePopover from '@/components/navigation/UserProfilePopover.vue'
 import { buildAppTopNavItems, type UserMenuKey } from '@/features/navigation/appNavigationState'
+import { resolveUserMenuAction } from '@/features/navigation/appUserMenuActionState'
+import { useAuthStore } from '@/stores/auth'
+import { useUiFeedbackStore } from '@/stores/uiFeedback'
 
 const route = useRoute()
 const router = useRouter()
+const authStore = useAuthStore()
+const uiFeedback = useUiFeedbackStore()
 const showUserPopover = ref(false)
 const userMenuRef = ref<HTMLElement | null>(null)
 
 const navItems = buildAppTopNavItems()
+
+const activeUserMenuKey = computed<UserMenuKey | null>(() => {
+  if (route.path.startsWith('/system')) {
+    return 'messages'
+  }
+
+  if (route.path.startsWith('/resources')) {
+    return 'space'
+  }
+
+  return null
+})
 
 const isActive = (to: string): boolean => {
   if (to === '/') {
@@ -63,12 +80,23 @@ const isActive = (to: string): boolean => {
   return route.path === to || route.path.startsWith(`${to}/`)
 }
 
-const handleUserMenuSelect = (key: UserMenuKey): void => {
+const handleUserMenuSelect = async (key: UserMenuKey): Promise<void> => {
   showUserPopover.value = false
 
-  if (key === 'space') {
-    void router.push('/resources')
+  const action = resolveUserMenuAction(key)
+
+  if (action.type === 'route') {
+    await router.push(action.to)
+    return
   }
+
+  if (action.type === 'unavailable') {
+    uiFeedback.showToast(action.message, { tone: 'info' })
+    return
+  }
+
+  await authStore.logout()
+  await router.push({ name: 'login' })
 }
 
 const handleDocumentClick = (event: MouseEvent): void => {

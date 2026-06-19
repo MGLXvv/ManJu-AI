@@ -19,7 +19,7 @@
         :key="item.key"
         type="button"
         class="user-popover__item"
-        :class="{ 'is-active': item.key === 'messages' }"
+        :class="{ 'is-active': activeKey === item.key }"
         role="menuitem"
         @click="$emit('select', item.key)"
       >
@@ -38,6 +38,10 @@ import FigmaIcon from '@/components/icons/FigmaIcon.vue'
 import { buildUserMenuItems, type UserMenuKey as MenuKey } from '@/features/navigation/appNavigationState'
 
 const menuItems = buildUserMenuItems()
+
+defineProps<{
+  activeKey?: MenuKey | null
+}>()
 
 defineEmits<{
   (e: 'select', key: MenuKey): void

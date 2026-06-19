@@ -43,21 +43,39 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import SystemMessageDetailModal from '@/components/system/SystemMessageDetailModal.vue'
 import SystemMessagePanel from '@/components/system/SystemMessagePanel.vue'
 import SystemPermissionPanel from '@/components/system/SystemPermissionPanel.vue'
 import SystemSidebar from '@/components/system/SystemSidebar.vue'
 import SystemStylePanel from '@/components/system/SystemStylePanel.vue'
 import { useSystemStore } from '@/stores/system'
-import type { SystemPermissionItem } from '@/types/system'
+import type { SystemPanelKey, SystemPermissionItem } from '@/types/system'
 
+const route = useRoute()
 const store = useSystemStore()
 const selectedMessageId = ref('')
 
+const syncPanelFromQuery = (): void => {
+  const panel = route.query.panel
+  if (panel === 'styles' || panel === 'permissions' || panel === 'messages') {
+    store.activePanel = panel as SystemPanelKey
+    selectedMessageId.value = ''
+  }
+}
+
 onMounted(() => {
   void store.hydrate()
+  syncPanelFromQuery()
 })
+
+watch(
+  () => route.query.panel,
+  () => {
+    syncPanelFromQuery()
+  },
+)
 
 const activePanel = computed({
   get: () => store.activePanel,

@@ -19,4 +19,12 @@ describe('appNavigationState', () => {
       'logout',
     ])
   })
+
+  it('does not expose unconfirmed top navigation items', () => {
+    const labels = buildAppTopNavItems().map((item) => item.label)
+
+    expect(labels).not.toContain('团队空间')
+    expect(labels).not.toContain('积分商城')
+    expect(labels).not.toContain('充值')
+  })
 })

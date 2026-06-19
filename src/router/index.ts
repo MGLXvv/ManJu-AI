@@ -38,8 +38,17 @@ router.beforeEach(async (to, from, next) => {
       const editorStore = useEditorStore(pinia)
       const uiFeedback = useUiFeedbackStore(pinia)
 
-      if (editorStore.currentProjectId !== projectId || !editorStore.draft) {
-        await editorStore.loadDraft(projectId)
+      try {
+        if (editorStore.currentProjectId !== projectId || !editorStore.draft) {
+          await editorStore.loadDraft(projectId)
+        }
+      } catch {
+        uiFeedback.showToast('项目草稿加载失败，请稍后再试', { tone: 'error' })
+        next({
+          name: 'projects',
+          replace: true,
+        })
+        return
       }
 
       const guardResult = resolveEditorRouteGuard(to.name, editorStore.draft)

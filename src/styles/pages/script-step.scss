@@ -115,93 +115,6 @@
   background: #323232;
 }
 
-.script-model-select-wrap {
-  position: relative;
-}
-
-.script-model-select {
-  display: grid;
-  grid-template-columns: 20px minmax(0, 1fr) 12px;
-  align-items: center;
-  justify-content: start;
-  column-gap: 8px;
-  height: var(--script-control-h);
-  min-width: clamp(132px, 7.9167vw, 152px);
-  padding: 0 clamp(10px, 0.7292vw, 14px);
-  border: 0;
-  border-radius: 999px;
-  background: #3d3f3f;
-  color: #d8d8d8;
-  font-size: var(--script-body-font);
-  font-weight: 600;
-  cursor: pointer;
-  line-height: 1;
-}
-
-.script-model-select__icon-img,
-.script-model-select__icon-fallback {
-  width: 20px;
-  height: 20px;
-}
-
-.script-model-select__label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  text-align: left;
-}
-
-.script-model-select__arrow {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 12px;
-  font-size: var(--script-body-font);
-  line-height: 1;
-  opacity: 0.7;
-}
-
-.script-model-menu {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  z-index: 20;
-  min-width: clamp(168px, 9.6875vw, 186px);
-  padding: 6px;
-  border: 1px solid #4a4b4c;
-  border-radius: 10px;
-  background: #2f3031;
-  box-shadow: 0 8px 20px rgb(0 0 0 / 35%);
-}
-
-.script-model-menu__item {
-  width: 100%;
-  display: grid;
-  grid-template-columns: 20px minmax(0, 1fr);
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: #d8d8d8;
-  text-align: left;
-  font-size: var(--script-small-font);
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.script-model-menu__item:hover,
-.script-model-menu__item.is-active {
-  background: #3b3c3d;
-}
-
-.script-model-menu__icon-img,
-.script-model-menu__icon-fallback {
-  width: 20px;
-  height: 20px;
-}
-
 .script-next-btn {
   width: clamp(100px, 6.1458vw, 118px);
   height: var(--script-control-h);
@@ -854,11 +767,6 @@
     width: 100%;
     justify-content: space-between;
     gap: 10px;
-  }
-
-  .script-model-select {
-    min-width: 0;
-    flex: 1;
   }
 
   .script-next-btn {

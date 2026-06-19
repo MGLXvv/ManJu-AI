@@ -8,9 +8,11 @@
       <section class="complete-step__card">
         <header class="complete-step__header">
           <div>
-            <p class="complete-step__eyebrow">初版完成页</p>
+            <p class="complete-step__eyebrow">项目结果汇总</p>
             <h1 class="complete-step__title">项目已进入完成阶段</h1>
-            <p class="complete-step__desc">当前草稿、分镜、视频和配音结果已经汇总，可以导出当前项目产物或返回项目列表。</p>
+            <p class="complete-step__desc">
+              当前页面用于汇总项目草稿、分镜、视频片段和配音结果；剪映工程导出需等待后续 UI 与导出规则确认。
+            </p>
           </div>
 
           <span class="complete-step__status">{{ projectStatusText }}</span>
@@ -35,12 +37,35 @@
           </article>
         </div>
 
+        <div class="complete-step__notices">
+          <article class="complete-step__notice" :class="{ 'is-empty': !completeSummary.hasPlayableVideo }">
+            <strong>视频结果</strong>
+            <p v-if="completeSummary.hasPlayableVideo">
+              已汇总 {{ playableVideoCount }} 个可预览视频片段，可继续随项目草稿一并导出。
+            </p>
+            <p v-else>{{ completeSummary.videoEmptyText }}</p>
+          </article>
+
+          <article class="complete-step__notice" :class="{ 'is-empty': !completeSummary.hasGeneratedAudio }">
+            <strong>配音结果</strong>
+            <p v-if="completeSummary.hasGeneratedAudio">
+              已汇总 {{ generatedAudioCount }} 条已生成配音结果，可继续导出配音 JSON。
+            </p>
+            <p v-else>{{ completeSummary.audioEmptyText }}</p>
+          </article>
+
+          <article class="complete-step__notice is-info">
+            <strong>导出说明</strong>
+            <p>{{ completeSummary.exportNoticeText }}</p>
+          </article>
+        </div>
+
         <div class="complete-step__actions">
           <button type="button" class="complete-step__secondary" :disabled="submitting" @click="exportDubbingArtifact">
-            导出配音结果
+            导出配音 JSON
           </button>
           <button type="button" class="complete-step__secondary" :disabled="submitting" @click="exportProjectArtifact">
-            导出项目草稿
+            导出项目草稿 JSON
           </button>
           <button type="button" class="complete-step__primary" :disabled="submitting" @click="goProjects">
             返回项目列表
@@ -124,7 +149,7 @@ const exportDubbingArtifact = async (): Promise<void> => {
   try {
     const artifact = buildDubbingArtifact(projectId.value, draft.value.dubbing)
     downloadJson(buildDubbingExportFileName(projectId.value), artifact)
-    showToast('配音结果已导出', 'success')
+    showToast('配音 JSON 已导出', 'success')
   } finally {
     submitting.value = false
   }
@@ -140,7 +165,7 @@ const exportProjectArtifact = async (): Promise<void> => {
   try {
     const artifact = buildScopedProjectArtifact(projectId.value || 'project', draft.value, 'complete')
     downloadJson(buildScopedProjectExportFileName(projectId.value || 'project'), artifact)
-    showToast('项目草稿已导出', 'success')
+    showToast('项目草稿 JSON 已导出', 'success')
   } finally {
     submitting.value = false
   }
@@ -254,6 +279,43 @@ const goProjects = async (): Promise<void> => {
   gap: 12px;
 }
 
+.complete-step__notices {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.complete-step__notice {
+  min-height: 120px;
+  padding: 18px;
+  border-radius: 20px;
+  background: rgba(34, 34, 38, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.complete-step__notice strong {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 15px;
+}
+
+.complete-step__notice p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.66);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.complete-step__notice.is-empty {
+  border-color: rgba(255, 190, 118, 0.24);
+  background: rgba(255, 190, 118, 0.08);
+}
+
+.complete-step__notice.is-info {
+  border-color: rgba(181, 156, 255, 0.2);
+  background: rgba(181, 156, 255, 0.08);
+}
+
 .complete-step__primary,
 .complete-step__secondary {
   min-width: 148px;
@@ -282,7 +344,8 @@ const goProjects = async (): Promise<void> => {
 }
 
 @media (max-width: 1200px) {
-  .complete-step__stats {
+  .complete-step__stats,
+  .complete-step__notices {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -297,7 +360,8 @@ const goProjects = async (): Promise<void> => {
     flex-direction: column;
   }
 
-  .complete-step__stats {
+  .complete-step__stats,
+  .complete-step__notices {
     grid-template-columns: 1fr;
   }
 }

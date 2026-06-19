@@ -26,7 +26,7 @@
             :selected-count="selectedShotIds.length"
             :total-count="shots.length"
             :primary-selected="isAllShotsSelected"
-            :action-disabled="false"
+            :action-disabled="isBatchActionDisabled"
             @exit="exitBatchMode"
             @toggle-primary="toggleSelectAllShots"
             @action="handleBatchGenerate"
@@ -183,7 +183,7 @@ import StoryboardPromptPanel from '@/components/editor/storyboard/StoryboardProm
 import StoryboardReferenceRail from '@/components/editor/storyboard/StoryboardReferenceRail.vue'
 import StoryboardTimeline from '@/components/editor/storyboard/StoryboardTimeline.vue'
 import StoryboardTopActions from '@/components/editor/storyboard/StoryboardTopActions.vue'
-import { resolveStoryboardBatchTargetIds } from '@/features/editor/storyboardBatchState'
+import { resolveStoryboardBatchAvailability } from '@/features/editor/storyboardBatchState'
 import { buildStoryboardDeleteDialogCopy, buildStoryboardDeleteToastMessage } from '@/features/editor/storyboardDeleteState'
 import { buildStoryboardDraftSnapshot } from '@/features/editor/storyboardDirtyState'
 import { resolveStoryboardTagOptions } from '@/features/editor/storyboardDraftState'
@@ -237,6 +237,7 @@ const submitting = ref(false)
 const leaveConfirmOpen = ref(false)
 const deleteConfirmOpen = ref(false)
 const batchDialogOpen = ref(false)
+const batchGenerating = ref(false)
 const pendingLeaveTarget = ref<RouteLocationRaw | null>(null)
 const pendingDeleteShotId = ref<string | null>(null)
 const bypassLeaveGuard = ref(false)
@@ -256,6 +257,14 @@ const optimizingPrompt = ref(false)
 const isAllShotsSelected = computed(
   () => shots.value.length > 0 && shots.value.every((shot) => selectedShotIds.value.includes(shot.id)),
 )
+const batchAvailability = computed(() =>
+  resolveStoryboardBatchAvailability({
+    shots: shots.value,
+    selectedShotIds: selectedShotIds.value,
+    overwriteStrategy: 'skip-generated',
+  }),
+)
+const isBatchActionDisabled = computed(() => submitting.value || batchGenerating.value || selectedShotIds.value.length === 0)
 const storyboardMode = computed<StoryboardMode>(() => editorStore.draft?.storyboardGenerationMode ?? null)
 const storyboardModeLabel = computed(() => {
   if (storyboardMode.value === 'image') return '图片生成'
@@ -640,12 +649,28 @@ const handleBatchTrigger = (): void => {
     return
   }
 
+  if (shots.value.length === 0) {
+    showToast('当前没有可批量操作的分镜', 'info')
+    return
+  }
+
   batchMode.value = true
 }
 
 const handleBatchGenerate = async (): Promise<void> => {
-  if (selectedShotIds.value.length === 0) {
+  if (submitting.value || batchGenerating.value) {
+    return
+  }
+
+  const availability = batchAvailability.value
+
+  if (availability.selectedCount === 0) {
     showToast('请先选择至少一个分镜', 'error')
+    return
+  }
+
+  if (!availability.canGenerate) {
+    showToast(availability.disabledReason || '当前选择中没有可生成的分镜', 'info')
     return
   }
 
@@ -697,43 +722,40 @@ const buildBatchGenerateSummary = (input: {
 }
 
 const runBatchGenerateNow = async (): Promise<void> => {
-  const targetIds = resolveStoryboardBatchTargetIds({
-    shots: shots.value,
-    selectedShotIds: selectedShotIds.value,
-    overwriteStrategy: 'skip-generated',
-  })
-
-  const skippedCount = selectedShotIds.value.length - targetIds.length
+  const availability = batchAvailability.value
+  const targetIds = availability.targetIds
+  const skippedCount = availability.unavailableCount
   if (targetIds.length === 0) {
-    const summary = buildBatchGenerateSummary({
-      successCount: 0,
-      failedCount: 0,
-      skippedCount,
-    })
-    showToast(summary.message, summary.tone)
+    showToast(availability.disabledReason || '当前选择中没有可生成的分镜', 'info')
     return
   }
 
-  store.markShotsGenerating(targetIds)
+  batchGenerating.value = true
 
-  let successCount = 0
-  let failedCount = 0
+  try {
+    store.markShotsGenerating(targetIds)
 
-  for (const id of targetIds) {
-    try {
-      await store.generateShotById(id)
-      successCount += 1
-    } catch {
-      failedCount += 1
+    let successCount = 0
+    let failedCount = 0
+
+    for (const id of targetIds) {
+      try {
+        await store.generateShotById(id)
+        successCount += 1
+      } catch {
+        failedCount += 1
+      }
     }
-  }
 
-  const summary = buildBatchGenerateSummary({
-    successCount,
-    failedCount,
-    skippedCount,
-  })
-  showToast(summary.message, summary.tone)
+    const summary = buildBatchGenerateSummary({
+      successCount,
+      failedCount,
+      skippedCount,
+    })
+    showToast(summary.message, summary.tone)
+  } finally {
+    batchGenerating.value = false
+  }
 }
 
 const confirmBatchGenerate = async ({

@@ -70,7 +70,7 @@ const scheduleTaskSettlement = (task: GenerationTask): void => {
       updateTaskInStorage(task.id, {
         status: GENERATION_TASK_STATUSES.failed,
         progress: 100,
-        errorMessage: error instanceof Error ? error.message : 'GENERATION_TASK_FAILED',
+        errorMessage: error instanceof Error ? error.message : API_ERROR_CODES.generationTaskFailed,
       })
     }
   }, 60)

@@ -69,11 +69,6 @@ const makeGuardAsset = (overrides: Partial<SettingAsset> = {}): SettingAsset =>
   }) as SettingAsset
 
 describe('generationResultGuards', () => {
-  it('exposes script error codes through API_ERROR_CODES', () => {
-    expect(API_ERROR_CODES.scriptGenerateFailed).toBe('SCRIPT_GENERATE_FAILED')
-    expect(API_ERROR_CODES.scriptOptimizeFailed).toBe('SCRIPT_OPTIMIZE_FAILED')
-  })
-
   it('returns script results when script content exists', () => {
     const result = assertScriptGenerateResult({ script: '第一幕：角色出场' })
 
@@ -101,11 +96,9 @@ describe('generationResultGuards', () => {
     })
   })
 
-  it('throws storyboard image and upscale errors for incomplete results', () => {
+  it('throws storyboard image errors for missing image or shot', () => {
     expect(() => assertStoryboardImageResult({ imageUrl: 'x' })).toThrow(API_ERROR_CODES.storyboardGenerateFailed)
-    expect(() => assertStoryboardUpscaleResult({ shot: makeGuardShot(), imageUrl: '' })).toThrow(
-      API_ERROR_CODES.storyboardUpscaleFailed,
-    )
+    expect(() => assertStoryboardImageResult({ shot: makeGuardShot() })).toThrow(API_ERROR_CODES.storyboardGenerateFailed)
   })
 
   it('returns storyboard prompt result when prompt exists', () => {
@@ -118,6 +111,13 @@ describe('generationResultGuards', () => {
 
   it('throws storyboard optimize failed for missing prompt results', () => {
     expect(() => assertStoryboardPromptResult({})).toThrow(API_ERROR_CODES.storyboardOptimizeFailed)
+  })
+
+  it('throws storyboard upscale errors for missing image or shot', () => {
+    expect(() => assertStoryboardUpscaleResult({ imageUrl: 'x' })).toThrow(API_ERROR_CODES.storyboardUpscaleFailed)
+    expect(() => assertStoryboardUpscaleResult({ shot: makeGuardShot(), imageUrl: '' })).toThrow(
+      API_ERROR_CODES.storyboardUpscaleFailed,
+    )
   })
 
   it('returns setting asset result when image and asset exist', () => {
@@ -138,6 +138,7 @@ describe('generationResultGuards', () => {
 
   it('throws setting image generate failed for incomplete asset results', () => {
     expect(() => assertSettingAssetResult({ imageUrl: 'x' })).toThrow(API_ERROR_CODES.settingImageGenerateFailed)
+    expect(() => assertSettingAssetResult({ asset: makeGuardAsset() })).toThrow(API_ERROR_CODES.settingImageGenerateFailed)
   })
 
   it('returns video result when video url and shot exist', () => {
@@ -167,9 +168,10 @@ describe('generationResultGuards', () => {
     expect(result).toEqual<VideoOptimizeResult>({ value: 'optimized text' })
   })
 
-  it('throws video optimize failed for missing optimize values', () => {
+  it('throws video optimize failed for missing or non-string optimize values', () => {
     expect(() => assertVideoOptimizeResult(undefined)).toThrow(API_ERROR_CODES.videoOptimizeFailed)
     expect(() => assertVideoOptimizeResult({})).toThrow(API_ERROR_CODES.videoOptimizeFailed)
+    expect(() => assertVideoOptimizeResult({ value: 42 as unknown as string })).toThrow(API_ERROR_CODES.videoOptimizeFailed)
   })
 
   it('returns dubbing result when card id and lines exist', () => {
@@ -206,5 +208,8 @@ describe('generationResultGuards', () => {
   it('throws dubbing generate failed for incomplete dubbing results', () => {
     expect(() => assertDubbingGenerateResult({ lines: [] })).toThrow(API_ERROR_CODES.dubbingGenerateFailed)
     expect(() => assertDubbingGenerateResult({ cardId: 'card-1' })).toThrow(API_ERROR_CODES.dubbingGenerateFailed)
+    expect(() => assertDubbingGenerateResult({ cardId: 'card-1', lines: 'bad' as unknown as [] })).toThrow(
+      API_ERROR_CODES.dubbingGenerateFailed,
+    )
   })
 })

@@ -1,3 +1,4 @@
+import { resolveGenerationTaskErrorMessage } from '@/features/editor/generationErrorMessageState'
 import { hasAnyMockFailureToken } from '@/features/shared/mockFailureState'
 import { API_ERROR_CODES } from '@/types/api-enums'
 
@@ -24,6 +25,11 @@ export const optimizeMockStoryboardPrompt = (prompt: string): string => {
 
 export const buildStoryboardGenerateErrorMessage = (error: unknown): string => {
   const code = error instanceof Error ? error.message : String(error ?? '')
+  const taskMessage = resolveGenerationTaskErrorMessage(error)
+
+  if (taskMessage) {
+    return taskMessage
+  }
 
   if (code === API_ERROR_CODES.storyboardGenerateFailed) {
     return '分镜生成失败，请调整提示词后重试'
@@ -31,6 +37,10 @@ export const buildStoryboardGenerateErrorMessage = (error: unknown): string => {
 
   if (code === API_ERROR_CODES.storyboardOptimizeFailed) {
     return 'AI优化失败，请稍后再试'
+  }
+
+  if (code === API_ERROR_CODES.storyboardUpscaleFailed) {
+    return '分镜放大失败，请稍后再试'
   }
 
   return '分镜生成失败，请稍后再试'

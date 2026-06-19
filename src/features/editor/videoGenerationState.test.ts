@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { API_ERROR_CODES } from '@/types/api-enums'
 import {
   buildVideoBatchGenerateMessage,
@@ -20,6 +20,10 @@ describe('videoGenerationState', () => {
     expect(buildVideoGenerateErrorMessage(API_ERROR_CODES.videoGenerateFailed)).toBe('视频生成失败，请调整提示词后重试')
     expect(buildVideoGenerateErrorMessage(API_ERROR_CODES.videoOptimizeFailed)).toBe('AI优化失败，请稍后再试')
     expect(buildVideoGenerateErrorMessage('UNKNOWN_ERROR')).toBe('视频生成失败，请稍后再试')
+  })
+
+  it('maps generic task errors before falling back to video copy', () => {
+    expect(buildVideoGenerateErrorMessage(API_ERROR_CODES.generationTaskCancelled)).toBe('生成任务已取消')
   })
 
   it('builds batch generate summary copy for success, partial failure, and full failure', () => {

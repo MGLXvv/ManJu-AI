@@ -1,5 +1,5 @@
 import { generationApi } from '@/api/modules/generation'
-import { GENERATION_TASK_STATUSES } from '@/types/api-enums'
+import { API_ERROR_CODES, GENERATION_TASK_STATUSES } from '@/types/api-enums'
 import type { CreateGenerationTaskInput, GenerationTask } from '@/types/generation'
 
 export interface WaitForTaskOptions {
@@ -24,7 +24,7 @@ export const waitForGenerationTask = async (
     const latest = await generationApi.getById(taskId)
 
     if (!latest) {
-      throw new Error('GENERATION_TASK_NOT_FOUND')
+      throw new Error(API_ERROR_CODES.generationTaskNotFound)
     }
 
     if (latest.status === GENERATION_TASK_STATUSES.success) {
@@ -32,17 +32,17 @@ export const waitForGenerationTask = async (
     }
 
     if (latest.status === GENERATION_TASK_STATUSES.failed) {
-      throw new Error(latest.errorMessage || 'GENERATION_TASK_FAILED')
+      throw new Error(latest.errorMessage || API_ERROR_CODES.generationTaskFailed)
     }
 
     if (latest.status === GENERATION_TASK_STATUSES.cancelled) {
-      throw new Error('GENERATION_TASK_CANCELLED')
+      throw new Error(API_ERROR_CODES.generationTaskCancelled)
     }
 
     await sleep(interval)
   }
 
-  throw new Error('GENERATION_TASK_TIMEOUT')
+  throw new Error(API_ERROR_CODES.generationTaskTimeout)
 }
 
 export const createAndWaitGenerationTask = async (

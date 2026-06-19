@@ -1,4 +1,5 @@
-﻿import { hasAnyMockFailureToken } from '@/features/shared/mockFailureState'
+import { resolveGenerationTaskErrorMessage } from '@/features/editor/generationErrorMessageState'
+import { hasAnyMockFailureToken } from '@/features/shared/mockFailureState'
 import { API_ERROR_CODES } from '@/types/api-enums'
 
 export const shouldMockVideoGenerateFail = (input: {
@@ -33,6 +34,11 @@ export const optimizeMockVideoDialogue = async (dialogue: string): Promise<strin
 
 export const buildVideoGenerateErrorMessage = (error: unknown): string => {
   const code = error instanceof Error ? error.message : String(error ?? '')
+  const taskMessage = resolveGenerationTaskErrorMessage(error)
+
+  if (taskMessage) {
+    return taskMessage
+  }
 
   if (code === API_ERROR_CODES.videoGenerateFailed) {
     return '视频生成失败，请调整提示词后重试'

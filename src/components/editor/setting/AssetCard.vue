@@ -69,13 +69,6 @@
             </div>
           </header>
 
-          <div v-if="asset.type === 'character' && asset.roleName" class="asset-card__meta">
-            {{ asset.roleName }}
-          </div>
-          <p v-if="asset.description" class="asset-card__description">
-            {{ asset.description }}
-          </p>
-
           <AssetImageStrip :images="displayImages" :title="asset.title" @preview="$emit('preview', asset)" />
 
           <AssetContentTabs v-if="isCharacter" v-model="activePanel" />

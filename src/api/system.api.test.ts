@@ -1,10 +1,15 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { resetLocalState } from './local'
 import { systemApi } from './system.api'
+import { systemApi as moduleSystemApi } from './modules/system'
 
 describe('system api', () => {
   beforeEach(() => {
     resetLocalState()
+  })
+
+  it('re-exports the module-level system api for compatibility', () => {
+    expect(systemApi).toBe(moduleSystemApi)
   })
 
   it('hydrates default system state', async () => {

@@ -1,5 +1,29 @@
 # Backend Integration Checklist
 
+## Runtime Mode
+
+- Front-end defaults to `mock` mode unless `VITE_API_MODE=http` is set
+- When `VITE_API_MODE=http`, standardized API modules use their HTTP implementations
+- Backend base URL is controlled by `VITE_API_BASE_URL`
+- If `VITE_API_BASE_URL` is missing, the HTTP client defaults to `/api`
+
+## Minimum Backend Startup Target
+
+The recommended minimum backend startup target is:
+
+- `GET /projects`
+- `POST /projects`
+- `GET /generation/tasks`
+- `POST /generation/tasks`
+- `GET /generation/tasks/:id`
+
+After these are stable, continue with:
+
+- editor draft APIs
+- setting and voice APIs
+- storyboard auxiliary APIs
+- remaining management modules
+
 ## Required Generation Task APIs
 
 The current front-end expects the following backend endpoints:
@@ -57,6 +81,18 @@ If these fields are missing, the front-end will throw stable error codes such as
 - `video`
 - `video_optimize`
 - `dubbing`
+
+## Recommended Generation Task Integration Order
+
+1. `script`
+2. `script_optimize`
+3. `setting_asset`
+4. `storyboard`
+5. `storyboard_optimize`
+6. `storyboard_upscale`
+7. `video`
+8. `video_optimize`
+9. `dubbing`
 
 ## Generation Boundary Reminder
 

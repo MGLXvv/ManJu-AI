@@ -11,6 +11,7 @@ This matrix gives a backend-facing overview of which API domains are already rea
 - Status: standardized
 - Backend required: yes
 - Mode switch: yes
+- Runtime mode support: `mock/http supported`
 - Main endpoints:
   - `GET /generation/tasks`
   - `GET /generation/tasks/:id`
@@ -28,6 +29,7 @@ This matrix gives a backend-facing overview of which API domains are already rea
 - Status: standardized
 - Backend required: yes
 - Mode switch: yes
+- Runtime mode support: `mock/http supported`
 - Main endpoints:
   - `GET /projects`
   - `GET /projects/:id`
@@ -44,6 +46,7 @@ This matrix gives a backend-facing overview of which API domains are already rea
 - Status: standardized
 - Backend required: yes, but mixed responsibility
 - Mode switch: yes
+- Runtime mode support: `mock/http supported`
 - Main endpoints:
   - `GET /storyboard/defaults`
   - `POST /storyboard/shots/:id/reference/:referenceImageId/apply`
@@ -65,6 +68,7 @@ This matrix gives a backend-facing overview of which API domains are already rea
 - Status: standardized
 - Backend required: yes
 - Mode switch: yes
+- Runtime mode support: `mock/http supported`
 - Main endpoints:
   - `GET /voices`
   - `POST /voices`
@@ -78,6 +82,7 @@ This matrix gives a backend-facing overview of which API domains are already rea
 - Status: standardized
 - Backend required: yes
 - Mode switch: yes
+- Runtime mode support: `mock/http supported`
 - Main role:
   - editor draft load/save
 - Main risk:
@@ -88,6 +93,7 @@ This matrix gives a backend-facing overview of which API domains are already rea
 - Status: standardized
 - Backend required: maybe
 - Mode switch: yes
+- Runtime mode support: `mock/http supported`
 - Main risk:
   - backend scope is not yet as clear as `generation/project/storyboard/voice`
 
@@ -96,34 +102,56 @@ This matrix gives a backend-facing overview of which API domains are already rea
 - Status: standardized
 - Backend required: yes
 - Mode switch: yes
+- Runtime mode support: `mock/http supported`
 - Main risk:
   - implementation is slightly special because mode resolution is lazy and `index.ts` still re-exports mock helpers
 
 ### Setting
 
-- Status: legacy top-level mock implementation
+- Status: standardized
 - Backend required: yes
-- Mode switch: no standardized module split
+- Mode switch: yes
+- Runtime mode support: `mock/http supported`
+- Main endpoints:
+  - `GET /settings/defaults`
+  - `POST /settings/assets`
+  - `PATCH /settings/assets/:assetId`
+  - `POST /settings/assets/:assetId/images`
+  - `POST /settings/assets/:assetId/candidate-selection`
+  - `POST /settings/assets/:assetId/generate-image`
 - Main risk:
-  - currently tied to local default assets, local voice mapping, and local image generation helpers
+  - image generation endpoint remains lower priority than generation-task integration
 - Recommendation:
-  - highest-priority migration target after this audit
+  - keep generation-task integration as the preferred backend path for setting image generation when possible
 
 ### System
 
-- Status: legacy top-level mock implementation
+- Status: standardized
 - Backend required: medium
-- Mode switch: no standardized module split
+- Mode switch: yes
+- Runtime mode support: `mock/http supported`
+- Main endpoints:
+  - `GET /system`
+  - `POST /system/styles`
+  - `PATCH /system/styles/:styleId`
+  - `DELETE /system/styles/:styleId`
+  - `POST /system/permissions`
+  - `PATCH /system/permissions/:permissionId`
+  - `DELETE /system/permissions/:permissionId`
+  - `POST /system/messages/:messageId/read`
+  - `POST /system/messages/read-all`
+  - `DELETE /system/messages`
 - Main risk:
-  - style management is already referenced by project creation, but API structure is still localStorage-based
+  - backend ownership priority is lower than project, editor draft, and generation flows
 - Recommendation:
-  - migrate after `setting`
+  - integrate after higher-priority project and generation domains
 
 ### Asset
 
 - Status: standardized
 - Backend required: maybe
 - Mode switch: yes
+- Runtime mode support: `mock/http supported`
 - Main endpoints:
   - `GET /projects/:projectId/assets`
   - `PUT /projects/:projectId/assets`
@@ -137,6 +165,7 @@ This matrix gives a backend-facing overview of which API domains are already rea
 - Status: standardized
 - Backend required: maybe
 - Mode switch: yes
+- Runtime mode support: `mock/http supported`
 - Main endpoints:
   - `GET /script-templates`
   - `POST /script-templates`

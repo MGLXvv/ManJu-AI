@@ -20,10 +20,10 @@
             v-if="batchMode"
             action-label="批量生成"
             primary-label="全选分镜"
-            :selected-count="selectedBatchTargets.length"
+            :selected-count="selectedShotIds.length"
             :total-count="shots.length"
             :primary-selected="isAllShotsSelected"
-            :action-disabled="selectedBatchTargets.length === 0"
+            :action-disabled="isVideoBatchActionDisabled"
             @exit="exitBatchMode"
             @toggle-primary="toggleSelectAllShots"
             @action="openBatchGenerateDialog"
@@ -200,7 +200,7 @@ import VideoPreviewPanel from '@/components/editor/video/VideoPreviewPanel.vue'
 import VideoPromptPanel from '@/components/editor/video/VideoPromptPanel.vue'
 import {
   canBatchGenerateVideoShot,
-  resolveSelectableVideoBatchShotIds,
+  resolveVideoBatchAvailability,
   resolveVideoBatchGenerateTargets,
 } from '@/features/editor/videoBatchState'
 import { validateEditorAdvance } from '@/features/editor/editorCompletionState'
@@ -247,6 +247,7 @@ const batchGenerateDialogOpen = ref(false)
 const batchGenerateMode = ref<'immediate' | 'scheduled'>('immediate')
 const batchGenerateDay = ref<'today' | 'tomorrow'>('today')
 const batchGenerateTime = ref('08:00')
+const batchGenerating = ref(false)
 const pendingLeaveTarget = ref<RouteLocationRaw | null>(null)
 const pendingDeleteShotId = ref<string | null>(null)
 const bypassLeaveGuard = ref(false)
@@ -261,12 +262,18 @@ const pendingUploadShotId = ref<string | null>(null)
 const uploadInputRef = ref<HTMLInputElement | null>(null)
 let scheduledBatchGenerateTimer: number | null = null
 
-const batchSelectableShotIds = computed(() => resolveSelectableVideoBatchShotIds(shots.value))
-const selectedBatchTargets = computed(() => resolveVideoBatchGenerateTargets(shots.value, selectedShotIds.value))
+const videoBatchAvailability = computed(() =>
+  resolveVideoBatchAvailability({
+    shots: shots.value,
+    selectedShotIds: selectedShotIds.value,
+    overwriteGenerated: false,
+  }),
+)
+const isVideoBatchActionDisabled = computed(
+  () => selectedShotIds.value.length === 0 || batchGenerating.value || submitting.value,
+)
 const isAllShotsSelected = computed(
-  () =>
-    batchSelectableShotIds.value.length > 0 &&
-    batchSelectableShotIds.value.every((id) => selectedShotIds.value.includes(id)),
+  () => shots.value.length > 0 && shots.value.every((shot) => selectedShotIds.value.includes(shot.id)),
 )
 const currentSnapshot = computed(() => buildStoryboardDraftSnapshot(shots.value))
 const isDirty = computed(() => currentSnapshot.value !== lastSavedSnapshot.value)
@@ -345,12 +352,6 @@ const selectShot = (id: string): void => {
 
 const handleTimelineSelect = (id: string): void => {
   if (batchMode.value) {
-    const shot = shots.value.find((item) => item.id === id)
-    if (!shot || !canBatchGenerateVideoShot(shot)) {
-      showToast('该镜头已生成或不可生成，不能加入批量生成', 'info')
-      return
-    }
-
     selectedShotIds.value = selectedShotIds.value.includes(id)
       ? selectedShotIds.value.filter((item) => item !== id)
       : [...selectedShotIds.value, id]
@@ -361,6 +362,27 @@ const handleTimelineSelect = (id: string): void => {
 }
 
 const generateShot = async (): Promise<void> => {
+  const shot = currentShot.value
+  if (!shot) {
+    showToast('当前没有可生成视频的分镜', 'error')
+    return
+  }
+
+  if (shot.isHidden) {
+    showToast('当前镜头已隐藏，无法生成视频', 'error')
+    return
+  }
+
+  if (shot.isLocked) {
+    showToast('当前镜头已锁定，无法生成视频', 'error')
+    return
+  }
+
+  if (!(shot.imageUrl ?? '').trim()) {
+    showToast('请先生成或上传分镜图后再生成视频', 'error')
+    return
+  }
+
   try {
     await store.generateActiveVideo()
     showToast('视频镜头已生成', 'success')
@@ -492,7 +514,7 @@ const exitBatchMode = (): void => {
 }
 
 const toggleSelectAllShots = (): void => {
-  selectedShotIds.value = isAllShotsSelected.value ? [] : [...batchSelectableShotIds.value]
+  selectedShotIds.value = isAllShotsSelected.value ? [] : shots.value.map((shot) => shot.id)
 }
 
 const handleBatchTrigger = (): void => {
@@ -501,28 +523,58 @@ const handleBatchTrigger = (): void => {
     return
   }
 
+  if (shots.value.length === 0) {
+    showToast('当前没有可生成视频的分镜', 'info')
+    return
+  }
+
   batchMode.value = true
 }
 
 const runBatchGenerate = async (ids = selectedShotIds.value): Promise<void> => {
-  const targets = resolveVideoBatchGenerateTargets(shots.value, ids)
-  if (targets.length === 0) {
-    showToast('暂无可批量生成的视频镜头', 'info')
+  if (batchGenerating.value) {
     return
   }
 
-  const results = await Promise.allSettled(targets.map((shot) => store.generateVideoById(shot.id)))
-  const successCount = results.filter((item) => item.status === 'fulfilled').length
-  const failedCount = results.length - successCount
+  const availability = resolveVideoBatchAvailability({
+    shots: shots.value,
+    selectedShotIds: ids,
+    overwriteGenerated: false,
+  })
+  const targets = resolveVideoBatchGenerateTargets(shots.value, ids)
+  if (targets.length === 0) {
+    showToast(availability.disabledReason || '当前选择中没有可生成视频的分镜', 'info')
+    return
+  }
 
-  showToast(buildVideoBatchGenerateMessage({ successCount, failedCount }), failedCount > 0 ? 'error' : 'success')
-  selectedShotIds.value = selectedShotIds.value.filter((id) =>
-    shots.value.some((shot) => shot.id === id && canBatchGenerateVideoShot(shot)),
-  )
+  batchGenerating.value = true
+  try {
+    const results = await Promise.allSettled(targets.map((shot) => store.generateVideoById(shot.id)))
+    const successCount = results.filter((item) => item.status === 'fulfilled').length
+    const failedCount = results.length - successCount
+
+    showToast(buildVideoBatchGenerateMessage({ successCount, failedCount }), failedCount > 0 ? 'error' : 'success')
+    selectedShotIds.value = selectedShotIds.value.filter((id) =>
+      shots.value.some((shot) => shot.id === id && canBatchGenerateVideoShot(shot)),
+    )
+  } finally {
+    batchGenerating.value = false
+  }
 }
 
 const openBatchGenerateDialog = (): void => {
-  if (selectedBatchTargets.value.length === 0) return
+  const availability = videoBatchAvailability.value
+  if (batchGenerating.value || submitting.value) {
+    return
+  }
+  if (availability.selectedCount === 0) {
+    showToast('请先选择至少一个分镜', 'error')
+    return
+  }
+  if (!availability.canGenerate) {
+    showToast(availability.disabledReason || '当前选择中没有可生成视频的分镜', 'info')
+    return
+  }
   batchGenerateDialogOpen.value = true
 }
 
@@ -531,12 +583,16 @@ const closeBatchGenerateDialog = (): void => {
 }
 
 const confirmBatchGenerate = async (): Promise<void> => {
+  if (batchGenerating.value) {
+    return
+  }
+
   batchGenerateDialogOpen.value = false
 
   if (batchGenerateMode.value === 'scheduled') {
-    const scheduledIds = resolveVideoBatchGenerateTargets(shots.value, selectedShotIds.value).map((shot) => shot.id)
+    const scheduledIds = videoBatchAvailability.value.targetIds
     if (scheduledIds.length === 0) {
-      showToast('暂无可批量生成的视频镜头', 'info')
+      showToast(videoBatchAvailability.value.disabledReason || '当前选择中没有可生成视频的分镜', 'info')
       return
     }
     if (scheduledBatchGenerateTimer !== null) {

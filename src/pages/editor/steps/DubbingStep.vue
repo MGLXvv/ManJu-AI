@@ -18,7 +18,7 @@
         <div class="dubbing-toolbar__actions">
           <span class="storyboard-top-actions__save-state-pill" :class="`is-${saveState.tone}`">{{ saveState.label }}</span>
           <button type="button" class="dubbing-toolbar__save" :disabled="submitting" @click="handleSaveExport">保存并导出</button>
-          <button type="button" class="dubbing-toolbar__batch" :disabled="submitting || batchGenerateTargets.length === 0" @click="handleGenerateAll">
+          <button type="button" class="dubbing-toolbar__batch" :disabled="isBatchGenerateDisabled" @click="handleGenerateAll">
             一键全部配音
           </button>
           <EditorModelSelect v-model="selectedModelId" :options="modelOptions" />
@@ -113,7 +113,10 @@ import EditorModelSelect, { type EditorModelOption } from '@/components/editor/c
 import DubbingRoleCard from '@/components/editor/dubbing/DubbingRoleCard.vue'
 import WorkflowStepper from '@/components/editor/WorkflowStepper.vue'
 import FigmaIcon from '@/components/icons/FigmaIcon.vue'
-import { resolveDubbingBatchGenerateTargets } from '@/features/editor/dubbingBatchState'
+import {
+  buildDubbingCardGenerateDisabledReason,
+  resolveDubbingBatchAvailability,
+} from '@/features/editor/dubbingBatchState'
 import { hideDubbingCardById, resolveVisibleDubbingCards } from '@/features/editor/dubbingCardVisibilityState'
 import { validateEditorAdvance } from '@/features/editor/editorCompletionState'
 import { buildDubbingDraftPatch, resolveDubbingCards } from '@/features/editor/dubbingDraftState'
@@ -143,6 +146,7 @@ const pageSize = 3
 const selectedModelId = ref('index-tts')
 const cards = ref<DubbingRoleCardModel[]>([])
 const submitting = ref(false)
+const batchGenerating = ref(false)
 const leaveConfirmOpen = ref(false)
 const deleteConfirmOpen = ref(false)
 const pendingLeaveTarget = ref<RouteLocationRaw | null>(null)
@@ -171,7 +175,8 @@ const visibleCards = computed(() => {
 })
 const totalCount = computed(() => visibleCards.value.length)
 const totalPages = computed(() => Math.max(1, Math.ceil(totalCount.value / pageSize)))
-const batchGenerateTargets = computed(() => resolveDubbingBatchGenerateTargets(cards.value))
+const batchAvailability = computed(() => resolveDubbingBatchAvailability(cards.value))
+const isBatchGenerateDisabled = computed(() => submitting.value || batchGenerating.value)
 const pagedCards = computed(() => {
   const start = (currentPage.value - 1) * pageSize
   return visibleCards.value.slice(start, start + pageSize)
@@ -211,6 +216,14 @@ const runGenerateCard = async (
 ): Promise<boolean> => {
   const card = cards.value.find((item) => item.id === id)
   if (!card) {
+    return false
+  }
+
+  const unavailableMessage = buildDubbingCardGenerateDisabledReason(card)
+  if (unavailableMessage) {
+    if (!options.silent) {
+      showToast(unavailableMessage, 'info')
+    }
     return false
   }
 
@@ -352,6 +365,18 @@ const previewLine = (lineId: string): void => {
 }
 
 const generateCard = async (id: string): Promise<void> => {
+  const card = cards.value.find((item) => item.id === id)
+  if (!card) {
+    showToast('当前配音卡片不存在，请刷新后重试', 'error')
+    return
+  }
+
+  const unavailableMessage = buildDubbingCardGenerateDisabledReason(card)
+  if (unavailableMessage) {
+    showToast(unavailableMessage, 'info')
+    return
+  }
+
   await runGenerateCard(id)
 }
 
@@ -379,21 +404,30 @@ const cancelDeleteConfirm = (): void => {
 }
 
 const handleGenerateAll = async (): Promise<void> => {
-  const targets = resolveDubbingBatchGenerateTargets(cards.value)
-  if (targets.length === 0) {
-    showToast('暂无可批量生成的配音卡片', 'info')
+  if (batchGenerating.value) {
+    return
+  }
+
+  const availability = batchAvailability.value
+  if (!availability.canGenerate) {
+    showToast(availability.disabledReason || '当前没有可批量生成的配音卡片', 'info')
     return
   }
 
   let successCount = 0
   let failedCount = 0
 
-  for (const card of targets) {
-    if (await runGenerateCard(card.id, { silent: true })) {
-      successCount += 1
-    } else {
-      failedCount += 1
+  batchGenerating.value = true
+  try {
+    for (const card of availability.targetCards) {
+      if (await runGenerateCard(card.id, { silent: true })) {
+        successCount += 1
+      } else {
+        failedCount += 1
+      }
     }
+  } finally {
+    batchGenerating.value = false
   }
 
   showToast(buildDubbingBatchGenerateMessage({ successCount, failedCount }), failedCount > 0 ? 'error' : 'success')

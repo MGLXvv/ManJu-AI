@@ -178,8 +178,17 @@ This matrix gives a backend-facing overview of which API domains are already rea
 
 ## Recommended Order
 
-1. backend integration environment and startup instructions
-2. final delivery inventory and remaining unimplemented capability list
+API layer is now structurally ready for backend integration.
+
+Primary backend priority:
+
+1. `auth`
+2. `project`
+3. `editor` draft
+4. `generation` task APIs
+5. `setting` and `voice`
+6. `storyboard` auxiliary APIs
+7. `system`, `asset`, and `scriptTemplate`
 
 ## Boundary Reminder
 

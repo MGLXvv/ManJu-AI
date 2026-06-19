@@ -120,50 +120,45 @@ Global switch baseline:
   - This module is standardized.
   - Its `index.ts` currently also re-exports parts of `auth.mock`, so the module is not as cleanly separated as `generation/project/storyboard/voice`.
 
-## C. Old Top-Level Mock Implementations Pending Migration
+## C. Additional Standardized Modules
 
 ### `setting`
 
-- Current entry: `src/api/setting.api.ts`
-- Structure: top-level local mock file
-- Mode switch: no standardized `modules/setting` layer
-- Current local dependencies:
-  - `delay`
-  - `createDefaultSettingAssets`
-  - `mockVoices`
-  - `mapVoiceAssetsToSettingVoiceOptions`
-- Current responsibilities:
-  - default setting asset list
-  - local asset creation
-  - local asset update
-  - local image upload
-  - local candidate-image selection
-  - local setting image generation
-- Risk:
-  - This module is already part of the main generation and dubbing flow, but backend reservation points are still unclear.
-- Next step:
-  - Prioritize `modules/setting/setting.mock.ts + setting.http.ts + setting.api.ts`.
+- Top-level entry: `src/api/setting.api.ts`
+- Real entry: `src/api/modules/setting/setting.api.ts`
+- Structure: `mock + http + api + types + index`
+- Mode switch: yes
+- HTTP endpoints:
+  - `GET /settings/defaults`
+  - `POST /settings/assets`
+  - `PATCH /settings/assets/:assetId`
+  - `POST /settings/assets/:assetId/images`
+  - `POST /settings/assets/:assetId/candidate-selection`
+  - `POST /settings/assets/:assetId/generate-image`
+- Notes:
+  - This module is now standardized for mock/http switching.
+  - Setting image generation still has a lower backend priority than the main generation-task flow.
 
 ### `system`
 
-- Current entry: `src/api/system.api.ts`
-- Structure: top-level local mock file
-- Mode switch: no standardized `modules/system` layer
-- Current local dependencies:
-  - `mockSystemStyles`
-  - `mockSystemPermissions`
-  - `mockSystemMessages`
-  - `delay`
-  - `readLocal`
-  - `writeLocal`
-- Current responsibilities:
-  - style management
-  - permission management
-  - message state
-- Risk:
-  - Style management is already referenced by project creation, but backend reservation points are still not standardized.
-- Next step:
-  - Migrate to `modules/system` after `setting` because `setting` is closer to the main editor flow.
+- Top-level entry: `src/api/system.api.ts`
+- Real entry: `src/api/modules/system/system.api.ts`
+- Structure: `mock + http + api + types + index`
+- Mode switch: yes
+- HTTP endpoints:
+  - `GET /system`
+  - `POST /system/styles`
+  - `PATCH /system/styles/:styleId`
+  - `DELETE /system/styles/:styleId`
+  - `POST /system/permissions`
+  - `PATCH /system/permissions/:permissionId`
+  - `DELETE /system/permissions/:permissionId`
+  - `POST /system/messages/:messageId/read`
+  - `POST /system/messages/read-all`
+  - `DELETE /system/messages`
+- Notes:
+  - This module is now standardized for mock/http switching.
+  - Backend priority remains lower than project, editor draft, and generation flows.
 
 ### `asset`
 
@@ -225,13 +220,16 @@ Utility/support files:
 - `resource`
 - `auth`
 
-### Main legacy modules still blocking a clean API-layer audit
+### Standardized modules with lower backend priority
 
-- `setting`
+- `resource`
 - `system`
+- `asset`
+- `scriptTemplate`
 
 ## Recommended Next Steps
 
-1. `P4-7`: add backend integration environment/setup instructions for mock/http switching
-2. `P4-8`: finalize delivery notes covering standardized modules versus remaining compatibility surfaces
-3. Keep `generation` as the preferred backend entry for generation flows and document any remaining storyboard direct-generation endpoints as compatibility-only unless product/backend intentionally require both
+1. keep `generation` as the preferred backend entry for AI generation flows
+2. integrate `auth`, `project`, and `editor` draft APIs first on the backend side
+3. integrate `setting`, `voice`, and storyboard auxiliary APIs after the primary generation path is stable
+4. treat `system`, `asset`, and `scriptTemplate` as lower-priority backend domains unless product scope requires them earlier

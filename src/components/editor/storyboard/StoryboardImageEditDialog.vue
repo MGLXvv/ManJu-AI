@@ -6,7 +6,7 @@
           <header class="storyboard-edit-dialog__header">
             <div>
               <h3>编辑分镜图</h3>
-              <p>框选需要修改的区域，输入编辑提示词后生成新的模拟结果。</p>
+              <p>框选需要修改的区域，输入编辑提示词后应用新的编辑结果。</p>
             </div>
             <button type="button" class="storyboard-edit-dialog__close" aria-label="关闭" @click="emit('close')">×</button>
           </header>
@@ -46,7 +46,7 @@
               </label>
 
               <div class="storyboard-edit-dialog__tips">
-                <span>这轮先做前端 mock，不接真实图像编辑后端。</span>
+                <span>建议聚焦局部画面调整，例如表情、光影或局部细节强化。</span>
               </div>
 
               <div class="storyboard-edit-dialog__actions">
@@ -115,7 +115,7 @@ const selectionStyle = computed(() => ({
 }))
 
 const canSubmit = computed(() => {
-  return promptText.value.trim().length > 0 && selection.value.width > 0 && selection.value.height > 0
+  return promptText.value.trim().length > 0 && selection.value.width >= 2 && selection.value.height >= 2
 })
 
 const resolvePoint = (event: PointerEvent): { x: number; y: number } | null => {

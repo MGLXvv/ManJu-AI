@@ -698,9 +698,15 @@ const applyImageEdit = async ({
       title: shot.title,
       selection,
     })
-    await store.applyEditedImageToShot(shot.id, result.imageUrl)
+    await store.applyEditedImageToShot(shot.id, {
+      imageUrl: result.imageUrl,
+      prompt,
+      selection,
+    })
     editDialogOpen.value = false
     showToast('视频封面编辑结果已应用', 'success')
+  } catch {
+    showToast('视频封面编辑失败，请稍后再试', 'error')
   } finally {
     editingImage.value = false
   }

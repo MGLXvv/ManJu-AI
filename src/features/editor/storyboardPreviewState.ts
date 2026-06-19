@@ -1,4 +1,6 @@
-﻿export interface StoryboardSaveStateInput {
+import type { StoryboardImageEditRecord, StoryboardImageEditSelection } from '@/types/storyboard'
+
+export interface StoryboardSaveStateInput {
   submitting: boolean
   isDirty: boolean
 }
@@ -8,12 +10,7 @@ export interface StoryboardSaveState {
   tone: 'saving' | 'dirty' | 'saved'
 }
 
-export interface StoryboardSelectionRect {
-  x: number
-  y: number
-  width: number
-  height: number
-}
+export type StoryboardSelectionRect = StoryboardImageEditSelection
 
 export interface BuildStoryboardEditedImageInput {
   sourceUrl: string
@@ -27,12 +24,23 @@ export interface BuildStoryboardEditedImageResult {
   referenceLabel: string
 }
 
+export interface BuildStoryboardImageEditRecordInput {
+  prompt: string
+  selection: StoryboardSelectionRect
+  sourceImageUrl: string
+  resultImageUrl: string
+  id?: string
+  now?: string
+}
+
 export interface BuildStoryboardUpscaledImageInput {
   sourceUrl: string
   title: string
 }
 
 const clamp = (value: number, min: number, max: number): number => Math.min(Math.max(value, min), max)
+
+const normalizePrompt = (prompt: string): string => prompt.trim().replace(/\s+/g, ' ')
 
 export const buildStoryboardSaveState = ({ submitting, isDirty }: StoryboardSaveStateInput): StoryboardSaveState => {
   if (submitting) {
@@ -61,7 +69,7 @@ export const clampStoryboardSelection = (selection: StoryboardSelectionRect): St
 }
 
 const summarizePrompt = (prompt: string): string => {
-  const normalized = prompt.trim().replace(/\s+/g, ' ')
+  const normalized = normalizePrompt(prompt)
   if (!normalized) {
     return '未填写编辑提示词'
   }
@@ -104,6 +112,22 @@ export const buildStoryboardEditedImage = ({
     referenceLabel: '编辑结果',
   }
 }
+
+export const buildStoryboardImageEditRecord = ({
+  prompt,
+  selection,
+  sourceImageUrl,
+  resultImageUrl,
+  id,
+  now,
+}: BuildStoryboardImageEditRecordInput): StoryboardImageEditRecord => ({
+  id: id ?? `edit-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  prompt: normalizePrompt(prompt),
+  selection: clampStoryboardSelection(selection),
+  sourceImageUrl,
+  resultImageUrl,
+  createdAt: now ?? new Date().toISOString(),
+})
 
 export const buildStoryboardUpscaledImage = ({
   sourceUrl,

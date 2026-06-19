@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { resetLocalState } from '@/api/local'
+import { buildStoryboardEditedImage } from '@/features/editor/storyboardPreviewState'
 import { API_ERROR_CODES } from '@/types/api-enums'
 import { useEditorStore } from './editor'
 import { useGenerationStore } from './generation'
@@ -197,6 +198,56 @@ describe('storyboard store', () => {
 
     const updated = store.shots.find((shot) => shot.id === target.id)
     expect(updated?.videoUrl).toBe(videoUrl)
+  })
+
+  it('applies edited image and appends edit history', async () => {
+    const store = useStoryboardStore()
+    const target = store.shots[0]
+    const originalImageUrl = target.imageUrl ?? ''
+    const result = buildStoryboardEditedImage({
+      sourceUrl: originalImageUrl,
+      prompt: '  强化主角眼神   并补一点冷色边光  ',
+      title: target.title,
+      selection: { x: 84, y: 10, width: 24, height: 30 },
+    })
+
+    await store.applyEditedImageToShot(target.id, {
+      imageUrl: result.imageUrl,
+      prompt: '  强化主角眼神   并补一点冷色边光  ',
+      selection: { x: 84, y: 10, width: 24, height: 30 },
+    })
+
+    const updated = store.shots.find((shot) => shot.id === target.id)
+    expect(updated?.imageUrl).toBe(result.imageUrl)
+    expect(updated?.editHistory).toHaveLength(1)
+    expect(updated?.editHistory?.[0]?.prompt).toBe('强化主角眼神 并补一点冷色边光')
+    expect(updated?.editHistory?.[0]?.sourceImageUrl).toBe(originalImageUrl)
+    expect(updated?.editHistory?.[0]?.resultImageUrl).toBe(result.imageUrl)
+    expect(updated?.editHistory?.[0]?.selection).toEqual({
+      x: 84,
+      y: 10,
+      width: 16,
+      height: 30,
+    })
+  })
+
+  it('does not apply edited image to a locked shot', async () => {
+    const store = useStoryboardStore()
+    const target = store.shots[0]
+    const originalImageUrl = target.imageUrl
+    store.toggleLock(target.id)
+
+    await expect(
+      store.applyEditedImageToShot(target.id, {
+        imageUrl: 'data:image/svg+xml,edited',
+        prompt: '强化主角眼神',
+        selection: { x: 12, y: 16, width: 20, height: 22 },
+      }),
+    ).resolves.toBeUndefined()
+
+    const updated = store.shots.find((shot) => shot.id === target.id)
+    expect(updated?.imageUrl).toBe(originalImageUrl)
+    expect(updated?.editHistory ?? []).toHaveLength(0)
   })
 
   it('replaces the shot with an upscaled image when storyboard upscale succeeds', async () => {

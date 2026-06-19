@@ -3,7 +3,13 @@ import { buildStoryboardDraftShots } from '@/features/editor/editorDraftMapper'
 import type { StoryboardMode } from '@/features/editor/storyboardModeState'
 import type { Shot } from '@/types/editor'
 import type { SettingAsset } from '@/types/settingAsset'
-import type { StoryboardReferenceImage, StoryboardShot, StoryboardTag, StoryboardTagOptions } from '@/types/storyboard'
+import type {
+  StoryboardImageEditRecord,
+  StoryboardReferenceImage,
+  StoryboardShot,
+  StoryboardTag,
+  StoryboardTagOptions,
+} from '@/types/storyboard'
 
 export interface StoryboardVideoValidationResult {
   ok: boolean
@@ -17,6 +23,10 @@ type LegacyPersistedStoryboardShot = Omit<Shot, 'status'> & {
 }
 
 const cloneReferenceImage = (image: StoryboardReferenceImage): StoryboardReferenceImage => ({ ...image })
+const cloneEditRecord = (record: StoryboardImageEditRecord): StoryboardImageEditRecord => ({
+  ...record,
+  selection: { ...record.selection },
+})
 
 const buildTagMap = (items: StoryboardTag[]) => new Map(items.map((item) => [item.id, { ...item }]))
 
@@ -116,6 +126,7 @@ export const resolveStoryboardShots = (
       isLocked: shot.isLocked ?? false,
       isFavorite: shot.isFavorite ?? false,
       referenceImages: (shot.referenceImages ?? []).map(cloneReferenceImage),
+      editHistory: (shot.editHistory ?? []).map(cloneEditRecord),
       createdAt: shot.createdAt ?? '2026年3月12日 17:16',
     }
   })

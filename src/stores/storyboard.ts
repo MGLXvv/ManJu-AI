@@ -7,10 +7,18 @@ import {
   storyboardApi,
 } from '@/api/storyboard.api'
 import { normalizeStoryboardShotsWithTagOptions } from '@/features/editor/storyboardDraftState'
+import { buildStoryboardImageEditRecord } from '@/features/editor/storyboardPreviewState'
 import { storyboardGenerationService, storyboardPromptService, videoGenerationService } from '@/services/generation'
 import { useEditorStore } from '@/stores/editor'
 import { API_ERROR_CODES } from '@/types/api-enums'
-import type { StoryboardRatio, StoryboardShot, StoryboardTag, StoryboardTagOptions, StoryboardVoiceAssignment } from '@/types/storyboard'
+import type {
+  StoryboardImageEditSelection,
+  StoryboardRatio,
+  StoryboardShot,
+  StoryboardTag,
+  StoryboardTagOptions,
+  StoryboardVoiceAssignment,
+} from '@/types/storyboard'
 
 const SHOT_TITLE_PATTERN = /^\u955C\u5934\s*(\d+)([A-Z]+)?$/
 
@@ -407,12 +415,24 @@ export const useStoryboardStore = defineStore('storyboard', () => {
     )
   }
 
-  const applyEditedImageToShot = async (shotId: string, imageUrl: string): Promise<void> => {
+  const applyEditedImageToShot = async (
+    shotId: string,
+    input: { imageUrl: string; prompt: string; selection: StoryboardImageEditSelection },
+  ): Promise<void> => {
     if (isShotLocked(shotId)) return
     const shot = shots.value.find((item) => item.id === shotId)
-    if (!shot) return
-    const updated = await storyboardApi.applyEditedImage(shot, imageUrl)
-    replaceShotById(shotId, updated)
+    if (!shot || !shot.imageUrl) return
+    const updated = await storyboardApi.applyEditedImage(shot, input.imageUrl)
+    const editRecord = buildStoryboardImageEditRecord({
+      prompt: input.prompt,
+      selection: input.selection,
+      sourceImageUrl: shot.imageUrl,
+      resultImageUrl: input.imageUrl,
+    })
+    replaceShotById(shotId, {
+      ...updated,
+      editHistory: [...(shot.editHistory ?? []), editRecord],
+    })
   }
 
   const addTagToActiveShot = (type: StoryboardTag['type'], tag: StoryboardTag): void => {

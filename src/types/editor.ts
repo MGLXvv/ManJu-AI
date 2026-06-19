@@ -1,6 +1,7 @@
 import type { DubbingDraft } from './dubbing'
 import type { SettingAsset } from './settingAsset'
 import type {
+  StoryboardImageEditRecord,
   StoryboardRatio,
   StoryboardReferenceImage,
   StoryboardShotStatus,
@@ -53,6 +54,7 @@ export interface Shot {
   isLocked?: boolean
   isFavorite?: boolean
   referenceImages?: StoryboardReferenceImage[]
+  editHistory?: StoryboardImageEditRecord[]
   createdAt?: string
 }
 

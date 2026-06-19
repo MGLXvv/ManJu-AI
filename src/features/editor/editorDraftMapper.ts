@@ -2,11 +2,15 @@ import { createDefaultEditorDraft } from '@/mocks/editor.mock'
 import type { DubbingDraft, DubbingRoleCardDraft, DubbingRoleCardModel, DubbingRoleLineDraft } from '@/types/dubbing'
 import type { EditorDraft, PropSetting, ScriptDraft, Shot } from '@/types/editor'
 import type { SettingAsset } from '@/types/settingAsset'
-import type { StoryboardReferenceImage, StoryboardShot } from '@/types/storyboard'
+import type { StoryboardImageEditRecord, StoryboardReferenceImage, StoryboardShot } from '@/types/storyboard'
 
 const DEFAULT_MODEL_ID = 'index-tts'
 
 const cloneReferenceImage = (image: StoryboardReferenceImage): StoryboardReferenceImage => ({ ...image })
+const cloneEditRecord = (record: StoryboardImageEditRecord): StoryboardImageEditRecord => ({
+  ...record,
+  selection: { ...record.selection },
+})
 
 const cloneLine = (line: DubbingRoleLineDraft): DubbingRoleLineDraft => ({ ...line })
 
@@ -40,6 +44,7 @@ export const cloneShotDraft = (shot: Shot): Shot => ({
   propIds: [...shot.propIds],
   voiceAssignments: shot.voiceAssignments?.map((item) => ({ ...item })) ?? [],
   referenceImages: shot.referenceImages?.map(cloneReferenceImage) ?? [],
+  editHistory: shot.editHistory?.map(cloneEditRecord) ?? [],
 })
 
 export const cloneDubbingDraft = (dubbing: DubbingDraft): DubbingDraft => ({
@@ -103,6 +108,7 @@ export const buildStoryboardDraftShots = (shots: StoryboardShot[]): Shot[] =>
     isLocked: shot.isLocked ?? false,
     isFavorite: shot.isFavorite ?? false,
     referenceImages: shot.referenceImages.map(cloneReferenceImage),
+    editHistory: shot.editHistory?.map(cloneEditRecord) ?? [],
     createdAt: shot.createdAt ?? '2026年03月12日 17:16',
   }))
 

@@ -15,6 +15,22 @@ export interface StoryboardReferenceImage {
   sourceShotId?: string
 }
 
+export interface StoryboardImageEditSelection {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+export interface StoryboardImageEditRecord {
+  id: string
+  prompt: string
+  selection: StoryboardImageEditSelection
+  sourceImageUrl: string
+  resultImageUrl: string
+  createdAt: string
+}
+
 export interface StoryboardVoiceAssignment {
   id: string
   characterId: string
@@ -52,6 +68,7 @@ export interface StoryboardShot {
   isLocked?: boolean
   isFavorite?: boolean
   referenceImages: StoryboardReferenceImage[]
+  editHistory?: StoryboardImageEditRecord[]
   createdAt: string
 }
 

@@ -1,6 +1,7 @@
 import { buildStoryboardUpscaledImage } from '@/features/editor/storyboardPreviewState'
 import { storyboardShotsMock, storyboardStylesMock, storyboardTagOptions } from '@/mocks/storyboard.mock'
 import { delay } from '@/api/local'
+import type { StoryboardImageEditRecord } from '@/types/storyboard'
 import type {
   StoryboardApiContract,
   StoryboardDefaultsResponse,
@@ -15,6 +16,11 @@ export const cloneStoryboardShot = (shot: StoryboardShot): StoryboardShot => ({
   scenes: shot.scenes.map((item) => ({ ...item })),
   props: shot.props.map((item) => ({ ...item })),
   referenceImages: shot.referenceImages.map((item) => ({ ...item })),
+  editHistory:
+    shot.editHistory?.map<StoryboardImageEditRecord>((item) => ({
+      ...item,
+      selection: { ...item.selection },
+    })) ?? [],
   voiceAssignments: shot.voiceAssignments?.map((item) => ({ ...item })) ?? [],
   attachments: shot.attachments?.map((item) => ({ ...item })) ?? [],
 })

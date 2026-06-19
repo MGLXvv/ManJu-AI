@@ -883,9 +883,15 @@ const applyImageEdit = async ({
       title: shot.title,
       selection,
     })
-    await store.applyEditedImageToShot(shot.id, result.imageUrl)
+    await store.applyEditedImageToShot(shot.id, {
+      imageUrl: result.imageUrl,
+      prompt,
+      selection,
+    })
     editDialogOpen.value = false
     showToast('编辑结果已应用到当前分镜', 'success')
+  } catch {
+    showToast('分镜编辑失败，请稍后再试', 'error')
   } finally {
     editingImage.value = false
   }

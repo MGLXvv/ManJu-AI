@@ -219,10 +219,10 @@ Utility/support files:
 - `editor`
 - `resource`
 - `auth`
+- `setting`
 
 ### Standardized modules with lower backend priority
 
-- `resource`
 - `system`
 - `asset`
 - `scriptTemplate`

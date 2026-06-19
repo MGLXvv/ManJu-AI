@@ -5,7 +5,7 @@
 Current front-end delivery already covers:
 
 - project creation, import, export, and dashboard list flows
-- script input, generation, and script optimization
+- script input and script generation
 - setting asset creation, editing, batch rules, and default voice linkage
 - storyboard mode selection and storyboard draft persistence
 - storyboard image generation, prompt optimization, batch prompt optimization, and image upscale
@@ -15,6 +15,11 @@ Current front-end delivery already covers:
 - generation service mainline based on generation tasks
 - API module standardization with mock/http switching
 - backend integration and runtime configuration documentation
+
+Notes:
+
+- `script_optimize` still exists as a reserved generation-task capability
+- the current script page does not expose script optimization as a product entry
 
 ## 2. Demo Path
 

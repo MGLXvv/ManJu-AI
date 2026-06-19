@@ -47,7 +47,7 @@
       </div>
 
       <div class="dubbing-footer">
-        <button type="button" class="dubbing-footer__primary" :disabled="submitting" @click="goCompleteStep">完成并导出剪映</button>
+        <button type="button" class="dubbing-footer__primary" :disabled="submitting" @click="goCompleteStep">进入结果汇总</button>
 
         <div class="dubbing-footer__pager">
           <span class="dubbing-footer__count">共{{ totalCount }}项</span>

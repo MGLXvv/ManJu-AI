@@ -312,7 +312,15 @@ const markSaved = (): void => {
   lastSavedSnapshot.value = currentSnapshot.value
 }
 
+const syncScriptDraftToStore = (): void => {
+  editorStore.updateScriptContent(sourceText.value)
+  editorStore.updateScriptPrompt(promptText.value)
+  editorStore.updateGeneratedScript(generatedScript.value)
+}
+
 const persistDraft = async (): Promise<boolean> => {
+  syncScriptDraftToStore()
+
   submitting.value = true
   try {
     await editorStore.saveDraft()
@@ -464,6 +472,8 @@ const handleNext = async (): Promise<void> => {
   }
 
   showToast(validation.successMessage, 'success')
+  bypassLeaveGuard.value = true
+
   await router.push({
     name: validation.routeName,
     params: route.params,

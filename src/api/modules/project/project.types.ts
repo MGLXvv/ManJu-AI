@@ -25,6 +25,40 @@ export interface ImportProjectInput {
   favorite?: boolean
 }
 
+export interface BackendProjectDTO {
+  id: number | string
+  name: string
+  status?: string
+  currentStep?: string
+  aspectRatio?: string
+  style?: string
+  durationSeconds?: number
+  coverUrl?: string
+  createTime?: string
+  updateTime?: string
+}
+
+export interface BackendProjectListQuery {
+  pageNo?: number
+  pageSize?: number
+  keyword?: string
+  status?: 'ALL' | 'IN_PROGRESS' | 'COMPLETED'
+}
+
+export interface BackendCreateProjectPayload {
+  name: string
+  description: string
+  aspectRatio: Project['ratio']
+  style: string
+  language: string
+  durationSeconds: number
+}
+
+export interface BackendUpdateProjectPayload {
+  name?: string
+  status?: 'IN_PROGRESS' | 'COMPLETED'
+}
+
 export interface ProjectApiContract {
   list(query?: ProjectListQuery): Promise<Project[]>
   getById(id: string): Promise<Project | null>

@@ -33,6 +33,8 @@ outputs/
 tools/
 原型/
 原型截图/
+.worktrees/
+vpn/
 task_plan.md
 findings.md
 progress.md

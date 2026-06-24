@@ -202,3 +202,285 @@ const submit = (): void => {
   close()
 }
 </script>
+
+<style scoped lang="scss">
+.create-project-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 220;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.create-project-modal__overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at top, rgb(185 105 255 / 10%), transparent 42%),
+    rgb(5 6 10 / 72%);
+  backdrop-filter: blur(10px);
+}
+
+.create-project-modal__dialog {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 560px);
+  display: grid;
+  gap: 24px;
+  padding: 24px;
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgb(31 31 37 / 98%) 0%, rgb(19 20 25 / 98%) 100%);
+  box-shadow:
+    0 22px 60px rgb(0 0 0 / 44%),
+    inset 0 1px 0 rgb(255 255 255 / 5%);
+}
+
+.create-project-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.create-project-modal__title {
+  margin: 0;
+  color: #fff;
+  font-size: 22px;
+  line-height: 1.2;
+  font-weight: 600;
+}
+
+.create-project-modal__close {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 10px;
+  background: rgb(255 255 255 / 6%);
+  color: #d8d8df;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.create-project-modal__close:hover {
+  background: rgb(255 255 255 / 10%);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.create-project-modal__body {
+  display: grid;
+  gap: 20px;
+}
+
+.create-project-modal__field {
+  display: grid;
+  gap: 10px;
+}
+
+.create-project-modal__label {
+  color: #d9dae1;
+  font-size: 14px;
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+.create-project-modal__input,
+.create-project-modal__select {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 12px;
+  background: rgb(255 255 255 / 4%);
+  color: #fff;
+  font-size: 14px;
+  outline: none;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+}
+
+.create-project-modal__input::placeholder {
+  color: #8b8d99;
+}
+
+.create-project-modal__input:focus,
+.create-project-modal__select:focus {
+  border-color: rgb(185 105 255 / 78%);
+  box-shadow: 0 0 0 3px rgb(185 105 255 / 14%);
+  background: rgb(255 255 255 / 6%);
+}
+
+.create-project-modal__select {
+  appearance: none;
+}
+
+.create-project-modal__select:disabled,
+.create-project-modal__submit:disabled {
+  cursor: not-allowed;
+}
+
+.create-project-modal__select:disabled {
+  color: #7c7d88;
+  background: rgb(255 255 255 / 3%);
+}
+
+.create-project-modal__select-wrap {
+  position: relative;
+}
+
+.create-project-modal__select-wrap::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  width: 8px;
+  height: 8px;
+  border-right: 1.5px solid #9b9ca7;
+  border-bottom: 1.5px solid #9b9ca7;
+  transform: translateY(-60%) rotate(45deg);
+  pointer-events: none;
+}
+
+.create-project-modal__ratio-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.create-project-modal__ratio {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 0 14px;
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 14px;
+  background: rgb(255 255 255 / 4%);
+  color: #d9dae1;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.create-project-modal__ratio:hover {
+  border-color: rgb(255 255 255 / 20%);
+  background: rgb(255 255 255 / 7%);
+  transform: translateY(-1px);
+}
+
+.create-project-modal__ratio.is-active {
+  border-color: rgb(185 105 255 / 80%);
+  background: rgb(185 105 255 / 14%);
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgb(185 105 255 / 24%);
+}
+
+.create-project-modal__ratio-icon {
+  display: inline-block;
+  border: 1.5px solid currentColor;
+  border-radius: 4px;
+  opacity: 0.85;
+}
+
+.create-project-modal__ratio-icon--landscape {
+  width: 22px;
+  height: 14px;
+}
+
+.create-project-modal__ratio-icon--portrait {
+  width: 14px;
+  height: 22px;
+}
+
+.create-project-modal__hint {
+  margin: 0;
+  color: #8f90a0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.create-project-modal__submit {
+  min-height: 48px;
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #b969ff 0%, #df7cff 100%);
+  color: #fff;
+  font-size: 15px;
+  line-height: 1;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 14px 28px rgb(185 105 255 / 24%);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    opacity 160ms ease;
+}
+
+.create-project-modal__submit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 30px rgb(185 105 255 / 30%);
+}
+
+.create-project-modal__submit:disabled {
+  opacity: 0.52;
+  box-shadow: none;
+}
+
+.create-project-modal__field.is-invalid .create-project-modal__input,
+.create-project-modal__field.is-invalid .create-project-modal__select,
+.create-project-modal__field.is-invalid .create-project-modal__ratio-grid {
+  border-color: rgb(255 106 138 / 70%);
+}
+
+.create-project-modal__field.is-invalid .create-project-modal__ratio {
+  border-color: rgb(255 106 138 / 44%);
+}
+
+.create-project-modal__field.is-flash .create-project-modal__input,
+.create-project-modal__field.is-flash .create-project-modal__select {
+  box-shadow: 0 0 0 3px rgb(255 106 138 / 14%);
+}
+
+.create-project-modal__field.is-flash .create-project-modal__ratio-grid {
+  border-radius: 16px;
+  box-shadow: 0 0 0 3px rgb(255 106 138 / 10%);
+}
+
+@media (max-width: 640px) {
+  .create-project-modal {
+    padding: 16px;
+  }
+
+  .create-project-modal__dialog {
+    gap: 20px;
+    padding: 20px;
+    border-radius: 20px;
+  }
+
+  .create-project-modal__title {
+    font-size: 20px;
+  }
+
+  .create-project-modal__ratio-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

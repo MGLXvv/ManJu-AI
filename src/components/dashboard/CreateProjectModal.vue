@@ -210,76 +210,75 @@ const submit = (): void => {
   z-index: 220;
   display: grid;
   place-items: center;
-  padding: 24px;
+  padding: 20px;
 }
 
 .create-project-modal__overlay {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(circle at top, rgb(185 105 255 / 10%), transparent 42%),
-    rgb(5 6 10 / 72%);
-  backdrop-filter: blur(10px);
+  background: rgb(5 6 10 / 68%);
+  backdrop-filter: blur(6px);
 }
 
 .create-project-modal__dialog {
   position: relative;
   z-index: 1;
-  width: min(100%, 560px);
+  width: min(100%, 558px);
+  min-height: 426px;
   display: grid;
-  gap: 24px;
-  padding: 24px;
-  border: 1px solid rgb(255 255 255 / 10%);
-  border-radius: 24px;
-  background:
-    linear-gradient(180deg, rgb(31 31 37 / 98%) 0%, rgb(19 20 25 / 98%) 100%);
-  box-shadow:
-    0 22px 60px rgb(0 0 0 / 44%),
-    inset 0 1px 0 rgb(255 255 255 / 5%);
+  grid-template-rows: 52px 1fr;
+  border: 1px solid rgb(255 255 255 / 15%);
+  border-radius: 18px;
+  background: #0a0a0b;
+  box-shadow: 0 4px 10.8px rgb(0 0 0 / 25%);
+  overflow: hidden;
 }
 
 .create-project-modal__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
+  height: 52px;
+  padding: 0 20px;
+  border-bottom: 1px solid #323232;
 }
 
 .create-project-modal__title {
   margin: 0;
   color: #fff;
-  font-size: 22px;
-  line-height: 1.2;
+  font-size: 16px;
+  line-height: 19px;
   font-weight: 600;
 }
 
 .create-project-modal__close {
-  width: 36px;
-  height: 36px;
+  width: 24px;
+  height: 24px;
   display: grid;
   place-items: center;
+  padding: 0;
   border: 0;
-  border-radius: 10px;
-  background: rgb(255 255 255 / 6%);
-  color: #d8d8df;
-  font-size: 22px;
+  background: transparent;
+  color: #fff;
+  font-size: 28px;
   line-height: 1;
   cursor: pointer;
   transition:
-    background 160ms ease,
-    color 160ms ease,
+    opacity 160ms ease,
     transform 160ms ease;
 }
 
 .create-project-modal__close:hover {
-  background: rgb(255 255 255 / 10%);
-  color: #fff;
+  opacity: 0.8;
   transform: translateY(-1px);
 }
 
 .create-project-modal__body {
   display: grid;
-  gap: 20px;
+  align-content: start;
+  gap: 0;
+  padding: 20px;
 }
 
 .create-project-modal__field {
@@ -287,39 +286,42 @@ const submit = (): void => {
   gap: 10px;
 }
 
+.create-project-modal__field + .create-project-modal__field {
+  margin-top: 14px;
+}
+
 .create-project-modal__label {
-  color: #d9dae1;
+  color: #979797;
   font-size: 14px;
-  line-height: 1.4;
-  font-weight: 500;
+  line-height: 17px;
+  font-weight: 600;
 }
 
 .create-project-modal__input,
 .create-project-modal__select {
   width: 100%;
-  min-height: 46px;
-  padding: 0 14px;
-  border: 1px solid rgb(255 255 255 / 10%);
-  border-radius: 12px;
-  background: rgb(255 255 255 / 4%);
+  height: 40px;
+  min-height: 40px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 8px;
+  background: #232425;
   color: #fff;
-  font-size: 14px;
+  font-size: 13px;
   outline: none;
   transition:
-    border-color 160ms ease,
     box-shadow 160ms ease,
     background 160ms ease;
 }
 
 .create-project-modal__input::placeholder {
-  color: #8b8d99;
+  color: #646357;
 }
 
 .create-project-modal__input:focus,
 .create-project-modal__select:focus {
-  border-color: rgb(185 105 255 / 78%);
-  box-shadow: 0 0 0 3px rgb(185 105 255 / 14%);
-  background: rgb(255 255 255 / 6%);
+  box-shadow: 0 0 0 3px rgb(140 63 255 / 16%);
+  background: #28292a;
 }
 
 .create-project-modal__select {
@@ -332,8 +334,9 @@ const submit = (): void => {
 }
 
 .create-project-modal__select:disabled {
-  color: #7c7d88;
-  background: rgb(255 255 255 / 3%);
+  color: #646357;
+  background: #232425;
+  opacity: 0.72;
 }
 
 .create-project-modal__select-wrap {
@@ -344,12 +347,12 @@ const submit = (): void => {
   content: '';
   position: absolute;
   top: 50%;
-  right: 16px;
+  right: 18px;
   width: 8px;
   height: 8px;
-  border-right: 1.5px solid #9b9ca7;
-  border-bottom: 1.5px solid #9b9ca7;
-  transform: translateY(-60%) rotate(45deg);
+  border-right: 2px solid #d2d2d2;
+  border-bottom: 2px solid #d2d2d2;
+  transform: translateY(-65%) rotate(45deg);
   pointer-events: none;
 }
 
@@ -360,74 +363,81 @@ const submit = (): void => {
 }
 
 .create-project-modal__ratio {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;
+  align-content: center;
   gap: 10px;
-  min-height: 52px;
+  height: 71px;
   padding: 0 14px;
-  border: 1px solid rgb(255 255 255 / 10%);
-  border-radius: 14px;
-  background: rgb(255 255 255 / 4%);
-  color: #d9dae1;
-  font-size: 14px;
-  font-weight: 500;
+  border: 0;
+  border-radius: 8px;
+  background: #232425;
+  color: #979797;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
   transition:
-    border-color 160ms ease,
     background 160ms ease,
     transform 160ms ease,
     box-shadow 160ms ease;
+  text-align: center;
 }
 
 .create-project-modal__ratio:hover {
-  border-color: rgb(255 255 255 / 20%);
-  background: rgb(255 255 255 / 7%);
+  background: #2a2b2c;
   transform: translateY(-1px);
 }
 
 .create-project-modal__ratio.is-active {
-  border-color: rgb(185 105 255 / 80%);
-  background: rgb(185 105 255 / 14%);
   color: #fff;
-  box-shadow: inset 0 0 0 1px rgb(185 105 255 / 24%);
+  border: 2px solid transparent;
+  background:
+    linear-gradient(#171124, #171124) padding-box,
+    linear-gradient(90deg, #8b5cf6 0%, #f8a45f 100%) border-box;
+  box-shadow: none;
 }
 
 .create-project-modal__ratio-icon {
-  display: inline-block;
-  border: 1.5px solid currentColor;
-  border-radius: 4px;
-  opacity: 0.85;
+  display: block;
+  border: 0;
+  border-radius: 1px;
 }
 
 .create-project-modal__ratio-icon--landscape {
-  width: 22px;
-  height: 14px;
+  width: 23px;
+  height: 13px;
+  background: linear-gradient(90deg, #b0f862 0%, #8b5cf6 100%);
 }
 
 .create-project-modal__ratio-icon--portrait {
-  width: 14px;
-  height: 22px;
+  width: 13px;
+  height: 23px;
+  background: linear-gradient(180deg, #b0f862 0%, #8b5cf6 100%);
 }
 
 .create-project-modal__hint {
   margin: 0;
-  color: #8f90a0;
+  color: #979797;
   font-size: 12px;
   line-height: 1.5;
 }
 
 .create-project-modal__submit {
-  min-height: 48px;
+  height: 40px;
+  margin-top: 20px;
   border: 0;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #b969ff 0%, #df7cff 100%);
+  border-radius: 8px;
+  background:
+    radial-gradient(64.4% 133.41% at 97.53% 113.7%, rgb(255 187 77 / 60%) 0%, rgb(140 63 255 / 0%) 100%),
+    #8c3fff;
   color: #fff;
-  font-size: 15px;
-  line-height: 1;
+  font-size: 13px;
+  line-height: 16px;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 14px 28px rgb(185 105 255 / 24%);
+  box-shadow:
+    0 18px 32px rgb(0 0 0 / 34%),
+    inset 0 0 39.4px rgb(255 255 255 / 28%);
   transition:
     transform 160ms ease,
     box-shadow 160ms ease,
@@ -436,32 +446,25 @@ const submit = (): void => {
 
 .create-project-modal__submit:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 16px 30px rgb(185 105 255 / 30%);
 }
 
 .create-project-modal__submit:disabled {
-  opacity: 0.52;
+  opacity: 0.45;
   box-shadow: none;
 }
 
 .create-project-modal__field.is-invalid .create-project-modal__input,
-.create-project-modal__field.is-invalid .create-project-modal__select,
-.create-project-modal__field.is-invalid .create-project-modal__ratio-grid {
-  border-color: rgb(255 106 138 / 70%);
+.create-project-modal__field.is-invalid .create-project-modal__select {
+  box-shadow: inset 0 0 0 1px rgb(255 106 138 / 70%);
 }
 
 .create-project-modal__field.is-invalid .create-project-modal__ratio {
-  border-color: rgb(255 106 138 / 44%);
+  box-shadow: inset 0 0 0 1px rgb(255 106 138 / 52%);
 }
 
 .create-project-modal__field.is-flash .create-project-modal__input,
 .create-project-modal__field.is-flash .create-project-modal__select {
-  box-shadow: 0 0 0 3px rgb(255 106 138 / 14%);
-}
-
-.create-project-modal__field.is-flash .create-project-modal__ratio-grid {
-  border-radius: 16px;
-  box-shadow: 0 0 0 3px rgb(255 106 138 / 10%);
+  box-shadow: 0 0 0 3px rgb(255 106 138 / 12%);
 }
 
 @media (max-width: 640px) {
@@ -470,13 +473,7 @@ const submit = (): void => {
   }
 
   .create-project-modal__dialog {
-    gap: 20px;
-    padding: 20px;
-    border-radius: 20px;
-  }
-
-  .create-project-modal__title {
-    font-size: 20px;
+    min-height: auto;
   }
 
   .create-project-modal__ratio-grid {

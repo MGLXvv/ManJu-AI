@@ -16,19 +16,75 @@ describe('editorHttpApi', () => {
   })
 
   it('loads draft from script workspace endpoint', async () => {
-    vi.mocked(http.get).mockResolvedValue({
-      data: {
-        rawText: 'source',
-        prompt: 'prompt',
-        content: 'generated',
-        updateTime: '2026-06-25T10:00:00.000Z',
-      },
-    })
+    vi.mocked(http.get)
+      .mockResolvedValueOnce({
+        data: {
+          rawText: 'source',
+          prompt: 'prompt',
+          content: 'generated',
+          updateTime: '2026-06-25T10:00:00.000Z',
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          storyboards: [],
+        },
+      })
 
     const draft = await editorHttpApi.getDraft('project-1')
 
     expect(http.get).toHaveBeenCalledWith('/aidrama/projects/project-1/script/workspace')
     expect(draft.script.generated).toBe('generated')
+  })
+
+  it('merges storyboard workspace shots into the draft', async () => {
+    vi.mocked(http.get)
+      .mockResolvedValueOnce({
+        data: {
+          rawText: 'source',
+          prompt: 'prompt',
+          content: 'generated',
+          updateTime: '2026-06-25T10:00:00.000Z',
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          storyboards: [
+            {
+              id: 101,
+              title: '镜头一',
+              content: '主角走入废墟',
+              durationSeconds: 8,
+              index: 1,
+            },
+          ],
+        },
+      })
+
+    const draft = await editorHttpApi.getDraft('project-1')
+
+    expect(http.get).toHaveBeenNthCalledWith(2, '/aidrama/projects/project-1/storyboard/workspace')
+    expect(draft.shots).toHaveLength(1)
+    expect(draft.shots[0].id).toBe('101')
+    expect(draft.shots[0].description).toBe('主角走入废墟')
+  })
+
+  it('keeps script draft data when storyboard workspace request fails', async () => {
+    vi.mocked(http.get)
+      .mockResolvedValueOnce({
+        data: {
+          rawText: 'source',
+          prompt: 'prompt',
+          content: 'generated',
+          updateTime: '2026-06-25T10:00:00.000Z',
+        },
+      })
+      .mockRejectedValueOnce(new Error('storyboard workspace failed'))
+
+    const draft = await editorHttpApi.getDraft('project-1')
+
+    expect(draft.script.content).toBe('source')
+    expect(Array.isArray(draft.shots)).toBe(true)
   })
 
   it('saves source text and prompt without calling script content when generated is empty', async () => {

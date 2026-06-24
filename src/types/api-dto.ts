@@ -32,6 +32,30 @@ export interface BackendScriptWorkspaceDTO {
   updatedAt?: string
 }
 
+export interface BackendStoryboardDTO {
+  id: number | string
+  title?: string | null
+  content?: string | null
+  description?: string | null
+  prompt?: string | null
+  imageUrl?: string | null
+  videoUrl?: string | null
+  durationSeconds?: number | null
+  sortOrder?: number | null
+  index?: number | null
+  status?: string | null
+  createTime?: string | null
+  updateTime?: string | null
+}
+
+export interface BackendStoryboardWorkspaceDTO {
+  storyboards?: BackendStoryboardDTO[]
+  list?: BackendStoryboardDTO[]
+  storyboardStatus?: string | null
+  canGenerateStoryboard?: boolean
+  canEnterVideo?: boolean
+}
+
 export interface GenerationListTasksRequestDTO {
   projectId: string
 }

@@ -208,6 +208,7 @@ import { useEditorStore } from '@/stores/editor'
 import { useProjectStore } from '@/stores/project'
 import { useStoryboardStore } from '@/stores/storyboard'
 import { useUiFeedbackStore } from '@/stores/uiFeedback'
+import { storyboardWorkflowService } from '@/services/editor/storyboardWorkflow.service'
 import { storyboardPromptService } from '@/services/generation'
 import { API_ERROR_CODES } from '@/types/api-enums'
 import type { StoryboardInsertDraft, StoryboardTagType } from '@/types/storyboard'
@@ -1007,8 +1008,14 @@ const goVideoStep = async (): Promise<void> => {
     return
   }
 
-  if (projectId.value) {
-    await projectStore.updateProjectStep(projectId.value, validation.nextStep)
+  try {
+    if (projectId.value) {
+      await storyboardWorkflowService.confirmStoryboard(projectId.value)
+      await projectStore.updateProjectStep(projectId.value, validation.nextStep)
+    }
+  } catch {
+    showToast('分镜确认失败，请稍后再试', 'error')
+    return
   }
 
   showToast(validation.successMessage, 'success')

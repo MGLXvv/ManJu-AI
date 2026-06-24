@@ -14,6 +14,12 @@ export default defineConfig({
     allowedHosts: [
       'assessing-seventh-ecommerce-goals.trycloudflare.com',
     ],
+    proxy: {
+      '/admin-api': {
+        target: 'http://10.10.3.26:48080',
+        changeOrigin: true,
+      },
+    },
   },
   test: {
       include: ['tests/**/*.test.ts'],

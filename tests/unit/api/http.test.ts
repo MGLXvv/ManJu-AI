@@ -1,9 +1,14 @@
 import axios from 'axios'
 import { describe, expect, it, vi } from 'vitest'
+import { http } from '@/api/http'
 import { attachInterceptors } from '@/api/interceptors'
 import { createApiError, isApiError } from '@/api/errors'
 
 describe('api error helpers', () => {
+  it('uses /admin-api as the default HTTP base URL fallback', () => {
+    expect(http.defaults.baseURL).toBe('/admin-api')
+  })
+
   it('builds a typed api error with code and status', () => {
     const error = createApiError({
       message: 'Unauthorized',

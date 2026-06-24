@@ -3,7 +3,7 @@ import { authSessionBridge } from '@/stores/auth'
 import { attachInterceptors } from './interceptors'
 
 export const http = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/admin-api',
   timeout: 30000,
 })
 

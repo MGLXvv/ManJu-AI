@@ -37,4 +37,111 @@ describe('api error helpers', () => {
 
     expect(config.headers.Authorization).toBe('Bearer token-123')
   })
+
+  it('unwraps CommonResult success responses to body.data', async () => {
+    const client = axios.create()
+    attachInterceptors(client, {
+      getToken: () => null,
+      onUnauthorized: vi.fn(),
+      onForbidden: vi.fn(),
+    })
+
+    const handler = (client.interceptors.response as unknown as {
+      handlers: Array<{
+        fulfilled: (value: { status: number; data: unknown }) => Promise<{ status: number; data: unknown }> | { status: number; data: unknown }
+      }>
+    }).handlers[0].fulfilled
+
+    const response = await handler({
+      status: 200,
+      data: {
+        code: 0,
+        msg: 'ok',
+        data: { token: 'abc' },
+      },
+    })
+
+    expect(response.data).toEqual({ token: 'abc' })
+  })
+
+  it('throws ApiError when CommonResult business code is not zero', async () => {
+    const client = axios.create()
+    attachInterceptors(client, {
+      getToken: () => null,
+      onUnauthorized: vi.fn(),
+      onForbidden: vi.fn(),
+    })
+
+    const handler = (client.interceptors.response as unknown as {
+      handlers: Array<{
+        fulfilled: (value: { status: number; data: unknown }) => Promise<{ status: number; data: unknown }> | { status: number; data: unknown }
+      }>
+    }).handlers[0].fulfilled
+
+    await expect(
+      handler({
+        status: 200,
+        data: {
+          code: 40001,
+          msg: 'Login failed',
+          data: null,
+        },
+      }),
+    ).rejects.toMatchObject({
+      message: 'Login failed',
+      code: '40001',
+      status: 200,
+    })
+  })
+
+  it('calls onUnauthorized when CommonResult code is 401', async () => {
+    const client = axios.create()
+    const onUnauthorized = vi.fn()
+    attachInterceptors(client, {
+      getToken: () => null,
+      onUnauthorized,
+      onForbidden: vi.fn(),
+    })
+
+    const handler = (client.interceptors.response as unknown as {
+      handlers: Array<{
+        fulfilled: (value: { status: number; data: unknown }) => Promise<{ status: number; data: unknown }> | { status: number; data: unknown }
+      }>
+    }).handlers[0].fulfilled
+
+    await expect(
+      handler({
+        status: 200,
+        data: {
+          code: 401,
+          msg: 'Unauthorized',
+          data: null,
+        },
+      }),
+    ).rejects.toBeTruthy()
+
+    expect(onUnauthorized).toHaveBeenCalledTimes(1)
+  })
+
+  it('passes through non-CommonResult responses unchanged', async () => {
+    const client = axios.create()
+    attachInterceptors(client, {
+      getToken: () => null,
+      onUnauthorized: vi.fn(),
+      onForbidden: vi.fn(),
+    })
+
+    const handler = (client.interceptors.response as unknown as {
+      handlers: Array<{
+        fulfilled: (value: { status: number; data: unknown }) => Promise<{ status: number; data: unknown }> | { status: number; data: unknown }
+      }>
+    }).handlers[0].fulfilled
+
+    const response = await handler({
+      status: 200,
+      data: { session: { token: 'raw' } },
+    })
+
+    expect(response.data).toEqual({ session: { token: 'raw' } })
+  })
 })

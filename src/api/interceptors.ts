@@ -1,4 +1,5 @@
 import type { AxiosInstance, InternalAxiosRequestConfig } from 'axios'
+import { isCommonResult } from './commonResult'
 import { createApiError } from './errors'
 
 interface AttachInterceptorOptions {
@@ -18,9 +19,35 @@ export const attachInterceptors = (client: AxiosInstance, options: AttachInterce
   })
 
   client.interceptors.response.use(
-    (response) => response,
+    async (response) => {
+      const body = response.data
+
+      if (isCommonResult(body)) {
+        if (body.code === 401) {
+          options.onUnauthorized()
+        }
+
+        if (body.code === 403) {
+          options.onForbidden()
+        }
+
+        if (body.code !== 0) {
+          throw createApiError({
+            message: body.msg || 'Request failed',
+            code: String(body.code),
+            status: response.status,
+            details: body,
+          })
+        }
+
+        response.data = body.data
+      }
+
+      return response
+    },
     (error) => {
       const status = error?.response?.status as number | undefined
+      const responseBody = error?.response?.data
 
       if (status === 401) {
         options.onUnauthorized()
@@ -31,10 +58,10 @@ export const attachInterceptors = (client: AxiosInstance, options: AttachInterce
       }
 
       throw createApiError({
-        message: error?.response?.data?.message ?? error?.message ?? 'Request failed',
-        code: error?.response?.data?.code ?? 'HTTP_REQUEST_FAILED',
+        message: responseBody?.msg ?? responseBody?.message ?? error?.message ?? 'Request failed',
+        code: responseBody?.code ? String(responseBody.code) : 'HTTP_REQUEST_FAILED',
         status,
-        details: error?.response?.data,
+        details: responseBody,
       })
     },
   )

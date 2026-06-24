@@ -34,7 +34,10 @@
 
           <div class="storyboard-main-card__divider"></div>
 
-          <div class="storyboard-main-card__body" :class="{ 'is-prompt-collapsed': isPromptCollapsed }">
+          <div
+            class="storyboard-main-card__body"
+            :class="{ 'is-prompt-collapsed': isPromptCollapsed, 'is-empty': !currentShot }"
+          >
             <StoryboardPromptPanel
               v-if="currentShot"
               :shot="currentShot"
@@ -61,6 +64,19 @@
               @toggle-collapse="togglePromptPanel"
               @generate-shot="generateShot"
             />
+
+            <div v-else class="storyboard-empty-state">
+              <p class="storyboard-empty-state__title">暂无分镜</p>
+              <p class="storyboard-empty-state__desc">可根据已确认剧本生成分镜。</p>
+              <button
+                type="button"
+                class="storyboard-empty-state__action"
+                :disabled="generatingStoryboardList"
+                @click="generateStoryboardFromScript"
+              >
+                {{ generatingStoryboardList ? '分镜生成中...' : '根据剧本生成分镜' }}
+              </button>
+            </div>
 
             <StoryboardPreviewPanel
               v-if="currentShot"
@@ -183,6 +199,7 @@ import StoryboardPromptPanel from '@/components/editor/storyboard/StoryboardProm
 import StoryboardReferenceRail from '@/components/editor/storyboard/StoryboardReferenceRail.vue'
 import StoryboardTimeline from '@/components/editor/storyboard/StoryboardTimeline.vue'
 import StoryboardTopActions from '@/components/editor/storyboard/StoryboardTopActions.vue'
+import { apiMode } from '@/api/shared/apiMode'
 import { resolveStoryboardBatchAvailability } from '@/features/editor/storyboardBatchState'
 import { buildStoryboardDeleteDialogCopy, buildStoryboardDeleteToastMessage } from '@/features/editor/storyboardDeleteState'
 import { buildStoryboardDraftSnapshot } from '@/features/editor/storyboardDirtyState'
@@ -239,6 +256,7 @@ const leaveConfirmOpen = ref(false)
 const deleteConfirmOpen = ref(false)
 const batchDialogOpen = ref(false)
 const batchGenerating = ref(false)
+const generatingStoryboardList = ref(false)
 const pendingLeaveTarget = ref<RouteLocationRaw | null>(null)
 const pendingDeleteShotId = ref<string | null>(null)
 const bypassLeaveGuard = ref(false)
@@ -312,6 +330,8 @@ watch(
 
     if (editorStore.draft?.shots.length) {
       store.replaceShots(resolveStoryboardShots(editorStore.draft.shots, nextTagOptions, editorStore.draft.settingAssets))
+    } else if (apiMode === 'http') {
+      store.replaceShots([])
     } else {
       await store.loadDefaults()
     }
@@ -430,6 +450,42 @@ const updateStyle = (value: string): void => {
 
 const updateRatio = (value: '16:9' | '9:16'): void => {
   store.updateActiveShotRatio(value)
+}
+
+const generateStoryboardFromScript = async (): Promise<void> => {
+  if (!projectId.value || generatingStoryboardList.value) {
+    return
+  }
+
+  generatingStoryboardList.value = true
+
+  try {
+    const patch = await storyboardWorkflowService.generateStoryboard(projectId.value)
+
+    if (!patch || patch.shots.length === 0) {
+      showToast('后端未返回可用分镜，请稍后重试', 'error')
+      return
+    }
+
+    const draft = editorStore.draft
+    if (!draft) {
+      showToast('分镜生成失败，请稍后再试', 'error')
+      return
+    }
+
+    const nextTagOptions = resolveStoryboardTagOptions(draft, tagOptions.value)
+    const resolvedShots = resolveStoryboardShots(patch.shots, nextTagOptions, draft.settingAssets)
+
+    editorStore.updateStoryboardShots(resolvedShots)
+    store.setTagOptions(nextTagOptions)
+    store.replaceShots(resolvedShots)
+    markSaved()
+    showToast('分镜已生成', 'success')
+  } catch {
+    showToast('分镜生成失败，请确认剧本已确认后重试', 'error')
+  } finally {
+    generatingStoryboardList.value = false
+  }
 }
 
 const generateShot = async (): Promise<void> => {

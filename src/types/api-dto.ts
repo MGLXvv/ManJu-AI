@@ -41,6 +41,7 @@ export interface BackendStoryboardDTO {
   imageUrl?: string | null
   videoUrl?: string | null
   durationSeconds?: number | null
+  sort?: number | null
   sortOrder?: number | null
   index?: number | null
   status?: string | null

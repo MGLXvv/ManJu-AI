@@ -44,6 +44,16 @@ describe('storyboard.mapper', () => {
     expect(shot.description).toBe('备用字段')
   })
 
+  it('maps backend sort field to shot index', () => {
+    const shot = mapBackendStoryboardToShot(
+      { id: 9, sort: 3, content: '后端返回排序字段' },
+      1,
+    )
+
+    expect(shot.index).toBe(3)
+    expect(shot.description).toBe('后端返回排序字段')
+  })
+
   it('returns empty shots when no backend storyboard list exists', () => {
     const patch = mapBackendStoryboardWorkspaceToDraftPatch({})
     expect(patch.shots).toEqual([])

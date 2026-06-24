@@ -9,7 +9,7 @@ export const mapBackendStoryboardToShot = (
   item: BackendStoryboardDTO,
   fallbackIndex: number,
 ): Shot => {
-  const index = Number(item.index ?? item.sortOrder ?? fallbackIndex)
+  const index = Number(item.index ?? item.sort ?? item.sortOrder ?? fallbackIndex)
 
   return {
     id: String(item.id),

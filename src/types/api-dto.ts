@@ -20,6 +20,18 @@ export interface EditorSaveDraftRequestDTO {
 
 export interface EditorSaveDraftResponseDTO extends SaveDraftResult {}
 
+export interface BackendScriptWorkspaceDTO {
+  rawText?: string
+  prompt?: string
+  content?: string
+  scriptContent?: string
+  generatedContent?: string
+  scriptStatus?: string
+  canEnterStoryboard?: boolean
+  updateTime?: string
+  updatedAt?: string
+}
+
 export interface GenerationListTasksRequestDTO {
   projectId: string
 }

@@ -1,0 +1,21 @@
+import { normalizeEditorDraft } from '@/features/editor/editorDraftMapper'
+import type { BackendScriptWorkspaceDTO } from '@/types/api-dto'
+import type { EditorDraft } from './editor.types'
+
+export const getBackendScriptGeneratedContent = (
+  workspace?: BackendScriptWorkspaceDTO,
+): string => workspace?.content || workspace?.scriptContent || workspace?.generatedContent || ''
+
+export const mapBackendScriptWorkspaceToDraft = (
+  projectId: string,
+  workspace?: BackendScriptWorkspaceDTO,
+): EditorDraft =>
+  normalizeEditorDraft(projectId, {
+    projectId,
+    script: {
+      content: workspace?.rawText || '',
+      prompt: workspace?.prompt || '',
+      generated: getBackendScriptGeneratedContent(workspace),
+      updatedAt: workspace?.updateTime || workspace?.updatedAt || '',
+    },
+  } as Partial<EditorDraft> as EditorDraft)

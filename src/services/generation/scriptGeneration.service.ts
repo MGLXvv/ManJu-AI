@@ -1,3 +1,5 @@
+import { http } from '@/api/http'
+import { isMockMode } from '@/api/shared/apiMode'
 import { GENERATION_TASK_TYPES } from '@/types/api-enums'
 import {
   type ScriptGeneratePayload,
@@ -25,6 +27,19 @@ export interface OptimizeScriptInput {
 
 export const scriptGenerationService = {
   async generateScript(input: GenerateScriptInput): Promise<ScriptGenerateResult> {
+    if (!isMockMode) {
+      await http.put(`/aidrama/projects/${input.projectId}/script/draft`, {
+        rawText: input.sourceText,
+        prompt: input.promptText,
+      })
+
+      const { data } = await http.post(`/aidrama/projects/${input.projectId}/script/generate`, {
+        modelId: input.modelId,
+      })
+
+      return assertScriptGenerateResult(data as Partial<ScriptGenerateResult> | undefined)
+    }
+
     const payload: ScriptGeneratePayload = {
       sourceText: input.sourceText,
       promptText: input.promptText,

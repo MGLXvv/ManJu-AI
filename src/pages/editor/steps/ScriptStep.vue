@@ -138,6 +138,7 @@ import { useEditorStore } from '@/stores/editor'
 import { useProjectStore } from '@/stores/project'
 import { useScriptTemplateStore } from '@/stores/scriptTemplates'
 import { useUiFeedbackStore } from '@/stores/uiFeedback'
+import { scriptWorkflowService } from '@/services/editor/scriptWorkflow.service'
 import { scriptGenerationService } from '@/services/generation'
 import { API_ERROR_CODES } from '@/types/api-enums'
 import type { ScriptTemplateInput } from '@/types/scriptTemplate'
@@ -467,8 +468,14 @@ const handleNext = async (): Promise<void> => {
     return
   }
 
-  if (projectId.value) {
-    await projectStore.updateProjectStep(projectId.value, validation.nextStep)
+  try {
+    if (projectId.value) {
+      await scriptWorkflowService.confirmScript(projectId.value)
+      await projectStore.updateProjectStep(projectId.value, validation.nextStep)
+    }
+  } catch (error) {
+    showToast(resolveEditorError(error, '文案确认失败，请稍后再试'), 'error')
+    return
   }
 
   showToast(validation.successMessage, 'success')

@@ -60,7 +60,65 @@
           </article>
         </div>
 
+        <section v-if="isHttpMode" class="complete-step__export-panel">
+          <div class="complete-step__export-header">
+            <div>
+              <strong>Mock 导出任务</strong>
+              <p v-if="exportLoading">正在读取导出工作区...</p>
+              <p v-else-if="canCreateExportTask">当前项目已满足导出条件，可创建 Mock 导出任务。</p>
+              <p v-else-if="missingVideoCount > 0">
+                仍有 {{ missingVideoCount }} 个分镜缺少视频，暂不能创建导出任务。
+              </p>
+              <p v-else>当前项目暂不满足导出条件，请先检查分镜与视频状态。</p>
+            </div>
+            <span class="complete-step__export-flag">
+              {{ latestExportTask ? '已有导出任务' : '尚未创建导出任务' }}
+            </span>
+          </div>
+
+          <article v-if="latestExportTask" class="complete-step__export-card">
+            <div class="complete-step__export-card-head">
+              <strong>最近任务 #{{ latestExportTask.id }}</strong>
+              <span class="complete-step__export-status">{{ formatExportStatus(latestExportTask.status) }}</span>
+            </div>
+            <p>进度：{{ latestExportTask.progress }}%</p>
+            <p v-if="latestExportTask.resultUrl">结果地址：{{ latestExportTask.resultUrl }}</p>
+            <p v-if="latestExportTask.errorMessage" class="complete-step__export-error">
+              错误信息：{{ latestExportTask.errorMessage }}
+            </p>
+          </article>
+
+          <div v-if="exportTasks.length > 0" class="complete-step__export-history">
+            <strong>历史任务</strong>
+            <ul class="complete-step__export-list">
+              <li v-for="task in exportTasks" :key="task.id">
+                <span>#{{ task.id }}</span>
+                <span>{{ formatExportStatus(task.status) }}</span>
+                <span>{{ task.progress }}%</span>
+              </li>
+            </ul>
+          </div>
+        </section>
+
         <div class="complete-step__actions">
+          <button
+            v-if="isHttpMode"
+            type="button"
+            class="complete-step__secondary"
+            :disabled="submitting || exportLoading"
+            @click="createMockExportTask"
+          >
+            创建导出任务
+          </button>
+          <button
+            v-if="isHttpMode"
+            type="button"
+            class="complete-step__secondary"
+            :disabled="submitting || downloadLoading || !latestExportTask"
+            @click="openMockDownloadUrl"
+          >
+            获取 Mock 下载地址
+          </button>
           <button type="button" class="complete-step__secondary" :disabled="submitting" @click="exportDubbingArtifact">
             导出配音 JSON
           </button>
@@ -78,11 +136,13 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { apiMode } from '@/api/shared/apiMode'
 import { useRoute, useRouter } from 'vue-router'
 import WorkflowStepper from '@/components/editor/WorkflowStepper.vue'
 import { buildCompleteSummary } from '@/features/editor/completeSummaryState'
 import { buildDubbingArtifact, buildDubbingExportFileName } from '@/features/editor/editorArtifactMapper'
 import { buildScopedProjectArtifact, buildScopedProjectExportFileName } from '@/features/editor/editorExportScopeState'
+import { exportWorkflowService } from '@/services/editor/exportWorkflow.service'
 import { useEditorStore } from '@/stores/editor'
 import { useProjectStore } from '@/stores/project'
 import { useUiFeedbackStore } from '@/stores/uiFeedback'
@@ -94,18 +154,41 @@ const projectStore = useProjectStore()
 const uiFeedback = useUiFeedbackStore()
 
 const submitting = ref(false)
+const exportLoading = ref(false)
+const downloadLoading = ref(false)
+const exportWorkspace = ref<Awaited<ReturnType<typeof exportWorkflowService.loadExportWorkspace>>>(null)
 const projectId = computed(() => String(route.params.projectId ?? ''))
 const draft = computed(() => editorStore.draft)
 const project = computed(() => projectStore.projects.find((item) => item.id === projectId.value) ?? null)
+const isHttpMode = apiMode === 'http'
 const projectName = computed(() => project.value?.name ?? draft.value?.projectId ?? '当前项目')
 const projectStatusText = computed(() => (project.value?.status === 'completed' ? '已完成' : '进行中'))
 const completeSummary = computed(() => buildCompleteSummary(draft.value))
 const shotCount = computed(() => completeSummary.value.shotCount)
 const playableVideoCount = computed(() => completeSummary.value.playableVideoCount)
 const generatedAudioCount = computed(() => completeSummary.value.generatedAudioCount)
+const canCreateExportTask = computed(() => exportWorkspace.value?.canExport ?? false)
+const missingVideoCount = computed(() => exportWorkspace.value?.missingVideoCount ?? 0)
+const latestExportTask = computed(() => exportWorkspace.value?.latestTask ?? null)
+const exportTasks = computed(() => exportWorkspace.value?.tasks ?? [])
 
 const showToast = (message: string, tone: 'info' | 'success' | 'error' = 'info'): void => {
   uiFeedback.showToast(message, { tone })
+}
+
+const formatExportStatus = (status: string): string => {
+  switch (status.toUpperCase()) {
+    case 'SUCCESS':
+      return '已完成'
+    case 'FAILED':
+      return '失败'
+    case 'RUNNING':
+      return '进行中'
+    case 'PENDING':
+      return '排队中'
+    default:
+      return status
+  }
 }
 
 const downloadJson = (fileName: string, payload: unknown): void => {
@@ -122,6 +205,23 @@ const downloadJson = (fileName: string, payload: unknown): void => {
   URL.revokeObjectURL(url)
 }
 
+const refreshExportWorkspace = async (): Promise<void> => {
+  if (!projectId.value || !isHttpMode) {
+    exportWorkspace.value = null
+    return
+  }
+
+  exportLoading.value = true
+  try {
+    exportWorkspace.value = await exportWorkflowService.loadExportWorkspace(projectId.value)
+  } catch (error) {
+    exportWorkspace.value = null
+    showToast(error instanceof Error ? error.message : '导出工作区加载失败', 'error')
+  } finally {
+    exportLoading.value = false
+  }
+}
+
 const syncProject = async (): Promise<void> => {
   if (!projectId.value) return
   await editorStore.loadDraft(projectId.value)
@@ -133,6 +233,7 @@ const syncProject = async (): Promise<void> => {
   if (current?.status !== 'completed') {
     await projectStore.toggleProjectStatus(projectId.value)
   }
+  await refreshExportWorkspace()
 }
 
 watch(projectId, () => {
@@ -168,6 +269,56 @@ const exportProjectArtifact = async (): Promise<void> => {
     showToast('项目草稿 JSON 已导出', 'success')
   } finally {
     submitting.value = false
+  }
+}
+
+const createMockExportTask = async (): Promise<void> => {
+  if (!projectId.value) {
+    showToast('未找到当前项目', 'error')
+    return
+  }
+
+  if (!canCreateExportTask.value) {
+    if (missingVideoCount.value > 0) {
+      showToast(`仍有 ${missingVideoCount.value} 个分镜缺少视频，暂不能导出`, 'error')
+      return
+    }
+
+    showToast('当前项目暂不满足导出条件', 'error')
+    return
+  }
+
+  submitting.value = true
+  try {
+    await exportWorkflowService.createExportTask(projectId.value)
+    await refreshExportWorkspace()
+    showToast('Mock 导出任务已创建', 'success')
+  } catch (error) {
+    showToast(error instanceof Error ? error.message : '创建导出任务失败', 'error')
+  } finally {
+    submitting.value = false
+  }
+}
+
+const openMockDownloadUrl = async (): Promise<void> => {
+  if (!latestExportTask.value) {
+    showToast('暂无可用的导出任务', 'error')
+    return
+  }
+
+  downloadLoading.value = true
+  try {
+    const url = await exportWorkflowService.getDownloadUrl(latestExportTask.value.id)
+    if (!url) {
+      showToast('当前导出任务暂无可用下载地址', 'error')
+      return
+    }
+
+    window.open(url, '_blank', 'noopener')
+  } catch (error) {
+    showToast(error instanceof Error ? error.message : '获取下载地址失败', 'error')
+  } finally {
+    downloadLoading.value = false
   }
 }
 
@@ -277,6 +428,90 @@ const goProjects = async (): Promise<void> => {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+}
+
+.complete-step__export-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 24px;
+  background: rgba(28, 28, 32, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.complete-step__export-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.complete-step__export-header strong,
+.complete-step__export-history strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 15px;
+}
+
+.complete-step__export-header p,
+.complete-step__export-card p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.complete-step__export-flag {
+  align-self: flex-start;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(181, 156, 255, 0.12);
+  border: 1px solid rgba(181, 156, 255, 0.22);
+  color: #d7c8ff;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.complete-step__export-card {
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(38, 38, 42, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.complete-step__export-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.complete-step__export-status {
+  color: #b0f862;
+  font-size: 13px;
+}
+
+.complete-step__export-error {
+  color: #ffbebe;
+}
+
+.complete-step__export-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.complete-step__export-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(38, 38, 42, 0.72);
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 13px;
 }
 
 .complete-step__notices {

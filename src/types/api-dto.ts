@@ -103,6 +103,32 @@ export interface BackendResourceLibraryPageDTO {
   total?: number
 }
 
+export interface BackendExportTaskDTO {
+  id?: number | string | null
+  exportTaskId?: number | string | null
+  status?: string | null
+  progress?: number | null
+  resultUrl?: string | null
+  errorMsg?: string | null
+  errorMessage?: string | null
+}
+
+export interface BackendExportWorkspaceDTO {
+  canExport?: boolean | null
+  missingVideoCount?: number | null
+  latestTask?: BackendExportTaskDTO | null
+  recentTask?: BackendExportTaskDTO | null
+  histories?: BackendExportTaskDTO[] | null
+  exports?: BackendExportTaskDTO[] | null
+  list?: BackendExportTaskDTO[] | null
+}
+
+export interface BackendExportDownloadDTO {
+  downloadUrl?: string | null
+  resultUrl?: string | null
+  url?: string | null
+}
+
 export interface GenerationListTasksRequestDTO {
   projectId: string
 }

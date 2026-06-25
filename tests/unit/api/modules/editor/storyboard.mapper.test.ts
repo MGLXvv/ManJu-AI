@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
+  isLocalStoryboardShotId,
   mapBackendStoryboardToShot,
   mapBackendStoryboardWorkspaceToDraftPatch,
+  mapShotToBackendStoryboardPayload,
   resolveBackendStoryboardList,
 } from '@/api/modules/editor/storyboard.mapper'
 
@@ -52,6 +54,34 @@ describe('storyboard.mapper', () => {
 
     expect(shot.index).toBe(3)
     expect(shot.description).toBe('后端返回排序字段')
+  })
+
+  it('maps storyboard shot fields to backend save payload', () => {
+    const payload = mapShotToBackendStoryboardPayload({
+      id: 'shot-local-1',
+      index: 1,
+      title: '镜头标题',
+      prompt: '镜头描述内容',
+      characters: [],
+      scenes: [],
+      props: [],
+      style: '写实',
+      ratio: '16:9',
+      status: 'pending-review',
+      referenceImages: [],
+      createdAt: '2026-06-25T00:00:00.000Z',
+    })
+
+    expect(payload).toEqual({
+      title: '镜头标题',
+      content: '镜头描述内容',
+      durationSeconds: 5,
+    })
+  })
+
+  it('detects local storyboard shot ids', () => {
+    expect(isLocalStoryboardShotId('shot-123')).toBe(true)
+    expect(isLocalStoryboardShotId('12')).toBe(false)
   })
 
   it('returns empty shots when no backend storyboard list exists', () => {

@@ -1,9 +1,26 @@
 import type { BackendStoryboardDTO, BackendStoryboardWorkspaceDTO } from '@/types/api-dto'
 import type { EditorDraft, Shot } from '@/types/editor'
+import type { StoryboardShot } from '@/types/storyboard'
+
+export interface BackendStoryboardSavePayload {
+  title: string
+  content: string
+  durationSeconds: number
+}
 
 export const resolveBackendStoryboardList = (
   workspace: BackendStoryboardWorkspaceDTO,
 ): BackendStoryboardDTO[] => workspace.storyboards ?? workspace.list ?? []
+
+export const isLocalStoryboardShotId = (id: string): boolean => id.startsWith('shot-')
+
+export const mapShotToBackendStoryboardPayload = (
+  shot: StoryboardShot,
+): BackendStoryboardSavePayload => ({
+  title: shot.title,
+  content: shot.prompt || '',
+  durationSeconds: shot.durationSeconds ?? 5,
+})
 
 export const mapBackendStoryboardToShot = (
   item: BackendStoryboardDTO,

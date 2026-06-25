@@ -199,6 +199,7 @@ import StoryboardPromptPanel from '@/components/editor/storyboard/StoryboardProm
 import StoryboardReferenceRail from '@/components/editor/storyboard/StoryboardReferenceRail.vue'
 import StoryboardTimeline from '@/components/editor/storyboard/StoryboardTimeline.vue'
 import StoryboardTopActions from '@/components/editor/storyboard/StoryboardTopActions.vue'
+import { isLocalStoryboardShotId } from '@/api/modules/editor/storyboard.mapper'
 import { apiMode } from '@/api/shared/apiMode'
 import { resolveStoryboardBatchAvailability } from '@/features/editor/storyboardBatchState'
 import { buildStoryboardDeleteDialogCopy, buildStoryboardDeleteToastMessage } from '@/features/editor/storyboardDeleteState'
@@ -228,7 +229,7 @@ import { useUiFeedbackStore } from '@/stores/uiFeedback'
 import { storyboardWorkflowService } from '@/services/editor/storyboardWorkflow.service'
 import { storyboardPromptService } from '@/services/generation'
 import { API_ERROR_CODES } from '@/types/api-enums'
-import type { StoryboardInsertDraft, StoryboardTagType } from '@/types/storyboard'
+import type { StoryboardInsertDraft, StoryboardShot, StoryboardTagType } from '@/types/storyboard'
 
 const store = useStoryboardStore()
 const editorStore = useEditorStore()
@@ -257,6 +258,7 @@ const deleteConfirmOpen = ref(false)
 const batchDialogOpen = ref(false)
 const batchGenerating = ref(false)
 const generatingStoryboardList = ref(false)
+const persistedStoryboardIds = ref<string[]>([])
 const pendingLeaveTarget = ref<RouteLocationRaw | null>(null)
 const pendingDeleteShotId = ref<string | null>(null)
 const bypassLeaveGuard = ref(false)
@@ -329,9 +331,16 @@ watch(
     store.setTagOptions(nextTagOptions)
 
     if (editorStore.draft?.shots.length) {
-      store.replaceShots(resolveStoryboardShots(editorStore.draft.shots, nextTagOptions, editorStore.draft.settingAssets))
+      const resolvedShots = resolveStoryboardShots(
+        editorStore.draft.shots,
+        nextTagOptions,
+        editorStore.draft.settingAssets,
+      )
+      store.replaceShots(resolvedShots)
+      updatePersistedStoryboardIds(resolvedShots)
     } else if (apiMode === 'http') {
       store.replaceShots([])
+      updatePersistedStoryboardIds([])
     } else {
       await store.loadDefaults()
     }
@@ -380,6 +389,12 @@ const showToast = (message: string, tone: 'info' | 'success' | 'error' = 'info')
   uiFeedback.showToast(message, { tone })
 }
 
+const updatePersistedStoryboardIds = (nextShots: StoryboardShot[]): void => {
+  persistedStoryboardIds.value = nextShots
+    .map((shot) => shot.id)
+    .filter((id) => !isLocalStoryboardShotId(id))
+}
+
 const markSaved = (): void => {
   lastSavedSnapshot.value = currentSnapshot.value
 }
@@ -392,11 +407,39 @@ const persistStoryboardDraft = async (): Promise<boolean> => {
   submitting.value = true
   try {
     editorStore.updateStoryboardShots(shots.value)
+
+    if (apiMode === 'http' && projectId.value) {
+      const syncedPatch = await storyboardWorkflowService.syncStoryboards(projectId.value, {
+        currentShots: shots.value,
+        persistedIds: persistedStoryboardIds.value,
+      })
+
+      if (syncedPatch) {
+        const draft = editorStore.draft
+        if (!draft) {
+          showToast('分镜同步失败，请稍后重试', 'error')
+          return false
+        }
+
+        const nextTagOptions = resolveStoryboardTagOptions(draft, tagOptions.value)
+        const syncedShots = resolveStoryboardShots(
+          syncedPatch.shots,
+          nextTagOptions,
+          draft.settingAssets,
+        )
+
+        editorStore.updateStoryboardShots(syncedShots)
+        store.setTagOptions(nextTagOptions)
+        store.replaceShots(syncedShots)
+        updatePersistedStoryboardIds(syncedShots)
+      }
+    }
+
     await editorStore.saveDraft()
     markSaved()
     return true
   } catch {
-    showToast('分镜保存失败，请稍后再试', 'error')
+    showToast(apiMode === 'http' ? '分镜同步失败，请稍后重试' : '分镜保存失败，请稍后再试', 'error')
     return false
   } finally {
     submitting.value = false
@@ -479,6 +522,7 @@ const generateStoryboardFromScript = async (): Promise<void> => {
     editorStore.updateStoryboardShots(resolvedShots)
     store.setTagOptions(nextTagOptions)
     store.replaceShots(resolvedShots)
+    updatePersistedStoryboardIds(resolvedShots)
     markSaved()
     showToast('分镜已生成', 'success')
   } catch {

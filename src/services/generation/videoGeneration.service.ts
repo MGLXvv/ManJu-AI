@@ -1,4 +1,8 @@
-import { GENERATION_TASK_TYPES } from '@/types/api-enums'
+import { isLocalStoryboardShotId } from '@/api/modules/editor/storyboard.mapper'
+import { apiMode } from '@/api/shared/apiMode'
+import { storyboardVideoTaskService } from '@/services/editor/storyboardVideoTask.service'
+import { storyboardWorkflowService } from '@/services/editor/storyboardWorkflow.service'
+import { API_ERROR_CODES, GENERATION_TASK_TYPES } from '@/types/api-enums'
 import type { StoryboardShot } from '@/types/storyboard'
 import type { VideoGeneratePayload } from './generationPayload.types'
 import { assertVideoGenerateResult } from './generationResultGuards'
@@ -12,6 +16,44 @@ export interface GenerateVideoInput {
 
 export const videoGenerationService = {
   async generateVideo(input: GenerateVideoInput): Promise<VideoGenerateResult> {
+    if (apiMode === 'http') {
+      if (isLocalStoryboardShotId(input.shot.id)) {
+        throw new Error(API_ERROR_CODES.storyboardVideoRequiresPersistedShot)
+      }
+
+      if (!(input.shot.imageUrl ?? '').trim()) {
+        throw new Error(API_ERROR_CODES.storyboardVideoImageRequired)
+      }
+
+      const task = await storyboardVideoTaskService.createStoryboardVideoTask(input.shot.id)
+      const workspacePatch = await storyboardWorkflowService.loadStoryboardWorkspace(input.projectId)
+      const refreshedDraftShot = workspacePatch?.shots.find((shot) => shot.id === input.shot.id)
+      const videoUrl = refreshedDraftShot?.videoUrl?.trim() || task?.resultUrl || ''
+      const refreshedShot: StoryboardShot | undefined = refreshedDraftShot
+        ? {
+            ...input.shot,
+            id: refreshedDraftShot.id,
+            index: refreshedDraftShot.index,
+            title: refreshedDraftShot.title,
+            imageUrl: refreshedDraftShot.imageUrl || input.shot.imageUrl,
+            videoUrl,
+            durationSeconds: refreshedDraftShot.durationSeconds,
+            status: videoUrl ? 'success' : 'failed',
+            createdAt: refreshedDraftShot.createdAt || input.shot.createdAt,
+          }
+        : undefined
+
+      return assertVideoGenerateResult({
+        shotId: input.shot.id,
+        videoUrl,
+        shot: refreshedShot ?? {
+          ...input.shot,
+          videoUrl,
+          status: videoUrl ? 'success' : 'failed',
+        },
+      })
+    }
+
     const payload: VideoGeneratePayload = {
       shotId: input.shot.id,
       title: input.shot.title,

@@ -11,6 +11,8 @@ export const API_ERROR_CODES = {
   storyboardOptimizeFailed: 'STORYBOARD_OPTIMIZE_FAILED',
   storyboardUpscaleFailed: 'STORYBOARD_UPSCALE_FAILED',
   storyboardUpscaleImageRequired: 'STORYBOARD_UPSCALE_IMAGE_REQUIRED',
+  storyboardVideoRequiresPersistedShot: 'STORYBOARD_VIDEO_REQUIRES_PERSISTED_SHOT',
+  storyboardVideoImageRequired: 'STORYBOARD_VIDEO_IMAGE_REQUIRED',
   videoGenerateFailed: 'VIDEO_GENERATE_FAILED',
   videoOptimizeFailed: 'VIDEO_OPTIMIZE_FAILED',
   dubbingGenerateFailed: 'DUBBING_GENERATE_FAILED',

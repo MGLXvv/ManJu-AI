@@ -40,12 +40,20 @@ export const buildVideoGenerateErrorMessage = (error: unknown): string => {
     return taskMessage
   }
 
+  if (code === API_ERROR_CODES.storyboardVideoRequiresPersistedShot) {
+    return '请先保存分镜后，再生成视频'
+  }
+
+  if (code === API_ERROR_CODES.storyboardVideoImageRequired) {
+    return '请先生成或上传分镜图后，再生成视频'
+  }
+
   if (code === API_ERROR_CODES.videoGenerateFailed) {
     return '视频生成失败，请调整提示词后重试'
   }
 
   if (code === API_ERROR_CODES.videoOptimizeFailed) {
-    return 'AI优化失败，请稍后再试'
+    return 'AI 优化失败，请稍后再试'
   }
 
   return '视频生成失败，请稍后再试'

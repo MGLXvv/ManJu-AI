@@ -198,6 +198,8 @@ import StoryboardTimeline from '@/components/editor/storyboard/StoryboardTimelin
 import StoryboardTopActions from '@/components/editor/storyboard/StoryboardTopActions.vue'
 import VideoPreviewPanel from '@/components/editor/video/VideoPreviewPanel.vue'
 import VideoPromptPanel from '@/components/editor/video/VideoPromptPanel.vue'
+import { isLocalStoryboardShotId } from '@/api/modules/editor/storyboard.mapper'
+import { apiMode } from '@/api/shared/apiMode'
 import {
   canBatchGenerateVideoShot,
   resolveVideoBatchAvailability,
@@ -375,6 +377,11 @@ const generateShot = async (): Promise<void> => {
 
   if (shot.isLocked) {
     showToast('当前镜头已锁定，无法生成视频', 'error')
+    return
+  }
+
+  if (apiMode === 'http' && isLocalStoryboardShotId(shot.id)) {
+    showToast('请先保存分镜后，再生成视频', 'error')
     return
   }
 

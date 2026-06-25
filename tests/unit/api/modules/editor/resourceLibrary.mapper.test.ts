@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { mapResourceLibraryItemToSettingAsset } from '@/api/modules/editor/resourceLibrary.mapper'
+import {
+  mapBackendResourceLibraryPage,
+  mapResourceLibraryItemToSettingAsset,
+  mapResourceLibraryTypeQuery,
+} from '@/api/modules/editor/resourceLibrary.mapper'
 
 describe('resourceLibrary.mapper', () => {
   it('maps backend resource library items into setting assets', () => {
@@ -36,5 +40,52 @@ describe('resourceLibrary.mapper', () => {
     expect(asset.type).toBe('scene')
     expect(asset.prompt).toBe('')
     expect(asset.favorite).toBe(false)
+  })
+
+  it('maps query type values for backend requests', () => {
+    expect(mapResourceLibraryTypeQuery('character')).toBe('CHARACTER')
+    expect(mapResourceLibraryTypeQuery('scene')).toBe('SCENE')
+    expect(mapResourceLibraryTypeQuery('prop')).toBe('PROP')
+    expect(mapResourceLibraryTypeQuery('all')).toBeUndefined()
+    expect(mapResourceLibraryTypeQuery()).toBeUndefined()
+  })
+
+  it('maps paged resource library payloads', () => {
+    const result = mapBackendResourceLibraryPage({
+      list: [
+        {
+          id: 8,
+          assetType: 'PROP',
+          name: 'Lantern',
+          extraJson: JSON.stringify({ prompt: 'warm lantern' }),
+        },
+      ],
+      total: 11,
+    })
+
+    expect(result.total).toBe(11)
+    expect(result.items[0]).toMatchObject({
+      id: '8',
+      type: 'prop',
+      title: 'Lantern',
+      prompt: 'warm lantern',
+    })
+  })
+
+  it('maps array resource library payloads', () => {
+    const result = mapBackendResourceLibraryPage([
+      {
+        id: 6,
+        type: 'SCENE',
+        name: 'Alley',
+      },
+    ])
+
+    expect(result.total).toBe(1)
+    expect(result.items[0]).toMatchObject({
+      id: '6',
+      type: 'scene',
+      title: 'Alley',
+    })
   })
 })

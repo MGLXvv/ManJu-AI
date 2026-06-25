@@ -3,6 +3,7 @@ import { http } from '@/api/http'
 
 vi.mock('@/api/http', () => ({
   http: {
+    get: vi.fn(),
     post: vi.fn(),
   },
 }))
@@ -47,7 +48,57 @@ describe('resourceLibraryService', () => {
     expect(result).toMatchObject({ id: 1, name: 'Hero' })
   })
 
-  it('imports resource asset ids into project and maps returned assets', async () => {
+  it('loads resource library assets with mapped query params', async () => {
+    vi.doMock('@/api/shared/apiMode', () => ({
+      apiMode: 'http',
+      isMockMode: false,
+    }))
+
+    vi.mocked(http.get).mockResolvedValue({
+      data: {
+        list: [
+          {
+            id: 3,
+            assetType: 'SCENE',
+            name: 'Street',
+            extraJson: JSON.stringify({ prompt: 'night street' }),
+          },
+        ],
+        total: 7,
+      },
+    })
+
+    const { resourceLibraryService } = await import('@/services/editor/resourceLibrary.service')
+    const result = await resourceLibraryService.listLibraryItems({
+      type: 'scene',
+      scope: 'PRIVATE',
+      keyword: 'street',
+      page: 2,
+      pageSize: 10,
+    })
+
+    expect(http.get).toHaveBeenCalledWith('/aidrama/resource-library/assets', {
+      params: {
+        pageNo: 2,
+        pageSize: 10,
+        type: 'SCENE',
+        keyword: 'street',
+        scope: 'PRIVATE',
+      },
+    })
+    expect(result).toEqual({
+      items: [
+        expect.objectContaining({
+          id: '3',
+          type: 'scene',
+          title: 'Street',
+        }),
+      ],
+      total: 7,
+    })
+  })
+
+  it('imports resource asset ids into project and refreshes asset workspace', async () => {
     vi.doMock('@/api/shared/apiMode', () => ({
       apiMode: 'http',
       isMockMode: false,
@@ -68,18 +119,38 @@ describe('resourceLibraryService', () => {
       ],
     })
 
+    const loadAssetWorkspace = vi.fn().mockResolvedValue([
+      {
+        id: '22',
+        type: 'character',
+        title: 'Imported Hero',
+        description: 'from library',
+        prompt: 'imported prompt',
+        imageUrls: [],
+        status: 'empty',
+        favorite: false,
+        createdAt: '2026-06-25T00:00:00.000Z',
+      },
+    ])
+
+    vi.doMock('@/services/editor/assetWorkflow.service', () => ({
+      assetWorkflowService: {
+        loadAssetWorkspace,
+      },
+    }))
+
     const { resourceLibraryService } = await import('@/services/editor/resourceLibrary.service')
-    const result = await resourceLibraryService.importAssetsToProject('5', ['1'])
+    const result = await resourceLibraryService.importFromLibrary('5', ['1'])
 
     expect(http.post).toHaveBeenCalledWith('/aidrama/projects/5/assets/import-from-library', {
       resourceAssetIds: [1],
     })
+    expect(loadAssetWorkspace).toHaveBeenCalledWith('5')
     expect(result).toEqual([
       expect.objectContaining({
         id: '22',
         type: 'character',
         title: 'Imported Hero',
-        prompt: 'imported prompt',
       }),
     ])
   })

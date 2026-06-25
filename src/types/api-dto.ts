@@ -84,7 +84,8 @@ export interface BackendResourceLibraryItemDTO {
   id: number | string
   tenantId?: number | string
   ownerUserId?: number | string
-  assetType: BackendAssetType
+  assetType?: BackendAssetType
+  type?: BackendAssetType
   name: string
   description?: string | null
   imageUrl?: string | null
@@ -95,6 +96,11 @@ export interface BackendResourceLibraryItemDTO {
   reviewStatus?: string | null
   createTime?: string | null
   updateTime?: string | null
+}
+
+export interface BackendResourceLibraryPageDTO {
+  list?: BackendResourceLibraryItemDTO[]
+  total?: number
 }
 
 export interface GenerationListTasksRequestDTO {

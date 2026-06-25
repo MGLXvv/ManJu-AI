@@ -9,6 +9,15 @@ import type { EditorDraft } from '@/types/editor'
 import type { StoryboardShot } from '@/types/storyboard'
 
 export const storyboardWorkflowService = {
+  async loadStoryboardWorkspace(projectId: string): Promise<Pick<EditorDraft, 'shots'> | null> {
+    if (isMockMode) {
+      return null
+    }
+
+    const { data } = await http.get(`/aidrama/projects/${projectId}/storyboard/workspace`)
+    return mapBackendStoryboardWorkspaceToDraftPatch(data)
+  },
+
   async generateStoryboard(projectId: string): Promise<Pick<EditorDraft, 'shots'> | null> {
     if (isMockMode) {
       return null
@@ -19,8 +28,7 @@ export const storyboardWorkflowService = {
     let patch = mapBackendStoryboardWorkspaceToDraftPatch(data)
 
     if (patch.shots.length === 0) {
-      const { data: workspace } = await http.get(`/aidrama/projects/${projectId}/storyboard/workspace`)
-      patch = mapBackendStoryboardWorkspaceToDraftPatch(workspace)
+      patch = (await this.loadStoryboardWorkspace(projectId)) ?? { shots: [] }
     }
 
     return patch
@@ -76,8 +84,7 @@ export const storyboardWorkflowService = {
       await this.updateStoryboard(projectId, shot)
     }
 
-    const { data } = await http.get(`/aidrama/projects/${projectId}/storyboard/workspace`)
-    return mapBackendStoryboardWorkspaceToDraftPatch(data)
+    return this.loadStoryboardWorkspace(projectId)
   },
 
   async confirmStoryboard(projectId: string): Promise<void> {

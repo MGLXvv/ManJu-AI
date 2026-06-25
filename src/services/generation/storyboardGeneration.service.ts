@@ -1,3 +1,7 @@
+import { isLocalStoryboardShotId } from '@/api/modules/editor/storyboard.mapper'
+import { apiMode } from '@/api/shared/apiMode'
+import { storyboardImageTaskService } from '@/services/editor/storyboardImageTask.service'
+import { storyboardWorkflowService } from '@/services/editor/storyboardWorkflow.service'
 import { GENERATION_TASK_TYPES } from '@/types/api-enums'
 import type { StoryboardShot } from '@/types/storyboard'
 import {
@@ -26,6 +30,40 @@ export interface UpscaleStoryboardImageInput {
 
 export const storyboardGenerationService = {
   async generateShotImage(input: GenerateStoryboardImageInput): Promise<StoryboardImageResult> {
+    if (apiMode === 'http') {
+      if (isLocalStoryboardShotId(input.shot.id)) {
+        throw new Error('STORYBOARD_IMAGE_REQUIRES_PERSISTED_SHOT')
+      }
+
+      const task = await storyboardImageTaskService.createStoryboardImageTask(input.shot.id, input.shot.prompt)
+      const workspacePatch = await storyboardWorkflowService.loadStoryboardWorkspace(input.projectId)
+      const refreshedDraftShot = workspacePatch?.shots.find((shot) => shot.id === input.shot.id)
+      const imageUrl = refreshedDraftShot?.imageUrl ?? task?.resultUrl ?? ''
+      const refreshedShot: StoryboardShot | undefined = refreshedDraftShot
+        ? {
+            ...input.shot,
+            id: refreshedDraftShot.id,
+            index: refreshedDraftShot.index,
+            title: refreshedDraftShot.title,
+            imageUrl: refreshedDraftShot.imageUrl,
+            videoUrl: refreshedDraftShot.videoUrl,
+            durationSeconds: refreshedDraftShot.durationSeconds,
+            status: imageUrl ? 'success' : 'failed',
+            createdAt: refreshedDraftShot.createdAt || input.shot.createdAt,
+          }
+        : undefined
+
+      return assertStoryboardImageResult({
+        shotId: input.shot.id,
+        imageUrl,
+        shot: refreshedShot ?? {
+          ...input.shot,
+          imageUrl,
+          status: imageUrl ? 'success' : 'failed',
+        },
+      })
+    }
+
     const payload: StoryboardGeneratePayload = {
       shotId: input.shot.id,
       title: input.shot.title,

@@ -31,12 +31,16 @@ export const buildStoryboardGenerateErrorMessage = (error: unknown): string => {
     return taskMessage
   }
 
+  if (code === 'STORYBOARD_IMAGE_REQUIRES_PERSISTED_SHOT') {
+    return '请先保存分镜后，再生成分镜图'
+  }
+
   if (code === API_ERROR_CODES.storyboardGenerateFailed) {
     return '分镜生成失败，请调整提示词后重试'
   }
 
   if (code === API_ERROR_CODES.storyboardOptimizeFailed) {
-    return 'AI优化失败，请稍后再试'
+    return 'AI 优化失败，请稍后再试'
   }
 
   if (code === API_ERROR_CODES.storyboardUpscaleFailed) {

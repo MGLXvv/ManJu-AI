@@ -130,6 +130,8 @@ import AssetPreviewModal from '@/components/editor/setting/AssetPreviewModal.vue
 import CreateAssetModal from '@/components/editor/setting/CreateAssetModal.vue'
 import SettingTabs from '@/components/editor/setting/SettingTabs.vue'
 import SettingToolbar from '@/components/editor/setting/SettingToolbar.vue'
+import { isLocalAssetId } from '@/api/modules/editor/asset.mapper'
+import { apiMode } from '@/api/shared/apiMode'
 import { getSettingBatchActionToast, toggleSelectVisibleAssets } from '@/features/editor/settingBatchState'
 import { validateEditorAdvance } from '@/features/editor/editorCompletionState'
 import { buildScopedProjectArtifact, buildScopedProjectExportFileName } from '@/features/editor/editorExportScopeState'
@@ -142,6 +144,7 @@ import {
   buildSettingArtifact,
   buildSettingBatchExportFileName,
 } from '@/features/editor/settingTransferState'
+import { assetWorkflowService } from '@/services/editor/assetWorkflow.service'
 import { useEditorStore } from '@/stores/editor'
 import { useProjectStore } from '@/stores/project'
 import { createDefaultSettingAssets, useSettingAssetsStore } from '@/stores/settingAssets'
@@ -171,6 +174,7 @@ const leaveConfirmOpen = ref(false)
 const deleteConfirmOpen = ref(false)
 const pendingLeaveTarget = ref<RouteLocationRaw | null>(null)
 const pendingDeleteIds = ref<string[]>([])
+const persistedAssetIds = ref<string[]>([])
 const bypassLeaveGuard = ref(false)
 const lastSavedSnapshot = ref('')
 
@@ -210,12 +214,12 @@ watch(
   async (nextProjectId) => {
     if (!nextProjectId) {
       assetsStore.resetAssets()
+      persistedAssetIds.value = []
       lastSavedSnapshot.value = buildSettingAssetsSnapshot(assetsStore.assets)
       return
     }
 
-    await editorStore.loadDraft(nextProjectId)
-    assetsStore.setAssets(resolveSettingAssets(editorStore.draft, createDefaultSettingAssets()))
+    await hydrateAssetsForProject(nextProjectId)
     lastSavedSnapshot.value = buildSettingAssetsSnapshot(assetsStore.assets)
   },
   { immediate: true },
@@ -238,8 +242,37 @@ const showToast = (message: string, tone: 'info' | 'success' | 'error' = 'info')
   uiFeedback.showToast(message, { tone })
 }
 
+const updatePersistedAssetIds = (assets: SettingAsset[]): void => {
+  persistedAssetIds.value = assets.map((asset) => asset.id).filter((id) => !isLocalAssetId(id))
+}
+
 const markSaved = (): void => {
   lastSavedSnapshot.value = currentSnapshot.value
+}
+
+const hydrateAssetsForProject = async (nextProjectId: string): Promise<void> => {
+  await editorStore.loadDraft(nextProjectId)
+
+  const draftAssets = resolveSettingAssets(editorStore.draft, createDefaultSettingAssets())
+  assetsStore.setAssets(draftAssets)
+  updatePersistedAssetIds(draftAssets)
+
+  if (apiMode !== 'http') {
+    return
+  }
+
+  try {
+    const backendAssets = await assetWorkflowService.loadAssetWorkspace(nextProjectId)
+    if (!backendAssets) {
+      return
+    }
+
+    assetsStore.setAssets(backendAssets)
+    editorStore.updateSettingAssets(backendAssets)
+    updatePersistedAssetIds(backendAssets)
+  } catch {
+    showToast('后端资产工作区需在分镜确认后同步，当前先使用本地设定继续编辑', 'info')
+  }
 }
 
 const persistSettingDraft = async (): Promise<boolean> => {
@@ -250,6 +283,25 @@ const persistSettingDraft = async (): Promise<boolean> => {
   submitting.value = true
   try {
     editorStore.updateSettingAssets(assetsStore.assets)
+
+    if (apiMode === 'http' && projectId.value) {
+      try {
+        const syncedAssets = await assetWorkflowService.syncAssets(projectId.value, {
+          currentAssets: assetsStore.assets,
+          persistedIds: persistedAssetIds.value,
+        })
+
+        if (syncedAssets) {
+          assetsStore.setAssets(syncedAssets)
+          editorStore.updateSettingAssets(syncedAssets)
+          updatePersistedAssetIds(syncedAssets)
+        }
+      } catch {
+        showToast('设定资产同步失败，请确认项目已完成分镜确认后再保存', 'error')
+        return false
+      }
+    }
+
     await editorStore.saveDraft()
     markSaved()
     return true

@@ -57,6 +57,29 @@ export interface BackendStoryboardWorkspaceDTO {
   canEnterVideo?: boolean
 }
 
+export type BackendAssetType = 'CHARACTER' | 'SCENE' | 'PROP'
+
+export interface BackendAssetDTO {
+  id: number | string
+  projectId?: number | string
+  type: BackendAssetType
+  name: string
+  description?: string | null
+  imageUrl?: string | null
+  extraJson?: string | null
+  favorite?: boolean | null
+  createTime?: string | null
+  updateTime?: string | null
+}
+
+export interface BackendAssetWorkspaceDTO {
+  characters?: BackendAssetDTO[]
+  scenes?: BackendAssetDTO[]
+  props?: BackendAssetDTO[]
+  summary?: Record<string, unknown> | null
+  canEnterImageGeneration?: boolean
+}
+
 export interface GenerationListTasksRequestDTO {
   projectId: string
 }

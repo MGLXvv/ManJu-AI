@@ -416,6 +416,11 @@ const closeGenerationModeDialog = (): void => {
 }
 
 const handleGenerate = async (id: string): Promise<void> => {
+  if (apiMode === 'http' && isLocalAssetId(id)) {
+    showToast('请先保存设定资产后，再生成素材图片', 'info')
+    return
+  }
+
   try {
     await assetsStore.generateAssetImage(id)
     showToast('素材已生成', 'success')

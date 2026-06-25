@@ -13,6 +13,8 @@ export const API_ERROR_CODES = {
   storyboardUpscaleImageRequired: 'STORYBOARD_UPSCALE_IMAGE_REQUIRED',
   storyboardVideoRequiresPersistedShot: 'STORYBOARD_VIDEO_REQUIRES_PERSISTED_SHOT',
   storyboardVideoImageRequired: 'STORYBOARD_VIDEO_IMAGE_REQUIRED',
+  storyboardVoiceRequiresPersistedShot: 'STORYBOARD_VOICE_REQUIRES_PERSISTED_SHOT',
+  storyboardVoiceDialogueRequired: 'STORYBOARD_VOICE_DIALOGUE_REQUIRED',
   videoGenerateFailed: 'VIDEO_GENERATE_FAILED',
   videoOptimizeFailed: 'VIDEO_OPTIMIZE_FAILED',
   dubbingGenerateFailed: 'DUBBING_GENERATE_FAILED',

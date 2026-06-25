@@ -14,6 +14,14 @@ export const buildDubbingGenerateErrorMessage = (error: unknown): string => {
     return taskMessage
   }
 
+  if (code === API_ERROR_CODES.storyboardVoiceRequiresPersistedShot) {
+    return '请先保存分镜后，再生成配音'
+  }
+
+  if (code === API_ERROR_CODES.storyboardVoiceDialogueRequired) {
+    return '请先填写对白后，再生成配音'
+  }
+
   if (code === API_ERROR_CODES.dubbingGenerateFailed) {
     return '配音生成失败，请调整对白后重试'
   }

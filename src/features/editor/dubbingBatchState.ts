@@ -1,3 +1,5 @@
+import { isLocalStoryboardShotId } from '@/api/modules/editor/storyboard.mapper'
+import { apiMode } from '@/api/shared/apiMode'
 import type { DubbingRoleCardModel, DubbingRoleLineDraft } from '@/types/dubbing'
 import { isVisibleDubbingCard } from './dubbingCardVisibilityState'
 
@@ -34,6 +36,10 @@ export const buildDubbingCardGenerateDisabledReason = (card: DubbingRoleCardMode
 
   if (card.lines.length === 0) {
     return '当前角色没有台词，无法生成配音'
+  }
+
+  if (apiMode === 'http' && card.lines.some((line) => isLocalStoryboardShotId(line.shotId))) {
+    return '请先保存分镜后，再生成配音'
   }
 
   if (isDubbingCardGenerating(card)) {
@@ -76,6 +82,10 @@ export const resolveDubbingBatchAvailability = (cards: DubbingRoleCardModel[]): 
 
     if (isDubbingCardCompleted(card)) {
       completedCount += 1
+      continue
+    }
+
+    if (apiMode === 'http' && card.lines.some((line) => isLocalStoryboardShotId(line.shotId))) {
       continue
     }
 

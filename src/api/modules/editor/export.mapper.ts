@@ -46,7 +46,9 @@ export const resolveBackendExportTaskList = (workspace: BackendExportWorkspaceDT
 export const mapBackendExportWorkspace = (workspace: BackendExportWorkspaceDTO): EditorExportWorkspace => ({
   canExport: workspace.canExport === true,
   missingVideoCount: typeof workspace.missingVideoCount === 'number' ? workspace.missingVideoCount : 0,
-  latestTask: workspace.latestTask
+  latestTask: workspace.latestExport
+    ? mapBackendExportTask(workspace.latestExport)
+    : workspace.latestTask
     ? mapBackendExportTask(workspace.latestTask)
     : workspace.recentTask
       ? mapBackendExportTask(workspace.recentTask)

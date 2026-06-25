@@ -81,6 +81,27 @@ describe('export.mapper', () => {
     expect(workspace.missingVideoCount).toBe(2)
   })
 
+  it('supports latestExport from the real export workspace response', () => {
+    const workspace = mapBackendExportWorkspace({
+      canExport: true,
+      missingVideoCount: 0,
+      latestExport: {
+        id: 8,
+        status: 'SUCCESS',
+        progress: 100,
+        resultUrl: '/mock-results/aidrama/exports/project-5-8.mp4',
+      },
+      exports: [{ id: 8, status: 'SUCCESS', progress: 100 }],
+    })
+
+    expect(workspace.latestTask).toMatchObject({
+      id: '8',
+      status: 'SUCCESS',
+      progress: 100,
+      resultUrl: '/mock-results/aidrama/exports/project-5-8.mp4',
+    })
+  })
+
   it('maps object and string download-url responses', () => {
     expect(mapBackendExportDownloadUrl({ downloadUrl: 'https://example.com/a.mp4' })).toBe(
       'https://example.com/a.mp4',

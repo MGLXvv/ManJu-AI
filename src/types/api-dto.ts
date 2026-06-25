@@ -116,6 +116,7 @@ export interface BackendExportTaskDTO {
 export interface BackendExportWorkspaceDTO {
   canExport?: boolean | null
   missingVideoCount?: number | null
+  latestExport?: BackendExportTaskDTO | null
   latestTask?: BackendExportTaskDTO | null
   recentTask?: BackendExportTaskDTO | null
   histories?: BackendExportTaskDTO[] | null

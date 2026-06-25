@@ -80,6 +80,23 @@ export interface BackendAssetWorkspaceDTO {
   canEnterImageGeneration?: boolean
 }
 
+export interface BackendResourceLibraryItemDTO {
+  id: number | string
+  tenantId?: number | string
+  ownerUserId?: number | string
+  assetType: BackendAssetType
+  name: string
+  description?: string | null
+  imageUrl?: string | null
+  extraJson?: string | null
+  scope?: string | null
+  sourceProjectId?: number | string | null
+  sourceAssetId?: number | string | null
+  reviewStatus?: string | null
+  createTime?: string | null
+  updateTime?: string | null
+}
+
 export interface GenerationListTasksRequestDTO {
   projectId: string
 }

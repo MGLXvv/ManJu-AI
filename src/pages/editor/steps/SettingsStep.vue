@@ -41,6 +41,7 @@
         @preview="openPreview"
         @favorite="toggleFavorite"
         @delete="deleteAsset"
+        @save-to-library="handleSaveAssetToLibrary"
       />
     </div>
 
@@ -145,6 +146,7 @@ import {
   buildSettingBatchExportFileName,
 } from '@/features/editor/settingTransferState'
 import { assetWorkflowService } from '@/services/editor/assetWorkflow.service'
+import { resourceLibraryService } from '@/services/editor/resourceLibrary.service'
 import { useEditorStore } from '@/stores/editor'
 import { useProjectStore } from '@/stores/project'
 import { createDefaultSettingAssets, useSettingAssetsStore } from '@/stores/settingAssets'
@@ -381,6 +383,25 @@ const handleSelectCandidate = async (payload: { id: string; imageUrl: string }):
 
 const handleUpdateAsset = async (payload: { id: string; patch: Partial<SettingAsset> }): Promise<void> => {
   await assetsStore.updateAsset(payload.id, payload.patch)
+}
+
+const handleSaveAssetToLibrary = async (id: string): Promise<void> => {
+  if (isLocalAssetId(id)) {
+    showToast('请先保存设定资产后，再加入资源库', 'info')
+    return
+  }
+
+  if (apiMode !== 'http') {
+    showToast('Mock 模式下不接入真实资源库', 'info')
+    return
+  }
+
+  try {
+    await resourceLibraryService.saveAssetToLibrary(id)
+    showToast('已保存到资源库', 'success')
+  } catch {
+    showToast('保存到资源库失败，请稍后再试', 'error')
+  }
 }
 
 const handleSelectAsset = (id: string): void => {

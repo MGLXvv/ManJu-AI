@@ -21,7 +21,7 @@ const settingAssetTypeMap: Record<SettingAssetType, BackendAssetType> = {
   prop: 'PROP',
 }
 
-const parseBackendAssetMeta = (
+export const parseBackendAssetMeta = (
   extraJson?: string | null,
 ): { prompt: string; favorite: boolean | undefined } => {
   if (!extraJson) {
@@ -41,6 +41,9 @@ const parseBackendAssetMeta = (
 
 export const isLocalAssetId = (id: string): boolean =>
   ['asset-', 'character-', 'scene-', 'prop-'].some((prefix) => id.startsWith(prefix))
+
+export const mapBackendAssetTypeToSettingAssetType = (type: BackendAssetType): SettingAssetType =>
+  backendAssetTypeMap[type]
 
 export const mapBackendAssetToSettingAsset = (asset: BackendAssetDTO): SettingAsset => {
   const parsedMeta = parseBackendAssetMeta(asset.extraJson)

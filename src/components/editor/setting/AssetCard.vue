@@ -84,6 +84,14 @@
 
           <div class="asset-card__footer">
             <AssetActionButtons @generate="$emit('generate', asset.id)" @upload="triggerUpload" />
+            <button
+              v-if="!batchMode"
+              type="button"
+              class="asset-card__library-btn"
+              @click.stop="$emit('save-to-library', asset.id)"
+            >
+              保存到资源库
+            </button>
             <footer class="asset-card__time">{{ asset.createdAt }}</footer>
           </div>
         </div>
@@ -128,6 +136,7 @@ const emit = defineEmits<{
   (e: 'preview', asset: SettingAsset): void
   (e: 'favorite', id: string): void
   (e: 'delete', id: string): void
+  (e: 'save-to-library', id: string): void
   (e: 'select', id: string): void
   (e: 'toggle-batch', id: string): void
   (e: 'update', payload: { id: string; patch: Partial<SettingAsset> }): void

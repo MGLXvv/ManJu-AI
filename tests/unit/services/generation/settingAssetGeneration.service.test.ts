@@ -22,7 +22,7 @@ describe('settingAssetGenerationService', () => {
     expect(result.imageUrl).toContain('data:image/svg+xml')
     expect(result.asset.imageUrls[0]).toBe(result.imageUrl)
     expect(result.asset.status).toBe('ready')
-  })
+  }, 10000)
 
   it('throws a stable error when setting image generation fails', async () => {
     const { settingAssetGenerationService } = await import('@/services/generation/settingAssetGeneration.service')

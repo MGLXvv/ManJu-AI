@@ -53,7 +53,7 @@ export const buildVideoGenerateErrorMessage = (error: unknown): string => {
   }
 
   if (code === API_ERROR_CODES.videoOptimizeFailed) {
-    return 'AI 优化失败，请稍后再试'
+    return 'AI优化失败，请稍后再试'
   }
 
   return '视频生成失败，请稍后再试'

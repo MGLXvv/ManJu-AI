@@ -44,7 +44,7 @@ describe('storyboardVideoTaskService', () => {
     const { storyboardVideoTaskService } = await import('@/services/editor/storyboardVideoTask.service')
     const result = await storyboardVideoTaskService.createStoryboardVideoTask('1')
 
-    expect(http.post).toHaveBeenCalledWith('/aidrama/storyboards/1/generate-video')
+    expect(http.post).toHaveBeenCalledWith('/aidrama/storyboards/1/generate-video', {})
     expect(result).toMatchObject({
       id: '8',
       status: 'SUCCESS',

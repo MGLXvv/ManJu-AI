@@ -9,11 +9,8 @@ export const assetImageTaskService = {
     }
 
     const trimmedPrompt = prompt?.trim()
-    const request = trimmedPrompt
-      ? http.post(`/aidrama/assets/${assetId}/generate-image`, { prompt: trimmedPrompt })
-      : http.post(`/aidrama/assets/${assetId}/generate-image`)
-
-    const { data } = await request
+    const payload = trimmedPrompt ? { prompt: trimmedPrompt } : {}
+    const { data } = await http.post(`/aidrama/assets/${assetId}/generate-image`, payload)
     return mapBackendAiTask(data)
   },
 }

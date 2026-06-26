@@ -26,7 +26,7 @@ describe('storyboardVoiceTaskService', () => {
     expect(http.post).not.toHaveBeenCalled()
   })
 
-  it('creates storyboard voice task in http mode without body', async () => {
+  it('creates storyboard voice task in http mode with empty json body', async () => {
     vi.doMock('@/api/shared/apiMode', () => ({
       apiMode: 'http',
       isMockMode: false,
@@ -45,7 +45,7 @@ describe('storyboardVoiceTaskService', () => {
     const { storyboardVoiceTaskService } = await import('@/services/editor/storyboardVoiceTask.service')
     const result = await storyboardVoiceTaskService.createStoryboardVoiceTask('1')
 
-    expect(http.post).toHaveBeenCalledWith('/aidrama/storyboards/1/generate-voice')
+    expect(http.post).toHaveBeenCalledWith('/aidrama/storyboards/1/generate-voice', {})
     expect(result).toMatchObject({
       id: '10',
       status: 'SUCCESS',

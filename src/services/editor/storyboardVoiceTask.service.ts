@@ -8,7 +8,7 @@ export const storyboardVoiceTaskService = {
       return null
     }
 
-    const { data } = await http.post(`/aidrama/storyboards/${storyboardId}/generate-voice`)
+    const { data } = await http.post(`/aidrama/storyboards/${storyboardId}/generate-voice`, {})
     return mapBackendAiTask(data)
   },
 }

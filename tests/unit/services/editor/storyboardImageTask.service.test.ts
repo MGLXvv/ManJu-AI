@@ -26,7 +26,7 @@ describe('storyboardImageTaskService', () => {
     expect(http.post).not.toHaveBeenCalled()
   })
 
-  it('creates storyboard image task in http mode without body when prompt is missing', async () => {
+  it('creates storyboard image task in http mode with empty json body when prompt is missing', async () => {
     vi.doMock('@/api/shared/apiMode', () => ({
       apiMode: 'http',
       isMockMode: false,
@@ -44,7 +44,7 @@ describe('storyboardImageTaskService', () => {
     const { storyboardImageTaskService } = await import('@/services/editor/storyboardImageTask.service')
     const result = await storyboardImageTaskService.createStoryboardImageTask('1')
 
-    expect(http.post).toHaveBeenCalledWith('/aidrama/storyboards/1/generate-image')
+    expect(http.post).toHaveBeenCalledWith('/aidrama/storyboards/1/generate-image', {})
     expect(result).toMatchObject({
       id: '6',
       status: 'SUCCESS',
@@ -69,6 +69,28 @@ describe('storyboardImageTaskService', () => {
 
     const { storyboardImageTaskService } = await import('@/services/editor/storyboardImageTask.service')
     await storyboardImageTaskService.createStoryboardImageTask('7', 'anime rooftop')
+
+    expect(http.post).toHaveBeenCalledWith('/aidrama/storyboards/7/generate-image', {
+      prompt: 'anime rooftop',
+    })
+  })
+
+  it('trims prompt before sending request body', async () => {
+    vi.doMock('@/api/shared/apiMode', () => ({
+      apiMode: 'http',
+      isMockMode: false,
+    }))
+
+    vi.mocked(http.post).mockResolvedValue({
+      data: {
+        taskId: 9,
+        status: 'RUNNING',
+        progress: 10,
+      },
+    })
+
+    const { storyboardImageTaskService } = await import('@/services/editor/storyboardImageTask.service')
+    await storyboardImageTaskService.createStoryboardImageTask('7', '  anime rooftop  ')
 
     expect(http.post).toHaveBeenCalledWith('/aidrama/storyboards/7/generate-image', {
       prompt: 'anime rooftop',

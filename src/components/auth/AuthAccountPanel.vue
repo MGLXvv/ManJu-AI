@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <section class="auth-account-panel">
     <h1 v-if="mode === 'password' || mode === 'code'" class="auth-account-panel__title">登录/注册</h1>
 
@@ -75,8 +75,8 @@
             :placeholder="passwordPlaceholder"
           />
           <button type="button" class="auth-account-panel__toggle-btn" @click="showPassword = !showPassword">
-            <FigmaIcon v-if="showPassword" name="form-eye-on" :size="16" />
-            <FigmaIcon v-else name="form-eye-off" :size="16" />
+            <FigmaIcon v-if="showPassword" name="tool-view" :size="30" />
+            <FigmaIcon v-else name="tool-view-off" :size="30" />
           </button>
         </div>
       </label>

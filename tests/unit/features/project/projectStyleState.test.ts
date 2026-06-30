@@ -44,4 +44,16 @@ describe('projectStyleState', () => {
       ]).map((item) => item.value),
     ).toEqual(['国风漫画'])
   })
+
+  it('returns a default style option when no enabled system style exists', () => {
+    expect(mapSystemStylesToProjectStyleOptions([])).toEqual([
+      {
+        id: 'default-style',
+        label: '默认风格',
+        value: '默认风格',
+        description: '系统默认风格',
+        previewUrl: undefined,
+      },
+    ])
+  })
 })

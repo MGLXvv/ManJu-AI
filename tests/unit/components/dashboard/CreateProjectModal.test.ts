@@ -41,4 +41,13 @@ describe('CreateProjectModal', () => {
     expect(html).toContain('暂无可用风格，请先到系统管理中添加风格')
     expect(html).toContain('disabled')
   })
+
+  it('preselects the only available fallback style option', async () => {
+    const html = await renderComponent({
+      open: true,
+      styleOptions: [{ id: 'default-style', label: '默认风格', value: '默认风格' }],
+    })
+
+    expect(html).toMatch(/<option value="默认风格"[^>]*selected[^>]*>默认风格<\/option>/)
+  })
 })

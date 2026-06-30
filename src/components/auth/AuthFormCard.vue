@@ -76,8 +76,8 @@
             @input="onInput('password', $event)"
           />
           <button type="button" class="auth-card__icon-btn" :disabled="loading" @click="$emit('toggle-password')">
-            <FigmaIcon v-if="showPassword" name="form-eye-on" :size="15" />
-            <FigmaIcon v-else name="form-eye-off" :size="15" />
+            <FigmaIcon v-if="showPassword" name="tool-view" :size="30" />
+            <FigmaIcon v-else name="tool-view-off" :size="30" />
           </button>
         </div>
         <small v-if="errors.password" class="auth-card__field-error">{{ errors.password }}</small>
@@ -115,8 +115,8 @@
             @input="onInput('password', $event)"
           />
           <button type="button" class="auth-card__icon-btn" :disabled="loading" @click="$emit('toggle-password')">
-            <FigmaIcon v-if="showPassword" name="form-eye-on" :size="15" />
-            <FigmaIcon v-else name="form-eye-off" :size="15" />
+            <FigmaIcon v-if="showPassword" name="tool-view" :size="30" />
+            <FigmaIcon v-else name="tool-view-off" :size="30" />
           </button>
         </div>
         <small v-if="errors.password" class="auth-card__field-error">{{ errors.password }}</small>

@@ -1,4 +1,6 @@
+import { createApiError } from '@/api/errors'
 import { http } from '@/api/http'
+import { API_ERROR_CODES } from '@/types/api-enums'
 import type { CreateGenerationTaskInput, GenerationApiContract, GenerationTask, GenerationTaskStatus } from './generation.types'
 
 export const generationHttpApi: GenerationApiContract = {
@@ -12,23 +14,23 @@ export const generationHttpApi: GenerationApiContract = {
     return data.task
   },
 
-  async create(input: CreateGenerationTaskInput) {
-    const { data } = await http.post('/generation/tasks', input)
-    return data.task
+  async create(_input: CreateGenerationTaskInput) {
+    throw createApiError({
+      message: API_ERROR_CODES.generationTaskHttpCreateUnsupported,
+      code: API_ERROR_CODES.generationTaskHttpCreateUnsupported,
+    })
   },
 
   async updateStatus(
-    id: string,
-    status: GenerationTaskStatus,
-    progress: number,
-    extras?: Pick<GenerationTask, 'result' | 'errorMessage'>,
+    _id: string,
+    _status: GenerationTaskStatus,
+    _progress: number,
+    _extras?: Pick<GenerationTask, 'result' | 'errorMessage'>,
   ) {
-    const { data } = await http.patch(`/generation/tasks/${id}`, {
-      status,
-      progress,
-      extras,
+    throw createApiError({
+      message: API_ERROR_CODES.generationTaskHttpUpdateUnsupported,
+      code: API_ERROR_CODES.generationTaskHttpUpdateUnsupported,
     })
-    return data.task
   },
 
   async cancel(id: string) {

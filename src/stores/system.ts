@@ -53,9 +53,9 @@ export const useSystemStore = defineStore('system', () => {
     loading.value = true
     try {
       const state = await systemApi.getState()
-      styles.value = state.styles
-      permissions.value = state.permissions
-      messages.value = state.messages
+      styles.value = state.styles ?? []
+      permissions.value = state.permissions ?? []
+      messages.value = state.messages ?? []
       hydrated.value = true
       messagePage.value = 1
     } finally {
@@ -110,15 +110,24 @@ export const useSystemStore = defineStore('system', () => {
 
   const markMessageRead = async (id: string): Promise<void> => {
     const updated = await systemApi.markMessageRead(id)
-    if (!updated) {
+    if (updated) {
+      messages.value = messages.value.map((item) => (item.id === id ? updated : item))
       return
     }
 
-    messages.value = messages.value.map((item) => (item.id === id ? updated : item))
+    messages.value = messages.value.map((item) =>
+      item.id === id ? { ...item, status: 'read' } : item,
+    )
   }
 
   const markAllRead = async (): Promise<void> => {
-    messages.value = await systemApi.markAllRead()
+    const updated = await systemApi.markAllRead()
+    if (updated.length > 0) {
+      messages.value = updated
+      return
+    }
+
+    messages.value = messages.value.map((item) => ({ ...item, status: 'read' }))
   }
 
   const clearMessages = async (): Promise<void> => {

@@ -138,7 +138,7 @@ describe('projectHttpApi', () => {
     expect(updated).toMatchObject({ id: '8', status: 'completed' })
   })
 
-  it('keeps import/export compatibility behavior in http mode', async () => {
+  it('uses the backend export alias route in http mode', async () => {
     get.mockResolvedValue({
       data: {
         id: 3,
@@ -150,11 +150,43 @@ describe('projectHttpApi', () => {
 
     const { projectHttpApi } = await import('@/api/modules/project/project.http')
 
-    await expect(projectHttpApi.importProjects([])).resolves.toEqual([])
-
     const exported = await projectHttpApi.exportProject('3')
-    expect(get).toHaveBeenCalledWith('/aidrama/projects/3')
+    expect(get).toHaveBeenCalledWith('/projects/3/export')
     expect(exported).toMatchObject({ id: '3', name: 'Export Demo' })
+  })
+
+  it('posts project imports through the backend compat route', async () => {
+    post.mockResolvedValue({
+      data: {
+        projects: [
+          {
+            id: 12,
+            name: 'Imported Demo',
+            status: 'IN_PROGRESS',
+            aspectRatio: '16:9',
+            createTime: '2026-06-24 09:00:00',
+          },
+        ],
+      },
+    })
+
+    const { projectHttpApi } = await import('@/api/modules/project/project.http')
+    const imported = await projectHttpApi.importProjects([
+      {
+        name: 'Imported Demo',
+        ratio: '16:9',
+        style: 'anime',
+      },
+    ])
+
+    expect(post).toHaveBeenCalledWith('/projects/import', [
+      {
+        name: 'Imported Demo',
+        ratio: '16:9',
+        style: 'anime',
+      },
+    ])
+    expect(imported).toMatchObject([{ id: '12', name: 'Imported Demo' }])
   })
 
   it('deletes by backend route', async () => {

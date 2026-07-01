@@ -34,12 +34,14 @@ export const projectHttpApi: ProjectApiContract = {
     return mapBackendProjectToProject(data)
   },
 
-  async importProjects(_inputs: ImportProjectInput[]) {
-    return []
+  async importProjects(inputs: ImportProjectInput[]) {
+    const { data } = await http.post<{ projects?: BackendProjectDTO[] }>('/projects/import', inputs)
+    return (data.projects ?? []).map(mapBackendProjectToProject)
   },
 
   async exportProject(id: string) {
-    return this.getById(id)
+    const { data } = await http.get<BackendProjectDTO>(`/projects/${id}/export`)
+    return data ? mapBackendProjectToProject(data) : null
   },
 
   async update(input: UpdateProjectInput) {

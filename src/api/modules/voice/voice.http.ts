@@ -1,23 +1,32 @@
+﻿import { createApiError } from '@/api/errors'
 import { http } from '@/api/http'
+import { API_ERROR_CODES } from '@/types/api-enums'
 import type { CreateVoiceAssetInput, UpdateVoiceAssetInput, VoiceApiContract } from './voice.types'
 
 export const voiceHttpApi: VoiceApiContract = {
   async list() {
     const { data } = await http.get('/voices')
-    return data.voices
+    return Array.isArray(data.voices) ? data.voices : []
   },
 
-  async create(input: CreateVoiceAssetInput) {
-    const { data } = await http.post('/voices', input)
-    return data.voice
+  async create(_input: CreateVoiceAssetInput) {
+    throw createApiError({
+      code: API_ERROR_CODES.voiceHttpWriteUnsupported,
+      message: 'Voice write operations are not available in the current HTTP phase.',
+    })
   },
 
-  async update(voiceId: string, input: UpdateVoiceAssetInput) {
-    const { data } = await http.patch(`/voices/${voiceId}`, input)
-    return data.voice
+  async update(_voiceId: string, _input: UpdateVoiceAssetInput) {
+    throw createApiError({
+      code: API_ERROR_CODES.voiceHttpWriteUnsupported,
+      message: 'Voice write operations are not available in the current HTTP phase.',
+    })
   },
 
-  async remove(voiceId: string) {
-    await http.delete(`/voices/${voiceId}`)
+  async remove(_voiceId: string) {
+    throw createApiError({
+      code: API_ERROR_CODES.voiceHttpWriteUnsupported,
+      message: 'Voice write operations are not available in the current HTTP phase.',
+    })
   },
 }

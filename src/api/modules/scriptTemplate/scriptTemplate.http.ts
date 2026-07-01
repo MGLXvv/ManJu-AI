@@ -1,23 +1,32 @@
+﻿import { createApiError } from '@/api/errors'
 import { http } from '@/api/http'
+import { API_ERROR_CODES } from '@/types/api-enums'
 import type { ScriptTemplateApiContract, ScriptTemplateInput } from './scriptTemplate.types'
 
 export const scriptTemplateHttpApi: ScriptTemplateApiContract = {
   async getTemplates() {
     const { data } = await http.get('/script-templates')
-    return data.templates
+    return Array.isArray(data.templates) ? data.templates : []
   },
 
-  async createTemplate(input: ScriptTemplateInput) {
-    const { data } = await http.post('/script-templates', input)
-    return data.template
+  async createTemplate(_input: ScriptTemplateInput) {
+    throw createApiError({
+      code: API_ERROR_CODES.scriptTemplateHttpWriteUnsupported,
+      message: 'Script template write operations are not available in the current HTTP phase.',
+    })
   },
 
-  async updateTemplate(templateId: string, input: ScriptTemplateInput) {
-    const { data } = await http.patch(`/script-templates/${templateId}`, input)
-    return data.template
+  async updateTemplate(_templateId: string, _input: ScriptTemplateInput) {
+    throw createApiError({
+      code: API_ERROR_CODES.scriptTemplateHttpWriteUnsupported,
+      message: 'Script template write operations are not available in the current HTTP phase.',
+    })
   },
 
-  async deleteTemplate(templateId: string) {
-    await http.delete(`/script-templates/${templateId}`)
+  async deleteTemplate(_templateId: string) {
+    throw createApiError({
+      code: API_ERROR_CODES.scriptTemplateHttpWriteUnsupported,
+      message: 'Script template write operations are not available in the current HTTP phase.',
+    })
   },
 }

@@ -1,4 +1,6 @@
+import { createApiError } from '@/api/errors'
 import { generationApi } from '@/api/modules/generation'
+import { isMockMode } from '@/api/shared/apiMode'
 import { API_ERROR_CODES, GENERATION_TASK_STATUSES } from '@/types/api-enums'
 import type { CreateGenerationTaskInput, GenerationTask } from '@/types/generation'
 
@@ -49,6 +51,13 @@ export const createAndWaitGenerationTask = async (
   input: CreateGenerationTaskInput,
   options: WaitForTaskOptions = {},
 ): Promise<GenerationTask> => {
+  if (!isMockMode) {
+    throw createApiError({
+      message: API_ERROR_CODES.generationTaskHttpCreateUnsupported,
+      code: API_ERROR_CODES.generationTaskHttpCreateUnsupported,
+    })
+  }
+
   const created = await generationApi.create(input)
   return waitForGenerationTask(created.id, options)
 }

@@ -133,7 +133,6 @@ const stylePlaceholder = computed(() => (hasStyleOptions.value ? '请选择整�
 
 const resetForm = (): void => {
   Object.assign(form, createEmptyCreateProjectForm())
-  form.style = enabledStyleOptions.value[0]?.value ?? ''
   fieldErrors.value = {}
   invalidFlashNonce.value = 0
 }
@@ -154,7 +153,7 @@ watch(
       return
     }
 
-    form.style = options[0]?.value ?? ''
+    form.style = ''
   },
   { immediate: true },
 )

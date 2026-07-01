@@ -42,12 +42,13 @@ describe('CreateProjectModal', () => {
     expect(html).toContain('disabled')
   })
 
-  it('preselects the only available fallback style option', async () => {
+  it('does not preselect a frontend fallback style option', async () => {
     const html = await renderComponent({
       open: true,
       styleOptions: [{ id: 'default-style', label: '默认风格', value: '默认风格' }],
     })
 
-    expect(html).toMatch(/<option value="默认风格"[^>]*selected[^>]*>默认风格<\/option>/)
+    expect(html).not.toMatch(/<option value="默认风格"[^>]*selected[^>]*>默认风格<\/option>/)
+    expect(html).toMatch(/<option value="" disabled[^>]*selected[^>]*>请选择整体风格<\/option>/)
   })
 })

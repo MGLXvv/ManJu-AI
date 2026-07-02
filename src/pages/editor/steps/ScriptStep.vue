@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <section class="script-step">
     <div class="script-workbench-bg" aria-hidden="true"></div>
 
@@ -120,7 +120,6 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter, type RouteLocationRaw } from 'vue-router'
 import AppConfirmDialog from '@/components/common/AppConfirmDialog.vue'
 import EditorModelSelect from '@/components/editor/common/EditorModelSelect.vue'
-import { resolveHttpReadonlyState } from '@/features/backend/httpReadonlyState'
 import ScriptInputPanel from '@/components/editor/script/ScriptInputPanel.vue'
 import ScriptPromptPanel from '@/components/editor/script/ScriptPromptPanel.vue'
 import ScriptResultPanel from '@/components/editor/script/ScriptResultPanel.vue'
@@ -152,7 +151,6 @@ const uiFeedback = useUiFeedbackStore()
 const scriptTemplateStore = useScriptTemplateStore()
 
 const DEFAULT_PROMPT = '请将输入故事整理为适合漫画短剧制作的三幕结构，保留核心冲突、角色转折和后续可拆分的镜头线索。'
-const scriptTemplateReadonlyState = resolveHttpReadonlyState('scriptTemplate')
 
 const sourceText = ref('')
 const promptText = ref(DEFAULT_PROMPT)
@@ -298,14 +296,6 @@ const showToast = (message: string, tone: 'info' | 'success' | 'error' = 'info')
   uiFeedback.showToast(message, { tone })
 }
 
-const blockReadonlyScriptTemplateWrite = (): boolean => {
-  if (!scriptTemplateReadonlyState.readonly) {
-    return false
-  }
-
-  showToast(scriptTemplateReadonlyState.message, 'error')
-  return true
-}
 
 const resolveEditorError = (error: unknown, fallback: string): string => {
   const message = error instanceof Error ? error.message : ''
@@ -520,9 +510,6 @@ const handleApplyTemplate = (templateId: string): void => {
 }
 
 const handleStartCreateTemplate = (): void => {
-  if (blockReadonlyScriptTemplateWrite()) {
-    return
-  }
   templatePanelMode.value = 'create'
   editingTemplateId.value = null
   templateForm.value = createEmptyScriptTemplateInput()
@@ -532,9 +519,6 @@ const handleStartCreateTemplate = (): void => {
 }
 
 const handleStartEditTemplate = (templateId: string): void => {
-  if (blockReadonlyScriptTemplateWrite()) {
-    return
-  }
   const template = scriptTemplateStore.templates.find((item) => item.id === templateId)
   if (!template) {
     showToast('未找到要修改的模板', 'error')
@@ -599,9 +583,6 @@ const cancelDiscardTemplateChanges = (): void => {
 }
 
 const handleRequestDeleteTemplate = (templateId: string): void => {
-  if (blockReadonlyScriptTemplateWrite()) {
-    return
-  }
   pendingDeleteTemplateId.value = templateId
   templateDeleteConfirmOpen.value = true
 }
@@ -612,11 +593,6 @@ const cancelDeleteTemplate = (): void => {
 }
 
 const confirmDeleteTemplate = async (): Promise<void> => {
-  if (blockReadonlyScriptTemplateWrite()) {
-    templateDeleteConfirmOpen.value = false
-    pendingDeleteTemplateId.value = null
-    return
-  }
 
   const templateId = pendingDeleteTemplateId.value
   if (!templateId) {
@@ -652,9 +628,6 @@ const confirmDiscardTemplateChanges = (): void => {
 }
 
 const handleSaveTemplate = async (): Promise<void> => {
-  if (blockReadonlyScriptTemplateWrite()) {
-    return
-  }
 
   const validation = validateScriptTemplateInput(
     scriptTemplateStore.templates,
@@ -688,3 +661,4 @@ const handleSaveTemplate = async (): Promise<void> => {
   }
 }
 </script>
+

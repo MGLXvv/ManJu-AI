@@ -1,5 +1,4 @@
 ﻿import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { API_ERROR_CODES } from '@/types/api-enums'
 
 const get = vi.fn()
 const post = vi.fn()
@@ -36,45 +35,77 @@ describe('scriptTemplateHttpApi', () => {
     expect(templates).toEqual([])
   })
 
-  it('throws a controlled error when creating templates in http mode', async () => {
+  it('creates templates through the http api', async () => {
+    post.mockResolvedValue({
+      data: {
+        template: {
+          id: 11,
+          name: 'Template A',
+          content: 'Body A',
+          updatedAt: '2026-07-02T00:00:00.000Z',
+        },
+      },
+    })
+
     const { scriptTemplateHttpApi } = await import('@/api/modules/scriptTemplate/scriptTemplate.http')
 
-    const error = await scriptTemplateHttpApi.createTemplate({
+    const template = await scriptTemplateHttpApi.createTemplate({
       name: 'Template A',
       content: 'Body A',
-    }).catch((reason) => reason)
+    })
 
-    expect(post).not.toHaveBeenCalled()
-    expect(error).toMatchObject({
-      name: 'ApiError',
-      code: API_ERROR_CODES.scriptTemplateHttpWriteUnsupported,
+    expect(post).toHaveBeenCalledWith('/script-templates', {
+      name: 'Template A',
+      content: 'Body A',
+    })
+    expect(template).toEqual({
+      id: '11',
+      name: 'Template A',
+      content: 'Body A',
+      updatedAt: '2026-07-02T00:00:00.000Z',
     })
   })
 
-  it('throws a controlled error when updating templates in http mode', async () => {
+  it('updates templates through the http api', async () => {
+    patch.mockResolvedValue({
+      data: {
+        template: {
+          id: 11,
+          name: 'Template B',
+          content: 'Body B',
+          updateTime: '2026-07-02T01:00:00.000Z',
+        },
+      },
+    })
+
     const { scriptTemplateHttpApi } = await import('@/api/modules/scriptTemplate/scriptTemplate.http')
 
-    const error = await scriptTemplateHttpApi.updateTemplate('template-1', {
+    const template = await scriptTemplateHttpApi.updateTemplate('template-1', {
       name: 'Template B',
       content: 'Body B',
-    }).catch((reason) => reason)
+    })
 
-    expect(patch).not.toHaveBeenCalled()
-    expect(error).toMatchObject({
-      name: 'ApiError',
-      code: API_ERROR_CODES.scriptTemplateHttpWriteUnsupported,
+    expect(patch).toHaveBeenCalledWith('/script-templates/template-1', {
+      name: 'Template B',
+      content: 'Body B',
+    })
+    expect(template).toEqual({
+      id: '11',
+      name: 'Template B',
+      content: 'Body B',
+      updatedAt: '2026-07-02T01:00:00.000Z',
     })
   })
 
-  it('throws a controlled error when deleting templates in http mode', async () => {
+  it('deletes templates through the http api', async () => {
+    del.mockResolvedValue({
+      data: {},
+    })
+
     const { scriptTemplateHttpApi } = await import('@/api/modules/scriptTemplate/scriptTemplate.http')
 
-    const error = await scriptTemplateHttpApi.deleteTemplate('template-1').catch((reason) => reason)
+    await scriptTemplateHttpApi.deleteTemplate('template-1')
 
-    expect(del).not.toHaveBeenCalled()
-    expect(error).toMatchObject({
-      name: 'ApiError',
-      code: API_ERROR_CODES.scriptTemplateHttpWriteUnsupported,
-    })
+    expect(del).toHaveBeenCalledWith('/script-templates/template-1')
   })
 })

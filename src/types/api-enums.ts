@@ -8,7 +8,6 @@
   generationTaskHttpUpdateUnsupported: 'GENERATION_TASK_HTTP_UPDATE_UNSUPPORTED',
   resourceHttpWriteUnsupported: 'RESOURCE_HTTP_WRITE_UNSUPPORTED',
   voiceHttpWriteUnsupported: 'VOICE_HTTP_WRITE_UNSUPPORTED',
-  scriptTemplateHttpWriteUnsupported: 'SCRIPT_TEMPLATE_HTTP_WRITE_UNSUPPORTED',
   scriptGenerateFailed: 'SCRIPT_GENERATE_FAILED',
   scriptOptimizeFailed: 'SCRIPT_OPTIMIZE_FAILED',
   settingImageGenerateFailed: 'SETTING_IMAGE_GENERATE_FAILED',
@@ -62,3 +61,4 @@ export const EDITOR_SAVE_STATES = {
 export type EditorSaveState = (typeof EDITOR_SAVE_STATES)[keyof typeof EDITOR_SAVE_STATES]
 
 export const PROJECT_ARTIFACT_VERSION = 'mock-v1' as const
+

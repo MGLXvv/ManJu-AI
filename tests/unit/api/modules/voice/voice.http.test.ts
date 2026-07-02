@@ -1,5 +1,4 @@
 ﻿import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { API_ERROR_CODES } from '@/types/api-enums'
 
 const get = vi.fn()
 const post = vi.fn()
@@ -36,45 +35,85 @@ describe('voiceHttpApi', () => {
     expect(voices).toEqual([])
   })
 
-  it('throws a controlled error when creating voices in http mode', async () => {
+  it('creates voices through the http api', async () => {
+    post.mockResolvedValue({
+      data: {
+        voice: {
+          id: 12,
+          name: 'Voice A',
+          audioUrl: 'https://example.com/a.wav',
+          duration: 12,
+          createdAt: '2026-07-02T00:00:00.000Z',
+        },
+      },
+    })
+
     const { voiceHttpApi } = await import('@/api/modules/voice/voice.http')
 
-    const error = await voiceHttpApi.create({
+    const voice = await voiceHttpApi.create({
       name: 'Voice A',
-      audioUrl: 'mock://voice.wav',
+      audioUrl: 'https://example.com/a.wav',
       duration: 12,
-    }).catch((reason) => reason)
+    })
 
-    expect(post).not.toHaveBeenCalled()
-    expect(error).toMatchObject({
-      name: 'ApiError',
-      code: API_ERROR_CODES.voiceHttpWriteUnsupported,
+    expect(post).toHaveBeenCalledWith('/voices', {
+      name: 'Voice A',
+      audioUrl: 'https://example.com/a.wav',
+      duration: 12,
+    })
+    expect(voice).toEqual({
+      id: '12',
+      name: 'Voice A',
+      audioUrl: 'https://example.com/a.wav',
+      duration: 12,
+      createdAt: '2026-07-02T00:00:00.000Z',
     })
   })
 
-  it('throws a controlled error when updating voices in http mode', async () => {
+  it('updates voices through the http api', async () => {
+    patch.mockResolvedValue({
+      data: {
+        voice: {
+          id: 12,
+          name: 'Voice B',
+          audioUrl: 'https://example.com/b.wav',
+          duration: 15,
+          createdAt: '2026-07-02T00:00:00.000Z',
+        },
+      },
+    })
+
     const { voiceHttpApi } = await import('@/api/modules/voice/voice.http')
 
-    const error = await voiceHttpApi.update('voice-1', {
+    const voice = await voiceHttpApi.update('voice-1', {
       name: 'Voice B',
-    }).catch((reason) => reason)
+      audioUrl: 'https://example.com/b.wav',
+      duration: 15,
+    })
 
-    expect(patch).not.toHaveBeenCalled()
-    expect(error).toMatchObject({
-      name: 'ApiError',
-      code: API_ERROR_CODES.voiceHttpWriteUnsupported,
+    expect(patch).toHaveBeenCalledWith('/voices/voice-1', {
+      name: 'Voice B',
+      audioUrl: 'https://example.com/b.wav',
+      duration: 15,
+    })
+    expect(voice).toEqual({
+      id: '12',
+      name: 'Voice B',
+      audioUrl: 'https://example.com/b.wav',
+      duration: 15,
+      createdAt: '2026-07-02T00:00:00.000Z',
     })
   })
 
-  it('throws a controlled error when deleting voices in http mode', async () => {
+  it('deletes voices through the http api', async () => {
+    del.mockResolvedValue({
+      data: {},
+    })
+
     const { voiceHttpApi } = await import('@/api/modules/voice/voice.http')
 
-    const error = await voiceHttpApi.remove('voice-1').catch((reason) => reason)
+    await voiceHttpApi.remove('voice-1')
 
-    expect(del).not.toHaveBeenCalled()
-    expect(error).toMatchObject({
-      name: 'ApiError',
-      code: API_ERROR_CODES.voiceHttpWriteUnsupported,
-    })
+    expect(del).toHaveBeenCalledWith('/voices/voice-1')
   })
 })

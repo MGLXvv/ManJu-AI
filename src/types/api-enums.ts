@@ -6,6 +6,7 @@
   generationTaskTimeout: 'GENERATION_TASK_TIMEOUT',
   generationTaskHttpCreateUnsupported: 'GENERATION_TASK_HTTP_CREATE_UNSUPPORTED',
   generationTaskHttpUpdateUnsupported: 'GENERATION_TASK_HTTP_UPDATE_UNSUPPORTED',
+  resourceHttpWriteUnsupported: 'RESOURCE_HTTP_WRITE_UNSUPPORTED',
   voiceHttpWriteUnsupported: 'VOICE_HTTP_WRITE_UNSUPPORTED',
   scriptTemplateHttpWriteUnsupported: 'SCRIPT_TEMPLATE_HTTP_WRITE_UNSUPPORTED',
   scriptGenerateFailed: 'SCRIPT_GENERATE_FAILED',

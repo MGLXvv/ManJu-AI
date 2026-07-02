@@ -44,6 +44,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { resolveHttpReadonlyState } from '@/features/backend/httpReadonlyState'
 import { useRoute } from 'vue-router'
 import SystemMessageDetailModal from '@/components/system/SystemMessageDetailModal.vue'
 import SystemMessagePanel from '@/components/system/SystemMessagePanel.vue'
@@ -51,11 +52,14 @@ import SystemPermissionPanel from '@/components/system/SystemPermissionPanel.vue
 import SystemSidebar from '@/components/system/SystemSidebar.vue'
 import SystemStylePanel from '@/components/system/SystemStylePanel.vue'
 import { useSystemStore } from '@/stores/system'
+import { useUiFeedbackStore } from '@/stores/uiFeedback'
 import type { SystemPanelKey, SystemPermissionItem } from '@/types/system'
 
 const route = useRoute()
 const store = useSystemStore()
+const uiFeedback = useUiFeedbackStore()
 const selectedMessageId = ref('')
+const readonlyState = resolveHttpReadonlyState('system')
 
 const syncPanelFromQuery = (): void => {
   const panel = route.query.panel
@@ -106,7 +110,23 @@ const messagePage = computed(() => store.messagePage)
 const messagePageCount = computed(() => store.messagePageCount)
 const selectedMessage = computed(() => store.messages.find((item) => item.id === selectedMessageId.value) ?? null)
 
+const showToast = (message: string, tone: 'info' | 'success' | 'error' = 'info'): void => {
+  uiFeedback.showToast(message, { tone })
+}
+
+const blockReadonlyWrite = (): boolean => {
+  if (!readonlyState.readonly) {
+    return false
+  }
+
+  showToast(readonlyState.message, 'error')
+  return true
+}
+
 const createStyle = async (payload: { name: string; category: string; prompt: string }): Promise<void> => {
+  if (blockReadonlyWrite()) {
+    return
+  }
   await store.createStyle(payload)
 }
 
@@ -114,16 +134,25 @@ const updateStyle = async (
   id: string,
   payload: { name: string; category: string; prompt: string },
 ): Promise<void> => {
+  if (blockReadonlyWrite()) {
+    return
+  }
   await store.updateStyle(id, payload)
 }
 
 const deleteStyle = async (id: string): Promise<void> => {
+  if (blockReadonlyWrite()) {
+    return
+  }
   await store.deleteStyle(id)
 }
 
 const createPermission = async (
   payload: { role: string; members: number; permissions: SystemPermissionItem['permissions'] },
 ): Promise<void> => {
+  if (blockReadonlyWrite()) {
+    return
+  }
   await store.createPermission(payload)
 }
 
@@ -131,10 +160,16 @@ const updatePermission = async (
   id: string,
   payload: { role: string; members: number; permissions: SystemPermissionItem['permissions'] },
 ): Promise<void> => {
+  if (blockReadonlyWrite()) {
+    return
+  }
   await store.updatePermission(id, payload)
 }
 
 const deletePermission = async (id: string): Promise<void> => {
+  if (blockReadonlyWrite()) {
+    return
+  }
   await store.deletePermission(id)
 }
 

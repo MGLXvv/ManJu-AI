@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <section class="resource-page">
     <div class="resource-page__bg" aria-hidden="true"></div>
 
@@ -100,16 +100,20 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import BatchSelectionToolbar from '@/components/editor/common/BatchSelectionToolbar.vue'
+import { resolveHttpReadonlyState } from '@/features/backend/httpReadonlyState'
 import FigmaIcon from '@/components/icons/FigmaIcon.vue'
 import ResourceAssetGrid from '@/components/resource/ResourceAssetGrid.vue'
 import ResourceFolderSidebar from '@/components/resource/ResourceFolderSidebar.vue'
 import ResourceLibraryTabs from '@/components/resource/ResourceLibraryTabs.vue'
 import ResourceLibraryToolbar from '@/components/resource/ResourceLibraryToolbar.vue'
 import { useResourcesStore } from '@/stores/resources'
+import { useUiFeedbackStore } from '@/stores/uiFeedback'
 import type { ResourceAssetSource } from '@/types/resource'
 
 const store = useResourcesStore()
+const uiFeedback = useUiFeedbackStore()
 const PAGE_SIZE = 6
+const readonlyState = resolveHttpReadonlyState('resource')
 
 const batchMode = ref(false)
 const selectedIds = ref<string[]>([])
@@ -172,11 +176,27 @@ onMounted(() => {
   void store.hydrate()
 })
 
+const showToast = (message: string, tone: 'info' | 'success' | 'error' = 'info'): void => {
+  uiFeedback.showToast(message, { tone })
+}
+
+const blockReadonlyWrite = (): boolean => {
+  if (!readonlyState.readonly) {
+    return false
+  }
+
+  showToast(readonlyState.message, 'error')
+  return true
+}
+
 const handleSelectFolder = (id: string): void => {
   store.setActiveFolder(id)
 }
 
 const beginCreate = (): void => {
+  if (blockReadonlyWrite()) {
+    return
+  }
   creating.value = true
   editingId.value = ''
 }
@@ -192,6 +212,9 @@ const saveCreate = async (payload: {
   imageUrl: string
   selectedVoiceId?: string
 }): Promise<void> => {
+  if (blockReadonlyWrite()) {
+    return
+  }
   await store.createAsset({
     tab: activeTab.value,
     source: activeFolderSource.value,
@@ -202,6 +225,9 @@ const saveCreate = async (payload: {
 }
 
 const beginEdit = (id: string): void => {
+  if (blockReadonlyWrite()) {
+    return
+  }
   editingId.value = id
   creating.value = false
 }
@@ -220,11 +246,17 @@ const saveEdit = async (payload: {
     selectedVoiceId?: string
   }
 }): Promise<void> => {
+  if (blockReadonlyWrite()) {
+    return
+  }
   await store.updateAsset(payload.id, payload.payload)
   editingId.value = ''
 }
 
 const deleteAsset = async (id: string): Promise<void> => {
+  if (blockReadonlyWrite()) {
+    return
+  }
   await store.deleteAsset(id)
   selectedIds.value = selectedIds.value.filter((item) => item !== id)
   if (editingId.value === id) {
@@ -235,6 +267,9 @@ const deleteAsset = async (id: string): Promise<void> => {
 const toggleBatchMode = (): void => {
   if (batchMode.value) {
     exitBatchMode()
+    return
+  }
+  if (blockReadonlyWrite()) {
     return
   }
   creating.value = false
@@ -262,6 +297,9 @@ const toggleSelectCurrentPage = (): void => {
 }
 
 const deleteSelected = async (): Promise<void> => {
+  if (blockReadonlyWrite()) {
+    return
+  }
   for (const id of [...selectedIds.value]) {
     await store.deleteAsset(id)
   }

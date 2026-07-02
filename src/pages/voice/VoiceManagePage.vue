@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <section class="voice-manage-page">
     <div class="voice-manage-page__bg" aria-hidden="true"></div>
 
@@ -112,14 +112,18 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import BatchSelectionToolbar from '@/components/editor/common/BatchSelectionToolbar.vue'
+import { resolveHttpReadonlyState } from '@/features/backend/httpReadonlyState'
 import FigmaIcon from '@/components/icons/FigmaIcon.vue'
 import VoiceCard from '@/components/voice/VoiceCard.vue'
 import VoiceEditorCard from '@/components/voice/VoiceEditorCard.vue'
+import { useUiFeedbackStore } from '@/stores/uiFeedback'
 import { useVoicesStore } from '@/stores/voices'
 
 const store = useVoicesStore()
+const uiFeedback = useUiFeedbackStore()
 
 const PAGE_SIZE = 8
+const readonlyState = resolveHttpReadonlyState('voice')
 
 const batchMode = ref(false)
 const adding = ref(false)
@@ -161,12 +165,28 @@ watch(filteredVoices, (value) => {
   selectedIds.value = selectedIds.value.filter((id) => value.some((voice) => voice.id === id))
 })
 
+const showToast = (message: string, tone: 'info' | 'success' | 'error' = 'info'): void => {
+  uiFeedback.showToast(message, { tone })
+}
+
+const blockReadonlyWrite = (): boolean => {
+  if (!readonlyState.readonly) {
+    return false
+  }
+
+  showToast(readonlyState.message, 'error')
+  return true
+}
+
 const resetDraft = (): void => {
   draftName.value = ''
   draftAudioUrl.value = ''
 }
 
 const beginAdd = (): void => {
+  if (blockReadonlyWrite()) {
+    return
+  }
   adding.value = true
   editingId.value = ''
   resetDraft()
@@ -178,6 +198,9 @@ const cancelAdd = (): void => {
 }
 
 const saveNewVoice = async (payload: { name: string; audioUrl: string; duration: number }): Promise<void> => {
+  if (blockReadonlyWrite()) {
+    return
+  }
   await store.createVoice(payload)
   adding.value = false
   resetDraft()
@@ -185,6 +208,9 @@ const saveNewVoice = async (payload: { name: string; audioUrl: string; duration:
 }
 
 const beginEdit = (id: string): void => {
+  if (blockReadonlyWrite()) {
+    return
+  }
   const voice = store.voices.find((item) => item.id === id)
   if (!voice) return
   adding.value = false
@@ -202,11 +228,17 @@ const saveEditingVoice = async (
   id: string,
   payload: { name: string; audioUrl: string; duration: number },
 ): Promise<void> => {
+  if (blockReadonlyWrite()) {
+    return
+  }
   await store.updateVoice(id, payload)
   cancelEdit()
 }
 
 const deleteVoice = async (id: string): Promise<void> => {
+  if (blockReadonlyWrite()) {
+    return
+  }
   await store.deleteVoice(id)
   selectedIds.value = selectedIds.value.filter((item) => item !== id)
   if (editingId.value === id) {
@@ -217,6 +249,10 @@ const deleteVoice = async (id: string): Promise<void> => {
 const toggleBatchMode = (): void => {
   if (batchMode.value) {
     exitBatchMode()
+    return
+  }
+
+  if (blockReadonlyWrite()) {
     return
   }
 
@@ -246,6 +282,9 @@ const toggleSelectCurrentPage = (): void => {
 }
 
 const deleteSelected = async (): Promise<void> => {
+  if (blockReadonlyWrite()) {
+    return
+  }
   for (const id of [...selectedIds.value]) {
     await store.deleteVoice(id)
   }

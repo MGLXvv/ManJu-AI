@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <section class="dubbing-step">
     <div class="dubbing-step__bg" aria-hidden="true"></div>
 
@@ -25,24 +25,26 @@
         </div>
       </div>
 
-      <div class="dubbing-grid-wrap">
+      <div ref="dubbingGridWrapRef" class="dubbing-grid-wrap">
         <div class="dubbing-grid">
-          <DubbingRoleCard
-            v-for="card in pagedCards"
-            :key="card.id"
-            :id="card.id"
-            :title="card.title"
-            :image-url="card.imageUrl"
-            :selected-voice-id="card.selectedVoiceId"
-            :voice-options="card.voiceOptions"
-            :lines="card.lines"
-            :created-at="card.createdAt"
-            :playing-line-id="playingLineId"
-            @update-voice="updateVoice(card.id, $event)"
-            @preview-line="previewLine"
-            @generate="generateCard"
-            @delete="requestDeleteCard"
-          />
+          <div v-for="(row, rowIndex) in dubbingRows" :key="`dubbing-row-${rowIndex}`" class="dubbing-grid__row">
+            <DubbingRoleCard
+              v-for="card in row"
+              :key="card.id"
+              :id="card.id"
+              :title="card.title"
+              :image-url="card.imageUrl"
+              :selected-voice-id="card.selectedVoiceId"
+              :voice-options="card.voiceOptions"
+              :lines="card.lines"
+              :created-at="card.createdAt"
+              :playing-line-id="playingLineId"
+              @update-voice="updateVoice(card.id, $event)"
+              @preview-line="previewLine"
+              @generate="generateCard"
+              @delete="requestDeleteCard"
+            />
+          </div>
         </div>
       </div>
 
@@ -140,6 +142,9 @@ const editorStore = useEditorStore()
 const projectStore = useProjectStore()
 const uiFeedback = useUiFeedbackStore()
 
+const DUBBING_CARD_WIDTH = 330
+const DUBBING_CARD_GAP = 16
+
 const keyword = ref('')
 const currentPage = ref(1)
 const pageSize = 3
@@ -154,7 +159,10 @@ const pendingDeleteCardId = ref<string | null>(null)
 const bypassLeaveGuard = ref(false)
 const lastSavedSnapshot = ref('')
 const playingLineId = ref<string | null>(null)
+const dubbingGridWrapRef = ref<HTMLElement | null>(null)
+const rowSize = ref(3)
 let previewAudio: HTMLAudioElement | null = null
+let resizeObserver: ResizeObserver | null = null
 
 const modelOptions: EditorModelOption[] = [
   { id: 'index-tts', name: 'indexTTS', iconName: 'model-openai' },
@@ -181,9 +189,28 @@ const pagedCards = computed(() => {
   const start = (currentPage.value - 1) * pageSize
   return visibleCards.value.slice(start, start + pageSize)
 })
+const dubbingRows = computed(() => {
+  const rows: DubbingRoleCardModel[][] = []
+  const size = Math.max(1, rowSize.value)
+  for (let index = 0; index < pagedCards.value.length; index += size) {
+    rows.push(pagedCards.value.slice(index, index + size))
+  }
+  return rows
+})
 const currentSnapshot = computed(() => JSON.stringify(buildDubbingDraftPatch({ modelId: selectedModelId.value, cards: cards.value })))
 const isDirty = computed(() => currentSnapshot.value !== lastSavedSnapshot.value)
 const saveState = computed(() => buildStoryboardSaveState({ submitting: submitting.value, isDirty: isDirty.value }))
+
+const recalcDubbingRowSize = (): void => {
+  const width = dubbingGridWrapRef.value?.clientWidth ?? 0
+  if (width <= 0) {
+    rowSize.value = 3
+    return
+  }
+
+  const fitCount = Math.floor((width + DUBBING_CARD_GAP) / (DUBBING_CARD_WIDTH + DUBBING_CARD_GAP))
+  rowSize.value = Math.max(1, fitCount)
+}
 
 const syncSavedSnapshot = (): void => {
   lastSavedSnapshot.value = currentSnapshot.value
@@ -480,10 +507,27 @@ const handleBeforeUnload = (event: BeforeUnloadEvent): void => {
 
 onMounted(() => {
   window.addEventListener('beforeunload', handleBeforeUnload)
+  recalcDubbingRowSize()
+  if (typeof ResizeObserver !== 'undefined') {
+    resizeObserver = new ResizeObserver(() => {
+      recalcDubbingRowSize()
+    })
+    if (dubbingGridWrapRef.value) {
+      resizeObserver.observe(dubbingGridWrapRef.value)
+    }
+  } else {
+    window.addEventListener('resize', recalcDubbingRowSize)
+  }
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('beforeunload', handleBeforeUnload)
+  if (resizeObserver) {
+    resizeObserver.disconnect()
+    resizeObserver = null
+  } else {
+    window.removeEventListener('resize', recalcDubbingRowSize)
+  }
   if (previewAudio) {
     previewAudio.pause()
     previewAudio = null

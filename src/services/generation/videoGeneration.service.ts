@@ -14,15 +14,19 @@ export interface GenerateVideoInput {
   shot: StoryboardShot
 }
 
+const assertShotHasStoryboardImage = (shot: StoryboardShot): void => {
+  if (!(shot.imageUrl ?? '').trim()) {
+    throw new Error(API_ERROR_CODES.storyboardVideoImageRequired)
+  }
+}
+
 export const videoGenerationService = {
   async generateVideo(input: GenerateVideoInput): Promise<VideoGenerateResult> {
+    assertShotHasStoryboardImage(input.shot)
+
     if (apiMode === 'http') {
       if (isLocalStoryboardShotId(input.shot.id)) {
         throw new Error(API_ERROR_CODES.storyboardVideoRequiresPersistedShot)
-      }
-
-      if (!(input.shot.imageUrl ?? '').trim()) {
-        throw new Error(API_ERROR_CODES.storyboardVideoImageRequired)
       }
 
       const task = await storyboardVideoTaskService.createStoryboardVideoTask(input.shot.id)

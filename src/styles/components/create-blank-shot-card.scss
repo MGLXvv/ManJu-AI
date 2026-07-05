@@ -2,23 +2,42 @@
   flex: 0 0 var(--storyboard-shot-card-width);
   width: var(--storyboard-shot-card-width);
   height: var(--storyboard-shot-card-height);
-  border: 1px dashed #4b4d4f;
-  border-radius: 8px;
-  background: #111213;
+  border: 0;
+  border-radius: 12px;
+  background: #0a0a0b;
   color: #9f9f9f;
   display: grid;
-  place-items: center;
-  gap: 4px;
+  place-content: center;
+  justify-items: center;
+  gap: 14px;
   cursor: pointer;
+  padding: 0;
+}
+
+.create-blank-shot-card:hover,
+.create-blank-shot-card:focus-visible {
+  background: #111213;
+  color: #d2d2d2;
+  outline: none;
 }
 
 .create-blank-shot-card__plus {
-  font-size: 34px;
-  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: #2d2e2f;
   color: #d9d9da;
-  transform: translateY(-2px);
+  font-size: 32px;
+  font-weight: 300;
+  line-height: 1;
+  transform: none;
 }
 
 .create-blank-shot-card small {
-  font-size: 11px;
+  color: #8f8f8f;
+  font-size: 12px;
+  line-height: 16px;
 }

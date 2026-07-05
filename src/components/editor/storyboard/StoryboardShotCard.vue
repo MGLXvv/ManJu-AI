@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <article
     class="storyboard-shot-card"
     :class="{
@@ -39,6 +39,13 @@
             </span>
           </div>
         </template>
+        <video
+          v-else-if="hasPlayableVideo"
+          :src="shot.videoUrl || undefined"
+          preload="metadata"
+          muted
+          playsinline
+        ></video>
         <img v-else-if="shot.imageUrl" :src="shot.imageUrl" :alt="shot.title" />
         <span v-else>空白分镜</span>
       </div>
@@ -98,6 +105,7 @@ const props = defineProps<{
 
 const shotNumberLabel = computed(() => props.shot.title.replace(/^镜头\s*/, '镜头'))
 const isGenerating = computed(() => props.shot.status === 'generating')
+const hasPlayableVideo = computed(() => Boolean(props.shot.videoUrl && !props.shot.videoUrl.startsWith('mock-video://')))
 
 defineEmits<{
   (e: 'select', id: string): void

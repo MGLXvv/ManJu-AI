@@ -28,9 +28,10 @@
 }
 
 .create-blank-shot-card:hover,
-.create-blank-shot-card:focus-visible {
-  background: #111213;
-  color: #d2d2d2;
+.create-blank-shot-card:focus-visible,
+.create-blank-shot-card:active {
+  background: #0a0a0b;
+  color: #9f9f9f;
   outline: none;
 }
 

@@ -32,6 +32,7 @@
         <button
           type="button"
           class="video-preview-panel__floating-play"
+          :class="{ 'is-playing': isPlaying }"
           :aria-label="isPlaying ? '暂停预览' : '播放预览'"
           :disabled="!hasPlayableVideo"
           @click="togglePlay"

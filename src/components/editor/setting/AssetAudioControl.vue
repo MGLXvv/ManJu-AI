@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="asset-audio">
     <div class="asset-audio__meta">
       <div ref="rootRef" class="asset-audio__meta-left">
@@ -37,8 +37,9 @@
 
     <button
       class="asset-audio__play"
+      :class="{ 'is-playing': isPlaying }"
       type="button"
-      aria-label="播放"
+      :aria-label="isPlaying ? '暂停' : '播放'"
       :disabled="!audioSrc"
       @click="togglePlayback"
     >

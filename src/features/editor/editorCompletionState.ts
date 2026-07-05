@@ -1,10 +1,11 @@
-﻿import { validateDubbingBeforeComplete } from '@/features/editor/dubbingPersistState'
+import { validateDubbingBeforeComplete } from '@/features/editor/dubbingPersistState'
 import { canEnterStoryboard } from '@/features/editor/scriptGenerationState'
 import { validateSettingBeforeStoryboard } from '@/features/editor/settingStoryboardState'
 import type { StoryboardMode } from '@/features/editor/storyboardModeState'
 import { validateStoryboardBeforeVideo } from '@/features/editor/storyboardPersistState'
 import { validateVideoBeforeDubbing } from '@/features/editor/videoPersistState'
 import type { DubbingRoleCardModel } from '@/types/dubbing'
+import type { EditorDraft } from '@/types/editor'
 import type { WorkflowStep } from '@/types/project'
 import type { SettingAsset } from '@/types/settingAsset'
 import type { StoryboardShot } from '@/types/storyboard'
@@ -43,8 +44,67 @@ export type EditorAdvancePayload = {
 
 export type EditorAdvanceResult = EditorAdvanceSuccess | EditorAdvanceFailure
 
-export function validateEditorAdvance(key: EditorAdvanceKey, payload: EditorAdvancePayload): EditorAdvanceResult {
-  switch (key) {
+type LegacyEditorAdvanceStep = 'script' | 'settings' | 'storyboard' | 'video' | 'dubbing' | 'complete'
+
+export interface LegacyEditorAdvancePayload {
+  from: LegacyEditorAdvanceStep
+  to: LegacyEditorAdvanceStep
+  draft: EditorDraft
+}
+
+export interface LegacyEditorAdvanceResult {
+  canAdvance: boolean
+  reason?: string
+}
+
+const buildLegacyResult = (result: EditorAdvanceResult): LegacyEditorAdvanceResult => {
+  if (result.ok) {
+    return { canAdvance: true }
+  }
+
+  return {
+    canAdvance: false,
+    reason: result.message,
+  }
+}
+
+const validateLegacyEditorAdvance = (input: LegacyEditorAdvancePayload): LegacyEditorAdvanceResult => {
+  if (input.from === 'dubbing' && input.to === 'complete') {
+    return { canAdvance: true }
+  }
+
+  if (input.from === 'script' && input.to === 'settings') {
+    return buildLegacyResult(validateEditorAdvance('scriptToSettings', { generatedScript: input.draft.script.generated || input.draft.script.content }))
+  }
+
+  if (input.from === 'settings' && input.to === 'storyboard') {
+    return buildLegacyResult(validateEditorAdvance('settingsToStoryboard', { assets: input.draft.settingAssets }))
+  }
+
+  if (input.from === 'storyboard' && input.to === 'video') {
+    return buildLegacyResult(validateEditorAdvance('storyboardToVideo', { shots: input.draft.shots as unknown as StoryboardShot[] }))
+  }
+
+  if (input.from === 'video' && input.to === 'dubbing') {
+    return buildLegacyResult(validateEditorAdvance('videoToDubbing', { shots: input.draft.shots as unknown as StoryboardShot[] }))
+  }
+
+  return {
+    canAdvance: true,
+  }
+}
+
+export function validateEditorAdvance(key: EditorAdvanceKey, payload: EditorAdvancePayload): EditorAdvanceResult
+export function validateEditorAdvance(input: LegacyEditorAdvancePayload): LegacyEditorAdvanceResult
+export function validateEditorAdvance(
+  keyOrInput: EditorAdvanceKey | LegacyEditorAdvancePayload,
+  payload: EditorAdvancePayload = {},
+): EditorAdvanceResult | LegacyEditorAdvanceResult {
+  if (typeof keyOrInput !== 'string') {
+    return validateLegacyEditorAdvance(keyOrInput)
+  }
+
+  switch (keyOrInput) {
     case 'scriptToSettings': {
       if (!canEnterStoryboard(payload.generatedScript ?? '')) {
         return { ok: false, message: '请先生成剧本，再进入下一步' }

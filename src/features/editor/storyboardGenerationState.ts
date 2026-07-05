@@ -31,6 +31,10 @@ export const buildStoryboardGenerateErrorMessage = (error: unknown): string => {
     return taskMessage
   }
 
+  if (code === 'STORYBOARD_IMAGE_REQUIRES_CHARACTER_AND_SCENE') {
+    return '至少选择一个角色和一个场景'
+  }
+
   if (code === 'STORYBOARD_IMAGE_REQUIRES_PERSISTED_SHOT') {
     return '请先保存分镜后，再生成分镜图'
   }

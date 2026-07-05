@@ -144,10 +144,10 @@ const uiFeedback = useUiFeedbackStore()
 
 const DUBBING_CARD_WIDTH = 330
 const DUBBING_CARD_GAP = 16
+const DUBBING_MAX_CARDS_PER_PAGE = 4
 
 const keyword = ref('')
 const currentPage = ref(1)
-const pageSize = 3
 const selectedModelId = ref('index-tts')
 const cards = ref<DubbingRoleCardModel[]>([])
 const submitting = ref(false)
@@ -182,16 +182,18 @@ const visibleCards = computed(() => {
   })
 })
 const totalCount = computed(() => visibleCards.value.length)
-const totalPages = computed(() => Math.max(1, Math.ceil(totalCount.value / pageSize)))
+const pageSize = computed(() => Math.max(1, Math.min(rowSize.value, DUBBING_MAX_CARDS_PER_PAGE)))
+const totalPages = computed(() => Math.max(1, Math.ceil(totalCount.value / pageSize.value)))
 const batchAvailability = computed(() => resolveDubbingBatchAvailability(cards.value))
 const isBatchGenerateDisabled = computed(() => submitting.value || batchGenerating.value)
 const pagedCards = computed(() => {
-  const start = (currentPage.value - 1) * pageSize
-  return visibleCards.value.slice(start, start + pageSize)
+  const size = pageSize.value
+  const start = (currentPage.value - 1) * size
+  return visibleCards.value.slice(start, start + size)
 })
 const dubbingRows = computed(() => {
   const rows: DubbingRoleCardModel[][] = []
-  const size = Math.max(1, rowSize.value)
+  const size = Math.max(1, pageSize.value)
   for (let index = 0; index < pagedCards.value.length; index += size) {
     rows.push(pagedCards.value.slice(index, index + size))
   }
@@ -327,7 +329,7 @@ watch(
   { immediate: true },
 )
 
-watch([totalCount, currentPage], () => {
+watch([totalCount, currentPage, pageSize], () => {
   if (currentPage.value > totalPages.value) {
     currentPage.value = totalPages.value
   }
@@ -522,52 +524,59 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('beforeunload', handleBeforeUnload)
-  if (resizeObserver) {
-    resizeObserver.disconnect()
-    resizeObserver = null
-  } else {
-    window.removeEventListener('resize', recalcDubbingRowSize)
-  }
+  window.removeEventListener('resize', recalcDubbingRowSize)
+  resizeObserver?.disconnect()
   if (previewAudio) {
     previewAudio.pause()
     previewAudio = null
   }
-  playingLineId.value = null
 })
 
-onBeforeRouteLeave((to: RouteLocationNormalizedLoadedGeneric) => {
-  if (!shouldInterceptStoryboardLeave(isDirty.value, bypassLeaveGuard.value)) {
-    if (bypassLeaveGuard.value) {
-      bypassLeaveGuard.value = false
-    }
+const handleBlockedNavigation = (target: RouteLocationRaw): void => {
+  pendingLeaveTarget.value = target
+  leaveConfirmOpen.value = true
+}
+
+const isLeavingDubbingStep = (to: RouteLocationNormalizedLoadedGeneric): boolean => to.name !== 'editor-dubbing'
+
+onBeforeRouteLeave((to) => {
+  if (bypassLeaveGuard.value) {
+    bypassLeaveGuard.value = false
     return true
   }
 
-  pendingLeaveTarget.value = to.fullPath
-  leaveConfirmOpen.value = true
-  return false
+  if (shouldInterceptStoryboardLeave({ isDirty: isDirty.value, isLeavingStoryboardStep: isLeavingDubbingStep(to) })) {
+    handleBlockedNavigation(to.fullPath)
+    return false
+  }
+
+  return true
 })
 
 const goCompleteStep = async (): Promise<void> => {
-  const validation = validateEditorAdvance('dubbingToComplete', { cards: visibleCards.value })
-  if (!validation.ok) {
-    showToast(validation.message, 'error')
+  if (!editorStore.draft) {
     return
   }
 
-  const saved = await persistDubbingDraft()
-  if (!saved) {
-    return
-  }
-
-  if (projectId.value) {
-    await projectStore.updateProjectStep(projectId.value, validation.nextStep)
-  }
-
-  showToast(validation.successMessage, 'success')
-  await router.push({
-    name: validation.routeName,
-    params: route.params,
+  const validation = validateEditorAdvance({
+    from: 'dubbing',
+    to: 'complete',
+    draft: editorStore.draft,
   })
+
+  if (!validation.canAdvance) {
+    showToast(validation.reason || '请先完成当前步骤', 'info')
+    return
+  }
+
+  if (isDirty.value) {
+    const saved = await persistDubbingDraft()
+    if (!saved) {
+      return
+    }
+  }
+
+  bypassLeaveGuard.value = true
+  await router.push({ name: 'editor-complete', params: { projectId: projectId.value } })
 }
 </script>

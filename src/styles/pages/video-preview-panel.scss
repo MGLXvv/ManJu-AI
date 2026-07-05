@@ -1,3 +1,8 @@
+.video-step .video-preview-panel,
+.video-step .video-preview-panel__canvas {
+  position: relative !important;
+}
+
 .video-step .video-preview-panel__stage {
   position: relative !important;
   width: 100% !important;

@@ -1,60 +1,101 @@
 .dubbing-role-card__table {
-  overflow: hidden;
+  overflow: hidden !important;
+}
+
+.dubbing-role-card__table-body {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
 }
 
 .dubbing-role-card__table-row {
-  height: 30px;
-  min-height: 30px;
-  max-height: 30px;
-  align-items: stretch;
-  box-sizing: border-box;
+  position: relative !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  max-height: 30px !important;
+  align-items: stretch !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  line-height: 30px !important;
 }
 
-.dubbing-role-card__line-shot,
-.dubbing-role-card__line-text-wrap,
-.dubbing-role-card__line-action {
-  height: 100%;
-  min-height: 0;
-  box-sizing: border-box;
-  align-self: stretch;
+.dubbing-role-card__table-row > .dubbing-role-card__line-shot,
+.dubbing-role-card__table-row > .dubbing-role-card__line-text-wrap,
+.dubbing-role-card__table-row > .dubbing-role-card__line-action {
+  height: 30px !important;
+  min-height: 30px !important;
+  max-height: 30px !important;
+  box-sizing: border-box !important;
+  align-self: stretch !important;
+  margin: 0 !important;
 }
 
-.dubbing-role-card__line-action {
-  display: grid;
-  place-items: center;
-  padding: 0;
-  overflow: hidden;
+.dubbing-role-card__table-row > .dubbing-role-card__line-shot,
+.dubbing-role-card__table-row > .dubbing-role-card__line-text-wrap {
+  display: flex !important;
+  align-items: center !important;
+  line-height: 30px !important;
+}
+
+.dubbing-role-card__table-row > .dubbing-role-card__line-action {
+  display: grid !important;
+  place-items: center !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  line-height: 0 !important;
+  background: #161718 !important;
+  transform: translateY(1px) !important;
+  height: 29px !important;
+  min-height: 29px !important;
+  max-height: 29px !important;
 }
 
 .dubbing-role-card__line-play {
-  align-self: center;
-  justify-self: center;
-  margin: 0;
-  transform: none;
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  min-height: 18px !important;
+  max-width: 18px !important;
+  max-height: 18px !important;
+  align-self: center !important;
+  justify-self: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
 }
 
 .dubbing-role-card__line-play:hover,
-.dubbing-role-card__line-play:focus-visible {
-  transform: none;
+.dubbing-role-card__line-play:focus-visible,
+.dubbing-role-card__line-play.is-playing {
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.dubbing-role-card__line-play svg {
+  display: block !important;
 }
 
 .dubbing-role-card__voice-row {
-  position: relative;
-  z-index: 20;
-  overflow: visible;
+  position: relative !important;
+  z-index: 20 !important;
+  overflow: visible !important;
 }
 
 .dubbing-role-card__voice-select,
 .dubbing-role-card__voice-select.asset-voice-select {
-  position: relative;
-  z-index: 21;
+  position: relative !important;
+  z-index: 21 !important;
 }
 
 .dubbing-role-card__voice-select .asset-voice-select__trigger {
-  cursor: pointer;
+  cursor: pointer !important;
 }
 
 .dubbing-role-card__voice-select .asset-voice-select__menu {
-  z-index: 80;
-  top: calc(100% + 6px);
+  z-index: 80 !important;
+  top: calc(100% + 6px) !important;
 }

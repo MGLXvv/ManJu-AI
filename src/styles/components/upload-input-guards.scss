@@ -1,0 +1,10 @@
+input[type='file'].asset-card__upload-input,
+input[type='file'].storyboard-step__upload-input {
+  position: fixed !important;
+  left: -9999px !important;
+  top: -9999px !important;
+  width: 1px !important;
+  height: 1px !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}

@@ -5,6 +5,7 @@
 .dubbing-role-card__table-body {
   overflow-x: hidden !important;
   overflow-y: auto !important;
+  border-top: 1px solid #323232 !important;
 }
 
 .dubbing-role-card__table-row {
@@ -19,6 +20,7 @@
   overflow: hidden !important;
   line-height: 30px !important;
   padding-right: 0 !important;
+  border-top: 0 !important;
 }
 
 .dubbing-role-card__table-row > .dubbing-role-card__line-shot,
@@ -30,6 +32,13 @@
   box-sizing: border-box !important;
   align-self: stretch !important;
   margin: 0 !important;
+  border-top: 1px solid #323232 !important;
+}
+
+.dubbing-role-card__table-row:first-child > .dubbing-role-card__line-shot,
+.dubbing-role-card__table-row:first-child > .dubbing-role-card__line-text-wrap,
+.dubbing-role-card__table-row:first-child > .dubbing-role-card__line-action {
+  border-top: 0 !important;
 }
 
 .dubbing-role-card__table-row > .dubbing-role-card__line-shot,

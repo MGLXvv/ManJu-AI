@@ -9,7 +9,6 @@
           <video
             ref="videoRef"
             class="video-preview-panel__media"
-            :poster="shot.imageUrl || undefined"
             :src="videoSrc || undefined"
             preload="auto"
             playsinline
@@ -17,7 +16,7 @@
             @play="handlePlay"
             @pause="handlePause"
             @ended="handleEnded"
-            @loadedmetadata="syncTimeline"
+            @loadedmetadata="initializePreviewFrame"
             @loadeddata="initializePreviewFrame"
             @timeupdate="syncTimeline"
           ></video>
@@ -185,6 +184,7 @@ watch(
     isMuted.value = false
     currentTime.value = 0
     actualDuration.value = 0
+    previewFrameInitialized.value = false
   },
   { immediate: true },
 )
@@ -210,7 +210,7 @@ const initializePreviewFrame = (): void => {
 
   previewFrameInitialized.value = true
 
-  const previewTime = Number.isFinite(video.duration) && video.duration > 0 ? Math.min(0.01, video.duration / 10) : 0
+  const previewTime = Number.isFinite(video.duration) && video.duration > 0 ? Math.min(0.1, video.duration / 10) : 0
   if (previewTime > 0 && video.currentTime === 0) {
     try {
       video.currentTime = previewTime
@@ -275,4 +275,3 @@ const togglePlay = async (): Promise<void> => {
   handlePause()
 }
 </script>
-

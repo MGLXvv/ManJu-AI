@@ -5,7 +5,7 @@
       :key="step.key"
       class="editor-side-nav__item"
       :class="{
-        'is-active': route.name === step.route,
+        'is-active': isStepActive(step.route),
         'is-done': index < activeIndex,
       }"
       :to="{ name: step.route, params: route.params }"
@@ -29,7 +29,23 @@ import type { WorkflowStep } from '@/types/project'
 import type { FigmaIconName } from '@/components/icons/figmaIconLibrary'
 
 const route = useRoute()
-const activeIndex = computed(() => editorSteps.findIndex((step) => step.route === route.name))
+
+const resolveWorkflowRoute = (name: unknown): string | null => {
+  if (name === 'editor-script-input' || name === 'editor-script-storyboard') {
+    return 'editor-script-input'
+  }
+
+  return typeof name === 'string' ? name : null
+}
+
+const activeIndex = computed(() => {
+  const activeRoute = resolveWorkflowRoute(route.name)
+  return editorSteps.findIndex((step) => step.route === activeRoute)
+})
+
+const isStepActive = (stepRoute: string): boolean => {
+  return resolveWorkflowRoute(route.name) === stepRoute
+}
 
 const resolveIcon = (step: WorkflowStep): FigmaIconName => {
   const iconMap: Record<WorkflowStep, FigmaIconName> = {

@@ -27,8 +27,10 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('@/layouts/EditorLayout.vue'),
     meta: { requiresAuth: true },
     children: [
-      { path: '', redirect: { name: 'editor-script' } },
-      { path: 'script', name: 'editor-script', component: () => import('@/pages/editor/steps/ScriptStep.vue') },
+      { path: '', redirect: { name: 'editor-script-input' } },
+      { path: 'script', redirect: { name: 'editor-script-input' } },
+      { path: 'script/input', name: 'editor-script-input', component: () => import('@/pages/editor/steps/ScriptStep.vue') },
+      { path: 'script/storyboard', name: 'editor-script-storyboard', component: () => import('@/pages/editor/steps/ScriptStep.vue') },
       { path: 'settings', name: 'editor-settings', component: () => import('@/pages/editor/steps/SettingsStep.vue') },
       { path: 'storyboard', name: 'editor-storyboard', component: () => import('@/pages/editor/steps/StoryboardStep.vue') },
       { path: 'video', name: 'editor-video', component: () => import('@/pages/editor/steps/VideoStep.vue') },

@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { validateEditorAdvance } from '@/features/editor/editorCompletionState'
 
 describe('editorCompletionState', () => {
@@ -30,6 +30,7 @@ describe('editorCompletionState', () => {
             dialogue: '',
             durationSeconds: 10,
             voiceAssignments: [],
+            isFavorite: true,
             createdAt: '2026年3月12日 17:16',
           },
         ],
@@ -63,6 +64,7 @@ describe('editorCompletionState', () => {
             dialogue: '',
             durationSeconds: 10,
             voiceAssignments: [],
+            isFavorite: true,
             createdAt: '2026年3月12日 17:16',
           },
         ],
@@ -70,6 +72,39 @@ describe('editorCompletionState', () => {
     ).toEqual({
       ok: false,
       message: '请先选择分镜生成模式',
+    })
+  })
+
+  it('blocks storyboard to video when visible shots are not all marked complete', () => {
+    expect(
+      validateEditorAdvance('storyboardToVideo', {
+        shots: [
+          {
+            id: 'shot-1',
+            index: 1,
+            title: '镜头 1',
+            prompt: '提示词',
+            imageUrl: 'mock://image',
+            status: 'success',
+            characters: [],
+            scenes: [],
+            props: [],
+            style: '国风漫画',
+            ratio: '16:9',
+            referenceImages: [],
+            videoPrompt: '',
+            dialogue: '',
+            durationSeconds: 10,
+            voiceAssignments: [],
+            isFavorite: false,
+            createdAt: '2026年3月12日 17:16',
+          },
+        ],
+        storyboardMode: 'image',
+      }),
+    ).toEqual({
+      ok: false,
+      message: '请先完成人工审核并标记所有可见分镜后再进入视频生成',
     })
   })
 

@@ -1,5 +1,4 @@
-import { resolveDubbingCards } from '@/features/editor/dubbingDraftState'
-import { canEnterStoryboard } from '@/features/editor/scriptGenerationState'
+﻿import { resolveDubbingCards } from '@/features/editor/dubbingDraftState'
 import { validateDubbingBeforeComplete } from '@/features/editor/dubbingPersistState'
 import { validateSettingBeforeStoryboard } from '@/features/editor/settingStoryboardState'
 import { resolveStoryboardShots, validateStoryboardBeforeVideo } from '@/features/editor/storyboardPersistState'
@@ -9,7 +8,8 @@ import type { SettingAsset } from '@/types/settingAsset'
 import type { StoryboardTagOptions } from '@/types/storyboard'
 
 export const EDITOR_ROUTE_SEQUENCE = [
-  'editor-script',
+  'editor-script-input',
+  'editor-script-storyboard',
   'editor-settings',
   'editor-storyboard',
   'editor-video',
@@ -52,11 +52,29 @@ const buildRouteGuardTagOptions = (assets: SettingAsset[]): StoryboardTagOptions
     .map((asset) => ({ id: asset.id, name: asset.title, type: asset.type })),
 })
 
+const hasScriptSource = (draft: EditorDraft | null): boolean => Boolean(draft?.script.content.trim())
+const hasGeneratedScript = (draft: EditorDraft | null): boolean => Boolean(draft?.script.generated.trim())
+const hasStoryboardText = (draft: EditorDraft | null): boolean => Boolean(draft?.script.storyboard.trim())
+
 export function resolveFirstIncompleteEditorRoute(draft: EditorDraft | null): EditorRouteBlockReason | null {
-  if (!draft || !canEnterStoryboard(draft.script.generated)) {
+  if (!draft || !hasScriptSource(draft)) {
     return {
-      routeName: 'editor-script',
+      routeName: 'editor-script-input',
+      message: '请先输入文案，再进入下一步',
+    }
+  }
+
+  if (!hasGeneratedScript(draft)) {
+    return {
+      routeName: 'editor-script-input',
       message: '请先生成剧本，再进入下一步',
+    }
+  }
+
+  if (!hasStoryboardText(draft)) {
+    return {
+      routeName: 'editor-script-storyboard',
+      message: '请先生成剧本分镜，再进入下一步',
     }
   }
 

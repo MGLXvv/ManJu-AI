@@ -36,17 +36,17 @@ export const resolveStoryboardToolAvailability = (input: {
     }
   }
 
-  if (input.mode !== 'image') {
-    return {
-      enabled: false,
-      reason: '图片生成模式可用',
-    }
-  }
-
   if (input.action === 'lock') {
     return {
       enabled: true,
       reason: '',
+    }
+  }
+
+  if (input.mode === 'multi-param') {
+    return {
+      enabled: false,
+      reason: '图片生成模式可用',
     }
   }
 

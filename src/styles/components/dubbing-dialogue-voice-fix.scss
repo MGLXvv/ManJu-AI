@@ -135,33 +135,33 @@
 .dubbing-role-card__line-play-icon {
   position: relative;
   display: block;
-  width: 13px;
-  height: 13px;
+  width: 15px;
+  height: 15px;
+  overflow: hidden;
 }
 
 .dubbing-role-card__line-play-icon::before {
   content: '';
   position: absolute;
   left: 1px;
-  top: 3px;
-  width: 0;
-  height: 0;
-  border-top: 4px solid transparent;
-  border-bottom: 4px solid transparent;
-  border-left: 6px solid currentColor;
+  top: 4px;
+  width: 8px;
+  height: 7px;
+  background: currentColor;
+  clip-path: polygon(0 28%, 33% 28%, 100% 0, 100% 100%, 33% 72%, 0 72%);
 }
 
 .dubbing-role-card__line-play-icon::after {
   content: '';
   position: absolute;
-  right: 0;
-  top: 1px;
-  width: 4px;
+  right: 1px;
+  top: 2px;
+  width: 7px;
   height: 11px;
-  border: 1px solid currentColor;
+  border: 1.4px solid currentColor;
   border-left: 0;
-  border-radius: 0 6px 6px 0;
-  opacity: 0.75;
+  border-radius: 0 999px 999px 0;
+  box-sizing: border-box;
 }
 
 .dubbing-role-card__line-pause-icon {

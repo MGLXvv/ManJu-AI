@@ -1,4 +1,4 @@
-﻿import { buildStoryboardUpscaledImage } from '@/features/editor/storyboardPreviewState'
+import { buildStoryboardUpscaledImage } from '@/features/editor/storyboardPreviewState'
 import { storyboardShotsMock, storyboardStylesMock, storyboardTagOptions } from '@/mocks/storyboard.mock'
 import { delay } from '@/api/local'
 import { MOCK_MEDIA_VIDEO_16_9_URL, MOCK_MEDIA_VIDEO_9_16_URL } from '@/mocks/mockMedia'
@@ -45,15 +45,28 @@ const prependReferenceImage = (
   ...shot.referenceImages,
 ].slice(0, 8)
 
-const createGeneratedImage = (title: string, seed: number): string =>
-  `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+const createGeneratedImage = (
+  title: string,
+  seed: number,
+  ratio: StoryboardShot['ratio'] = '16:9',
+): string => {
+  const isPortrait = ratio === '9:16'
+  const width = isPortrait ? 720 : 1280
+  const height = isPortrait ? 1280 : 720
+  const footerHeight = isPortrait ? 132 : 108
+  const footerY = height - footerHeight
+  const fontSize = isPortrait ? 42 : 54
+  const textY = height - (isPortrait ? 48 : 40)
+
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
       <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#3b4f77"/><stop offset="100%" stop-color="#8254c8"/></linearGradient></defs>
-      <rect width="1280" height="720" fill="url(#g)" />
-      <rect x="0" y="612" width="1280" height="108" fill="rgba(0,0,0,0.42)" />
-      <text x="30" y="680" fill="white" font-family="Segoe UI, PingFang SC, Microsoft YaHei, sans-serif" font-size="54" font-weight="700">${title}</text>
+      <rect width="${width}" height="${height}" fill="url(#g)" />
+      <rect x="0" y="${footerY}" width="${width}" height="${footerHeight}" fill="rgba(0,0,0,0.42)" />
+      <text x="30" y="${textY}" fill="white" font-family="Segoe UI, PingFang SC, Microsoft YaHei, sans-serif" font-size="${fontSize}" font-weight="700">${title}</text>
     </svg>`,
   )}`
+}
 
 const resolveMockVideoUrl = (shot: StoryboardShot): string =>
   shot.ratio === '9:16' ? MOCK_MEDIA_VIDEO_9_16_URL : MOCK_MEDIA_VIDEO_16_9_URL
@@ -123,7 +136,11 @@ export const storyboardMockApi: StoryboardApiContract = {
 
   async generateShotImage(shot) {
     await delay(1200)
-    const imageUrl = createGeneratedImage(`镜头生成 ${Date.now() % 10000}`, Math.floor(Math.random() * 1000))
+    const imageUrl = createGeneratedImage(
+      `镜头生成 ${Date.now() % 10000}`,
+      Math.floor(Math.random() * 1000),
+      shot.ratio,
+    )
     return {
       imageUrl,
       shot: cloneStoryboardShot({

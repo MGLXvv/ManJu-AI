@@ -1,7 +1,7 @@
-﻿<template>
+<template>
   <section class="video-preview-panel">
     <div class="video-preview-panel__canvas">
-      <div class="video-preview-panel__stage">
+      <div class="video-preview-panel__stage" :class="{ 'is-portrait': shot.ratio === '9:16' }">
         <template v-if="shot.status === 'generating'">
           <div class="video-preview-panel__loading">视频生成中...</div>
         </template>
@@ -11,13 +11,14 @@
             class="video-preview-panel__media"
             :poster="shot.imageUrl || undefined"
             :src="videoSrc || undefined"
-            preload="metadata"
+            preload="auto"
             playsinline
             :muted="isMuted"
             @play="handlePlay"
             @pause="handlePause"
             @ended="handleEnded"
             @loadedmetadata="syncTimeline"
+            @loadeddata="initializePreviewFrame"
             @timeupdate="syncTimeline"
           ></video>
         </template>
@@ -152,6 +153,7 @@ const isPlaying = ref(false)
 const isMuted = ref(false)
 const currentTime = ref(0)
 const actualDuration = ref(0)
+const previewFrameInitialized = ref(false)
 
 const videoSrc = computed(() => props.shot.videoUrl ?? '')
 const hasPlayableVideo = computed(() => Boolean(videoSrc.value && !videoSrc.value.startsWith('mock-video://')))
@@ -200,6 +202,24 @@ const syncTimeline = (): void => {
   currentTime.value = Number.isFinite(video.currentTime) ? video.currentTime : 0
   actualDuration.value = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 0
   isMuted.value = video.muted
+}
+
+const initializePreviewFrame = (): void => {
+  const video = videoRef.value
+  if (!video || !hasPlayableVideo.value || previewFrameInitialized.value) return
+
+  previewFrameInitialized.value = true
+
+  const previewTime = Number.isFinite(video.duration) && video.duration > 0 ? Math.min(0.01, video.duration / 10) : 0
+  if (previewTime > 0 && video.currentTime === 0) {
+    try {
+      video.currentTime = previewTime
+    } catch {
+      // Ignore browsers that block early seek before enough data is buffered.
+    }
+  }
+
+  syncTimeline()
 }
 
 const handlePlay = (): void => {

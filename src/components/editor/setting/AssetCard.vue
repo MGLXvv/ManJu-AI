@@ -140,9 +140,24 @@ const selectedVoiceId = ref(props.asset.selectedVoiceId ?? props.asset.voiceOpti
 
 const isCharacter = computed(() => props.asset.type === 'character')
 const voiceOptions = computed(() => props.asset.voiceOptions ?? [])
+const validGeneratedImages = computed(() => {
+  const seen = new Set<string>()
+  return props.asset.imageUrls.filter((image) => {
+    const normalized = image.trim()
+    if (!normalized || seen.has(normalized)) {
+      return false
+    }
+    seen.add(normalized)
+    return true
+  })
+})
 const validCandidateImages = computed(() => {
   const seen = new Set<string>()
-  return (props.asset.candidateImages ?? []).filter((image) => {
+  const orderedCandidates = props.asset.candidateImages?.length
+    ? [...props.asset.candidateImages, ...validGeneratedImages.value]
+    : [...validGeneratedImages.value]
+
+  return orderedCandidates.filter((image) => {
     const normalized = image.trim()
     if (!normalized || seen.has(normalized)) {
       return false
@@ -153,7 +168,7 @@ const validCandidateImages = computed(() => {
 })
 const showCandidateLibrary = computed(() => props.isExpanded && validCandidateImages.value.length >= 2)
 const primaryDisplayImage = computed(() => {
-  const currentImage = props.asset.imageUrls.find((image) => image.trim().length > 0)
+  const currentImage = validGeneratedImages.value[0]
   if (currentImage) {
     return currentImage
   }
@@ -168,16 +183,14 @@ const selectedCandidateIndex = computed(() => {
 })
 
 const displayImages = computed(() => {
-  const primaryImages = props.asset.imageUrls.filter((image) => image.trim().length > 0)
-  if (primaryImages.length > 0) {
-    return primaryImages
+  if (validGeneratedImages.value.length > 0) {
+    return validGeneratedImages.value
   }
   if (validCandidateImages.value.length > 0) {
     return [validCandidateImages.value[0]]
   }
   return ['']
 })
-
 const promptValue = computed({
   get: () => props.asset.prompt,
   set: (value: string) => {

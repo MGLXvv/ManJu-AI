@@ -749,6 +749,12 @@
   display: grid;
   place-items: center;
 }
+.storyboard-canvas__stage.is-portrait {
+  width: auto;
+  height: 100%;
+  max-width: 100%;
+  aspect-ratio: 9 / 16;
+}
 
 .storyboard-canvas.is-generating .storyboard-canvas__stage {
   background: #232425;

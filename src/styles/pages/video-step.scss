@@ -591,15 +591,13 @@
   overflow: hidden;
 }
 
-.video-preview-panel__stage {
-  position: relative;
-  width: 100%;
+
+
+.video-preview-panel__stage.is-portrait {
+  width: auto;
   height: 100%;
-  min-height: 0;
-  max-height: 100%;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
+  max-width: 100%;
+  aspect-ratio: 9 / 16;
 }
 
 .video-preview-panel__media {

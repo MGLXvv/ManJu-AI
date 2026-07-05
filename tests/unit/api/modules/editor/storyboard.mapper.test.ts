@@ -29,6 +29,20 @@ describe('storyboard.mapper', () => {
     expect(patch.shots[0].durationSeconds).toBe(8)
   })
 
+  it('maps backend storyboard ratio from aspectRatio and ratio fields', () => {
+    const portraitFromAspect = mapBackendStoryboardToShot(
+      { id: 1, aspectRatio: '9:16', content: '竖版镜头' },
+      1,
+    )
+    const portraitFromRatio = mapBackendStoryboardToShot(
+      { id: 2, ratio: '9:16', content: '竖版镜头' },
+      2,
+    )
+
+    expect(portraitFromAspect.ratio).toBe('9:16')
+    expect(portraitFromRatio.ratio).toBe('9:16')
+  })
+
   it('falls back to list and sortOrder fields', () => {
     const list = resolveBackendStoryboardList({
       list: [{ id: 'shot-2', sortOrder: 2, description: '备用字段' }],

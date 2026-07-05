@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <section class="setting-step">
     <div class="setting-step__bg" aria-hidden="true"></div>
 
@@ -17,7 +17,6 @@
       <BatchSelectionToolbar
         v-if="batchMode"
         primary-label="本页全选"
-        secondary-label="全部资产"
         :selected-count="selectedBatchIds.length"
         :total-count="assetsStore.assets.length"
         :primary-selected="isFilteredFullySelected"

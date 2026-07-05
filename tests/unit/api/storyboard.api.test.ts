@@ -23,6 +23,12 @@ describe('storyboardApi', () => {
     expect(updated?.status).toBe('success')
   })
 
+  it('returns default storyboard shots without manual review marks', async () => {
+    const defaults = await storyboardApi.listDefaults()
+
+    expect(defaults.shots.every((shot) => shot.isFavorite === false)).toBe(true)
+  })
+
   it('generates a mock video url for the shot', async () => {
     const source = createDefaultStoryboardState().shots[0]!
 

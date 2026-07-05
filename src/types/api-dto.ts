@@ -40,6 +40,8 @@ export interface BackendStoryboardDTO {
   prompt?: string | null
   imageUrl?: string | null
   videoUrl?: string | null
+  ratio?: '16:9' | '9:16' | string | null
+  aspectRatio?: '16:9' | '9:16' | string | null
   durationSeconds?: number | null
   sort?: number | null
   sortOrder?: number | null

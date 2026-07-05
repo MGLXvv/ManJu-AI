@@ -134,6 +134,7 @@ export const settingMockApi: SettingApiContract = {
         ...asset,
         status: 'ready',
         imageUrls: [imageUrl, ...asset.imageUrls].slice(0, 6),
+        candidateImages: [...(asset.candidateImages ?? []), imageUrl].slice(-12),
       }),
     }
   },

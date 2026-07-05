@@ -28,6 +28,44 @@ const renderComponent = async (props: Record<string, unknown>) =>
   )
 
 describe('AssetCard', () => {
+  it('shows candidate library when expanded asset has multiple generated images', async () => {
+    const html = await renderComponent({
+      asset: {
+        ...baseAsset,
+        imageUrls: ['image-1', 'image-2'],
+        candidateImages: [],
+      },
+      isSelected: true,
+      isExpanded: true,
+      batchMode: false,
+      isBatchSelected: false,
+    })
+
+    expect(html).toContain('asset-card__candidates')
+  })
+
+  it('keeps candidate library image order stable after the main image changes', async () => {
+    const html = await renderComponent({
+      asset: {
+        ...baseAsset,
+        imageUrls: ['image-3', 'image-1', 'image-2'],
+        candidateImages: ['image-1', 'image-2', 'image-3'],
+      },
+      isSelected: true,
+      isExpanded: true,
+      batchMode: false,
+      isBatchSelected: false,
+    })
+
+    const candidatesHtml = html.slice(html.indexOf('asset-card__candidates'))
+    const idx1 = candidatesHtml.indexOf('src="image-1"')
+    const idx2 = candidatesHtml.indexOf('src="image-2"')
+    const idx3 = candidatesHtml.indexOf('src="image-3"')
+    expect(idx1).toBeGreaterThan(-1)
+    expect(idx2).toBeGreaterThan(idx1)
+    expect(idx3).toBeGreaterThan(idx2)
+  })
+
   it('shows the batch checkbox only when batch mode is enabled', async () => {
     const plainHtml = await renderComponent({
       asset: baseAsset,

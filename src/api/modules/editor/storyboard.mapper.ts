@@ -27,6 +27,7 @@ export const mapBackendStoryboardToShot = (
   fallbackIndex: number,
 ): Shot => {
   const index = Number(item.index ?? item.sort ?? item.sortOrder ?? fallbackIndex)
+  const ratio = item.ratio === '9:16' || item.aspectRatio === '9:16' ? '9:16' : '16:9'
 
   return {
     id: String(item.id),
@@ -44,7 +45,7 @@ export const mapBackendStoryboardToShot = (
     voiceAssignments: [],
     status: 'pending-review',
     style: 'anime',
-    ratio: '16:9',
+    ratio,
     isHidden: false,
     isLocked: false,
     isFavorite: false,

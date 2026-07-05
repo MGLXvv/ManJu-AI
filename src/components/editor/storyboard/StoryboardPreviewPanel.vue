@@ -1,10 +1,10 @@
-﻿<template>
+<template>
   <section class="storyboard-preview-panel">
     <div
       class="storyboard-canvas"
       :class="{ 'is-generating': isGenerating, 'is-hidden': Boolean(shot.isHidden), 'is-locked': Boolean(shot.isLocked) }"
     >
-      <div class="storyboard-canvas__stage">
+      <div class="storyboard-canvas__stage" :class="{ 'is-portrait': shot.ratio === '9:16' }">
         <template v-if="isMultiParamMode">
           <div class="storyboard-canvas__empty is-multi-param">
             <strong>多参模式，无图片生成</strong>

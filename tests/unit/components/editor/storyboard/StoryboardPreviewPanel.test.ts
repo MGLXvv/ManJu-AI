@@ -8,8 +8,13 @@ const baseShot: StoryboardShot = {
   id: 'shot-1',
   index: 1,
   title: '镜头 1',
-  imageUrl: 'https://example.com/shot-1.png',
+  imageUrl: 'data:image/svg+xml;charset=UTF-8,test',
   prompt: '测试镜头',
+  videoPrompt: '',
+  dialogue: '',
+  durationSeconds: 10,
+  voiceAssignments: [],
+  attachments: [],
   characters: [],
   scenes: [],
   props: [],
@@ -18,6 +23,10 @@ const baseShot: StoryboardShot = {
   status: 'success',
   referenceImages: [],
   createdAt: '2026-03-12 17:16',
+  videoUrl: '',
+  isHidden: false,
+  isLocked: false,
+  isFavorite: false,
 }
 
 const renderComponent = async (props: any) =>
@@ -37,5 +46,15 @@ describe('StoryboardPreviewPanel', () => {
     expect(html).toContain('多参模式，无图片生成')
     expect(html).not.toContain('<img')
     expect(html).not.toContain('当前镜头暂无预览图')
+  })
+
+  it('marks portrait storyboard previews with a portrait stage class', async () => {
+    const html = await renderComponent({
+      shot: { ...baseShot, ratio: '9:16' },
+      mode: 'image',
+    })
+
+    expect(html).toContain('storyboard-canvas__stage')
+    expect(html).toContain('is-portrait')
   })
 })

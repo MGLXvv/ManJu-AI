@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <section class="storyboard-timeline" :class="{ 'is-collapsed': collapsed }">
     <button type="button" class="storyboard-timeline__nav" aria-label="向左滚动" @click="scrollTrack(-280)">
       <span class="storyboard-timeline__nav-frame" aria-hidden="true"></span>
@@ -42,7 +42,11 @@
             @insert="$emit('insert-after', shot.id)"
           />
 
-          <div v-if="index < shots.length - 1" class="storyboard-timeline__link" aria-hidden="true">
+          <div
+            v-if="index < shots.length - 1 || (index === shots.length - 1 && !batchMode)"
+            class="storyboard-timeline__link"
+            aria-hidden="true"
+          >
             <span class="storyboard-timeline__link-line"></span>
             <span class="storyboard-timeline__link-plus">
               <svg width="10" height="50" viewBox="0 0 10 50" fill="none" xmlns="http://www.w3.org/2000/svg">

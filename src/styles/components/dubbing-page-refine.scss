@@ -47,8 +47,10 @@
 }
 
 .dubbing-grid-wrap {
+  display: grid;
+  place-items: start center;
   overflow: auto;
-  padding-right: 2px;
+  padding: 0 2px;
   scrollbar-width: none;
 }
 
@@ -60,13 +62,18 @@
 .dubbing-grid {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: flex-start;
   gap: var(--dubbing-card-gap);
+  width: 100%;
+  min-width: 0;
+  min-height: 100%;
 }
 
 .dubbing-grid__row {
   display: flex;
   align-items: flex-start;
+  justify-content: center;
   gap: var(--dubbing-card-gap);
   width: 100%;
   min-width: 0;

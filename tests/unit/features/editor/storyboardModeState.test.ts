@@ -29,7 +29,7 @@ describe('storyboardModeState', () => {
     })
   })
 
-  it('blocks every non-view action outside image mode', () => {
+  it('blocks image edit actions in multi-param mode', () => {
     expect(
       resolveStoryboardToolAvailability({
         mode: 'multi-param',
@@ -40,20 +40,33 @@ describe('storyboardModeState', () => {
       enabled: false,
       reason: '图片生成模式可用',
     })
+  })
+
+  it('allows lock across non-view modes', () => {
+    expect(
+      resolveStoryboardToolAvailability({
+        mode: 'multi-param',
+        action: 'lock',
+        isLocked: false,
+      }),
+    ).toEqual({
+      enabled: true,
+      reason: '',
+    })
 
     expect(
       resolveStoryboardToolAvailability({
         mode: null,
-        action: 'delete',
-        isLocked: false,
+        action: 'lock',
+        isLocked: true,
       }),
     ).toEqual({
-      enabled: false,
-      reason: '图片生成模式可用',
+      enabled: true,
+      reason: '',
     })
   })
 
-  it('blocks non-view actions on locked shots in image mode', () => {
+  it('blocks non-view actions on locked shots in image-compatible mode', () => {
     expect(
       resolveStoryboardToolAvailability({
         mode: 'image',
@@ -104,6 +117,19 @@ describe('storyboardModeState', () => {
       resolveStoryboardToolAvailability({
         mode: 'image',
         action: 'zoom',
+        isLocked: false,
+      }),
+    ).toEqual({
+      enabled: true,
+      reason: '',
+    })
+  })
+
+  it('allows edit actions for legacy null mode', () => {
+    expect(
+      resolveStoryboardToolAvailability({
+        mode: null,
+        action: 'edit',
         isLocked: false,
       }),
     ).toEqual({

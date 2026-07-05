@@ -1,4 +1,4 @@
-.storyboard-shot-card__thumb video {
+.storyboard-timeline .storyboard-shot-card__thumb video {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -7,6 +7,6 @@
   pointer-events: none;
 }
 
-.storyboard-shot-card.is-hidden .storyboard-shot-card__thumb video {
+.storyboard-timeline .storyboard-shot-card.is-hidden .storyboard-shot-card__thumb video {
   opacity: 0.48;
 }

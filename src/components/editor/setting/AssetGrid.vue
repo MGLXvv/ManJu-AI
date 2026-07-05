@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div ref="gridWrapRef" class="asset-grid-wrap">
     <div class="asset-grid">
       <div
@@ -24,7 +24,6 @@
           @preview="$emit('preview', $event)"
           @favorite="$emit('favorite', $event)"
           @delete="$emit('delete', $event)"
-          @save-to-library="$emit('save-to-library', $event)"
         />
       </div>
     </div>
@@ -113,6 +112,5 @@ defineEmits<{
   (e: 'preview', asset: SettingAsset): void
   (e: 'favorite', id: string): void
   (e: 'delete', id: string): void
-  (e: 'save-to-library', id: string): void
 }>()
 </script>

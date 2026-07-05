@@ -1,6 +1,7 @@
-import { buildStoryboardUpscaledImage } from '@/features/editor/storyboardPreviewState'
+﻿import { buildStoryboardUpscaledImage } from '@/features/editor/storyboardPreviewState'
 import { storyboardShotsMock, storyboardStylesMock, storyboardTagOptions } from '@/mocks/storyboard.mock'
 import { delay } from '@/api/local'
+import { MOCK_MEDIA_VIDEO_16_9_URL, MOCK_MEDIA_VIDEO_9_16_URL } from '@/mocks/mockMedia'
 import type { StoryboardImageEditRecord } from '@/types/storyboard'
 import type {
   StoryboardApiContract,
@@ -53,6 +54,9 @@ const createGeneratedImage = (title: string, seed: number): string =>
       <text x="30" y="680" fill="white" font-family="Segoe UI, PingFang SC, Microsoft YaHei, sans-serif" font-size="54" font-weight="700">${title}</text>
     </svg>`,
   )}`
+
+const resolveMockVideoUrl = (shot: StoryboardShot): string =>
+  shot.ratio === '9:16' ? MOCK_MEDIA_VIDEO_9_16_URL : MOCK_MEDIA_VIDEO_16_9_URL
 
 export const createDefaultStoryboardState = (): StoryboardDefaultsResponse => ({
   shots: storyboardShotsMock.map(cloneStoryboardShot),
@@ -137,7 +141,7 @@ export const storyboardMockApi: StoryboardApiContract = {
 
   async generateVideo(shot) {
     await delay(980)
-    const videoUrl = `mock-video://${shot.id}/${Date.now()}`
+    const videoUrl = resolveMockVideoUrl(shot)
     return {
       videoUrl,
       shot: cloneStoryboardShot({

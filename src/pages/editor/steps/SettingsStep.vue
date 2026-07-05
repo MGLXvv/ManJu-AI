@@ -7,7 +7,6 @@
         v-model:keyword="keyword"
         :batch-label="batchMode ? '退出批量' : '批量操作'"
         @add="openCreateModal"
-        @import-library="openResourceLibraryImportDialog"
         @batch="handleBatch"
         @save-export="handleSaveExport"
         @next="openGenerationModeDialog"
@@ -42,7 +41,6 @@
         @preview="openPreview"
         @favorite="toggleFavorite"
         @delete="deleteAsset"
-        @save-to-library="handleSaveAssetToLibrary"
       />
     </div>
 

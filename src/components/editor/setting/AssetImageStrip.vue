@@ -1,5 +1,5 @@
 <template>
-  <div class="asset-image-strip">
+  <div class="asset-image-strip" :class="{ 'asset-image-strip--empty': !hasImages }">
     <button
       v-if="hasImages"
       class="asset-image-strip__preview"

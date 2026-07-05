@@ -17,10 +17,6 @@
       <FigmaIcon name="card-add" :size="14" />
       <span>添加</span>
     </button>
-    <button class="setting-toolbar__btn" type="button" @click="$emit('import-library')">
-      <FigmaIcon name="topbar-resource-default" :size="14" />
-      <span>从资源库导入</span>
-    </button>
     <button class="setting-toolbar__btn" type="button" @click="$emit('batch')">
       <FigmaIcon name="batch" :size="16" />
       <span>{{ batchLabel }}</span>
@@ -55,7 +51,6 @@ const emit = defineEmits<{
   (e: 'update:keyword', value: string): void
   (e: 'update:modelValue', value: string): void
   (e: 'add'): void
-  (e: 'import-library'): void
   (e: 'batch'): void
   (e: 'save-export'): void
   (e: 'next'): void

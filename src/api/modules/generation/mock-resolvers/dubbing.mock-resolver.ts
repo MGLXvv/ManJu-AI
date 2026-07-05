@@ -1,4 +1,4 @@
-import { buildMockAudioDataUrl } from '@/features/editor/dubbingAudioState'
+﻿import { MOCK_MEDIA_AUDIO_URL } from '@/mocks/mockMedia'
 import { shouldMockDubbingGenerateFail } from '@/features/editor/dubbingGenerationState'
 import type { DubbingGeneratePayload } from '@/services/generation/generationPayload.types'
 import { API_ERROR_CODES, GENERATION_TASK_STATUSES } from '@/types/api-enums'
@@ -15,7 +15,6 @@ export const resolveDubbingMockTask = async (
   const payload = task.payload as Partial<DubbingGeneratePayload> | undefined
   const card = payload?.card
   const title = String(payload?.title ?? card?.title ?? '')
-  const modelId = String(payload?.modelId ?? '')
   const lines = Array.isArray(payload?.lines) ? payload.lines : card?.lines ?? []
 
   if (
@@ -44,10 +43,7 @@ export const resolveDubbingMockTask = async (
   const nextLines = card.lines.map((line) => ({
     ...line,
     status: 'success' as const,
-    audioUrl: buildMockAudioDataUrl({
-      seed: `${card.title}-${line.shotId}-${modelId}`,
-      durationMs: 720,
-    }),
+    audioUrl: MOCK_MEDIA_AUDIO_URL,
   }))
 
   return {

@@ -7,6 +7,7 @@
         'is-generating': asset.status === 'generating',
         'is-selected': isSelected,
         'is-expanded': isExpanded,
+        'has-candidate-library': showCandidateLibrary,
         'is-batch-mode': batchMode,
         'is-batch-selected': isBatchSelected,
       },
@@ -84,14 +85,6 @@
 
           <div class="asset-card__footer">
             <AssetActionButtons @generate="$emit('generate', asset.id)" @upload="triggerUpload" />
-            <button
-              v-if="!batchMode"
-              type="button"
-              class="asset-card__library-btn"
-              @click.stop="$emit('save-to-library', asset.id)"
-            >
-              保存到资源库
-            </button>
             <footer class="asset-card__time">{{ asset.createdAt }}</footer>
           </div>
         </div>
@@ -100,7 +93,7 @@
     <AssetCandidateList
       v-if="showCandidateLibrary"
       class="asset-card__candidates"
-      :images="candidateImages"
+      :images="validCandidateImages"
       :title="asset.title"
       :selected-index="selectedCandidateIndex"
       @select="onSelectCandidate"
@@ -136,7 +129,6 @@ const emit = defineEmits<{
   (e: 'preview', asset: SettingAsset): void
   (e: 'favorite', id: string): void
   (e: 'delete', id: string): void
-  (e: 'save-to-library', id: string): void
   (e: 'select', id: string): void
   (e: 'toggle-batch', id: string): void
   (e: 'update', payload: { id: string; patch: Partial<SettingAsset> }): void
@@ -148,20 +140,40 @@ const selectedVoiceId = ref(props.asset.selectedVoiceId ?? props.asset.voiceOpti
 
 const isCharacter = computed(() => props.asset.type === 'character')
 const voiceOptions = computed(() => props.asset.voiceOptions ?? [])
-const candidateImages = computed(() => props.asset.candidateImages ?? [])
-const showCandidateLibrary = computed(() => props.isExpanded && candidateImages.value.length >= 2)
+const validCandidateImages = computed(() => {
+  const seen = new Set<string>()
+  return (props.asset.candidateImages ?? []).filter((image) => {
+    const normalized = image.trim()
+    if (!normalized || seen.has(normalized)) {
+      return false
+    }
+    seen.add(normalized)
+    return true
+  })
+})
+const showCandidateLibrary = computed(() => props.isExpanded && validCandidateImages.value.length >= 2)
+const primaryDisplayImage = computed(() => {
+  const currentImage = props.asset.imageUrls.find((image) => image.trim().length > 0)
+  if (currentImage) {
+    return currentImage
+  }
+  return validCandidateImages.value[0] ?? ''
+})
 const selectedCandidateIndex = computed(() => {
-  const currentImage = props.asset.imageUrls[0]
-  if (!currentImage) {
+  if (!primaryDisplayImage.value) {
     return 0
   }
-  const currentIndex = candidateImages.value.findIndex((image) => image === currentImage)
+  const currentIndex = validCandidateImages.value.findIndex((image) => image === primaryDisplayImage.value)
   return currentIndex >= 0 ? currentIndex : 0
 })
 
 const displayImages = computed(() => {
-  if (props.asset.imageUrls.length > 0) {
-    return props.asset.imageUrls
+  const primaryImages = props.asset.imageUrls.filter((image) => image.trim().length > 0)
+  if (primaryImages.length > 0) {
+    return primaryImages
+  }
+  if (validCandidateImages.value.length > 0) {
+    return [validCandidateImages.value[0]]
   }
   return ['']
 })

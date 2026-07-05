@@ -385,8 +385,6 @@
 }
 
 .asset-card.is-expanded {
-  flex: 0 0 var(--asset-card-width-expanded);
-  width: var(--asset-card-width-expanded);
   height: var(--asset-card-height);
   min-height: var(--asset-card-height);
   max-height: var(--asset-card-height);
@@ -396,16 +394,37 @@
   justify-self: auto;
 }
 
+.asset-card.is-expanded:not(.has-candidate-library) {
+  flex: 0 0 var(--asset-expanded-left-width);
+  width: var(--asset-expanded-left-width);
+}
+
+.asset-card.is-expanded.has-candidate-library {
+  flex: 0 0 var(--asset-card-width-expanded);
+  width: var(--asset-card-width-expanded);
+}
+
 .asset-card.is-expanded .asset-card__base {
+  height: 100%;
+  padding: 12px;
+  overflow: hidden;
+}
+
+.asset-card.is-expanded:not(.has-candidate-library) .asset-card__base {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  border-radius: 16px;
+}
+
+.asset-card.is-expanded.has-candidate-library .asset-card__base {
   flex: 0 0 var(--asset-expanded-left-width);
   width: var(--asset-expanded-left-width);
   min-width: var(--asset-expanded-left-width);
   max-width: var(--asset-expanded-left-width);
-  height: 100%;
-  padding: 12px;
   border-radius: 16px 0 0 16px;
   border-right: 0;
-  overflow: hidden;
 }
 
 .asset-card--character.is-selected .asset-card__base {
@@ -462,9 +481,18 @@
 }
 
 .asset-card.is-expanded .asset-image-strip {
-  width: var(--asset-expanded-main-width);
   height: 174px;
   border-radius: 12px;
+}
+
+.asset-card.is-expanded.has-candidate-library .asset-image-strip {
+  width: var(--asset-expanded-main-width);
+}
+
+.asset-card.is-expanded:not(.has-candidate-library) .asset-image-strip {
+  width: 100%;
+  max-width: calc(var(--asset-card-width) - 24px);
+  margin: 0 auto;
 }
 
 .asset-card.is-expanded .asset-prompt-panel,
@@ -583,6 +611,13 @@
   background: #2a2c30;
 }
 
+.asset-image-strip--empty {
+  height: 174px;
+  min-height: 174px;
+  padding: 0 14px;
+  border: 1px dashed rgb(255 255 255 / 12%);
+  background: transparent;
+}
 .asset-image-strip__preview {
   position: absolute;
   right: 10px;
@@ -635,14 +670,16 @@
 }
 
 .asset-image-strip__empty {
-  display: grid;
-  justify-items: center;
-  align-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   gap: 8px;
   width: 100%;
   height: 100%;
+  min-height: 0;
   color: #85878f;
   font-size: 12px;
+  text-align: center;
 }
 
 .asset-prompt {

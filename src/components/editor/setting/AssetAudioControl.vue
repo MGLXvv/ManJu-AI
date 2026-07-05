@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="asset-audio">
     <div class="asset-audio__meta">
       <div ref="rootRef" class="asset-audio__meta-left">
@@ -71,15 +71,19 @@ const isPlaying = ref(false)
 const currentSeconds = ref(0)
 const durationSeconds = ref(0)
 const waveformBars = ref<number[]>([])
+const previewWaveformBars = ref<number[] | null>(null)
 
 let audioContext: AudioContext | null = null
 let analyserNode: AnalyserNode | null = null
 let sourceNode: MediaElementAudioSourceNode | null = null
 let frequencyData: Uint8Array | null = null
 let rafId: number | null = null
+let waveformLoadToken = 0
 
 const createFallbackBars = (): number[] =>
   props.audio.waveform ?? Array.from({ length: 34 }, (_, i) => (i % 7) + 5)
+
+const getIdleWaveformBars = (): number[] => previewWaveformBars.value ?? createFallbackBars()
 
 const selectedVoiceLabel = computed(() => {
   return props.voiceOptions.find((item) => item.id === props.selectedVoiceId)?.name ?? props.audio.title
@@ -125,6 +129,70 @@ const formatHms = (seconds: number): string => {
   const m = Math.floor((total % 3600) / 60)
   const s = total % 60
   return [h, m, s].map((item) => String(item).padStart(2, '0')).join(':')
+}
+
+const buildPreviewWaveformBars = (samples: Float32Array, count = 34): number[] => {
+  if (!samples.length) {
+    return createFallbackBars()
+  }
+
+  const blockSize = Math.max(1, Math.floor(samples.length / count))
+  return Array.from({ length: count }, (_, index) => {
+    const start = index * blockSize
+    const end = Math.min(samples.length, start + blockSize)
+    let peak = 0
+
+    for (let cursor = start; cursor < end; cursor += 1) {
+      const amplitude = Math.abs(samples[cursor] ?? 0)
+      if (amplitude > peak) {
+        peak = amplitude
+      }
+    }
+
+    return Math.max(3, Math.min(20, Math.round(peak * 18) + 3))
+  })
+}
+
+const loadPreviewWaveform = async (): Promise<void> => {
+  const src = audioSrc.value.trim()
+  if (!src) {
+    previewWaveformBars.value = null
+    if (!isPlaying.value) {
+      waveformBars.value = createFallbackBars()
+    }
+    return
+  }
+
+  const currentToken = ++waveformLoadToken
+
+  try {
+    const response = await fetch(src)
+    const arrayBuffer = await response.arrayBuffer()
+    const decodeContext = new AudioContext()
+
+    try {
+      const audioBuffer = await decodeContext.decodeAudioData(arrayBuffer.slice(0))
+      if (currentToken !== waveformLoadToken) {
+        return
+      }
+
+      const channelData = audioBuffer.getChannelData(0)
+      previewWaveformBars.value = buildPreviewWaveformBars(channelData)
+      if (!isPlaying.value) {
+        waveformBars.value = getIdleWaveformBars()
+      }
+    } finally {
+      void decodeContext.close()
+    }
+  } catch {
+    if (currentToken !== waveformLoadToken) {
+      return
+    }
+    previewWaveformBars.value = null
+    if (!isPlaying.value) {
+      waveformBars.value = createFallbackBars()
+    }
+  }
 }
 
 const syncWaveformFromAnalyser = (): void => {
@@ -204,7 +272,7 @@ const stopPlayback = (): void => {
   currentSeconds.value = 0
   isPlaying.value = false
   stopWaveformLoop()
-  waveformBars.value = createFallbackBars()
+  waveformBars.value = getIdleWaveformBars()
 }
 
 const togglePlayback = async (): Promise<void> => {
@@ -238,6 +306,7 @@ const onLoadedMetadata = (): void => {
   if (Number.isFinite(element.duration) && element.duration > 0) {
     durationSeconds.value = element.duration
   }
+  void loadPreviewWaveform()
 }
 
 const onPlay = (): void => {
@@ -248,13 +317,14 @@ const onPlay = (): void => {
 const onPause = (): void => {
   isPlaying.value = false
   stopWaveformLoop()
+  waveformBars.value = getIdleWaveformBars()
 }
 
 const onEnded = (): void => {
   isPlaying.value = false
   currentSeconds.value = 0
   stopWaveformLoop()
-  waveformBars.value = createFallbackBars()
+  waveformBars.value = getIdleWaveformBars()
 }
 
 const handleDocumentClick = (event: MouseEvent): void => {
@@ -276,10 +346,12 @@ onMounted(() => {
   audioRef.value?.addEventListener('play', onPlay)
   audioRef.value?.addEventListener('pause', onPause)
   audioRef.value?.addEventListener('ended', onEnded)
+  void loadPreviewWaveform()
 })
 
 onBeforeUnmount(() => {
   stopPlayback()
+  waveformLoadToken += 1
   audioRef.value?.removeEventListener('timeupdate', onTimeUpdate)
   audioRef.value?.removeEventListener('loadedmetadata', onLoadedMetadata)
   audioRef.value?.removeEventListener('play', onPlay)
@@ -307,13 +379,15 @@ watch(
 watch(
   () => props.audio.waveform,
   () => {
-    if (!isPlaying.value) {
+    if (!isPlaying.value && !previewWaveformBars.value) {
       waveformBars.value = createFallbackBars()
     }
   },
 )
 
 watch(audioSrc, () => {
+  previewWaveformBars.value = null
   stopPlayback()
+  void loadPreviewWaveform()
 })
 </script>

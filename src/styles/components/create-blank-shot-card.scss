@@ -1,3 +1,16 @@
+.storyboard-timeline .storyboard-timeline__link-line {
+  display: none;
+}
+
+.storyboard-timeline .storyboard-timeline__link {
+  flex: 0 0 28px;
+  width: 28px;
+  height: var(--storyboard-shot-card-height);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .create-blank-shot-card {
   flex: 0 0 var(--storyboard-shot-card-width);
   width: var(--storyboard-shot-card-width);
@@ -22,9 +35,8 @@
 }
 
 .create-blank-shot-card__plus {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: inline-grid;
+  place-items: center;
   width: 34px;
   height: 34px;
   border-radius: 8px;
@@ -32,8 +44,9 @@
   color: #d9d9da;
   font-size: 32px;
   font-weight: 300;
-  line-height: 1;
-  transform: none;
+  line-height: 34px;
+  text-align: center;
+  transform: translateY(-1px);
 }
 
 .create-blank-shot-card small {

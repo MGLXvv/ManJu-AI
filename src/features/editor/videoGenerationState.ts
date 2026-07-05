@@ -45,7 +45,7 @@ export const buildVideoGenerateErrorMessage = (error: unknown): string => {
   }
 
   if (code === API_ERROR_CODES.storyboardVideoImageRequired) {
-    return '请先生成或上传分镜图后，再生成视频'
+    return '请先在分镜生成步骤生成该镜头图片'
   }
 
   if (code === API_ERROR_CODES.videoGenerateFailed) {

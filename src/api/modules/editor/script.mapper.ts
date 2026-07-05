@@ -1,4 +1,4 @@
-import { normalizeEditorDraft } from '@/features/editor/editorDraftMapper'
+﻿import { normalizeEditorDraft } from '@/features/editor/editorDraftMapper'
 import type { BackendScriptWorkspaceDTO } from '@/types/api-dto'
 import type { EditorDraft } from './editor.types'
 
@@ -16,6 +16,8 @@ export const mapBackendScriptWorkspaceToDraft = (
       content: workspace?.rawText || '',
       prompt: workspace?.prompt || '',
       generated: getBackendScriptGeneratedContent(workspace),
+      storyboard: '',
       updatedAt: workspace?.updateTime || workspace?.updatedAt || '',
     },
   } as Partial<EditorDraft> as EditorDraft)
+

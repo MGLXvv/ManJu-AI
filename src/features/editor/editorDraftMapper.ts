@@ -1,4 +1,4 @@
-import { createDefaultEditorDraft } from '@/mocks/editor.mock'
+﻿import { createDefaultEditorDraft } from '@/mocks/editor.mock'
 import type { DubbingDraft, DubbingRoleCardDraft, DubbingRoleCardModel, DubbingRoleLineDraft } from '@/types/dubbing'
 import type { EditorDraft, PropSetting, ScriptDraft, Shot } from '@/types/editor'
 import type { SettingAsset } from '@/types/settingAsset'
@@ -66,7 +66,7 @@ const buildSummary = (assets: SettingAsset[], type: SettingAsset['type']): PropS
 
 export const buildScriptDraftPatch = (
   current: ScriptDraft,
-  patch: Partial<Pick<ScriptDraft, 'content' | 'prompt' | 'generated' | 'updatedAt'>>,
+  patch: Partial<Pick<ScriptDraft, 'content' | 'prompt' | 'outline' | 'generated' | 'storyboard' | 'updatedAt'>>,
 ): Pick<EditorDraft, 'script'> => ({
   script: {
     ...cloneScriptDraft(current),

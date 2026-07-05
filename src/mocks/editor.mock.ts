@@ -5,7 +5,9 @@ export const createDefaultEditorDraft = (projectId: string): EditorDraft => ({
   script: {
     content: '',
     prompt: '',
+    outline: '',
     generated: '',
+    storyboard: '',
     updatedAt: new Date().toISOString(),
   },
   characters: [],

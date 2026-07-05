@@ -1,4 +1,4 @@
-import type { DubbingDraft } from './dubbing'
+﻿import type { DubbingDraft } from './dubbing'
 import type { SettingAsset } from './settingAsset'
 import type {
   StoryboardImageEditRecord,
@@ -11,7 +11,9 @@ import type {
 export interface ScriptDraft {
   content: string
   prompt: string
+  outline: string
   generated: string
+  storyboard: string
   updatedAt: string
 }
 

@@ -1,32 +1,54 @@
 ﻿<template>
   <section class="script-step">
     <div class="script-workbench-bg" aria-hidden="true"></div>
-
     <div class="script-workbench-card">
       <header class="script-workbench-card__topbar">
         <EditorModelSelect v-model="selectedModelId" />
-
         <div class="script-workbench-card__topbar-right">
           <span class="script-workbench-card__save-state" :class="{ 'is-dirty': isDirty }">
             {{ actionState === 'saving' ? '保存中' : isDirty ? '未保存' : '已保存' }}
           </span>
-
-          <button class="script-next-btn" type="button" :disabled="!canEnterNext || submitting" @click="handleNext">
-            进入设定
+          <button
+            v-if="currentStage === 'storyboard'"
+            class="script-secondary-btn"
+            type="button"
+            :disabled="submitting || !storyboardText.trim()"
+            @click="exportStoryboardArtifact"
+          >
+            保存并导出
+          </button>
+          <button
+            v-if="previousStage"
+            class="script-secondary-btn"
+            type="button"
+            :disabled="submitting"
+            @click="handleBack"
+          >
+            返回上一步
+          </button>
+          <button
+            class="script-next-btn"
+            type="button"
+            :disabled="!canEnterNext || submitting"
+            @click="handleNext"
+          >
+            {{ nextButtonText }}
           </button>
         </div>
       </header>
-
       <div class="script-workbench-card__divider"></div>
-
       <div class="script-workbench-card__body">
         <ScriptInputPanel
-          v-model="sourceText"
+          v-model="displayedSourceModel"
+          :title="stageInputTitle"
+          :placeholder="stageInputPlaceholder"
+          :show-import-button="showImportButton"
+          :use-empty-guide="useEmptyGuide"
+          :import-button-text="inputImportButtonText"
           :disabled="isBusy"
           @import-text="handleImportText"
           @import-error="handleScriptImportError"
         />
-
         <div class="script-workbench-card__right">
           <div
             ref="promptWrapRef"
@@ -35,6 +57,10 @@
           >
             <ScriptPromptPanel
               v-model="promptText"
+              :title="promptTitle"
+              :placeholder="promptPlaceholder"
+              :generate-text="promptGenerateText"
+              :generating-text="promptGeneratingText"
               :disabled="isBusy"
               :status-text="statusText"
               :action-state="actionState"
@@ -44,7 +70,6 @@
               @delete="handleDelete"
               @generate="handleGenerate"
             />
-
             <ScriptTemplatePopover
               v-if="templatePanelOpen"
               ref="templatePopoverRef"
@@ -66,11 +91,10 @@
               @update:form-content="handleTemplateContentChange"
             />
           </div>
-
           <div class="script-workbench-card__dash-line"></div>
-
           <ScriptResultPanel
-            v-model="generatedScript"
+            v-model="displayedResultModel"
+            :title="resultTitle"
             :loading="generating"
             :disabled="isBusy"
             :placeholder-text="resultPlaceholderText"
@@ -90,7 +114,6 @@
       @confirm="confirmLeave"
       @cancel="cancelLeaveConfirm"
     />
-
     <AppConfirmDialog
       :open="templateDiscardConfirmOpen"
       title="确定放弃模板编辑？"
@@ -101,7 +124,6 @@
       @confirm="confirmDiscardTemplateChanges"
       @cancel="cancelDiscardTemplateChanges"
     />
-
     <AppConfirmDialog
       :open="templateDeleteConfirmOpen"
       title="确定删除当前模板？"
@@ -112,6 +134,38 @@
       @confirm="confirmDeleteTemplate"
       @cancel="cancelDeleteTemplate"
     />
+
+    <Teleport to="body">
+      <Transition name="app-confirm-dialog-fade">
+        <div v-if="templateNameDialogOpen" class="script-template-name-dialog__mask" @click="cancelTemplateNameDialog">
+          <section class="script-template-name-dialog" role="dialog" aria-modal="true" @click.stop>
+            <h3 class="script-template-name-dialog__title">保存提示词模板</h3>
+            <p class="script-template-name-dialog__desc">请输入模板名称，保存当前提示词。</p>
+            <input
+              v-model="templateNameValue"
+              class="script-template-name-dialog__input"
+              type="text"
+              maxlength="24"
+              placeholder="请输入模板名称"
+            />
+            <p v-if="templateNameError" class="script-template-name-dialog__error">{{ templateNameError }}</p>
+            <div class="script-template-name-dialog__actions">
+              <button class="script-template-name-dialog__btn is-neutral" type="button" @click="cancelTemplateNameDialog">
+                取消
+              </button>
+              <button
+                class="script-template-name-dialog__btn is-primary"
+                type="button"
+                :disabled="templateSubmitting"
+                @click="confirmTemplateNameDialog"
+              >
+                {{ templateSubmitting ? '保存中' : '保存模板' }}
+              </button>
+            </div>
+          </section>
+        </div>
+      </Transition>
+    </Teleport>
   </section>
 </template>
 
@@ -124,8 +178,8 @@ import ScriptInputPanel from '@/components/editor/script/ScriptInputPanel.vue'
 import ScriptPromptPanel from '@/components/editor/script/ScriptPromptPanel.vue'
 import ScriptResultPanel from '@/components/editor/script/ScriptResultPanel.vue'
 import ScriptTemplatePopover from '@/components/editor/script/ScriptTemplatePopover.vue'
+import { buildScopedProjectArtifact, buildScopedProjectExportFileName } from '@/features/editor/editorExportScopeState'
 import { buildScriptDraftSnapshot, clearScriptPromptFields, hasUnsavedScriptChanges } from '@/features/editor/scriptDraftState'
-import { validateEditorAdvance } from '@/features/editor/editorCompletionState'
 import { buildScriptLeaveDialogCopy, shouldInterceptScriptLeave } from '@/features/editor/scriptLeaveConfirmState'
 import {
   buildScriptTemplateInput,
@@ -134,14 +188,16 @@ import {
   validateScriptTemplateInput,
   type ScriptTemplateFormErrors,
 } from '@/features/editor/scriptTemplateState'
+import { scriptWorkflowService } from '@/services/editor/scriptWorkflow.service'
 import { useEditorStore } from '@/stores/editor'
 import { useProjectStore } from '@/stores/project'
 import { useScriptTemplateStore } from '@/stores/scriptTemplates'
 import { useUiFeedbackStore } from '@/stores/uiFeedback'
-import { scriptWorkflowService } from '@/services/editor/scriptWorkflow.service'
-import { scriptGenerationService } from '@/services/generation'
 import { API_ERROR_CODES } from '@/types/api-enums'
 import type { ScriptTemplateInput } from '@/types/scriptTemplate'
+
+type ScriptStageRouteName = 'editor-script-input' | 'editor-script-storyboard'
+type ScriptStageKey = 'input' | 'storyboard'
 
 const router = useRouter()
 const route = useRoute()
@@ -150,11 +206,13 @@ const projectStore = useProjectStore()
 const uiFeedback = useUiFeedbackStore()
 const scriptTemplateStore = useScriptTemplateStore()
 
-const DEFAULT_PROMPT = '请将输入故事整理为适合漫画短剧制作的三幕结构，保留核心冲突、角色转折和后续可拆分的镜头线索。'
+const DEFAULT_PROMPT = '请将输入内容整理为适合漫画短剧制作的剧本，突出情绪推进、画面感、旁白与字幕节奏。'
 
 const sourceText = ref('')
+const outlineText = ref('')
 const promptText = ref(DEFAULT_PROMPT)
 const generatedScript = ref('')
+const storyboardText = ref('')
 const generating = ref(false)
 const submitting = ref(false)
 const selectedModelId = ref('gpt-4.0')
@@ -174,140 +232,188 @@ const pendingDeleteTemplateId = ref<string | null>(null)
 const templateForm = ref<ScriptTemplateInput>(createEmptyScriptTemplateInput())
 const templateInitialForm = ref<ScriptTemplateInput>(createEmptyScriptTemplateInput())
 const templateFormErrors = ref<ScriptTemplateFormErrors>({})
-const lastSavedSnapshot = ref(buildScriptDraftSnapshot({ sourceText: '', promptText: DEFAULT_PROMPT, generatedScript: '' }))
+const templateNameDialogOpen = ref(false)
+const templateNameValue = ref('')
+const templateNameError = ref('')
+const pendingTemplateContent = ref('')
+const lastSavedSnapshot = ref(
+  buildScriptDraftSnapshot({
+    sourceText: '',
+    promptText: DEFAULT_PROMPT,
+    outlineText: '',
+    generatedScript: '',
+    storyboardText: '',
+  }),
+)
 const pendingLeaveTarget = ref<RouteLocationRaw | null>(null)
 const bypassLeaveGuard = ref(false)
 
+const STAGE_ROUTES: Record<ScriptStageKey, ScriptStageRouteName> = {
+  input: 'editor-script-input',
+  storyboard: 'editor-script-storyboard',
+}
+const STAGE_ORDER: ScriptStageKey[] = ['input', 'storyboard']
+
 const projectId = computed(() => String(route.params.projectId ?? ''))
-const canGenerate = computed(() => Boolean(sourceText.value.trim()))
-const canEnterNext = computed(() => Boolean(generatedScript.value.trim()))
+const stageRouteName = computed(() => (route.name as ScriptStageRouteName | undefined) ?? 'editor-script-input')
+const currentStage = computed<ScriptStageKey>(() =>
+  stageRouteName.value === 'editor-script-storyboard' ? 'storyboard' : 'input',
+)
+const currentStageIndex = computed(() => STAGE_ORDER.indexOf(currentStage.value))
+const previousStage = computed<ScriptStageKey | null>(() =>
+  currentStageIndex.value > 0 ? STAGE_ORDER[currentStageIndex.value - 1] : null,
+)
+
+const canGenerate = computed(() =>
+  currentStage.value === 'input' ? Boolean(sourceText.value.trim()) : Boolean(generatedScript.value.trim()),
+)
+const canEnterNext = computed(() =>
+  currentStage.value === 'input' ? Boolean(generatedScript.value.trim()) : Boolean(storyboardText.value.trim()),
+)
 const isBusy = computed(() => generating.value || submitting.value)
 const actionState = computed<'idle' | 'saving' | 'generating'>(() => {
   if (submitting.value) return 'saving'
   if (generating.value) return 'generating'
   return 'idle'
 })
+
+const stageInputTitle = computed(() => (currentStage.value === 'input' ? '文案输入' : '剧本'))
+const stageInputPlaceholder = computed(() =>
+  currentStage.value === 'input'
+    ? '请输入故事创意、剧情梗概或完整文案内容'
+    : '请编辑剧本内容，确认后再继续生成分镜文案'
+)
+const showImportButton = computed(() => currentStage.value === 'input')
+const useEmptyGuide = computed(() => currentStage.value === 'input')
+const inputImportButtonText = computed(() => '导入TXT文档')
+const promptTitle = computed(() => '编辑提示词')
+const promptPlaceholder = computed(() =>
+  currentStage.value === 'input'
+    ? '请输入剧本生成要求，例如题材、节奏、角色关系和字幕风格'
+    : '请输入分镜拆解要求，例如镜头数量、景别、机位和画面细节'
+)
+const promptGenerateText = computed(() => (currentStage.value === 'input' ? '生成剧本' : '分镜'))
+const promptGeneratingText = computed(() => (currentStage.value === 'input' ? '生成剧本中' : '分镜中'))
+const resultTitle = computed(() => (currentStage.value === 'input' ? '剧本生成' : '剧本分镜'))
+const resultPlaceholderText = computed(() =>
+  currentStage.value === 'input' ? '正在根据文案生成剧本...' : '正在根据剧本生成分镜...'
+)
+const nextButtonText = computed(() => (currentStage.value === 'input' ? '进入分镜' : '进入设定'))
 const statusText = computed(() => {
-  switch (actionState.value) {
-    case 'saving':
-      return '正在保存当前文案内容'
-    case 'generating':
-      return '正在根据原始文案生成剧本'
-    default:
-      return isDirty.value ? '当前内容有修改，建议先保存' : '当前内容已同步到草稿'
+  if (actionState.value === 'saving') return '正在保存当前内容'
+  if (actionState.value === 'generating') {
+    return currentStage.value === 'input' ? '正在根据文案生成剧本' : '正在根据剧本生成分镜文案'
   }
+  if (isDirty.value) return '当前内容有修改，建议先保存'
+  return currentStage.value === 'input' ? '输入文案后直接生成剧本' : '生成分镜后可保存并导出 JSON'
 })
-const resultPlaceholderText = computed(() => '正在生成剧本...')
+
 const currentSnapshot = computed(() =>
   buildScriptDraftSnapshot({
     sourceText: sourceText.value,
     promptText: promptText.value,
+    outlineText: outlineText.value,
     generatedScript: generatedScript.value,
+    storyboardText: storyboardText.value,
   }),
 )
 const isDirty = computed(() =>
   hasUnsavedScriptChanges(lastSavedSnapshot.value, {
     sourceText: sourceText.value,
     promptText: promptText.value,
+    outlineText: outlineText.value,
     generatedScript: generatedScript.value,
+    storyboardText: storyboardText.value,
   }),
 )
 const leaveDialogCopy = buildScriptLeaveDialogCopy()
-const templateFormDirty = computed(() =>
-  hasScriptTemplateInputChanges(templateInitialForm.value, templateForm.value),
-)
+const templateFormDirty = computed(() => hasScriptTemplateInputChanges(templateInitialForm.value, templateForm.value))
+
+const displayedSourceModel = computed({
+  get: () => (currentStage.value === 'input' ? sourceText.value : generatedScript.value),
+  set: (value: string) => {
+    if (currentStage.value === 'input') {
+      sourceText.value = value
+      return
+    }
+    generatedScript.value = value
+  },
+})
+
+const displayedResultModel = computed({
+  get: () => (currentStage.value === 'input' ? generatedScript.value : storyboardText.value),
+  set: (value: string) => {
+    if (currentStage.value === 'input') {
+      generatedScript.value = value
+      return
+    }
+    storyboardText.value = value
+  },
+})
+
+const getTemplatePopoverElement = (): HTMLElement | null => {
+  const currentRef = templatePopoverRef.value
+  if (!currentRef) return null
+  if ('$el' in currentRef && currentRef.$el) return currentRef.$el
+  return currentRef as HTMLElement
+}
 
 const updateTemplatePopoverPosition = (): void => {
   const wrapEl = promptWrapRef.value
-  const popoverEl = (templatePopoverRef.value &&
-    '$el' in templatePopoverRef.value &&
-    templatePopoverRef.value.$el
-    ? templatePopoverRef.value.$el
-    : templatePopoverRef.value) as HTMLElement | null
+  const popoverEl = getTemplatePopoverElement()
   const promptCardEl = wrapEl?.querySelector<HTMLElement>('.script-prompt-card')
-
-  if (!wrapEl || !popoverEl || !promptCardEl) {
-    return
-  }
+  if (!wrapEl || !popoverEl || !promptCardEl) return
 
   const wrapRect = wrapEl.getBoundingClientRect()
   const promptCardRect = promptCardEl.getBoundingClientRect()
-  const width = promptCardRect.width
-  const left = promptCardRect.left - wrapRect.left
-  const top = promptCardRect.bottom - wrapRect.top - 9
-
   templatePopoverStyle.value = {
-    left: `${left}px`,
-    top: `${top}px`,
-    width: `${width}px`,
+    left: `${promptCardRect.left - wrapRect.left}px`,
+    top: `${promptCardRect.bottom - wrapRect.top - 9}px`,
+    width: `${promptCardRect.width}px`,
   }
 }
 
 const handleGlobalPointerDown = (event: PointerEvent): void => {
-  if (!templatePanelOpen.value) {
-    return
-  }
-
+  if (!templatePanelOpen.value) return
   const target = event.target as Node | null
-  if (!target) {
-    return
-  }
-
-  if (promptWrapRef.value?.contains(target)) {
-    return
-  }
-
+  if (!target || promptWrapRef.value?.contains(target)) return
   handleRequestCloseTemplatePanel()
 }
 
 watch(
   projectId,
   async (nextProjectId) => {
-    if (!nextProjectId) {
-      return
-    }
-
+    if (!nextProjectId) return
     await editorStore.loadDraft(nextProjectId)
     sourceText.value = editorStore.draft?.script.content ?? ''
+    outlineText.value = editorStore.draft?.script.outline ?? ''
     promptText.value = editorStore.draft?.script.prompt || DEFAULT_PROMPT
     generatedScript.value = editorStore.draft?.script.generated ?? ''
+    storyboardText.value = editorStore.draft?.script.storyboard ?? ''
     lastSavedSnapshot.value = buildScriptDraftSnapshot({
       sourceText: sourceText.value,
       promptText: promptText.value,
+      outlineText: outlineText.value,
       generatedScript: generatedScript.value,
+      storyboardText: storyboardText.value,
     })
   },
   { immediate: true },
 )
 
-watch(sourceText, (content) => {
-  editorStore.updateScriptContent(content)
-})
-
-watch(promptText, (prompt) => {
-  editorStore.updateScriptPrompt(prompt)
-})
-
-watch(generatedScript, (generated) => {
-  editorStore.updateGeneratedScript(generated)
-})
+watch(sourceText, (content) => editorStore.updateScriptContent(content))
+watch(outlineText, (outline) => editorStore.updateScriptOutline(outline))
+watch(promptText, (prompt) => editorStore.updateScriptPrompt(prompt))
+watch(generatedScript, (generated) => editorStore.updateGeneratedScript(generated))
+watch(storyboardText, (storyboard) => editorStore.updateStoryboardText(storyboard))
 
 const showToast = (message: string, tone: 'info' | 'success' | 'error' = 'info'): void => {
   uiFeedback.showToast(message, { tone })
 }
 
-
 const resolveEditorError = (error: unknown, fallback: string): string => {
   const message = error instanceof Error ? error.message : ''
-
-  switch (message) {
-    case API_ERROR_CODES.editorSaveFailed:
-      return '保存失败，请检查内容后重试'
-    case 'SCRIPT_GENERATE_FAILED':
-      return '剧本生成失败，请调整文案或提示词后重试'
-    default:
-      return fallback
-  }
+  return message === API_ERROR_CODES.editorSaveFailed ? '保存失败，请检查内容后重试' : fallback
 }
 
 const markSaved = (): void => {
@@ -316,13 +422,14 @@ const markSaved = (): void => {
 
 const syncScriptDraftToStore = (): void => {
   editorStore.updateScriptContent(sourceText.value)
+  editorStore.updateScriptOutline(outlineText.value)
   editorStore.updateScriptPrompt(promptText.value)
   editorStore.updateGeneratedScript(generatedScript.value)
+  editorStore.updateStoryboardText(storyboardText.value)
 }
 
 const persistDraft = async (): Promise<boolean> => {
   syncScriptDraftToStore()
-
   submitting.value = true
   try {
     await editorStore.saveDraft()
@@ -336,6 +443,34 @@ const persistDraft = async (): Promise<boolean> => {
   }
 }
 
+const downloadJson = (fileName: string, payload: unknown): void => {
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
+    type: 'application/json;charset=utf-8',
+  })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = fileName
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
+
+const exportStoryboardArtifact = async (): Promise<void> => {
+  if (!editorStore.draft) {
+    showToast('未找到当前项目草稿', 'error')
+    return
+  }
+
+  const saved = await persistDraft()
+  if (!saved) return
+
+  const artifact = buildScopedProjectArtifact(projectId.value || editorStore.draft.projectId, editorStore.draft, 'storyboard')
+  downloadJson(buildScopedProjectExportFileName(projectId.value || editorStore.draft.projectId), artifact)
+  showToast('分镜草稿 JSON 已导出', 'success')
+}
+
 const cancelLeaveConfirm = (): void => {
   leaveConfirmOpen.value = false
   pendingLeaveTarget.value = null
@@ -345,20 +480,13 @@ const confirmLeave = async (): Promise<void> => {
   const nextTarget = pendingLeaveTarget.value
   leaveConfirmOpen.value = false
   pendingLeaveTarget.value = null
-
-  if (!nextTarget) {
-    return
-  }
-
+  if (!nextTarget) return
   bypassLeaveGuard.value = true
   await router.push(nextTarget)
 }
 
 const handleBeforeUnload = (event: BeforeUnloadEvent): void => {
-  if (!isDirty.value) {
-    return
-  }
-
+  if (!isDirty.value) return
   event.preventDefault()
   event.returnValue = ''
 }
@@ -376,9 +504,7 @@ onBeforeUnmount(() => {
 
 onBeforeRouteLeave((to) => {
   if (!shouldInterceptScriptLeave(isDirty.value, bypassLeaveGuard.value)) {
-    if (bypassLeaveGuard.value) {
-      bypassLeaveGuard.value = false
-    }
+    if (bypassLeaveGuard.value) bypassLeaveGuard.value = false
     return true
   }
 
@@ -396,21 +522,16 @@ const handleScriptImportError = (message: string): void => {
 }
 
 const handleSave = async (): Promise<void> => {
-  const saved = await persistDraft()
-  if (saved) {
-    showToast('文案内容已保存', 'success')
-  }
+  handleStartCreateTemplate()
 }
 
 const handleOpenTemplate = (): void => {
   if (!templatePanelOpen.value) {
     scriptTemplateStore.ensureLoaded()
   }
-
   templatePanelMode.value = 'list'
   templateFormErrors.value = {}
   templatePanelOpen.value = !templatePanelOpen.value
-
   if (templatePanelOpen.value) {
     void nextTick(updateTemplatePopoverPosition)
   }
@@ -420,72 +541,166 @@ const handleDelete = async (): Promise<void> => {
   const nextFields = clearScriptPromptFields({
     sourceText: sourceText.value,
     promptText: promptText.value,
+    outlineText: outlineText.value,
     generatedScript: generatedScript.value,
+    storyboardText: storyboardText.value,
   })
   sourceText.value = nextFields.sourceText
   promptText.value = nextFields.promptText
+  outlineText.value = nextFields.outlineText
   generatedScript.value = nextFields.generatedScript
+  storyboardText.value = nextFields.storyboardText
   const saved = await persistDraft()
   if (saved) {
     showToast('提示词内容已清空', 'success')
   }
 }
 
+const splitIdeaLines = (value: string): string[] =>
+  value
+    .split(/\r?\n|[。！？!?]/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+
+const buildScriptFromSource = (source: string, prompt: string): string => {
+  const parts = splitIdeaLines(source)
+  const [opening = '城市夜景，霓虹闪烁', setup = '主角穿过街道，心绪不安', conflict = '一次意外让故事冲突开始升级', suspense = '镜头停在人物表情，留下新的悬念'] = parts
+  const promptHint = prompt.trim()
+
+  return [
+    '【镜头1】开场-0:00-0:05',
+    '',
+    `画面：${opening}`,
+    '',
+    `旁白：${opening}，故事在夜色里缓缓展开。`,
+    '',
+    '字幕：弹出标题',
+    '',
+    '【镜头2】铺垫-0:05-0:10',
+    '',
+    `画面：${setup}`,
+    '',
+    `旁白：${setup}，人物情绪开始被拉紧。`,
+    '',
+    '字幕：情绪逐渐铺开',
+    '',
+    '【镜头3】冲突-0:10-0:15',
+    '',
+    `画面：${conflict}`,
+    '',
+    `旁白：${conflict}，主线矛盾被正式抛出。`,
+    '',
+    '字幕：冲突升级',
+    '',
+    '【镜头4】悬念-0:15-0:20',
+    '',
+    `画面：${suspense}`,
+    '',
+    `旁白：${suspense}，为下一阶段留下继续展开的空间。`,
+    '',
+    `字幕：${promptHint ? `风格：${promptHint}` : '留下下一幕悬念'}`,
+  ].join('\n')
+}
+
+const buildStoryboardFromScript = (script: string, prompt: string): string => {
+  const baseLines = splitIdeaLines(script).filter((line) => !line.startsWith('【镜头'))
+  const promptHint = prompt.trim()
+
+  return Array.from({ length: 8 }, (_, index) => {
+    const narration = baseLines[index % Math.max(baseLines.length, 1)] ?? '在这个不眠的城市里，故事继续推进。'
+    const shotSize = ['全景', '中景', '近景'][index % 3]
+    const visual =
+      index % 2 === 0
+        ? '城市夜景，霓虹闪烁，车流穿梭'
+        : '角色穿过街道，灯牌闪动，氛围逐渐压紧'
+    const camera =
+      index % 2 === 0 ? '固定机位，轻微延迟效果' : '跟随机位，缓慢横移推进'
+
+    return [
+      `分镜${index + 1}/8`,
+      '',
+      '时长：5秒',
+      '',
+      `景别：${shotSize}`,
+      '',
+      `画面：${visual}`,
+      '',
+      `旁白：${narration}`,
+      '',
+      `机位：${camera}`,
+      ...(promptHint ? ['', `补充要求：${promptHint}`] : []),
+    ].join('\n')
+  }).join('\n\n')
+}
+
 const handleGenerate = async (): Promise<void> => {
-  if (!canGenerate.value || generating.value) {
-    return
-  }
+  if (!canGenerate.value || generating.value) return
 
   generating.value = true
   try {
-    const result = await scriptGenerationService.generateScript({
-      projectId: projectId.value,
-      sourceText: sourceText.value,
-      promptText: promptText.value,
-      modelId: selectedModelId.value,
-    })
-    generatedScript.value = result.script
+    if (currentStage.value === 'input') {
+      generatedScript.value = buildScriptFromSource(sourceText.value, promptText.value)
+      outlineText.value = ''
+      const saved = await persistDraft()
+      if (saved) {
+        showToast('剧本生成完成', 'success')
+      }
+      return
+    }
+
+    storyboardText.value = buildStoryboardFromScript(generatedScript.value, promptText.value)
     const saved = await persistDraft()
     if (saved) {
-      showToast('剧本生成完成', 'success')
+      showToast('剧本分镜生成完成', 'success')
     }
   } catch (error) {
-    showToast(resolveEditorError(error, '剧本生成失败，请稍后再试'), 'error')
+    showToast(resolveEditorError(error, '生成失败，请稍后再试'), 'error')
   } finally {
     generating.value = false
   }
 }
 
+const getStageRouteParams = (name: ScriptStageRouteName | 'editor-settings') => ({
+  name,
+  params: route.params,
+})
+
+const handleBack = async (): Promise<void> => {
+  if (!previousStage.value) return
+  const saved = await persistDraft()
+  if (!saved) return
+  bypassLeaveGuard.value = true
+  await router.push(getStageRouteParams(STAGE_ROUTES[previousStage.value]))
+}
 
 const handleNext = async (): Promise<void> => {
-  const validation = validateEditorAdvance('scriptToSettings', { generatedScript: generatedScript.value })
-  if (!validation.ok) {
-    showToast(validation.message, 'error')
+  if (!canEnterNext.value) {
+    showToast(currentStage.value === 'input' ? '请先生成剧本，再进入分镜阶段' : '请先生成剧本分镜，再进入设定页', 'error')
     return
   }
 
   const saved = await persistDraft()
-  if (!saved) {
+  if (!saved) return
+
+  if (currentStage.value === 'input') {
+    bypassLeaveGuard.value = true
+    await router.push(getStageRouteParams('editor-script-storyboard'))
     return
   }
 
   try {
     if (projectId.value) {
       await scriptWorkflowService.confirmScript(projectId.value)
-      await projectStore.updateProjectStep(projectId.value, validation.nextStep)
+      await projectStore.updateProjectStep(projectId.value, 'settings')
     }
   } catch (error) {
     showToast(resolveEditorError(error, '文案确认失败，请稍后再试'), 'error')
     return
   }
 
-  showToast(validation.successMessage, 'success')
+  showToast('剧本分镜已保存，正在进入设定页', 'success')
   bypassLeaveGuard.value = true
-
-  await router.push({
-    name: validation.routeName,
-    params: route.params,
-  })
+  await router.push(getStageRouteParams('editor-settings'))
 }
 
 const resetTemplateEditor = (): void => {
@@ -498,10 +713,7 @@ const resetTemplateEditor = (): void => {
 
 const handleApplyTemplate = (templateId: string): void => {
   const template = scriptTemplateStore.templates.find((item) => item.id === templateId)
-  if (!template) {
-    return
-  }
-
+  if (!template) return
   selectedTemplateId.value = template.id
   promptText.value = template.content
   templatePanelOpen.value = false
@@ -510,12 +722,52 @@ const handleApplyTemplate = (templateId: string): void => {
 }
 
 const handleStartCreateTemplate = (): void => {
-  templatePanelMode.value = 'create'
-  editingTemplateId.value = null
-  templateForm.value = createEmptyScriptTemplateInput()
-  templateInitialForm.value = createEmptyScriptTemplateInput()
-  templateFormErrors.value = {}
-  void nextTick(updateTemplatePopoverPosition)
+  const content = promptText.value.trim()
+  if (!content) {
+    showToast('请先输入提示词，再保存为模板', 'error')
+    return
+  }
+  pendingTemplateContent.value = content
+  templateNameValue.value = ''
+  templateNameError.value = ''
+  templatePanelOpen.value = false
+  templatePopoverStyle.value = {}
+  templateNameDialogOpen.value = true
+}
+
+const cancelTemplateNameDialog = (): void => {
+  if (templateSubmitting.value) return
+  templateNameDialogOpen.value = false
+  templateNameValue.value = ''
+  templateNameError.value = ''
+  pendingTemplateContent.value = ''
+}
+
+const confirmTemplateNameDialog = async (): Promise<void> => {
+  const validation = validateScriptTemplateInput(
+    scriptTemplateStore.templates,
+    { name: templateNameValue.value, content: pendingTemplateContent.value },
+    null,
+  )
+  if (!validation.ok) {
+    templateNameError.value = validation.errors.name || validation.errors.content || '模板保存失败'
+    return
+  }
+
+  templateSubmitting.value = true
+  try {
+    const created = await scriptTemplateStore.createTemplate(validation.value)
+    selectedTemplateId.value = created.id
+    templateNameDialogOpen.value = false
+    templateNameValue.value = ''
+    templateNameError.value = ''
+    pendingTemplateContent.value = ''
+    showToast('提示词模板已添加', 'success')
+  } catch {
+    templateNameError.value = '模板保存失败，请稍后再试'
+  } finally {
+    templateSubmitting.value = false
+  }
 }
 
 const handleStartEditTemplate = (templateId: string): void => {
@@ -524,7 +776,6 @@ const handleStartEditTemplate = (templateId: string): void => {
     showToast('未找到要修改的模板', 'error')
     return
   }
-
   selectedTemplateId.value = template.id
   editingTemplateId.value = template.id
   templatePanelMode.value = 'edit'
@@ -540,7 +791,6 @@ const handleCancelTemplateEdit = (): void => {
     templateDiscardConfirmOpen.value = true
     return
   }
-
   resetTemplateEditor()
 }
 
@@ -550,32 +800,19 @@ const handleRequestCloseTemplatePanel = (): void => {
     templateDiscardConfirmOpen.value = true
     return
   }
-
   templatePanelOpen.value = false
   templatePopoverStyle.value = {}
   resetTemplateEditor()
 }
 
 const handleTemplateNameChange = (value: string): void => {
-  templateForm.value = {
-    ...templateForm.value,
-    name: value,
-  }
-  templateFormErrors.value = {
-    ...templateFormErrors.value,
-    name: undefined,
-  }
+  templateForm.value = { ...templateForm.value, name: value }
+  templateFormErrors.value = { ...templateFormErrors.value, name: undefined }
 }
 
 const handleTemplateContentChange = (value: string): void => {
-  templateForm.value = {
-    ...templateForm.value,
-    content: value,
-  }
-  templateFormErrors.value = {
-    ...templateFormErrors.value,
-    content: undefined,
-  }
+  templateForm.value = { ...templateForm.value, content: value }
+  templateFormErrors.value = { ...templateFormErrors.value, content: undefined }
 }
 
 const cancelDiscardTemplateChanges = (): void => {
@@ -593,11 +830,8 @@ const cancelDeleteTemplate = (): void => {
 }
 
 const confirmDeleteTemplate = async (): Promise<void> => {
-
   const templateId = pendingDeleteTemplateId.value
-  if (!templateId) {
-    return
-  }
+  if (!templateId) return
 
   templateSubmitting.value = true
   try {
@@ -628,13 +862,11 @@ const confirmDiscardTemplateChanges = (): void => {
 }
 
 const handleSaveTemplate = async (): Promise<void> => {
-
   const validation = validateScriptTemplateInput(
     scriptTemplateStore.templates,
     templateForm.value,
     editingTemplateId.value,
   )
-
   if (!validation.ok) {
     templateFormErrors.value = validation.errors
     return
@@ -642,16 +874,11 @@ const handleSaveTemplate = async (): Promise<void> => {
 
   templateSubmitting.value = true
   try {
-    if (templatePanelMode.value === 'create') {
-      const created = await scriptTemplateStore.createTemplate(validation.value)
-      selectedTemplateId.value = created.id
-      showToast('提示词模板已添加', 'success')
-    } else if (editingTemplateId.value) {
+    if (editingTemplateId.value) {
       const updated = await scriptTemplateStore.updateTemplate(editingTemplateId.value, validation.value)
       selectedTemplateId.value = updated.id
       showToast('提示词模板已更新', 'success')
     }
-
     templatePanelOpen.value = false
     resetTemplateEditor()
   } catch {

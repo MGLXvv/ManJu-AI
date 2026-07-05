@@ -1,13 +1,13 @@
-<template>
+﻿<template>
   <section class="script-prompt-block">
-    <h2 class="script-column-title">编辑提示词</h2>
+    <h2 class="script-column-title">{{ titleText }}</h2>
 
     <div class="script-prompt-card">
       <textarea
         v-model="model"
         class="script-prompt-card__textarea"
         :disabled="disabled"
-        placeholder="请输入生成剧本时的要求，例如字数、风格、剧情重点、角色表现等"
+        :placeholder="placeholderText"
       />
 
       <footer class="script-prompt-card__actions">
@@ -42,7 +42,7 @@
             :disabled="!canGenerate || disabled"
             @click="$emit('generate')"
           >
-            {{ actionState === 'generating' ? '生成中' : actionState === 'optimizing' ? '优化中' : '生成剧本' }}
+            {{ actionState === 'generating' ? loadingText : actionState === 'optimizing' ? '优化中' : generateButtonText }}
           </button>
         </div>
       </footer>
@@ -51,14 +51,27 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import FigmaIcon from '@/components/icons/FigmaIcon.vue'
 
-defineProps<{
-  canGenerate: boolean
-  disabled?: boolean
-  statusText?: string
-  actionState?: 'idle' | 'saving' | 'generating' | 'optimizing'
-}>()
+const props = withDefaults(
+  defineProps<{
+    canGenerate: boolean
+    disabled?: boolean
+    statusText?: string
+    actionState?: 'idle' | 'saving' | 'generating' | 'optimizing'
+    title?: string
+    placeholder?: string
+    generateText?: string
+    generatingText?: string
+  }>(),
+  {
+    title: '编辑提示词',
+    placeholder: '请输入生成剧本时的要求，例如字数、风格、剧情重点、角色表现等',
+    generateText: '生成剧本',
+    generatingText: '生成中',
+  },
+)
 
 defineEmits<{
   (e: 'delete'): void
@@ -68,4 +81,8 @@ defineEmits<{
 }>()
 
 const model = defineModel<string>({ required: true })
+const titleText = computed(() => props.title)
+const placeholderText = computed(() => props.placeholder)
+const generateButtonText = computed(() => props.generateText)
+const loadingText = computed(() => props.generatingText)
 </script>

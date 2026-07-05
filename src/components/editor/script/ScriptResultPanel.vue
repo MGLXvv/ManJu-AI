@@ -1,6 +1,6 @@
-<template>
+﻿<template>
   <section class="script-result-block">
-    <h2 class="script-column-title">剧本生成</h2>
+    <h2 class="script-column-title">{{ titleText }}</h2>
 
     <div ref="resultCardRef" class="script-result-card">
       <div class="script-result-card__body">
@@ -53,12 +53,18 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import FigmaIcon from '@/components/icons/FigmaIcon.vue'
 import scriptEmptyStateImage from '@/assets/icons/svg/script-empty-ufo.svg'
 
-const props = defineProps<{
-  loading?: boolean
-  disabled?: boolean
-  placeholderText?: string
-  showOptimize?: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    loading?: boolean
+    disabled?: boolean
+    placeholderText?: string
+    showOptimize?: boolean
+    title?: string
+  }>(),
+  {
+    title: '剧本生成',
+  },
+)
 
 defineEmits<{
   (e: 'optimize'): void
@@ -68,6 +74,7 @@ const model = defineModel<string>({ required: true })
 const resultCardRef = ref<HTMLElement | null>(null)
 const isFullscreen = ref(false)
 
+const titleText = computed(() => props.title)
 const placeholderText = computed(() => props.placeholderText || '正在生成剧本...')
 
 const syncFullscreenState = (): void => {

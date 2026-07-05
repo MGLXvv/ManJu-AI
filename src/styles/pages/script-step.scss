@@ -1,4 +1,4 @@
-.script-step {
+﻿.script-step {
   --script-page-space: clamp(14px, 1.0417vw, 20px);
   --script-panel-gap: var(--script-page-space);
   --script-topbar-h: clamp(52px, 5.6481vh, 61px);
@@ -256,6 +256,14 @@
   font-family: var(--font-sans);
   font-size: var(--script-body-font);
   line-height: 1.7;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.script-input-panel__textarea::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .script-input-panel__textarea::placeholder,
@@ -797,3 +805,127 @@
     gap: 8px;
   }
 }
+
+
+
+.script-secondary-btn {
+  min-width: clamp(108px, 6.5625vw, 126px);
+  height: var(--script-control-h);
+  padding: 0 18px;
+  border: 1px solid rgb(255 255 255 / 12%);
+  border-radius: 999px;
+  background: #232425;
+  color: #f1eff5;
+  font-size: var(--script-body-font);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.script-secondary-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.script-result-card__textarea {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.script-result-card__textarea::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.script-template-name-dialog__mask {
+  position: fixed;
+  inset: 0;
+  z-index: 245;
+  display: grid;
+  place-items: center;
+  background: rgb(8 8 11 / 62%);
+  backdrop-filter: blur(6px);
+}
+
+.script-template-name-dialog {
+  width: min(420px, calc(100vw - 32px));
+  padding: 24px 24px 20px;
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 18px;
+  background: #17171c;
+  box-shadow: 0 24px 60px rgb(0 0 0 / 42%);
+}
+
+.script-template-name-dialog__title {
+  margin: 0;
+  color: #fff;
+  font-size: 20px;
+  line-height: 1.3;
+  font-weight: 700;
+}
+
+.script-template-name-dialog__desc {
+  margin: 10px 0 0;
+  color: rgb(255 255 255 / 64%);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.script-template-name-dialog__input {
+  width: 100%;
+  height: 42px;
+  margin-top: 18px;
+  padding: 0 14px;
+  border: 1px solid #3b3c43;
+  border-radius: 12px;
+  background: #202126;
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: var(--script-small-font);
+  box-sizing: border-box;
+  outline: none;
+}
+
+.script-template-name-dialog__error {
+  margin: 10px 0 0;
+  color: #ff98a6;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.script-template-name-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.script-template-name-dialog__btn {
+  min-width: 96px;
+  height: 36px;
+  padding: 0 16px;
+  border: 1px solid rgb(255 255 255 / 12%);
+  border-radius: 999px;
+  background: #2f3136;
+  color: #f3f3f4;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.script-template-name-dialog__btn.is-primary {
+  border-color: transparent;
+  background: linear-gradient(90deg, #b969ff 0%, #ef86ff 100%);
+  color: #170d1d;
+}
+
+.script-template-name-dialog__btn.is-neutral {
+  background: #232425;
+  color: #f1eff5;
+}
+
+.script-template-name-dialog__btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+

@@ -1,14 +1,21 @@
-<template>
+﻿<template>
   <section class="script-input-panel">
-    <h2 class="script-column-title">文案输入</h2>
+    <h2 class="script-column-title">{{ titleText }}</h2>
 
     <div class="script-input-panel__card">
-      <button class="script-doc-btn" type="button" :disabled="disabled" @click="triggerImport">
+      <button
+        v-if="showImportButton"
+        class="script-doc-btn"
+        type="button"
+        :disabled="disabled"
+        @click="triggerImport"
+      >
         <FigmaIcon class="script-doc-btn__icon" name="action-doc-link" :size="20" />
-        <span>文档</span>
+        <span>{{ importButtonText }}</span>
       </button>
 
       <input
+        v-if="showImportButton"
         ref="fileInputRef"
         class="script-input-panel__file-input"
         type="file"
@@ -26,7 +33,7 @@
           v-model="model"
           class="script-input-panel__textarea"
           :disabled="disabled"
-          placeholder="请输入你的创意、故事梗概或完整文案"
+          :placeholder="placeholderText"
         />
       </div>
     </div>
@@ -39,9 +46,23 @@ import FigmaIcon from '@/components/icons/FigmaIcon.vue'
 import { validateScriptImportFile, validateScriptTextContent } from '@/features/editor/scriptInputState'
 import ScriptEmptyGuide from './ScriptEmptyGuide.vue'
 
-defineProps<{
-  disabled?: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    disabled?: boolean
+    title?: string
+    placeholder?: string
+    showImportButton?: boolean
+    useEmptyGuide?: boolean
+    importButtonText?: string
+  }>(),
+  {
+    title: '文案输入',
+    placeholder: '请输入你的创意、故事梗概或完整文案',
+    showImportButton: true,
+    useEmptyGuide: true,
+    importButtonText: '文档',
+  },
+)
 
 const model = defineModel<string>({ required: true })
 
@@ -54,7 +75,9 @@ const manualMode = ref(false)
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
 
-const showGuide = computed(() => !model.value.trim() && !manualMode.value)
+const titleText = computed(() => props.title)
+const placeholderText = computed(() => props.placeholder)
+const showGuide = computed(() => props.useEmptyGuide && !model.value.trim() && !manualMode.value)
 
 const onSelectTemplate = async (text: string): Promise<void> => {
   model.value = text

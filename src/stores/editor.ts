@@ -15,7 +15,7 @@ import type { SettingAsset } from '@/types/settingAsset'
 import type { StoryboardShot } from '@/types/storyboard'
 
 export const editorSteps: Array<{ key: WorkflowStep; label: string; route: string }> = [
-  { key: 'script', label: '文案处理', route: 'editor-script' },
+  { key: 'script', label: '文案处理', route: 'editor-script-input' },
   { key: 'settings', label: '设定', route: 'editor-settings' },
   { key: 'storyboard', label: '分镜生成', route: 'editor-storyboard' },
   { key: 'video', label: '视频生成', route: 'editor-video' },
@@ -90,6 +90,17 @@ export const useEditorStore = defineStore('editor', () => {
     }
   }
 
+  const updateScriptOutline = (outline: string): void => {
+    if (!draft.value) {
+      return
+    }
+
+    draft.value = {
+      ...draft.value,
+      ...buildScriptDraftPatch(draft.value.script, { outline }),
+    }
+  }
+
   const updateGeneratedScript = (generated: string): void => {
     if (!draft.value) {
       return
@@ -98,6 +109,17 @@ export const useEditorStore = defineStore('editor', () => {
     draft.value = {
       ...draft.value,
       ...buildScriptDraftPatch(draft.value.script, { generated }),
+    }
+  }
+
+  const updateStoryboardText = (storyboard: string): void => {
+    if (!draft.value) {
+      return
+    }
+
+    draft.value = {
+      ...draft.value,
+      ...buildScriptDraftPatch(draft.value.script, { storyboard }),
     }
   }
 
@@ -158,7 +180,9 @@ export const useEditorStore = defineStore('editor', () => {
     saveDraft,
     updateScriptContent,
     updateScriptPrompt,
+    updateScriptOutline,
     updateGeneratedScript,
+    updateStoryboardText,
     updateSettingAssets,
     updateStoryboardGenerationMode,
     updateStoryboardShots,

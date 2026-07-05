@@ -1,4 +1,4 @@
-import { hasAnyMockFailureToken } from '@/features/shared/mockFailureState'
+﻿import { hasAnyMockFailureToken } from '@/features/shared/mockFailureState'
 import { normalizeEditorDraft } from '@/features/editor/editorDraftMapper'
 import { API_ERROR_CODES } from '@/types/api-enums'
 import type { EditorGetDraftResponseDTO, EditorSaveDraftRequestDTO, EditorSaveDraftResponseDTO } from '@/types/api-dto'
@@ -27,7 +27,7 @@ export const editorMockApi: EditorApiContract = {
 
     const shouldFailSave =
       hasAnyMockFailureToken(
-        [request.draft.script.content, request.draft.script.prompt, request.draft.script.generated],
+        [request.draft.script.content, request.draft.script.prompt, request.draft.script.outline, request.draft.script.generated, request.draft.script.storyboard],
         ['#mock-save-fail'],
       ) ||
       request.draft.shots.some((shot) =>
@@ -69,3 +69,4 @@ export const editorMockApi: EditorApiContract = {
     return response
   },
 }
+

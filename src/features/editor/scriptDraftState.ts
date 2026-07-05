@@ -1,7 +1,9 @@
-export interface ScriptDraftFields {
+﻿export interface ScriptDraftFields {
   sourceText: string
   promptText: string
+  outlineText: string
   generatedScript: string
+  storyboardText: string
 }
 
 export const buildScriptDraftSnapshot = (fields: ScriptDraftFields): string => {

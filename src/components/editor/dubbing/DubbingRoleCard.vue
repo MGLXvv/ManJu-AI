@@ -1,7 +1,7 @@
 <template>
   <article class="dubbing-role-card">
     <header class="dubbing-role-card__header">
-      <span class="dubbing-role-card__header-label">台词</span>
+      <span class="dubbing-role-card__header-label">{{ title }}</span>
     </header>
 
     <div class="dubbing-role-card__body">

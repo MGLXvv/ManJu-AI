@@ -28,8 +28,18 @@ export interface UpscaleStoryboardImageInput {
   shot: StoryboardShot
 }
 
+const STORYBOARD_IMAGE_REQUIRES_CHARACTER_AND_SCENE = 'STORYBOARD_IMAGE_REQUIRES_CHARACTER_AND_SCENE'
+
+const assertShotHasRequiredTags = (shot: StoryboardShot): void => {
+  if (shot.characters.length === 0 || shot.scenes.length === 0) {
+    throw new Error(STORYBOARD_IMAGE_REQUIRES_CHARACTER_AND_SCENE)
+  }
+}
+
 export const storyboardGenerationService = {
   async generateShotImage(input: GenerateStoryboardImageInput): Promise<StoryboardImageResult> {
+    assertShotHasRequiredTags(input.shot)
+
     if (apiMode === 'http') {
       if (isLocalStoryboardShotId(input.shot.id)) {
         throw new Error('STORYBOARD_IMAGE_REQUIRES_PERSISTED_SHOT')

@@ -1,0 +1,34 @@
+.video-voice-table {
+  display: grid;
+  grid-template-rows: 36px minmax(0, 1fr);
+  min-height: 0;
+}
+
+.video-voice-table__header {
+  min-height: 36px;
+}
+
+.video-voice-table__body {
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / 26%) transparent;
+}
+
+.video-voice-table__body::-webkit-scrollbar {
+  width: 6px;
+  height: 0;
+}
+
+.video-voice-table__body::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgb(255 255 255 / 26%);
+}
+
+.video-voice-table__body::-webkit-scrollbar-track {
+  background: transparent;
+}

@@ -71,11 +71,12 @@
         :active-shot-id="activeShotId"
         :batch-mode="batchMode"
         :batch-selected-ids="selectedShotIds"
+        :review-by-shot-id="videoReviewByShotId"
         @select="handleTimelineSelect"
         @upload="triggerUploadForShot"
         @copy="copyShot"
         @delete="deleteShot"
-        @favorite="toggleFavorite"
+        @favorite="toggleVideoReviewed"
         @create="createBlankShot"
       />
     </div>
@@ -280,6 +281,9 @@ const isVideoBatchActionDisabled = computed(
 const isAllShotsSelected = computed(
   () => shots.value.length > 0 && shots.value.every((shot) => selectedShotIds.value.includes(shot.id)),
 )
+const videoReviewByShotId = computed<Record<string, boolean>>(() =>
+  Object.fromEntries(shots.value.map((shot) => [shot.id, Boolean(shot.videoReviewed)])),
+)
 const currentSnapshot = computed(() => buildStoryboardDraftSnapshot(shots.value))
 const isDirty = computed(() => currentSnapshot.value !== lastSavedSnapshot.value)
 const saveState = computed(() => buildStoryboardSaveState({ submitting: submitting.value, isDirty: isDirty.value }))
@@ -456,8 +460,14 @@ const deleteShot = (id: string): void => {
   deleteConfirmOpen.value = true
 }
 
-const toggleFavorite = (id: string): void => {
-  store.toggleFavorite(id)
+const toggleVideoReviewed = (id: string): void => {
+  const target = shots.value.find((item) => item.id === id)
+  if (!target) {
+    return
+  }
+
+  target.videoReviewed = !target.videoReviewed
+  showToast(target.videoReviewed ? '视频镜头已标记为审核完成' : '已取消视频镜头审核标记', 'success')
 }
 
 const toggleLock = (id: string): void => {

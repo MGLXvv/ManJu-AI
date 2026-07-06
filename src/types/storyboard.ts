@@ -67,6 +67,7 @@ export interface StoryboardShot {
   isHidden?: boolean
   isLocked?: boolean
   isFavorite?: boolean
+  videoReviewed?: boolean
   referenceImages: StoryboardReferenceImage[]
   editHistory?: StoryboardImageEditRecord[]
   createdAt: string

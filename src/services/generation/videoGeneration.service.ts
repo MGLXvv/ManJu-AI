@@ -1,5 +1,7 @@
 import { isLocalStoryboardShotId } from '@/api/modules/editor/storyboard.mapper'
 import { apiMode } from '@/api/shared/apiMode'
+import { validateStoryboardShotVideoSource } from '@/features/editor/storyboardParameterValidationState'
+import type { StoryboardMode } from '@/features/editor/storyboardModeState'
 import { storyboardVideoTaskService } from '@/services/editor/storyboardVideoTask.service'
 import { storyboardWorkflowService } from '@/services/editor/storyboardWorkflow.service'
 import { API_ERROR_CODES, GENERATION_TASK_TYPES } from '@/types/api-enums'
@@ -12,17 +14,26 @@ import { createAndWaitGenerationTask } from './generationTaskRunner'
 export interface GenerateVideoInput {
   projectId: string
   shot: StoryboardShot
+  storyboardMode?: StoryboardMode
 }
 
-const assertShotHasStoryboardImage = (shot: StoryboardShot): void => {
-  if (!(shot.imageUrl ?? '').trim()) {
-    throw new Error(API_ERROR_CODES.storyboardVideoImageRequired)
+const assertShotCanGenerateVideo = (shot: StoryboardShot, storyboardMode: StoryboardMode): void => {
+  const result = validateStoryboardShotVideoSource(shot, storyboardMode)
+  if (result.ok) {
+    return
   }
+
+  if (storyboardMode === 'multi-param') {
+    throw new Error(API_ERROR_CODES.storyboardVideoParametersRequired)
+  }
+
+  throw new Error(API_ERROR_CODES.storyboardVideoImageRequired)
 }
 
 export const videoGenerationService = {
   async generateVideo(input: GenerateVideoInput): Promise<VideoGenerateResult> {
-    assertShotHasStoryboardImage(input.shot)
+    const storyboardMode = input.storyboardMode ?? 'image'
+    assertShotCanGenerateVideo(input.shot, storyboardMode)
 
     if (apiMode === 'http') {
       if (isLocalStoryboardShotId(input.shot.id)) {

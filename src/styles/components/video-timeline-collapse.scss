@@ -1,13 +1,24 @@
-.video-layout {
+.video-step .video-layout {
   --video-timeline-height: 170px;
 
   grid-template-rows: minmax(0, 1fr) var(--video-timeline-height);
 }
 
-.video-layout.is-timeline-collapsed {
+.video-step .video-layout.is-timeline-collapsed {
   --video-timeline-height: var(--storyboard-timeline-collapsed-height);
 }
 
-.video-layout::before {
+.video-step .video-layout::before {
   top: calc(100% - var(--video-timeline-height));
+}
+
+.video-step .video-layout.is-timeline-collapsed .video-layout__main {
+  padding-bottom: 0;
+}
+
+.video-step .video-main-card,
+.video-step .video-main-card__body,
+.video-step .video-prompt-panel,
+.video-step .video-preview-panel {
+  min-height: 0;
 }

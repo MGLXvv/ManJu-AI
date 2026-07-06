@@ -1,5 +1,6 @@
 import { isLocalStoryboardShotId } from '@/api/modules/editor/storyboard.mapper'
 import { apiMode } from '@/api/shared/apiMode'
+import { resolveImmediateAiTaskResultUrl } from '@/services/editor/aiTaskResultState'
 import { storyboardVoiceTaskService } from '@/services/editor/storyboardVoiceTask.service'
 import { API_ERROR_CODES, GENERATION_TASK_TYPES } from '@/types/api-enums'
 import type { DubbingRoleCardModel, DubbingRoleLineDraft } from '@/types/dubbing'
@@ -29,7 +30,7 @@ export const dubbingGenerationService = {
         }
 
         const task = await storyboardVoiceTaskService.createStoryboardVoiceTask(line.shotId)
-        const audioUrl = task?.resultUrl || ''
+        const audioUrl = resolveImmediateAiTaskResultUrl({ task })
 
         lines.push({
           ...line,

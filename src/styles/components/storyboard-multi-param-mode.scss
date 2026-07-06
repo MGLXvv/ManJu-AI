@@ -37,6 +37,16 @@
 }
 
 .storyboard-layout:has(.storyboard-canvas__empty.is-multi-param) .storyboard-shot-card__actions {
+  display: grid;
+  grid-template-columns: repeat(2, 28px);
   justify-content: center;
-  gap: 18px;
+  justify-items: center;
+  align-items: center;
+  column-gap: 34px;
+  padding: 0;
+}
+
+.storyboard-layout:has(.storyboard-canvas__empty.is-multi-param) .storyboard-shot-card__actions button {
+  width: 28px;
+  height: 22px;
 }

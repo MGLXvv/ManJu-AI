@@ -1,0 +1,28 @@
+.resource-library-import-dialog {
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.resource-library-import-dialog__panel {
+  position: relative;
+  width: min(940px, calc(100vw - 80px));
+  max-height: min(720px, calc(100vh - 80px));
+  margin: 0;
+}
+
+.resource-library-import-dialog__list {
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.resource-library-import-dialog__list::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.video-step .storyboard-shot-card__star-btn {
+  display: none;
+}

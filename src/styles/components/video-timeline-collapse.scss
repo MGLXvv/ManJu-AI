@@ -1,0 +1,13 @@
+.video-layout {
+  --video-timeline-height: 170px;
+
+  grid-template-rows: minmax(0, 1fr) var(--video-timeline-height);
+}
+
+.video-layout.is-timeline-collapsed {
+  --video-timeline-height: var(--storyboard-timeline-collapsed-height);
+}
+
+.video-layout::before {
+  top: calc(100% - var(--video-timeline-height));
+}

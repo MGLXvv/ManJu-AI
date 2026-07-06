@@ -1,11 +1,16 @@
 .video-voice-table {
   display: grid;
   grid-template-rows: 36px minmax(0, 1fr);
-  min-height: 0;
+  flex: 0 0 167px;
+  height: 167px;
+  min-height: 167px;
+  max-height: 167px;
 }
 
 .video-voice-table__header {
+  height: 36px;
   min-height: 36px;
+  max-height: 36px;
 }
 
 .video-voice-table__body {
@@ -17,6 +22,10 @@
   overscroll-behavior: contain;
   scrollbar-width: thin;
   scrollbar-color: rgb(255 255 255 / 26%) transparent;
+}
+
+.video-voice-table__row {
+  min-height: 43px;
 }
 
 .video-voice-table__body::-webkit-scrollbar {

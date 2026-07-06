@@ -1,6 +1,6 @@
 export const SCRIPT_TEXT_LIMITS = {
   min: 1,
-  max: 5000,
+  max: 100000,
 } as const
 
 export const SUPPORTED_SCRIPT_IMPORT_EXTENSIONS = ['txt', 'md', 'text'] as const

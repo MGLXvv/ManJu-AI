@@ -106,7 +106,7 @@ export const buildStoryboardDraftShots = (shots: StoryboardShot[]): Shot[] =>
     ratio: shot.ratio,
     isHidden: shot.isHidden ?? false,
     isLocked: shot.isLocked ?? false,
-    storyboardReviewed: shot.storyboardReviewed ?? false,
+    storyboardReviewed: shot.storyboardReviewed ?? shot.isFavorite ?? false,
     videoReviewed: shot.videoReviewed ?? false,
     referenceImages: shot.referenceImages.map(cloneReferenceImage),
     editHistory: shot.editHistory?.map(cloneEditRecord) ?? [],

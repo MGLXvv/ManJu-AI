@@ -1,6 +1,15 @@
 import { isApiError } from '@/api/errors'
 import { API_ERROR_CODES } from '@/types/api-enums'
 
+const isQuotaErrorLike = (error: unknown): boolean => {
+  if (!error || typeof error !== 'object') {
+    return false
+  }
+
+  const value = error as { name?: string; code?: number }
+  return value.name === 'QuotaExceededError' || value.name === 'NS_ERROR_DOM_QUOTA_REACHED' || value.code === 22 || value.code === 1014
+}
+
 export const buildSettingSaveErrorMessage = (error: unknown, apiMode: 'mock' | 'http'): string => {
   if (isApiError(error)) {
     if (error.code === API_ERROR_CODES.editorLocalStorageQuotaExceeded) {
@@ -12,7 +21,7 @@ export const buildSettingSaveErrorMessage = (error: unknown, apiMode: 'mock' | '
     }
   }
 
-  if (error instanceof DOMException && (error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
+  if (isQuotaErrorLike(error)) {
     return '浏览器本地存储空间不足，请清理缓存或减少上传图片后再保存'
   }
 

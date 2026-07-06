@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <section class="dashboard-page">
     <div class="dashboard-page__content">
       <div class="dashboard-page__header-shell">
@@ -92,6 +92,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import AppConfirmDialog from '@/components/common/AppConfirmDialog.vue'
 import { buildDeleteDialogCopy, buildDeleteToastMessage } from '@/features/dashboard/projectDeleteState'
 import { buildProjectExportFileName, parseImportedProjects } from '@/features/dashboard/projectTransferState'
@@ -108,6 +109,7 @@ import { useUiFeedbackStore } from '@/stores/uiFeedback'
 const store = useProjectStore()
 const systemStore = useSystemStore()
 const uiFeedback = useUiFeedbackStore()
+const router = useRouter()
 const createModalOpen = ref(false)
 const batchMode = ref(false)
 const selectedIds = ref<string[]>([])
@@ -170,11 +172,15 @@ interface CreateProjectPayload {
 }
 
 const handleCreateProject = async (payload: CreateProjectPayload): Promise<void> => {
-  await store.createProject(payload.name, {
+  const created = await store.createProject(payload.name, {
     ratio: payload.ratio,
     style: payload.style,
   })
   createModalOpen.value = false
+  await router.push({
+    name: 'editor-script-input',
+    params: { projectId: created.id },
+  })
 }
 
 const onImportProject = (): void => {

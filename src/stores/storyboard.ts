@@ -1,4 +1,4 @@
-﻿import { defineStore } from 'pinia'
+import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import {
   cloneStoryboardShot,
@@ -20,7 +20,7 @@ import type {
   StoryboardVoiceAssignment,
 } from '@/types/storyboard'
 
-const SHOT_TITLE_PATTERN = /^\u955C\u5934\s*(\d+)([A-Z]+)?$/
+const SHOT_TITLE_PATTERN = /^镜头\s*(\d+)([A-Z]+)?$/
 
 const parseShotTitle = (title: string, fallbackBase: number): { base: number; isPrimary: boolean } => {
   const match = title.match(SHOT_TITLE_PATTERN)
@@ -37,7 +37,7 @@ const parseShotTitle = (title: string, fallbackBase: number): { base: number; is
   }
 }
 
-const buildShotTitle = (base: number, suffix = ''): string => `\u955C\u5934 ${base}${suffix}`
+const buildShotTitle = (base: number, suffix = ''): string => `镜头 ${base}${suffix}`
 
 const buildAlphaSuffix = (index: number): string => {
   let current = index
@@ -157,13 +157,13 @@ export const useStoryboardStore = defineStore('storyboard', () => {
     characters: [],
     scenes: [],
     props: [],
-    style: styleOptions.value[0] ?? '????',
+    style: styleOptions.value[0] ?? '写实',
     ratio: '16:9',
     status: 'pending-review',
     isHidden: false,
     isFavorite: false,
     isLocked: false,
-    createdAt: '2026?3?12? 17:16',
+    createdAt: '2026年3月12日 17:16',
     referenceImages: [],
   })
 
@@ -351,7 +351,7 @@ export const useStoryboardStore = defineStore('storyboard', () => {
       id: `shot-${Date.now()}`,
       index: sourceIndex + 2,
       title: buildShotTitle(sourceBase, 'A'),
-    createdAt: '2026?3?12? 17:16',
+      createdAt: '2026年3月12日 17:16',
     })
     const nextShots = [...shots.value]
     nextShots.splice(sourceIndex + 1, 0, duplicated)
@@ -514,6 +514,7 @@ export const useStoryboardStore = defineStore('storyboard', () => {
       const result = await videoGenerationService.generateVideo({
         projectId: editorStore.currentProjectId ?? 'mock-project',
         shot: target,
+        storyboardMode: editorStore.draft?.storyboardGenerationMode ?? 'image',
       })
 
       replaceShotById(id, result.shot)
@@ -599,5 +600,3 @@ export const useStoryboardStore = defineStore('storyboard', () => {
     upscaleShotById,
   }
 })
-
-

@@ -1,5 +1,6 @@
 import { buildStoryboardExportFileName, buildStoryboardExportPayload } from '@/features/editor/editorArtifactMapper'
 import { buildStoryboardDraftShots } from '@/features/editor/editorDraftMapper'
+import { validateMultiParamShotsBeforeVideo } from '@/features/editor/storyboardParameterValidationState'
 import type { StoryboardMode } from '@/features/editor/storyboardModeState'
 import type { Shot } from '@/types/editor'
 import type { SettingAsset } from '@/types/settingAsset'
@@ -159,10 +160,13 @@ export const validateStoryboardBeforeVideo = (
     }
   }
 
-  if (mode === 'multi-param' && visibleShots.some((shot) => !shot.prompt.trim())) {
-    return {
-      ok: false,
-      message: '请先补充分镜画面描述后再进入视频生成',
+  if (mode === 'multi-param') {
+    const result = validateMultiParamShotsBeforeVideo(visibleShots)
+    if (!result.ok) {
+      return {
+        ok: false,
+        message: result.message,
+      }
     }
   }
 

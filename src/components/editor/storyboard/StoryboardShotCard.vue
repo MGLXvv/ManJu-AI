@@ -94,6 +94,8 @@ import { computed } from 'vue'
 import FigmaIcon from '@/components/icons/FigmaIcon.vue'
 import type { StoryboardShot } from '@/types/storyboard'
 
+type LegacyStoryboardFavorite = StoryboardShot & { isFavorite?: boolean }
+
 const props = withDefaults(
   defineProps<{
     shot: StoryboardShot
@@ -114,7 +116,7 @@ const props = withDefaults(
 const shotNumberLabel = computed(() => props.shot.title.replace(/^镜头\s*/, '镜头'))
 const isGenerating = computed(() => props.shot.status === 'generating')
 const hasPlayableVideo = computed(() => Boolean(props.shot.videoUrl && !props.shot.videoUrl.startsWith('mock-video://')))
-const isReviewed = computed(() => props.reviewActive ?? Boolean(props.shot.isFavorite))
+const isReviewed = computed(() => props.reviewActive ?? Boolean(props.shot.storyboardReviewed ?? (props.shot as LegacyStoryboardFavorite).isFavorite))
 
 defineEmits<{
   (e: 'select', id: string): void

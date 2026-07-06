@@ -1,5 +1,6 @@
 import { isLocalStoryboardShotId } from '@/api/modules/editor/storyboard.mapper'
 import { apiMode } from '@/api/shared/apiMode'
+import { resolveImmediateAiTaskResultUrl } from '@/services/editor/aiTaskResultState'
 import { storyboardImageTaskService } from '@/services/editor/storyboardImageTask.service'
 import { storyboardWorkflowService } from '@/services/editor/storyboardWorkflow.service'
 import { GENERATION_TASK_TYPES } from '@/types/api-enums'
@@ -48,7 +49,10 @@ export const storyboardGenerationService = {
       const task = await storyboardImageTaskService.createStoryboardImageTask(input.shot.id, input.shot.prompt)
       const workspacePatch = await storyboardWorkflowService.loadStoryboardWorkspace(input.projectId)
       const refreshedDraftShot = workspacePatch?.shots.find((shot) => shot.id === input.shot.id)
-      const imageUrl = refreshedDraftShot?.imageUrl ?? task?.resultUrl ?? ''
+      const imageUrl = resolveImmediateAiTaskResultUrl({
+        task,
+        workspaceResultUrl: refreshedDraftShot?.imageUrl,
+      })
       const refreshedShot: StoryboardShot | undefined = refreshedDraftShot
         ? {
             ...input.shot,

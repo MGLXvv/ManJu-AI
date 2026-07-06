@@ -107,6 +107,7 @@ export const buildStoryboardDraftShots = (shots: StoryboardShot[]): Shot[] =>
     isHidden: shot.isHidden ?? false,
     isLocked: shot.isLocked ?? false,
     isFavorite: shot.isFavorite ?? false,
+    videoReviewed: shot.videoReviewed ?? false,
     referenceImages: shot.referenceImages.map(cloneReferenceImage),
     editHistory: shot.editHistory?.map(cloneEditRecord) ?? [],
     createdAt: shot.createdAt ?? '2026年03月12日 17:16',

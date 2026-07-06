@@ -7,6 +7,7 @@
         v-model:keyword="keyword"
         :batch-label="batchMode ? '退出批量' : '批量操作'"
         @add="openCreateModal"
+        @import-library="openResourceLibraryImportDialog"
         @batch="handleBatch"
         @save-export="handleSaveExport"
         @next="openGenerationModeDialog"
@@ -45,6 +46,16 @@
 
     <CreateAssetModal v-model:open="createModalOpen" :voice-options="voiceOptions" @submit="createAsset" />
     <AssetPreviewModal v-model:open="previewOpen" :asset="previewAsset" />
+    <ResourceLibraryImportDialog
+      :open="resourceLibraryDialogOpen"
+      :loading="resourceLibraryLoading"
+      :items="resourceLibraryItems"
+      :active-type="resourceLibraryType"
+      :importing-id="resourceLibraryImportingId"
+      @close="closeResourceLibraryImportDialog"
+      @update:type="handleResourceLibraryTypeChange"
+      @import="handleImportFromLibrary"
+    />
 
     <div v-if="generationModeDialogOpen" class="setting-generation-mode-dialog">
       <div class="setting-generation-mode-dialog__overlay" @click="closeGenerationModeDialog"></div>
@@ -127,9 +138,11 @@ import BatchSelectionToolbar from '@/components/editor/common/BatchSelectionTool
 import AssetGrid from '@/components/editor/setting/AssetGrid.vue'
 import AssetPreviewModal from '@/components/editor/setting/AssetPreviewModal.vue'
 import CreateAssetModal from '@/components/editor/setting/CreateAssetModal.vue'
+import ResourceLibraryImportDialog from '@/components/editor/setting/ResourceLibraryImportDialog.vue'
 import SettingTabs from '@/components/editor/setting/SettingTabs.vue'
 import SettingToolbar from '@/components/editor/setting/SettingToolbar.vue'
 import { isLocalAssetId } from '@/api/modules/editor/asset.mapper'
+import type { ResourceLibraryQueryType } from '@/api/modules/editor/resourceLibrary.mapper'
 import { apiMode } from '@/api/shared/apiMode'
 import { getSettingBatchActionToast, toggleSelectVisibleAssets } from '@/features/editor/settingBatchState'
 import { validateEditorAdvance } from '@/features/editor/editorCompletionState'
@@ -144,6 +157,7 @@ import {
   buildSettingBatchExportFileName,
 } from '@/features/editor/settingTransferState'
 import { assetWorkflowService } from '@/services/editor/assetWorkflow.service'
+import { resourceLibraryService } from '@/services/editor/resourceLibrary.service'
 import { useEditorStore } from '@/stores/editor'
 import { useProjectStore } from '@/stores/project'
 import { createDefaultSettingAssets, useSettingAssetsStore } from '@/stores/settingAssets'
@@ -176,6 +190,11 @@ const pendingDeleteIds = ref<string[]>([])
 const persistedAssetIds = ref<string[]>([])
 const bypassLeaveGuard = ref(false)
 const lastSavedSnapshot = ref('')
+const resourceLibraryDialogOpen = ref(false)
+const resourceLibraryLoading = ref(false)
+const resourceLibraryItems = ref<SettingAsset[]>([])
+const resourceLibraryType = ref<ResourceLibraryQueryType>('all')
+const resourceLibraryImportingId = ref('')
 
 const projectId = computed(() => String(route.params.projectId ?? ''))
 const keyword = computed({
@@ -247,6 +266,62 @@ const updatePersistedAssetIds = (assets: SettingAsset[]): void => {
 
 const markSaved = (): void => {
   lastSavedSnapshot.value = currentSnapshot.value
+}
+
+const loadResourceLibraryItems = async (): Promise<void> => {
+  resourceLibraryLoading.value = true
+  try {
+    const result = await resourceLibraryService.listLibraryItems({
+      type: resourceLibraryType.value,
+      page: 1,
+      pageSize: 20,
+      scope: 'PRIVATE',
+    })
+    resourceLibraryItems.value = result.items
+  } catch {
+    showToast('资源库加载失败，请稍后再试', 'error')
+  } finally {
+    resourceLibraryLoading.value = false
+  }
+}
+
+const openResourceLibraryImportDialog = async (): Promise<void> => {
+  resourceLibraryDialogOpen.value = true
+  await loadResourceLibraryItems()
+}
+
+const closeResourceLibraryImportDialog = (): void => {
+  resourceLibraryDialogOpen.value = false
+  resourceLibraryImportingId.value = ''
+}
+
+const handleResourceLibraryTypeChange = async (value: ResourceLibraryQueryType): Promise<void> => {
+  resourceLibraryType.value = value
+  await loadResourceLibraryItems()
+}
+
+const handleImportFromLibrary = async (resourceAssetId: string): Promise<void> => {
+  if (!projectId.value) {
+    showToast('未找到当前项目，无法导入资源', 'error')
+    return
+  }
+
+  resourceLibraryImportingId.value = resourceAssetId
+  try {
+    const syncedAssets = await resourceLibraryService.importFromLibrary(projectId.value, [resourceAssetId])
+    if (syncedAssets?.length) {
+      const nextAssets = apiMode === 'http' ? syncedAssets : [...syncedAssets, ...assetsStore.assets]
+      assetsStore.setAssets(nextAssets)
+      editorStore.updateSettingAssets(nextAssets)
+      updatePersistedAssetIds(nextAssets)
+    }
+    showToast('已从资源库导入', 'success')
+    closeResourceLibraryImportDialog()
+  } catch {
+    showToast('从资源库导入失败，请稍后再试', 'error')
+  } finally {
+    resourceLibraryImportingId.value = ''
+  }
 }
 
 const hydrateAssetsForProject = async (nextProjectId: string): Promise<void> => {

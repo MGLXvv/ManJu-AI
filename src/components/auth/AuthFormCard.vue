@@ -122,6 +122,20 @@
         <small v-if="errors.password" class="auth-card__field-error">{{ errors.password }}</small>
       </label>
 
+      <label v-if="mode === 'password'" class="auth-card__remember">
+        <button
+          type="button"
+          class="auth-card__remember-toggle"
+          :class="{ 'is-checked': rememberPassword }"
+          :aria-pressed="rememberPassword"
+          :disabled="loading"
+          @click="$emit('update:rememberPassword', !rememberPassword)"
+        >
+          <FigmaIcon name="checkbox-checked" :size="14" class="auth-card__agree-icon" :class="{ 'is-visible': rememberPassword }" />
+        </button>
+        <span>记住密码</span>
+      </label>
+
       <label class="auth-card__agree">
         <button
           type="button"
@@ -169,6 +183,7 @@ const props = withDefaults(
     password: string
     code?: string
     agreed: boolean
+    rememberPassword?: boolean
     showPassword?: boolean
     loading?: boolean
     codeCountdown?: number
@@ -183,6 +198,7 @@ const props = withDefaults(
   {
     username: '',
     code: '',
+    rememberPassword: false,
     showPassword: false,
     loading: false,
     codeCountdown: 0,
@@ -203,6 +219,7 @@ const emit = defineEmits<{
   (e: 'update:password', value: string): void
   (e: 'update:code', value: string): void
   (e: 'update:agreed', value: boolean): void
+  (e: 'update:rememberPassword', value: boolean): void
   (e: 'submit'): void
   (e: 'forgot'): void
   (e: 'code-help'): void

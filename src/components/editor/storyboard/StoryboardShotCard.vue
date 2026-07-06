@@ -57,12 +57,12 @@
           <span v-if="shot.isLocked" class="storyboard-shot-card__status-tag is-locked">锁定</span>
         </div>
         <button
-          v-if="!batchMode && showFavorite"
+          v-if="!batchMode && showReview"
           type="button"
           class="storyboard-shot-card__star-btn"
           :class="{ 'is-favorite': isReviewed }"
-          :aria-label="isReviewed ? '取消标记' : '标记镜头'"
-          @click.stop="$emit('favorite', shot.id)"
+          :aria-label="isReviewed ? '取消审核标记' : '标记审核完成'"
+          @click.stop="$emit('review', shot.id)"
         >
           <span class="storyboard-shot-card__star-bg" aria-hidden="true"></span>
           <span class="storyboard-shot-card__star-icon" aria-hidden="true">
@@ -104,11 +104,11 @@ const props = withDefaults(
     batchSelected?: boolean
     draggable?: boolean
     dragging?: boolean
-    showFavorite?: boolean
+    showReview?: boolean
     reviewActive?: boolean
   }>(),
   {
-    showFavorite: true,
+    showReview: true,
     reviewActive: undefined,
   },
 )
@@ -123,7 +123,7 @@ defineEmits<{
   (e: 'upload', id: string): void
   (e: 'copy', id: string): void
   (e: 'delete', id: string): void
-  (e: 'favorite', id: string): void
+  (e: 'review', id: string): void
   (e: 'drag-start', id: string, event: DragEvent): void
   (e: 'drag-end'): void
 }>()

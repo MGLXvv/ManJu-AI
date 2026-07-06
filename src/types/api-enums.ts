@@ -1,4 +1,4 @@
-﻿export const API_ERROR_CODES = {
+export const API_ERROR_CODES = {
   editorSaveFailed: 'EDITOR_SAVE_FAILED',
   generationTaskNotFound: 'GENERATION_TASK_NOT_FOUND',
   generationTaskFailed: 'GENERATION_TASK_FAILED',
@@ -17,6 +17,7 @@
   storyboardUpscaleImageRequired: 'STORYBOARD_UPSCALE_IMAGE_REQUIRED',
   storyboardVideoRequiresPersistedShot: 'STORYBOARD_VIDEO_REQUIRES_PERSISTED_SHOT',
   storyboardVideoImageRequired: 'STORYBOARD_VIDEO_IMAGE_REQUIRED',
+  storyboardVideoParametersRequired: 'STORYBOARD_VIDEO_PARAMETERS_REQUIRED',
   storyboardVoiceRequiresPersistedShot: 'STORYBOARD_VOICE_REQUIRES_PERSISTED_SHOT',
   storyboardVoiceDialogueRequired: 'STORYBOARD_VOICE_DIALOGUE_REQUIRED',
   videoGenerateFailed: 'VIDEO_GENERATE_FAILED',
@@ -61,4 +62,3 @@ export const EDITOR_SAVE_STATES = {
 export type EditorSaveState = (typeof EDITOR_SAVE_STATES)[keyof typeof EDITOR_SAVE_STATES]
 
 export const PROJECT_ARTIFACT_VERSION = 'mock-v1' as const
-

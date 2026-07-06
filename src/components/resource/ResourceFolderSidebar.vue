@@ -2,7 +2,6 @@
   <aside class="resource-sidebar">
     <div class="resource-sidebar__header">
       <span>文件夹</span>
-      <button type="button" class="resource-sidebar__add" @click="$emit('add-folder')">+</button>
     </div>
 
     <div class="resource-sidebar__list">
@@ -31,7 +30,6 @@ defineProps<{
 }>()
 
 defineEmits<{
-  (e: 'add-folder'): void
   (e: 'select-folder', id: string): void
 }>()
 </script>

@@ -1,3 +1,5 @@
+@use './video-timeline-collapse';
+
 input[type='file'].asset-card__upload-input,
 input[type='file'].storyboard-step__upload-input {
   position: fixed !important;

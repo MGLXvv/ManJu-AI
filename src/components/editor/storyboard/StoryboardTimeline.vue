@@ -34,7 +34,7 @@
             @upload="$emit('upload', $event)"
             @copy="$emit('copy', $event)"
             @delete="$emit('delete', $event)"
-            @review="handleReview"
+            @review="$emit('review', $event)"
             @drag-start="handleDragStart"
             @drag-end="handleDragEnd"
           />
@@ -130,8 +130,6 @@ const emit = defineEmits<{
   (e: 'copy', id: string): void
   (e: 'delete', id: string): void
   (e: 'review', id: string): void
-  /** @deprecated 兼容旧页面绑定，请使用 review */
-  (e: 'favorite', id: string): void
   (e: 'reorder', payload: { draggedId: string; targetId: string }): void
   (e: 'insert-after', id: string): void
   (e: 'create'): void
@@ -147,11 +145,6 @@ const scrollTrack = (delta: number): void => {
     left: delta,
     behavior: 'smooth',
   })
-}
-
-const handleReview = (id: string): void => {
-  emit('review', id)
-  emit('favorite', id)
 }
 
 const handleDragStart = (id: string, event: DragEvent): void => {

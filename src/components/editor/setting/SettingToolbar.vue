@@ -75,6 +75,7 @@ const emit = defineEmits<{
   (e: 'update:keyword', value: string): void
   (e: 'update:modelValue', value: string): void
   (e: 'add'): void
+  (e: 'import-library'): void
   (e: 'batch'): void
   (e: 'save-export'): void
   (e: 'next'): void

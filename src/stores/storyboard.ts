@@ -161,8 +161,9 @@ export const useStoryboardStore = defineStore('storyboard', () => {
     ratio: '16:9',
     status: 'pending-review',
     isHidden: false,
-    isFavorite: false,
     isLocked: false,
+    storyboardReviewed: false,
+    videoReviewed: false,
     createdAt: '2026年3月12日 17:16',
     referenceImages: [],
   })
@@ -300,11 +301,14 @@ export const useStoryboardStore = defineStore('storyboard', () => {
     })
   }
 
-  const toggleFavorite = (id: string): void => {
+  const toggleStoryboardReviewed = (id: string): void => {
     const target = shots.value.find((item) => item.id === id)
     if (!target) return
-    patchShotById(id, { isFavorite: !target.isFavorite })
+    patchShotById(id, { storyboardReviewed: !(target.storyboardReviewed ?? target.isFavorite ?? false) })
   }
+
+  /** @deprecated 兼容旧调用，请使用 toggleStoryboardReviewed */
+  const toggleFavorite = toggleStoryboardReviewed
 
   const toggleLock = (id: string): void => {
     const target = shots.value.find((item) => item.id === id)
@@ -577,6 +581,7 @@ export const useStoryboardStore = defineStore('storyboard', () => {
     removeActiveShotVoicesByCharacter,
     addActiveShotAttachment,
     removeActiveShotAttachment,
+    toggleStoryboardReviewed,
     toggleFavorite,
     toggleLock,
     toggleHidden,

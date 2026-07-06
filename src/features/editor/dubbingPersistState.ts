@@ -10,12 +10,21 @@ export interface DubbingCompleteValidationResult {
 export { buildDubbingExportFileName }
 
 export const validateDubbingBeforeComplete = (cards: DubbingRoleCardModel[]): DubbingCompleteValidationResult => {
-  const hasGeneratedAudio = resolveVisibleDubbingCards(cards).some((card) => card.lines.some((line) => Boolean(line.audioUrl)))
+  const visibleCards = resolveVisibleDubbingCards(cards)
+  const visibleLines = visibleCards.flatMap((card) => card.lines)
 
-  if (!hasGeneratedAudio) {
+  if (visibleLines.length === 0) {
     return {
       ok: false,
-      message: '请至少生成一条配音后再进入完成页',
+      message: '当前没有可生成配音的台词，请先检查视频对白内容',
+    }
+  }
+
+  const missingCount = visibleLines.filter((line) => !line.audioUrl).length
+  if (missingCount > 0) {
+    return {
+      ok: false,
+      message: `仍有 ${missingCount} 条可见台词未生成配音，请全部生成后再进入完成页`,
     }
   }
 

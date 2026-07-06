@@ -127,14 +127,27 @@
 }
 
 .voice-editor-card__upload {
-  display: grid;
-  place-items: center;
-  gap: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
   min-height: 140px;
   border: 0;
   background: transparent;
   color: #d2d2d2;
   cursor: pointer;
+}
+
+.voice-editor-card__upload .app-icon {
+  flex: 0 0 auto;
+  color: #d2d2d2;
+}
+
+.voice-editor-card__upload span {
+  color: #d2d2d2;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .voice-editor-card__footer {

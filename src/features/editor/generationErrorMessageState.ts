@@ -12,6 +12,8 @@ export const resolveGenerationTaskErrorMessage = (error: unknown): string | null
       return '生成任务已取消'
     case API_ERROR_CODES.generationTaskFailed:
       return '生成任务失败，请稍后再试'
+    case API_ERROR_CODES.generationTaskHttpPending:
+      return '生成任务已提交，结果仍在处理中，请稍后刷新工作区查看结果'
     default:
       return null
   }

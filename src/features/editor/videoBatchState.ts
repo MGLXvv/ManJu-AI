@@ -1,9 +1,12 @@
+import { validateStoryboardShotVideoSource } from '@/features/editor/storyboardParameterValidationState'
+import type { StoryboardMode } from '@/features/editor/storyboardModeState'
 import type { StoryboardShot } from '@/types/storyboard'
 
 export interface ResolveVideoBatchAvailabilityInput {
   shots: StoryboardShot[]
   selectedShotIds: string[]
   overwriteGenerated?: boolean
+  storyboardMode?: StoryboardMode
 }
 
 export interface VideoBatchAvailability {
@@ -13,6 +16,7 @@ export interface VideoBatchAvailability {
   hiddenCount: number
   lockedCount: number
   missingImageCount: number
+  missingParameterCount: number
   generatedCount: number
   unavailableCount: number
   canGenerate: boolean
@@ -22,10 +26,11 @@ export interface VideoBatchAvailability {
 export const canBatchGenerateVideoShot = (
   shot: StoryboardShot,
   overwriteGenerated = false,
+  storyboardMode: StoryboardMode = 'image',
 ): boolean =>
   !shot.isLocked &&
   !shot.isHidden &&
-  (shot.imageUrl ?? '').trim().length > 0 &&
+  validateStoryboardShotVideoSource(shot, storyboardMode).ok &&
   shot.status !== 'generating' &&
   (overwriteGenerated || !shot.videoUrl)
 
@@ -33,6 +38,7 @@ export const resolveVideoBatchAvailability = ({
   shots,
   selectedShotIds,
   overwriteGenerated = false,
+  storyboardMode = 'image',
 }: ResolveVideoBatchAvailabilityInput): VideoBatchAvailability => {
   const selectedIdSet = new Set(selectedShotIds)
   const selectedShots = shots.filter((shot) => selectedIdSet.has(shot.id))
@@ -40,6 +46,7 @@ export const resolveVideoBatchAvailability = ({
   let hiddenCount = 0
   let lockedCount = 0
   let missingImageCount = 0
+  let missingParameterCount = 0
   let generatedCount = 0
 
   const targetIds = selectedShots
@@ -54,8 +61,13 @@ export const resolveVideoBatchAvailability = ({
         return false
       }
 
-      if (!(shot.imageUrl ?? '').trim()) {
-        missingImageCount += 1
+      const sourceValidation = validateStoryboardShotVideoSource(shot, storyboardMode)
+      if (!sourceValidation.ok) {
+        if (storyboardMode === 'multi-param') {
+          missingParameterCount += 1
+        } else {
+          missingImageCount += 1
+        }
         return false
       }
 
@@ -83,6 +95,8 @@ export const resolveVideoBatchAvailability = ({
     disabledReason = '请先选择至少一个分镜'
   } else if (targetIds.length === 0 && hiddenCount + lockedCount === selectedCount) {
     disabledReason = '当前选择的分镜均已隐藏或锁定，无法批量生成视频'
+  } else if (targetIds.length === 0 && missingParameterCount === selectedCount) {
+    disabledReason = '当前选择的分镜多参配置不完整，请先补全角色、场景、道具、画面描述、图像风格和画面比例'
   } else if (targetIds.length === 0 && missingImageCount === selectedCount) {
     disabledReason = '当前选择的分镜均缺少图片，请先生成或上传分镜图'
   } else if (targetIds.length === 0 && generatedCount === selectedCount) {
@@ -98,6 +112,7 @@ export const resolveVideoBatchAvailability = ({
     hiddenCount,
     lockedCount,
     missingImageCount,
+    missingParameterCount,
     generatedCount,
     unavailableCount,
     canGenerate: targetIds.length > 0,
@@ -111,15 +126,17 @@ export const resolveVideoBatchTargetIds = (input: ResolveVideoBatchAvailabilityI
 export const resolveVideoBatchGenerateTargets = (
   shots: StoryboardShot[],
   selectedIds: string[],
+  storyboardMode: StoryboardMode = 'image',
 ): StoryboardShot[] => {
   const targetIds = new Set(
     resolveVideoBatchTargetIds({
       shots,
       selectedShotIds: selectedIds,
+      storyboardMode,
     }),
   )
   return shots.filter((shot) => targetIds.has(shot.id))
 }
 
-export const resolveSelectableVideoBatchShotIds = (shots: StoryboardShot[]): string[] =>
-  shots.filter((shot) => canBatchGenerateVideoShot(shot)).map((shot) => shot.id)
+export const resolveSelectableVideoBatchShotIds = (shots: StoryboardShot[], storyboardMode: StoryboardMode = 'image'): string[] =>
+  shots.filter((shot) => canBatchGenerateVideoShot(shot, false, storyboardMode)).map((shot) => shot.id)

@@ -44,6 +44,7 @@
           v-model:password="currentPassword"
           v-model:code="currentCode"
           v-model:agreed="agreed"
+          v-model:remember-password="rememberPassword"
           :show-password="showPassword"
           :loading="authStore.loading"
           :code-countdown="currentCountdown"
@@ -80,9 +81,40 @@ import { AUTH_ERROR } from '@/api/auth.api'
 import { useAuthStore } from '@/stores/auth'
 import type { ThirdPartyProvider } from '@/types/auth'
 
+interface RememberedPasswordPayload {
+  account: string
+  password: string
+}
+
+const REMEMBERED_PASSWORD_KEY = 'amd.auth.remembered-password'
+
+const readRememberedPassword = (): RememberedPasswordPayload | null => {
+  try {
+    const raw = window.localStorage.getItem(REMEMBERED_PASSWORD_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as Partial<RememberedPasswordPayload>
+    const account = typeof parsed.account === 'string' ? parsed.account : ''
+    const password = typeof parsed.password === 'string' ? parsed.password : ''
+    if (!account || !password) return null
+    return { account, password }
+  } catch {
+    return null
+  }
+}
+
+const writeRememberedPassword = (payload: RememberedPasswordPayload): void => {
+  window.localStorage.setItem(REMEMBERED_PASSWORD_KEY, JSON.stringify(payload))
+}
+
+const clearRememberedPassword = (): void => {
+  window.localStorage.removeItem(REMEMBERED_PASSWORD_KEY)
+}
+
+const rememberedPassword = readRememberedPassword()
 const { t } = useI18n()
 const mode = ref<AuthMode>('password')
 const agreed = ref(true)
+const rememberPassword = ref(Boolean(rememberedPassword))
 const showPassword = ref(false)
 const activeProvider = ref<ThirdPartyProvider | null>(null)
 const pendingBindProvider = ref<ThirdPartyProvider | null>(null)
@@ -92,7 +124,7 @@ const thirdPartyScanState = ref<'idle' | 'scanned' | 'confirmed' | 'expired'>('i
 const authStore = useAuthStore()
 const router = useRouter()
 
-const passwordForm = reactive({ account: 'admin11', password: '123456' })
+const passwordForm = reactive({ account: rememberedPassword?.account ?? '', password: rememberedPassword?.password ?? '' })
 const codeForm = reactive({ account: '', code: '' })
 const registerForm = reactive({ username: '', account: '', code: '', password: '' })
 const resetForm = reactive({ username: '', account: '', code: '', password: '' })
@@ -297,6 +329,12 @@ watch(mode, (nextMode, prevMode) => {
   thirdPartyAction.value = null
 })
 
+watch(rememberPassword, (value) => {
+  if (!value) {
+    clearRememberedPassword()
+  }
+})
+
 watch(activeProvider, (nextProvider) => {
   if (nextProvider) {
     startThirdPartyScanFlow()
@@ -384,6 +422,14 @@ const onSubmit = async (): Promise<void> => {
   try {
     if (mode.value === 'password') {
       await authStore.loginByPassword({ account: passwordForm.account, password: passwordForm.password })
+      if (rememberPassword.value) {
+        writeRememberedPassword({
+          account: passwordForm.account.trim(),
+          password: passwordForm.password,
+        })
+      } else {
+        clearRememberedPassword()
+      }
       await completeAndRedirect(t('auth.toast.loginSuccess'))
       return
     }
@@ -414,6 +460,8 @@ const onSubmit = async (): Promise<void> => {
       code: resetForm.code,
       password: resetForm.password,
     })
+    clearRememberedPassword()
+    rememberPassword.value = false
     passwordForm.account = resetForm.account
     passwordForm.password = ''
     mode.value = 'password'

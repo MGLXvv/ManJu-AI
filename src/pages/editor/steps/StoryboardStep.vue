@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <section class="storyboard-step">
     <div class="storyboard-step__bg" aria-hidden="true"></div>
 
@@ -96,13 +96,13 @@
 
       <StoryboardReferenceRail
         class="storyboard-layout__reference"
-      :images="currentReferenceImages"
-      :collapsed="isReferenceCollapsed"
-      :active-image-url="currentShot?.imageUrl ?? ''"
-      :disabled="Boolean(currentShot?.isLocked)"
-      @select="selectReference"
-      @toggle-collapse="toggleReferenceRail"
-    />
+        :images="currentReferenceImages"
+        :collapsed="isReferenceCollapsed"
+        :active-image-url="currentShot?.imageUrl ?? ''"
+        :disabled="Boolean(currentShot?.isLocked)"
+        @select="selectReference"
+        @toggle-collapse="toggleReferenceRail"
+      />
 
       <StoryboardTimeline
         class="storyboard-layout__timeline"
@@ -117,7 +117,7 @@
         @upload="triggerUploadForShot"
         @copy="copyShot"
         @delete="deleteShot"
-        @favorite="toggleFavorite"
+        @review="toggleStoryboardReviewed"
         @reorder="reorderShots"
         @insert-after="openInsertMode"
         @create="createBlankShot"
@@ -667,8 +667,8 @@ const confirmInsertShot = (): void => {
   showToast('新镜头已插入', 'success')
 }
 
-const toggleFavorite = (id: string): void => {
-  store.toggleFavorite(id)
+const toggleStoryboardReviewed = (id: string): void => {
+  store.toggleStoryboardReviewed(id)
 }
 
 const requestDeleteShot = (id: string): void => {

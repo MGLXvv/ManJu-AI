@@ -49,7 +49,7 @@ export const buildVideoGenerateErrorMessage = (error: unknown): string => {
   }
 
   if (code === API_ERROR_CODES.storyboardVideoParametersRequired) {
-    return '请先补全当前镜头的多参配置：角色、场景、道具、画面描述、图像风格和画面比例'
+    return '请先补全当前镜头的多参配置：角色、场景、画面描述、图像风格和画面比例'
   }
 
   if (code === API_ERROR_CODES.videoGenerateFailed) {

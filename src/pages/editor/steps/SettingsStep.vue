@@ -45,16 +45,6 @@
 
     <CreateAssetModal v-model:open="createModalOpen" :voice-options="voiceOptions" @submit="createAsset" />
     <AssetPreviewModal v-model:open="previewOpen" :asset="previewAsset" />
-    <ResourceLibraryImportDialog
-      :open="resourceLibraryDialogOpen"
-      :loading="resourceLibraryLoading"
-      :items="resourceLibraryItems"
-      :active-type="resourceLibraryType"
-      :importing-id="resourceLibraryImportingId"
-      @close="closeResourceLibraryImportDialog"
-      @update:type="handleResourceLibraryTypeChange"
-      @import="handleImportFromLibrary"
-    />
 
     <div v-if="generationModeDialogOpen" class="setting-generation-mode-dialog">
       <div class="setting-generation-mode-dialog__overlay" @click="closeGenerationModeDialog"></div>
@@ -137,7 +127,6 @@ import BatchSelectionToolbar from '@/components/editor/common/BatchSelectionTool
 import AssetGrid from '@/components/editor/setting/AssetGrid.vue'
 import AssetPreviewModal from '@/components/editor/setting/AssetPreviewModal.vue'
 import CreateAssetModal from '@/components/editor/setting/CreateAssetModal.vue'
-import ResourceLibraryImportDialog from '@/components/editor/setting/ResourceLibraryImportDialog.vue'
 import SettingTabs from '@/components/editor/setting/SettingTabs.vue'
 import SettingToolbar from '@/components/editor/setting/SettingToolbar.vue'
 import { isLocalAssetId } from '@/api/modules/editor/asset.mapper'
@@ -155,7 +144,6 @@ import {
   buildSettingBatchExportFileName,
 } from '@/features/editor/settingTransferState'
 import { assetWorkflowService } from '@/services/editor/assetWorkflow.service'
-import { resourceLibraryService } from '@/services/editor/resourceLibrary.service'
 import { useEditorStore } from '@/stores/editor'
 import { useProjectStore } from '@/stores/project'
 import { createDefaultSettingAssets, useSettingAssetsStore } from '@/stores/settingAssets'
@@ -163,7 +151,6 @@ import { useUiFeedbackStore } from '@/stores/uiFeedback'
 import { useVoicesStore } from '@/stores/voices'
 import { API_ERROR_CODES } from '@/types/api-enums'
 import type { SettingAsset, SettingAssetTypeFilter } from '@/types/settingAsset'
-import type { ResourceLibraryQueryType } from '@/api/modules/editor/resourceLibrary.mapper'
 
 const router = useRouter()
 const route = useRoute()
@@ -176,11 +163,6 @@ const voicesStore = useVoicesStore()
 const createModalOpen = ref(false)
 const previewOpen = ref(false)
 const previewAsset = ref<SettingAsset | null>(null)
-const resourceLibraryDialogOpen = ref(false)
-const resourceLibraryLoading = ref(false)
-const resourceLibraryItems = ref<SettingAsset[]>([])
-const resourceLibraryType = ref<ResourceLibraryQueryType>('all')
-const resourceLibraryImportingId = ref('')
 const generationModeDialogOpen = ref(false)
 const pendingStoryboardMode = ref<'multi-param' | 'image'>('multi-param')
 const selectedAssetId = ref('')
@@ -354,46 +336,6 @@ const openPreview = (asset: SettingAsset): void => {
   previewOpen.value = true
 }
 
-const loadResourceLibraryItems = async (): Promise<void> => {
-  if (apiMode !== 'http') {
-    resourceLibraryItems.value = []
-    return
-  }
-
-  resourceLibraryLoading.value = true
-  try {
-    const result = await resourceLibraryService.listLibraryItems({
-      type: resourceLibraryType.value,
-      page: 1,
-      pageSize: 20,
-      scope: 'PRIVATE',
-    })
-    resourceLibraryItems.value = result.items
-  } finally {
-    resourceLibraryLoading.value = false
-  }
-}
-
-const openResourceLibraryImportDialog = async (): Promise<void> => {
-  if (apiMode !== 'http') {
-    showToast('Mock 模式下不接入真实资源库', 'info')
-    return
-  }
-
-  resourceLibraryDialogOpen.value = true
-  await loadResourceLibraryItems()
-}
-
-const closeResourceLibraryImportDialog = (): void => {
-  resourceLibraryDialogOpen.value = false
-  resourceLibraryImportingId.value = ''
-}
-
-const handleResourceLibraryTypeChange = async (value: ResourceLibraryQueryType): Promise<void> => {
-  resourceLibraryType.value = value
-  await loadResourceLibraryItems()
-}
-
 const openGenerationModeDialog = (): void => {
   const entryState = getStoryboardModeEntryState(editorStore.draft?.storyboardGenerationMode ?? null)
   pendingStoryboardMode.value = entryState.mode
@@ -443,50 +385,6 @@ const handleSelectCandidate = async (payload: { id: string; imageUrl: string }):
 
 const handleUpdateAsset = async (payload: { id: string; patch: Partial<SettingAsset> }): Promise<void> => {
   await assetsStore.updateAsset(payload.id, payload.patch)
-}
-
-const handleSaveAssetToLibrary = async (id: string): Promise<void> => {
-  if (isLocalAssetId(id)) {
-    showToast('请先保存设定资产后，再加入资源库', 'info')
-    return
-  }
-
-  if (apiMode !== 'http') {
-    showToast('Mock 模式下不接入真实资源库', 'info')
-    return
-  }
-
-  try {
-    await resourceLibraryService.saveAssetToLibrary(id)
-    showToast('已保存到资源库', 'success')
-  } catch {
-    showToast('保存到资源库失败，请稍后再试', 'error')
-  }
-}
-
-const handleImportFromLibrary = async (resourceAssetId: string): Promise<void> => {
-  if (!projectId.value) {
-    return
-  }
-
-  try {
-    resourceLibraryImportingId.value = resourceAssetId
-    const syncedAssets = await resourceLibraryService.importFromLibrary(projectId.value, [resourceAssetId])
-
-    if (syncedAssets) {
-      assetsStore.setAssets(syncedAssets)
-      editorStore.updateSettingAssets(syncedAssets)
-      updatePersistedAssetIds(syncedAssets)
-      markSaved()
-    }
-
-    showToast('已从资源库导入', 'success')
-    closeResourceLibraryImportDialog()
-  } catch {
-    showToast('从资源库导入失败，请稍后再试', 'error')
-  } finally {
-    resourceLibraryImportingId.value = ''
-  }
 }
 
 const handleSelectAsset = (id: string): void => {

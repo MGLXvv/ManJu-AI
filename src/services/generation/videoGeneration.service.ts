@@ -2,6 +2,7 @@ import { isLocalStoryboardShotId } from '@/api/modules/editor/storyboard.mapper'
 import { apiMode } from '@/api/shared/apiMode'
 import { validateStoryboardShotVideoSource } from '@/features/editor/storyboardParameterValidationState'
 import type { StoryboardMode } from '@/features/editor/storyboardModeState'
+import { resolveImmediateAiTaskResultUrl } from '@/services/editor/aiTaskResultState'
 import { storyboardVideoTaskService } from '@/services/editor/storyboardVideoTask.service'
 import { storyboardWorkflowService } from '@/services/editor/storyboardWorkflow.service'
 import { API_ERROR_CODES, GENERATION_TASK_TYPES } from '@/types/api-enums'
@@ -43,7 +44,10 @@ export const videoGenerationService = {
       const task = await storyboardVideoTaskService.createStoryboardVideoTask(input.shot.id)
       const workspacePatch = await storyboardWorkflowService.loadStoryboardWorkspace(input.projectId)
       const refreshedDraftShot = workspacePatch?.shots.find((shot) => shot.id === input.shot.id)
-      const videoUrl = refreshedDraftShot?.videoUrl?.trim() || task?.resultUrl || ''
+      const videoUrl = resolveImmediateAiTaskResultUrl({
+        task,
+        workspaceResultUrl: refreshedDraftShot?.videoUrl,
+      })
       const refreshedShot: StoryboardShot | undefined = refreshedDraftShot
         ? {
             ...input.shot,

@@ -25,6 +25,13 @@ export const validateVideoBeforeDubbing = (shots: StoryboardShot[]): VideoDubbin
     }
   }
 
+  if (visibleShots.some((shot) => !shot.videoReviewed)) {
+    return {
+      ok: false,
+      message: '请先完成人工审核并标记所有可见视频镜头后再进入配音',
+    }
+  }
+
   return {
     ok: true,
     message: '',

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <section class="video-step storyboard-step">
     <div class="storyboard-step__bg" aria-hidden="true"></div>
 
@@ -206,6 +206,7 @@ import {
   resolveVideoBatchGenerateTargets,
 } from '@/features/editor/videoBatchState'
 import { validateEditorAdvance } from '@/features/editor/editorCompletionState'
+import { validateStoryboardShotVideoSource } from '@/features/editor/storyboardParameterValidationState'
 import { buildStoryboardDraftSnapshot } from '@/features/editor/storyboardDirtyState'
 import { resolveStoryboardTagOptions } from '@/features/editor/storyboardDraftState'
 import { shouldInterceptStoryboardLeave } from '@/features/editor/storyboardLeaveConfirmState'
@@ -240,6 +241,7 @@ const activeShotId = computed(() => store.activeShotId)
 const activeShot = computed(() => store.activeShot)
 const currentShot = computed(() => activeShot.value ?? shots.value[0] ?? null)
 const availableCharacters = computed(() => store.tagOptions.characters)
+const storyboardMode = computed(() => editorStore.draft?.storyboardGenerationMode ?? 'image')
 const batchMode = ref(false)
 const selectedShotIds = ref<string[]>([])
 const submitting = ref(false)
@@ -269,6 +271,7 @@ const videoBatchAvailability = computed(() =>
     shots: shots.value,
     selectedShotIds: selectedShotIds.value,
     overwriteGenerated: false,
+    storyboardMode: storyboardMode.value,
   }),
 )
 const isVideoBatchActionDisabled = computed(
@@ -385,8 +388,9 @@ const generateShot = async (): Promise<void> => {
     return
   }
 
-  if (!(shot.imageUrl ?? '').trim()) {
-    showToast('请先生成或上传分镜图后再生成视频', 'error')
+  const sourceValidation = validateStoryboardShotVideoSource(shot, storyboardMode.value)
+  if (!sourceValidation.ok) {
+    showToast(sourceValidation.message, 'error')
     return
   }
 
@@ -547,8 +551,9 @@ const runBatchGenerate = async (ids = selectedShotIds.value): Promise<void> => {
     shots: shots.value,
     selectedShotIds: ids,
     overwriteGenerated: false,
+    storyboardMode: storyboardMode.value,
   })
-  const targets = resolveVideoBatchGenerateTargets(shots.value, ids)
+  const targets = resolveVideoBatchGenerateTargets(shots.value, ids, storyboardMode.value)
   if (targets.length === 0) {
     showToast(availability.disabledReason || '当前选择中没有可生成视频的分镜', 'info')
     return
@@ -562,7 +567,7 @@ const runBatchGenerate = async (ids = selectedShotIds.value): Promise<void> => {
 
     showToast(buildVideoBatchGenerateMessage({ successCount, failedCount }), failedCount > 0 ? 'error' : 'success')
     selectedShotIds.value = selectedShotIds.value.filter((id) =>
-      shots.value.some((shot) => shot.id === id && canBatchGenerateVideoShot(shot)),
+      shots.value.some((shot) => shot.id === id && canBatchGenerateVideoShot(shot, false, storyboardMode.value)),
     )
   } finally {
     batchGenerating.value = false

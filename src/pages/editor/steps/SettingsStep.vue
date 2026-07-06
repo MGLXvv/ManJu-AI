@@ -256,11 +256,11 @@ watch(
   { immediate: true },
 )
 
-const showToast = (message: string, tone: 'info' | 'success' | 'error' = 'info'): void => {
+function showToast(message: string, tone: 'info' | 'success' | 'error' = 'info'): void {
   uiFeedback.showToast(message, { tone })
 }
 
-const updatePersistedAssetIds = (assets: SettingAsset[]): void => {
+function updatePersistedAssetIds(assets: SettingAsset[]): void {
   persistedAssetIds.value = assets.map((asset) => asset.id).filter((id) => !isLocalAssetId(id))
 }
 
@@ -324,7 +324,7 @@ const handleImportFromLibrary = async (resourceAssetId: string): Promise<void> =
   }
 }
 
-const hydrateAssetsForProject = async (nextProjectId: string): Promise<void> => {
+async function hydrateAssetsForProject(nextProjectId: string): Promise<void> {
   await editorStore.loadDraft(nextProjectId)
 
   const draftAssets = resolveSettingAssets(editorStore.draft, createDefaultSettingAssets())

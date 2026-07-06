@@ -558,25 +558,23 @@ const goCompleteStep = async (): Promise<void> => {
     return
   }
 
-  const validation = validateEditorAdvance({
-    from: 'dubbing',
-    to: 'complete',
-    draft: editorStore.draft,
-  })
-
-  if (!validation.canAdvance) {
-    showToast(validation.reason || '请先完成当前步骤', 'info')
+  const validation = validateEditorAdvance('dubbingToComplete', { cards: cards.value })
+  if (!validation.ok) {
+    showToast(validation.message, 'info')
     return
   }
 
-  if (isDirty.value) {
-    const saved = await persistDubbingDraft()
-    if (!saved) {
-      return
-    }
+  const saved = await persistDubbingDraft()
+  if (!saved) {
+    return
   }
 
+  if (projectId.value) {
+    await projectStore.updateProjectStep(projectId.value, validation.nextStep)
+  }
+
+  showToast(validation.successMessage, 'success')
   bypassLeaveGuard.value = true
-  await router.push({ name: 'editor-complete', params: { projectId: projectId.value } })
+  await router.push({ name: validation.routeName, params: { projectId: projectId.value } })
 }
 </script>

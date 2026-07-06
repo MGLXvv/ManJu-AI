@@ -2,7 +2,7 @@
   <section class="video-step storyboard-step">
     <div class="storyboard-step__bg" aria-hidden="true"></div>
 
-    <div class="video-layout">
+    <div class="video-layout" :class="{ 'is-timeline-collapsed': isTimelineCollapsed }">
       <div class="video-layout__main">
         <section class="storyboard-main-card video-main-card" :class="{ 'has-batch-toolbar': batchMode }">
           <StoryboardTopActions
@@ -71,6 +71,7 @@
         :active-shot-id="activeShotId"
         :batch-mode="batchMode"
         :batch-selected-ids="selectedShotIds"
+        :collapsed="isTimelineCollapsed"
         :review-by-shot-id="videoReviewByShotId"
         @select="handleTimelineSelect"
         @upload="triggerUploadForShot"
@@ -78,6 +79,7 @@
         @delete="deleteShot"
         @review="toggleVideoReviewed"
         @create="createBlankShot"
+        @toggle-collapse="toggleTimelineCollapse"
       />
     </div>
 
@@ -265,6 +267,7 @@ const optimizingVideoPrompt = ref(false)
 const optimizingDialogue = ref(false)
 const pendingUploadShotId = ref<string | null>(null)
 const uploadInputRef = ref<HTMLInputElement | null>(null)
+const isTimelineCollapsed = ref(false)
 let scheduledBatchGenerateTimer: number | null = null
 
 const videoBatchAvailability = computed(() =>
@@ -357,6 +360,10 @@ const persistVideoDraft = async (): Promise<boolean> => {
 
 const selectShot = (id: string): void => {
   store.selectShot(id)
+}
+
+const toggleTimelineCollapse = (): void => {
+  isTimelineCollapsed.value = !isTimelineCollapsed.value
 }
 
 const handleTimelineSelect = (id: string): void => {

@@ -60,13 +60,13 @@
           v-if="!batchMode && showFavorite"
           type="button"
           class="storyboard-shot-card__star-btn"
-          :class="{ 'is-favorite': shot.isFavorite }"
-          :aria-label="shot.isFavorite ? '取消标记' : '标记镜头'"
+          :class="{ 'is-favorite': isReviewed }"
+          :aria-label="isReviewed ? '取消标记' : '标记镜头'"
           @click.stop="$emit('favorite', shot.id)"
         >
           <span class="storyboard-shot-card__star-bg" aria-hidden="true"></span>
           <span class="storyboard-shot-card__star-icon" aria-hidden="true">
-            <FigmaIcon :name="shot.isFavorite ? 'card-star-orange' : 'card-star-outline'" :size="14" />
+            <FigmaIcon :name="isReviewed ? 'card-star-orange' : 'card-star-outline'" :size="14" />
           </span>
         </button>
       </header>
@@ -103,15 +103,18 @@ const props = withDefaults(
     draggable?: boolean
     dragging?: boolean
     showFavorite?: boolean
+    reviewActive?: boolean
   }>(),
   {
     showFavorite: true,
+    reviewActive: undefined,
   },
 )
 
 const shotNumberLabel = computed(() => props.shot.title.replace(/^镜头\s*/, '镜头'))
 const isGenerating = computed(() => props.shot.status === 'generating')
 const hasPlayableVideo = computed(() => Boolean(props.shot.videoUrl && !props.shot.videoUrl.startsWith('mock-video://')))
+const isReviewed = computed(() => props.reviewActive ?? Boolean(props.shot.isFavorite))
 
 defineEmits<{
   (e: 'select', id: string): void

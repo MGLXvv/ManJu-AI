@@ -28,13 +28,13 @@
             :batch-selected="batchSelectedIds.includes(shot.id)"
             :draggable="!batchMode"
             :dragging="draggingShotId === shot.id"
-            :show-favorite="showFavorite"
+            :show-review="showReview"
             :review-active="reviewByShotId[shot.id]"
             @select="$emit('select', $event)"
             @upload="$emit('upload', $event)"
             @copy="$emit('copy', $event)"
             @delete="$emit('delete', $event)"
-            @favorite="$emit('favorite', $event)"
+            @review="$emit('review', $event)"
             @drag-start="handleDragStart"
             @drag-end="handleDragEnd"
           />
@@ -110,7 +110,7 @@ withDefaults(
     batchMode?: boolean
     batchSelectedIds?: string[]
     collapsed?: boolean
-    showFavorite?: boolean
+    showReview?: boolean
     reviewByShotId?: Record<string, boolean>
   }>(),
   {
@@ -119,7 +119,7 @@ withDefaults(
     batchMode: false,
     batchSelectedIds: () => [],
     collapsed: false,
-    showFavorite: true,
+    showReview: true,
     reviewByShotId: () => ({}),
   },
 )
@@ -129,7 +129,7 @@ const emit = defineEmits<{
   (e: 'upload', id: string): void
   (e: 'copy', id: string): void
   (e: 'delete', id: string): void
-  (e: 'favorite', id: string): void
+  (e: 'review', id: string): void
   (e: 'reorder', payload: { draggedId: string; targetId: string }): void
   (e: 'insert-after', id: string): void
   (e: 'create'): void

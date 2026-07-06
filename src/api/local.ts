@@ -5,11 +5,16 @@ export const delay = (ms = 120): Promise<void> => new Promise((resolve) => setTi
 const memoryStorage = new Map<string, string>()
 
 const isQuotaExceededError = (error: unknown): boolean => {
-  if (!(error instanceof DOMException)) {
-    return false
+  if (typeof DOMException !== 'undefined' && error instanceof DOMException) {
+    return error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED' || error.code === 22 || error.code === 1014
   }
 
-  return error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED' || error.code === 22 || error.code === 1014
+  if (error && typeof error === 'object') {
+    const value = error as { name?: string; code?: number }
+    return value.name === 'QuotaExceededError' || value.name === 'NS_ERROR_DOM_QUOTA_REACHED' || value.code === 22 || value.code === 1014
+  }
+
+  return false
 }
 
 export const readLocal = <T>(key: string, fallback: T): T => {

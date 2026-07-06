@@ -21,6 +21,7 @@ type LegacyStoryboardShotStatus = Shot['status'] | 'idle' | 'pending'
 
 type LegacyPersistedStoryboardShot = Omit<Shot, 'status'> & {
   status: LegacyStoryboardShotStatus
+  isFavorite?: boolean
 }
 
 const cloneReferenceImage = (image: StoryboardReferenceImage): StoryboardReferenceImage => ({ ...image })
@@ -125,7 +126,7 @@ export const resolveStoryboardShots = (
       status: normalizeLegacyStoryboardStatus(shot.status),
       isHidden: shot.isHidden ?? false,
       isLocked: shot.isLocked ?? false,
-      isFavorite: shot.isFavorite ?? false,
+      storyboardReviewed: shot.storyboardReviewed ?? shot.isFavorite ?? false,
       videoReviewed: shot.videoReviewed ?? false,
       referenceImages: (shot.referenceImages ?? []).map(cloneReferenceImage),
       editHistory: (shot.editHistory ?? []).map(cloneEditRecord),
@@ -171,7 +172,7 @@ export const validateStoryboardBeforeVideo = (
     }
   }
 
-  if (visibleShots.some((shot) => !shot.isFavorite)) {
+  if (visibleShots.some((shot) => !shot.storyboardReviewed)) {
     return {
       ok: false,
       message: '请先完成人工审核并标记所有可见分镜后再进入视频生成',

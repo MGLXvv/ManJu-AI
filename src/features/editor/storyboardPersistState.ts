@@ -172,7 +172,7 @@ export const validateStoryboardBeforeVideo = (
     }
   }
 
-  if (visibleShots.some((shot) => !shot.storyboardReviewed)) {
+  if (visibleShots.some((shot) => !(shot.storyboardReviewed ?? shot.isFavorite))) {
     return {
       ok: false,
       message: '请先完成人工审核并标记所有可见分镜后再进入视频生成',

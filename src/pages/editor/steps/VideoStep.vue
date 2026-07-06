@@ -76,7 +76,7 @@
         @upload="triggerUploadForShot"
         @copy="copyShot"
         @delete="deleteShot"
-        @favorite="toggleVideoReviewed"
+        @review="toggleVideoReviewed"
         @create="createBlankShot"
       />
     </div>

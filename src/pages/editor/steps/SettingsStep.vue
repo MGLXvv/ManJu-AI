@@ -150,6 +150,7 @@ import { buildScopedProjectArtifact, buildScopedProjectExportFileName } from '@/
 import { buildSettingAssetsSnapshot, resolveSettingAssets } from '@/features/editor/settingDraftState'
 import { buildSettingDeleteDialogCopy } from '@/features/editor/settingDeleteState'
 import { buildSettingLeaveDialogCopy, shouldInterceptSettingLeave } from '@/features/editor/settingLeaveConfirmState'
+import { buildSettingSaveErrorMessage } from '@/features/editor/settingSaveErrorState'
 import { getStoryboardModeEntryState } from '@/features/editor/storyboardModeState'
 import { mapVoiceAssetsToOptions } from '@/features/voice/voiceOptionState'
 import {
@@ -379,8 +380,9 @@ const persistSettingDraft = async (): Promise<boolean> => {
     await editorStore.saveDraft()
     markSaved()
     return true
-  } catch {
-    showToast('设定保存失败，请稍后再试', 'error')
+  } catch (error) {
+    console.warn('[SettingsStep] Failed to save setting draft', error)
+    showToast(buildSettingSaveErrorMessage(error, apiMode), 'error')
     return false
   } finally {
     submitting.value = false

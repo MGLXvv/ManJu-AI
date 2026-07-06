@@ -1,0 +1,42 @@
+.storyboard-layout:has(.storyboard-canvas__empty.is-multi-param) {
+  --reference-width: 0px;
+  --layout-column-gap: 0px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.storyboard-layout:has(.storyboard-canvas__empty.is-multi-param)::before {
+  right: 0;
+}
+
+.storyboard-layout:has(.storyboard-canvas__empty.is-multi-param)::after {
+  display: none;
+}
+
+.storyboard-layout:has(.storyboard-canvas__empty.is-multi-param) .storyboard-layout__main {
+  padding-right: 0;
+}
+
+.storyboard-layout:has(.storyboard-canvas__empty.is-multi-param) .storyboard-layout__reference {
+  display: none;
+}
+
+.storyboard-layout:has(.storyboard-canvas__empty.is-multi-param) .storyboard-top-actions__group > .storyboard-top-actions__btn:first-of-type {
+  display: none;
+}
+
+.storyboard-layout:has(.storyboard-canvas__empty.is-multi-param) .batch-selection-toolbar {
+  display: none;
+}
+
+.storyboard-layout:has(.storyboard-canvas__empty.is-multi-param) .storyboard-main-card.has-batch-toolbar {
+  grid-template-rows: var(--storyboard-main-topbar-height) 1px minmax(0, 1fr);
+}
+
+.storyboard-layout:has(.storyboard-canvas__empty.is-multi-param) .storyboard-shot-card__actions > button:first-child {
+  display: none;
+}
+
+.storyboard-layout:has(.storyboard-canvas__empty.is-multi-param) .storyboard-shot-card__actions {
+  justify-content: center;
+  gap: 18px;
+}

@@ -126,6 +126,7 @@ export const resolveStoryboardShots = (
       isHidden: shot.isHidden ?? false,
       isLocked: shot.isLocked ?? false,
       isFavorite: shot.isFavorite ?? false,
+      videoReviewed: shot.videoReviewed ?? false,
       referenceImages: (shot.referenceImages ?? []).map(cloneReferenceImage),
       editHistory: (shot.editHistory ?? []).map(cloneEditRecord),
       createdAt: shot.createdAt ?? '2026年3月12日 17:16',

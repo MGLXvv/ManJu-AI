@@ -27,6 +27,8 @@
         </select>
       </label>
 
+      <button type="button" class="resource-toolbar__batch" @click="$emit('export')">导出资源</button>
+      <button type="button" class="resource-toolbar__batch" @click="$emit('reuse')">复用到项目</button>
       <button type="button" class="resource-toolbar__batch" @click="$emit('batch')">{{ batchLabel }}</button>
     </div>
   </header>
@@ -56,6 +58,8 @@ const emit = defineEmits<{
   (e: 'update:keyword', value: string): void
   (e: 'update:sourceFilter', value: ResourceSourceFilter): void
   (e: 'update:typeFilter', value: ResourceTypeFilter): void
+  (e: 'export'): void
+  (e: 'reuse'): void
   (e: 'batch'): void
 }>()
 

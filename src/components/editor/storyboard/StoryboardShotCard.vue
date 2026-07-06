@@ -57,7 +57,7 @@
           <span v-if="shot.isLocked" class="storyboard-shot-card__status-tag is-locked">锁定</span>
         </div>
         <button
-          v-if="!batchMode"
+          v-if="!batchMode && showFavorite"
           type="button"
           class="storyboard-shot-card__star-btn"
           :class="{ 'is-favorite': shot.isFavorite }"
@@ -94,14 +94,20 @@ import { computed } from 'vue'
 import FigmaIcon from '@/components/icons/FigmaIcon.vue'
 import type { StoryboardShot } from '@/types/storyboard'
 
-const props = defineProps<{
-  shot: StoryboardShot
-  active: boolean
-  batchMode?: boolean
-  batchSelected?: boolean
-  draggable?: boolean
-  dragging?: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    shot: StoryboardShot
+    active: boolean
+    batchMode?: boolean
+    batchSelected?: boolean
+    draggable?: boolean
+    dragging?: boolean
+    showFavorite?: boolean
+  }>(),
+  {
+    showFavorite: true,
+  },
+)
 
 const shotNumberLabel = computed(() => props.shot.title.replace(/^镜头\s*/, '镜头'))
 const isGenerating = computed(() => props.shot.status === 'generating')

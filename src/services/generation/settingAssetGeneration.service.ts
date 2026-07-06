@@ -1,6 +1,7 @@
 import { isLocalAssetId } from '@/api/modules/editor/asset.mapper'
 import { apiMode } from '@/api/shared/apiMode'
 import { assetImageTaskService } from '@/services/editor/assetImageTask.service'
+import { resolveImmediateAiTaskResultUrl } from '@/services/editor/aiTaskResultState'
 import { assetWorkflowService } from '@/services/editor/assetWorkflow.service'
 import { GENERATION_TASK_TYPES } from '@/types/api-enums'
 import type { SettingAsset } from '@/types/settingAsset'
@@ -24,7 +25,10 @@ export const settingAssetGenerationService = {
       const task = await assetImageTaskService.createAssetImageTask(input.asset.id, input.asset.prompt)
       const workspace = await assetWorkflowService.loadAssetWorkspace(input.projectId)
       const refreshedAsset = workspace?.find((asset) => asset.id === input.asset.id)
-      const imageUrl = refreshedAsset?.imageUrls[0] ?? task?.resultUrl ?? ''
+      const imageUrl = resolveImmediateAiTaskResultUrl({
+        task,
+        workspaceResultUrl: refreshedAsset?.imageUrls[0],
+      })
 
       return assertSettingAssetResult({
         assetId: input.asset.id,

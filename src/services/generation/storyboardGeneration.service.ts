@@ -1,5 +1,5 @@
 import { isLocalStoryboardShotId } from '@/api/modules/editor/storyboard.mapper'
-import { apiMode } from '@/api/shared/apiMode'
+import { isMockMode } from '@/api/shared/apiMode'
 import { resolveImmediateAiTaskResultUrl } from '@/services/editor/aiTaskResultState'
 import { storyboardImageTaskService } from '@/services/editor/storyboardImageTask.service'
 import { storyboardWorkflowService } from '@/services/editor/storyboardWorkflow.service'
@@ -37,73 +37,74 @@ const assertShotHasRequiredTags = (shot: StoryboardShot): void => {
   }
 }
 
+const buildStoryboardGeneratePayload = (shot: StoryboardShot): StoryboardGeneratePayload => ({
+  shotId: shot.id,
+  title: shot.title,
+  prompt: shot.prompt,
+  style: shot.style,
+  ratio: shot.ratio,
+  characters: shot.characters,
+  scenes: shot.scenes,
+  props: shot.props,
+  referenceImages: shot.referenceImages,
+  shot,
+})
+
 export const storyboardGenerationService = {
   async generateShotImage(input: GenerateStoryboardImageInput): Promise<StoryboardImageResult> {
     assertShotHasRequiredTags(input.shot)
 
-    if (apiMode === 'http') {
-      if (isLocalStoryboardShotId(input.shot.id)) {
-        throw new Error('STORYBOARD_IMAGE_REQUIRES_PERSISTED_SHOT')
-      }
-
-      const task = await storyboardImageTaskService.createStoryboardImageTask(input.shot.id, input.shot.prompt)
-      const workspacePatch = await storyboardWorkflowService.loadStoryboardWorkspace(input.projectId)
-      const refreshedDraftShot = workspacePatch?.shots.find((shot) => shot.id === input.shot.id)
-      const imageUrl = resolveImmediateAiTaskResultUrl({
-        task,
-        workspaceResultUrl: refreshedDraftShot?.imageUrl,
-      })
-      const refreshedShot: StoryboardShot | undefined = refreshedDraftShot
-        ? {
-            ...input.shot,
-            id: refreshedDraftShot.id,
-            index: refreshedDraftShot.index,
-            title: refreshedDraftShot.title,
-            imageUrl: refreshedDraftShot.imageUrl,
-            videoUrl: refreshedDraftShot.videoUrl,
-            durationSeconds: refreshedDraftShot.durationSeconds,
-            status: imageUrl ? 'success' : 'failed',
-            createdAt: refreshedDraftShot.createdAt || input.shot.createdAt,
-          }
-        : undefined
-
-      return assertStoryboardImageResult({
-        shotId: input.shot.id,
-        imageUrl,
-        shot: refreshedShot ?? {
-          ...input.shot,
-          imageUrl,
-          status: imageUrl ? 'success' : 'failed',
+    if (isMockMode) {
+      const payload = buildStoryboardGeneratePayload(input.shot)
+      const task = await createAndWaitGenerationTask(
+        {
+          projectId: input.projectId,
+          type: GENERATION_TASK_TYPES.storyboard,
+          shotId: input.shot.id,
+          payload: payload as Record<string, unknown>,
         },
-      })
+        {
+          interval: 100,
+        },
+      )
+
+      return assertStoryboardImageResult(task.result as Partial<StoryboardImageResult> | undefined)
     }
 
-    const payload: StoryboardGeneratePayload = {
+    if (isLocalStoryboardShotId(input.shot.id)) {
+      throw new Error('STORYBOARD_IMAGE_REQUIRES_PERSISTED_SHOT')
+    }
+
+    const task = await storyboardImageTaskService.createStoryboardImageTask(input.shot.id, input.shot.prompt)
+    const workspacePatch = await storyboardWorkflowService.loadStoryboardWorkspace(input.projectId)
+    const refreshedDraftShot = workspacePatch?.shots.find((shot) => shot.id === input.shot.id)
+    const imageUrl = resolveImmediateAiTaskResultUrl({
+      task,
+      workspaceResultUrl: refreshedDraftShot?.imageUrl,
+    })
+    const refreshedShot: StoryboardShot | undefined = refreshedDraftShot
+      ? {
+          ...input.shot,
+          id: refreshedDraftShot.id,
+          index: refreshedDraftShot.index,
+          title: refreshedDraftShot.title,
+          imageUrl: refreshedDraftShot.imageUrl,
+          videoUrl: refreshedDraftShot.videoUrl,
+          durationSeconds: refreshedDraftShot.durationSeconds,
+          status: imageUrl ? 'success' : 'failed',
+          createdAt: refreshedDraftShot.createdAt || input.shot.createdAt,
+        }
+      : undefined
+
+    return assertStoryboardImageResult({
       shotId: input.shot.id,
-      title: input.shot.title,
-      prompt: input.shot.prompt,
-      style: input.shot.style,
-      ratio: input.shot.ratio,
-      characters: input.shot.characters,
-      scenes: input.shot.scenes,
-      props: input.shot.props,
-      referenceImages: input.shot.referenceImages,
-      shot: input.shot,
-    }
-
-    const task = await createAndWaitGenerationTask(
-      {
-        projectId: input.projectId,
-        type: GENERATION_TASK_TYPES.storyboard,
-        shotId: input.shot.id,
-        payload: payload as Record<string, unknown>,
+      imageUrl,
+      shot: refreshedShot ?? {
+        ...input.shot,
+        imageUrl,
+        status: imageUrl ? 'success' : 'failed',
       },
-      {
-        interval: 100,
-      },
-    )
-
-    return assertStoryboardImageResult(task.result as Partial<StoryboardImageResult> | undefined)
+    })
   },
 
   async upscaleShotImage(input: UpscaleStoryboardImageInput): Promise<StoryboardUpscaleResult> {

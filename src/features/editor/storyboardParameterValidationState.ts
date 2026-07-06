@@ -22,10 +22,6 @@ export const resolveMissingMultiParamFields = (shot: StoryboardShot): string[] =
     missingFields.push('场景')
   }
 
-  if (shot.props.length === 0) {
-    missingFields.push('道具')
-  }
-
   if (!shot.prompt.trim()) {
     missingFields.push('画面描述')
   }

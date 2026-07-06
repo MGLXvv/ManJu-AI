@@ -6,6 +6,7 @@ export const API_ERROR_CODES = {
   generationTaskTimeout: 'GENERATION_TASK_TIMEOUT',
   generationTaskHttpCreateUnsupported: 'GENERATION_TASK_HTTP_CREATE_UNSUPPORTED',
   generationTaskHttpUpdateUnsupported: 'GENERATION_TASK_HTTP_UPDATE_UNSUPPORTED',
+  generationTaskHttpPending: 'GENERATION_TASK_HTTP_PENDING',
   resourceHttpWriteUnsupported: 'RESOURCE_HTTP_WRITE_UNSUPPORTED',
   voiceHttpWriteUnsupported: 'VOICE_HTTP_WRITE_UNSUPPORTED',
   scriptGenerateFailed: 'SCRIPT_GENERATE_FAILED',

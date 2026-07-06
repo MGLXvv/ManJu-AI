@@ -1,3 +1,4 @@
+import { resolveDubbingCards } from '@/features/editor/dubbingDraftState'
 import { validateDubbingBeforeComplete } from '@/features/editor/dubbingPersistState'
 import { canEnterStoryboard } from '@/features/editor/scriptGenerationState'
 import { validateSettingBeforeStoryboard } from '@/features/editor/settingStoryboardState'
@@ -70,7 +71,7 @@ const buildLegacyResult = (result: EditorAdvanceResult): LegacyEditorAdvanceResu
 
 const validateLegacyEditorAdvance = (input: LegacyEditorAdvancePayload): LegacyEditorAdvanceResult => {
   if (input.from === 'dubbing' && input.to === 'complete') {
-    return { canAdvance: true }
+    return buildLegacyResult(validateEditorAdvance('dubbingToComplete', { cards: resolveDubbingCards(input.draft) }))
   }
 
   if (input.from === 'script' && input.to === 'settings') {

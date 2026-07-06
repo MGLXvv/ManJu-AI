@@ -28,6 +28,7 @@
             :batch-selected="batchSelectedIds.includes(shot.id)"
             :draggable="!batchMode"
             :dragging="draggingShotId === shot.id"
+            :show-favorite="showFavorite"
             @select="$emit('select', $event)"
             @upload="$emit('upload', $event)"
             @copy="$emit('copy', $event)"
@@ -108,6 +109,7 @@ withDefaults(
     batchMode?: boolean
     batchSelectedIds?: string[]
     collapsed?: boolean
+    showFavorite?: boolean
   }>(),
   {
     mode: null,
@@ -115,6 +117,7 @@ withDefaults(
     batchMode: false,
     batchSelectedIds: () => [],
     collapsed: false,
+    showFavorite: true,
   },
 )
 

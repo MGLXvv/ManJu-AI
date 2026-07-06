@@ -114,7 +114,8 @@ const createShot = (
     ratio,
     status,
     isHidden: false,
-    isFavorite: false,
+    storyboardReviewed: false,
+    videoReviewed: false,
     isLocked: false,
     createdAt: ts,
     referenceImages: [

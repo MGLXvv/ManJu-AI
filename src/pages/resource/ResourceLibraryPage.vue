@@ -9,6 +9,8 @@
         v-model:type-filter="typeFilter"
         :batch-label="batchMode ? '退出批量' : '批量操作'"
         :search-placeholder="activeTab === 'creative' ? '请输入提示词、主体、故事板' : '请输入关键词'"
+        @export="exportFilteredResources"
+        @reuse="reuseFilteredResources"
         @batch="toggleBatchMode"
       />
 
@@ -19,22 +21,20 @@
           :folders="visibleFolders"
           :active-folder-id="activeFolderId"
           :counts="folderCounts"
-          @add-folder="noop"
           @select-folder="handleSelectFolder"
         />
 
         <div class="resource-page__main">
           <BatchSelectionToolbar
             v-if="batchMode"
-            action-label="批量删除"
             primary-label="本页全选"
             :selected-count="selectedIds.length"
             :total-count="filteredAssets.length"
             :primary-selected="isPageFullySelected"
-            :action-disabled="selectedIds.length === 0"
+            :actions="batchActions"
             @exit="exitBatchMode"
             @toggle-primary="toggleSelectCurrentPage"
-            @action="deleteSelected"
+            @action="handleBatchAction"
           />
 
           <ResourceAssetGrid
@@ -108,11 +108,12 @@ import ResourceLibraryTabs from '@/components/resource/ResourceLibraryTabs.vue'
 import ResourceLibraryToolbar from '@/components/resource/ResourceLibraryToolbar.vue'
 import { useResourcesStore } from '@/stores/resources'
 import { useUiFeedbackStore } from '@/stores/uiFeedback'
-import type { ResourceAssetSource } from '@/types/resource'
+import type { ResourceAsset, ResourceAssetSource } from '@/types/resource'
 
 const store = useResourcesStore()
 const uiFeedback = useUiFeedbackStore()
 const PAGE_SIZE = 6
+const RESOURCE_REUSE_QUEUE_KEY = 'amd.resource.reuse.queue'
 const readonlyState = resolveHttpReadonlyState('resource')
 
 const batchMode = ref(false)
@@ -149,6 +150,7 @@ const typeFilter = computed({
 const visibleFolders = computed(() => store.visibleFolders)
 const folderCounts = computed(() => store.folderCounts)
 const filteredAssets = computed(() => store.filteredAssets)
+const selectedAssets = computed(() => store.assets.filter((asset) => selectedIds.value.includes(asset.id)))
 const totalPages = computed(() => Math.max(1, Math.ceil(filteredAssets.value.length / PAGE_SIZE)))
 const pagedAssets = computed(() => {
   const start = (currentPage.value - 1) * PAGE_SIZE
@@ -161,6 +163,14 @@ const isPageFullySelected = computed(
 const visiblePages = computed(() => Array.from({ length: totalPages.value }, (_, index) => index + 1).slice(0, 5))
 const activeFolderSource = computed<ResourceAssetSource>(() => {
   return visibleFolders.value.find((folder) => folder.id === activeFolderId.value)?.source ?? 'created'
+})
+const batchActions = computed(() => {
+  const disabled = selectedIds.value.length === 0
+  return [
+    { key: 'reuse', label: '复用到项目', disabled, tone: 'secondary' as const },
+    { key: 'export', label: '批量导出', disabled, tone: 'secondary' as const },
+    { key: 'delete', label: '批量删除', disabled, tone: 'danger' as const },
+  ]
 })
 
 watch([filteredAssets, activeTab], ([assets]) => {
@@ -191,6 +201,61 @@ const blockReadonlyWrite = (): boolean => {
 
 const handleSelectFolder = (id: string): void => {
   store.setActiveFolder(id)
+}
+
+const buildResourceExportPayload = (items: ResourceAsset[]) => ({
+  artifact: 'resource-library',
+  version: 'mock-v1',
+  exportedAt: new Date().toISOString(),
+  tab: activeTab.value,
+  sourceFilter: sourceFilter.value,
+  typeFilter: typeFilter.value,
+  items,
+})
+
+const downloadResourceAssets = (items: ResourceAsset[], fileName = 'resource-library-assets.json'): void => {
+  const blob = new Blob([JSON.stringify(buildResourceExportPayload(items), null, 2)], {
+    type: 'application/json;charset=utf-8',
+  })
+  const objectUrl = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = objectUrl
+  link.download = fileName
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(objectUrl)
+}
+
+const queueReusableAssets = (items: ResourceAsset[]): void => {
+  window.localStorage.setItem(
+    RESOURCE_REUSE_QUEUE_KEY,
+    JSON.stringify({
+      version: 'mock-v1',
+      updatedAt: new Date().toISOString(),
+      items,
+    }),
+  )
+}
+
+const exportFilteredResources = (): void => {
+  if (filteredAssets.value.length === 0) {
+    showToast('当前没有可导出的资源', 'info')
+    return
+  }
+
+  downloadResourceAssets(filteredAssets.value)
+  showToast(`已导出 ${filteredAssets.value.length} 个资源`, 'success')
+}
+
+const reuseFilteredResources = (): void => {
+  if (filteredAssets.value.length === 0) {
+    showToast('当前没有可复用的资源', 'info')
+    return
+  }
+
+  queueReusableAssets(filteredAssets.value)
+  showToast(`已将 ${filteredAssets.value.length} 个资源加入复用入口，后续可在项目设定中接入`, 'success')
 }
 
 const beginCreate = (): void => {
@@ -296,6 +361,26 @@ const toggleSelectCurrentPage = (): void => {
   selectedIds.value = Array.from(new Set([...selectedIds.value, ...currentPageIds.value]))
 }
 
+const exportSelected = (): void => {
+  if (selectedAssets.value.length === 0) {
+    showToast('请先选择要导出的资源', 'error')
+    return
+  }
+
+  downloadResourceAssets(selectedAssets.value, 'resource-library-selected-assets.json')
+  showToast(`已导出 ${selectedAssets.value.length} 个资源`, 'success')
+}
+
+const reuseSelected = (): void => {
+  if (selectedAssets.value.length === 0) {
+    showToast('请先选择要复用的资源', 'error')
+    return
+  }
+
+  queueReusableAssets(selectedAssets.value)
+  showToast(`已将 ${selectedAssets.value.length} 个资源加入复用入口`, 'success')
+}
+
 const deleteSelected = async (): Promise<void> => {
   if (blockReadonlyWrite()) {
     return
@@ -306,5 +391,17 @@ const deleteSelected = async (): Promise<void> => {
   exitBatchMode()
 }
 
-const noop = (): void => {}
+const handleBatchAction = async (actionKey?: string): Promise<void> => {
+  switch (actionKey) {
+    case 'reuse':
+      reuseSelected()
+      return
+    case 'export':
+      exportSelected()
+      return
+    case 'delete':
+    default:
+      await deleteSelected()
+  }
+}
 </script>

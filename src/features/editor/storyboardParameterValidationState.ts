@@ -35,7 +35,11 @@ const hasSceneParameter = (shot: MultiParamShotLike): boolean => {
     return true
   }
 
-  return (shot.sceneIds?.filter(Boolean).length ?? 0) > 0
+  if ((shot.sceneIds?.filter(Boolean).length ?? 0) > 0) {
+    return true
+  }
+
+  return Boolean(shot.prompt.trim())
 }
 
 export const resolveMissingMultiParamFields = (shot: StoryboardShot): string[] => {

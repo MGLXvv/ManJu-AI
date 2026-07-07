@@ -5,20 +5,48 @@ export interface StoryboardParameterValidationResult {
   ok: boolean
   message: string
   missingFields: string[]
+  shotId?: string
+}
+
+type MultiParamShotLike = StoryboardShot & {
+  characterIds?: string[]
+  sceneIds?: string[]
+  propIds?: string[]
 }
 
 const VALID_RATIOS = new Set(['16:9', '9:16'])
 
 const buildShotLabel = (shot: StoryboardShot): string => shot.title?.trim() || `镜头${shot.index}`
 
+const hasCharacterParameter = (shot: MultiParamShotLike): boolean => {
+  if ((shot.characters?.length ?? 0) > 0) {
+    return true
+  }
+
+  if ((shot.characterIds?.filter(Boolean).length ?? 0) > 0) {
+    return true
+  }
+
+  return (shot.voiceAssignments ?? []).some((item) => Boolean(item.characterId))
+}
+
+const hasSceneParameter = (shot: MultiParamShotLike): boolean => {
+  if ((shot.scenes?.length ?? 0) > 0) {
+    return true
+  }
+
+  return (shot.sceneIds?.filter(Boolean).length ?? 0) > 0
+}
+
 export const resolveMissingMultiParamFields = (shot: StoryboardShot): string[] => {
+  const target = shot as MultiParamShotLike
   const missingFields: string[] = []
 
-  if (shot.characters.length === 0) {
+  if (!hasCharacterParameter(target)) {
     missingFields.push('角色')
   }
 
-  if (shot.scenes.length === 0) {
+  if (!hasSceneParameter(target)) {
     missingFields.push('场景')
   }
 
@@ -44,6 +72,7 @@ export const validateMultiParamShotParameters = (shot: StoryboardShot): Storyboa
       ok: true,
       message: '',
       missingFields,
+      shotId: shot.id,
     }
   }
 
@@ -51,6 +80,7 @@ export const validateMultiParamShotParameters = (shot: StoryboardShot): Storyboa
     ok: false,
     message: `${buildShotLabel(shot)} 多参配置不完整，请补全：${missingFields.join('、')}`,
     missingFields,
+    shotId: shot.id,
   }
 }
 
@@ -83,6 +113,7 @@ export const validateStoryboardShotVideoSource = (
       ok: false,
       message: '请先生成或上传分镜图后再生成视频',
       missingFields: ['分镜图片'],
+      shotId: shot.id,
     }
   }
 
@@ -90,5 +121,6 @@ export const validateStoryboardShotVideoSource = (
     ok: true,
     message: '',
     missingFields: [],
+    shotId: shot.id,
   }
 }

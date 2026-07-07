@@ -14,6 +14,27 @@ export const resolveBackendStoryboardList = (
 
 export const isLocalStoryboardShotId = (id: string): boolean => id.startsWith('shot-')
 
+const normalizeBackendStoryboardStatus = (item: BackendStoryboardDTO): Shot['status'] => {
+  const rawStatus = String(item.status ?? '').trim().toLowerCase()
+
+  if (item.imageUrl) {
+    return 'success'
+  }
+
+  if (['success', 'succeeded', 'completed', 'done', 'ready'].includes(rawStatus)) {
+    return 'success'
+  }
+
+  if (['generating', 'processing', 'running', 'in_progress', 'in-progress'].includes(rawStatus)) {
+    return 'generating'
+  }
+
+  if (['failed', 'error', 'errored'].includes(rawStatus)) {
+    return 'failed'
+  }
+
+  return 'pending-review'
+}
 export const mapShotToBackendStoryboardPayload = (
   shot: StoryboardShot,
 ): BackendStoryboardSavePayload => ({
@@ -43,7 +64,7 @@ export const mapBackendStoryboardToShot = (
     dialogue: '',
     durationSeconds: item.durationSeconds ?? 5,
     voiceAssignments: [],
-    status: 'pending-review',
+    status: normalizeBackendStoryboardStatus(item),
     style: 'anime',
     ratio,
     isHidden: false,

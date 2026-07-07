@@ -309,7 +309,7 @@ watch(
     store.setTagOptions(nextTagOptions)
 
     if (editorStore.draft?.shots.length) {
-      store.replaceShots(resolveStoryboardShots(editorStore.draft.shots, nextTagOptions))
+      store.replaceShots(resolveStoryboardShots(editorStore.draft.shots, nextTagOptions, editorStore.draft.settingAssets))
     } else {
       await store.loadDefaults()
     }
@@ -835,6 +835,10 @@ const handleUploadFileChange = async (event: Event): Promise<void> => {
 const goDubbingStep = async (): Promise<void> => {
   const validation = validateEditorAdvance('videoToDubbing', { shots: shots.value })
   if (!validation.ok) {
+    if (validation.shotId) {
+      store.selectShot(validation.shotId)
+      exitBatchMode()
+    }
     showToast(validation.message, 'error')
     return
   }

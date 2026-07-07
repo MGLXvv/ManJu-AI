@@ -1099,6 +1099,11 @@ const goVideoStep = async (): Promise<void> => {
     storyboardMode: storyboardMode.value,
   })
   if (!validation.ok) {
+    if (validation.shotId) {
+      store.selectShot(validation.shotId)
+      exitBatchMode()
+      resetInsertMode()
+    }
     showToast(validation.message, 'error')
     return
   }

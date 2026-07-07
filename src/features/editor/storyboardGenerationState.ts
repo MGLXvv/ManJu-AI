@@ -31,8 +31,12 @@ export const buildStoryboardGenerateErrorMessage = (error: unknown): string => {
     return taskMessage
   }
 
-  if (code === 'STORYBOARD_IMAGE_REQUIRES_CHARACTER_AND_SCENE') {
-    return '至少选择一个角色和一个场景'
+  if (code.startsWith('STORYBOARD_IMAGE_REQUIRES_REQUIRED_PARAMETERS')) {
+    const fields = code.split(':')[1]?.split('|').filter(Boolean) ?? []
+    if (fields.length > 0) {
+      return `请先补全${fields.join('、')}`
+    }
+    return '请先补全角色、画面描述、图像风格和画面比例；场景标签可选，画面描述可作为场景上下文'
   }
 
   if (code === 'STORYBOARD_IMAGE_REQUIRES_PERSISTED_SHOT') {

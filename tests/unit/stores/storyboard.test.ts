@@ -306,4 +306,19 @@ describe('storyboard store', () => {
     expect(store.shots.find((shot) => shot.id === target.id)?.imageUrl).toBe(originalImageUrl)
     expect(store.shots.find((shot) => shot.id === target.id)?.status).toBe(originalStatus)
   })
+  it('resets review flags when copying a shot', () => {
+    const store = useStoryboardStore()
+    const source = store.shots[0]
+
+    store.selectShot(source.id)
+    store.updateActiveShot({ storyboardReviewed: true, videoReviewed: true })
+    store.copyShot(source.id)
+
+    const copied = store.shots[1]
+    expect(copied.id).not.toBe(source.id)
+    expect(copied.storyboardReviewed).toBe(false)
+    expect(copied.videoReviewed).toBe(false)
+    expect(copied.imageUrl).toBe(source.imageUrl)
+    expect(copied.videoUrl).toBe(source.videoUrl)
+  })
 })

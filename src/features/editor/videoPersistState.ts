@@ -4,6 +4,7 @@ import type { StoryboardShot } from '@/types/storyboard'
 export interface VideoDubbingValidationResult {
   ok: boolean
   message: string
+  shotId?: string
 }
 
 export { buildVideoExportFileName }
@@ -18,17 +19,21 @@ export const validateVideoBeforeDubbing = (shots: StoryboardShot[]): VideoDubbin
     }
   }
 
-  if (visibleShots.some((shot) => !shot.videoUrl)) {
+  const firstMissingVideoShot = visibleShots.find((shot) => !(shot.videoUrl ?? '').trim())
+  if (firstMissingVideoShot) {
     return {
       ok: false,
       message: '请先为所有可见镜头生成视频后再进入配音',
+      shotId: firstMissingVideoShot.id,
     }
   }
 
-  if (visibleShots.some((shot) => !shot.videoReviewed)) {
+  const firstUnreviewedShot = visibleShots.find((shot) => !shot.videoReviewed)
+  if (firstUnreviewedShot) {
     return {
       ok: false,
       message: '请先完成人工审核并标记所有可见视频镜头后再进入配音',
+      shotId: firstUnreviewedShot.id,
     }
   }
 

@@ -102,6 +102,39 @@ describe('editorCompletionState', () => {
     expect(result.ok).toBe(false)
   })
 
+  it('returns shot id when video to dubbing validation fails', () => {
+    const result = validateEditorAdvance('videoToDubbing', {
+      shots: [
+        {
+          id: 'shot-1',
+          index: 1,
+          title: 'shot 1',
+          prompt: 'prompt',
+          imageUrl: 'mock://image',
+          videoUrl: '',
+          status: 'success',
+          characters: [],
+          scenes: [],
+          props: [],
+          style: 'style',
+          ratio: '16:9',
+          referenceImages: [],
+          videoPrompt: '',
+          dialogue: '',
+          durationSeconds: 10,
+          voiceAssignments: [],
+          storyboardReviewed: true,
+          createdAt: '2026-03-12 17:16',
+        },
+      ],
+    })
+
+    expect(result).toMatchObject({
+      ok: false,
+      shotId: 'shot-1',
+    })
+  })
+
   it('ignores hidden dubbing cards when validating complete-step entry', () => {
     const result = validateEditorAdvance('dubbingToComplete', {
       cards: [

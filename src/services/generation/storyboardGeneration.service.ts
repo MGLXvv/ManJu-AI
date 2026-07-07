@@ -1,5 +1,6 @@
 import { isLocalStoryboardShotId } from '@/api/modules/editor/storyboard.mapper'
 import { isMockMode } from '@/api/shared/apiMode'
+import { validateMultiParamShotParameters } from '@/features/editor/storyboardParameterValidationState'
 import { resolveImmediateAiTaskResultUrl } from '@/services/editor/aiTaskResultState'
 import { storyboardImageTaskService } from '@/services/editor/storyboardImageTask.service'
 import { storyboardWorkflowService } from '@/services/editor/storyboardWorkflow.service'
@@ -29,11 +30,12 @@ export interface UpscaleStoryboardImageInput {
   shot: StoryboardShot
 }
 
-const STORYBOARD_IMAGE_REQUIRES_CHARACTER_AND_SCENE = 'STORYBOARD_IMAGE_REQUIRES_CHARACTER_AND_SCENE'
+const STORYBOARD_IMAGE_REQUIRES_REQUIRED_PARAMETERS = 'STORYBOARD_IMAGE_REQUIRES_REQUIRED_PARAMETERS'
 
-const assertShotHasRequiredTags = (shot: StoryboardShot): void => {
-  if (shot.characters.length === 0 || shot.scenes.length === 0) {
-    throw new Error(STORYBOARD_IMAGE_REQUIRES_CHARACTER_AND_SCENE)
+const assertShotHasRequiredParameters = (shot: StoryboardShot): void => {
+  const result = validateMultiParamShotParameters(shot)
+  if (!result.ok) {
+    throw new Error(`${STORYBOARD_IMAGE_REQUIRES_REQUIRED_PARAMETERS}:${result.missingFields.join('|')}`)
   }
 }
 
@@ -52,7 +54,7 @@ const buildStoryboardGeneratePayload = (shot: StoryboardShot): StoryboardGenerat
 
 export const storyboardGenerationService = {
   async generateShotImage(input: GenerateStoryboardImageInput): Promise<StoryboardImageResult> {
-    assertShotHasRequiredTags(input.shot)
+    assertShotHasRequiredParameters(input.shot)
 
     if (isMockMode) {
       const payload = buildStoryboardGeneratePayload(input.shot)

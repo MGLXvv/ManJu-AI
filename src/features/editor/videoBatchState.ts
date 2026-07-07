@@ -96,7 +96,7 @@ export const resolveVideoBatchAvailability = ({
   } else if (targetIds.length === 0 && hiddenCount + lockedCount === selectedCount) {
     disabledReason = '当前选择的分镜均已隐藏或锁定，无法批量生成视频'
   } else if (targetIds.length === 0 && missingParameterCount === selectedCount) {
-    disabledReason = '当前选择的分镜多参配置不完整，请先补全角色、场景、画面描述、图像风格和画面比例'
+    disabledReason = '请先补全角色、画面描述、图像风格和画面比例；场景标签可选，画面描述可作为场景上下文'
   } else if (targetIds.length === 0 && missingImageCount === selectedCount) {
     disabledReason = '当前选择的分镜均缺少图片，请先生成或上传分镜图'
   } else if (targetIds.length === 0 && generatedCount === selectedCount) {

@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import type { StoryboardShot } from '@/types/storyboard'
 import { buildVideoExportFileName, validateVideoBeforeDubbing } from '@/features/editor/videoPersistState'
 
@@ -33,6 +33,7 @@ describe('videoPersistState', () => {
     expect(validateVideoBeforeDubbing([makeShot()])).toEqual({
       ok: false,
       message: '请先为所有可见镜头生成视频后再进入配音',
+      shotId: 'shot-1',
     })
   })
 
@@ -43,7 +44,7 @@ describe('videoPersistState', () => {
     })
   })
 
-  it('blocks entering dubbing when any visible shot is missing a video url', () => {
+  it('returns the first missing video shot id', () => {
     expect(
       validateVideoBeforeDubbing([
         makeShot({ id: 'shot-1', videoUrl: 'mock-video://shot-1/2', status: 'success', isHidden: false }),
@@ -52,14 +53,28 @@ describe('videoPersistState', () => {
     ).toEqual({
       ok: false,
       message: '请先为所有可见镜头生成视频后再进入配音',
+      shotId: 'shot-2',
     })
   })
 
-  it('allows entering dubbing when every visible shot has video url', () => {
+  it('blocks entering dubbing when any visible shot is not reviewed', () => {
     expect(
       validateVideoBeforeDubbing([
-        makeShot({ id: 'shot-1', videoUrl: 'mock-video://shot-1/2', status: 'success', isHidden: false }),
-        makeShot({ id: 'shot-2', videoUrl: 'mock-video://shot-2/2', status: 'success', isHidden: false }),
+        makeShot({ id: 'shot-1', videoUrl: 'mock-video://shot-1/2', status: 'success', isHidden: false, videoReviewed: true }),
+        makeShot({ id: 'shot-2', videoUrl: 'mock-video://shot-2/2', status: 'success', isHidden: false, videoReviewed: false }),
+      ]),
+    ).toEqual({
+      ok: false,
+      message: '请先完成人工审核并标记所有可见视频镜头后再进入配音',
+      shotId: 'shot-2',
+    })
+  })
+
+  it('allows entering dubbing when every visible shot has reviewed video', () => {
+    expect(
+      validateVideoBeforeDubbing([
+        makeShot({ id: 'shot-1', videoUrl: 'mock-video://shot-1/2', status: 'success', isHidden: false, videoReviewed: true }),
+        makeShot({ id: 'shot-2', videoUrl: 'mock-video://shot-2/2', status: 'success', isHidden: false, videoReviewed: true }),
       ]),
     ).toEqual({
       ok: true,
@@ -70,7 +85,7 @@ describe('videoPersistState', () => {
   it('ignores hidden shots when validating before dubbing', () => {
     expect(
       validateVideoBeforeDubbing([
-        makeShot({ id: 'shot-1', videoUrl: 'mock-video://shot-1/2', status: 'success', isHidden: false }),
+        makeShot({ id: 'shot-1', videoUrl: 'mock-video://shot-1/2', status: 'success', isHidden: false, videoReviewed: true }),
         makeShot({ id: 'shot-2', videoUrl: '', status: 'pending-review', isHidden: true }),
       ]),
     ).toEqual({

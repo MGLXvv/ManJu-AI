@@ -171,7 +171,7 @@ export function validateEditorAdvance(
     case 'videoToDubbing': {
       const result = validateVideoBeforeDubbing(payload.shots ?? [])
       if (!result.ok) {
-        return { ok: false, message: result.message }
+        return { ok: false, message: result.message, shotId: result.shotId }
       }
       return {
         ok: true,

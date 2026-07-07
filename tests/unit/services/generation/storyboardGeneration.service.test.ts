@@ -24,6 +24,38 @@ describe('storyboardGenerationService', () => {
     expect(result.shot.status).toBe('success')
   })
 
+  it('allows prompt text to satisfy scene context when scene tags are empty', async () => {
+    const { storyboardGenerationService } = await import('@/services/generation/storyboardGeneration.service')
+    const shot = {
+      ...createDefaultStoryboardState().shots[0]!,
+      scenes: [],
+      prompt: 'rainy street with the lead turning back under neon reflections',
+    }
+
+    const result = await storyboardGenerationService.generateShotImage({
+      projectId: 'storyboard-service-project',
+      shot,
+    })
+
+    expect(result.shot.status).toBe('success')
+  })
+
+  it('rejects storyboard image generation when required parameters are missing', async () => {
+    const { storyboardGenerationService } = await import('@/services/generation/storyboardGeneration.service')
+    const shot = {
+      ...createDefaultStoryboardState().shots[0]!,
+      characters: [],
+      voiceAssignments: [],
+    }
+
+    await expect(
+      storyboardGenerationService.generateShotImage({
+        projectId: 'storyboard-service-project',
+        shot,
+      }),
+    ).rejects.toThrow('STORYBOARD_IMAGE_REQUIRES_REQUIRED_PARAMETERS')
+  })
+
   it('throws a stable error when storyboard generation fails', async () => {
     const { storyboardGenerationService } = await import('@/services/generation/storyboardGeneration.service')
     const shot = createDefaultStoryboardState().shots[0]!

@@ -353,6 +353,8 @@ export const useStoryboardStore = defineStore('storyboard', () => {
       id: `shot-${Date.now()}`,
       index: sourceIndex + 2,
       title: buildShotTitle(sourceBase, 'A'),
+      storyboardReviewed: false,
+      videoReviewed: false,
       createdAt: '2026年3月12日 17:16',
     })
     const nextShots = [...shots.value]

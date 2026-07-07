@@ -43,6 +43,21 @@ describe('storyboard.mapper', () => {
     expect(portraitFromRatio.ratio).toBe('9:16')
   })
 
+  it('marks backend shots with image urls as success', () => {
+    const shot = mapBackendStoryboardToShot(
+      { id: 3, content: '已有首帧', imageUrl: 'https://example.com/shot.png' },
+      1,
+    )
+
+    expect(shot.status).toBe('success')
+  })
+
+  it('maps backend storyboard status values when image is absent', () => {
+    expect(mapBackendStoryboardToShot({ id: 4, content: '处理中', status: 'processing' }, 1).status).toBe('generating')
+    expect(mapBackendStoryboardToShot({ id: 5, content: '失败', status: 'failed' }, 1).status).toBe('failed')
+    expect(mapBackendStoryboardToShot({ id: 6, content: '待审核', status: 'pending' }, 1).status).toBe('pending-review')
+  })
+
   it('falls back to list and sortOrder fields', () => {
     const list = resolveBackendStoryboardList({
       list: [{ id: 'shot-2', sortOrder: 2, description: '备用字段' }],

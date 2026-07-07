@@ -33,6 +33,7 @@ export interface EditorAdvanceSuccess {
 export interface EditorAdvanceFailure {
   ok: false
   message: string
+  shotId?: string
 }
 
 export type EditorAdvancePayload = {
@@ -132,7 +133,7 @@ export function validateEditorAdvance(
     case 'storyboardToVideo': {
       const result = validateStoryboardBeforeVideo(payload.shots ?? [], payload.storyboardMode ?? null)
       if (!result.ok) {
-        return { ok: false, message: result.message }
+        return { ok: false, message: result.message, shotId: result.shotId }
       }
       return {
         ok: true,

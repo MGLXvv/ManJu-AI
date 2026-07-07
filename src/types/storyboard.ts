@@ -67,8 +67,6 @@ export interface StoryboardShot {
   isHidden?: boolean
   isLocked?: boolean
   storyboardReviewed?: boolean
-  /** @deprecated 旧草稿兼容字段，请使用 storyboardReviewed */
-  isFavorite?: boolean
   videoReviewed?: boolean
   referenceImages: StoryboardReferenceImage[]
   editHistory?: StoryboardImageEditRecord[]

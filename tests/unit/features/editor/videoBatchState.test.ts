@@ -28,7 +28,7 @@ const buildShot = (patch: Partial<StoryboardShot> = {}): StoryboardShot => ({
   status: patch.status ?? 'pending-review',
   isHidden: patch.isHidden ?? false,
   isLocked: patch.isLocked ?? false,
-  isFavorite: patch.isFavorite ?? false,
+  storyboardReviewed: patch.storyboardReviewed ?? false,
   referenceImages: patch.referenceImages ?? [],
   createdAt: patch.createdAt ?? '2026-03-12 17:16',
 })

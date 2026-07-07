@@ -27,7 +27,7 @@ const baseShot: StoryboardShot = {
   videoUrl: MOCK_MEDIA_VIDEO_9_16_URL,
   isHidden: false,
   isLocked: false,
-  isFavorite: false,
+  storyboardReviewed: false,
 }
 
 describe('VideoPreviewPanel', () => {

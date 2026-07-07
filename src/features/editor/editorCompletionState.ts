@@ -3,13 +3,13 @@ import { validateDubbingBeforeComplete } from '@/features/editor/dubbingPersistS
 import { canEnterStoryboard } from '@/features/editor/scriptGenerationState'
 import { validateSettingBeforeStoryboard } from '@/features/editor/settingStoryboardState'
 import type { StoryboardMode } from '@/features/editor/storyboardModeState'
-import { validateStoryboardBeforeVideo } from '@/features/editor/storyboardPersistState'
+import { resolveStoryboardShots, validateStoryboardBeforeVideo } from '@/features/editor/storyboardPersistState'
 import { validateVideoBeforeDubbing } from '@/features/editor/videoPersistState'
 import type { DubbingRoleCardModel } from '@/types/dubbing'
 import type { EditorDraft } from '@/types/editor'
 import type { WorkflowStep } from '@/types/project'
 import type { SettingAsset } from '@/types/settingAsset'
-import type { StoryboardShot } from '@/types/storyboard'
+import type { StoryboardShot, StoryboardTagOptions } from '@/types/storyboard'
 
 export type EditorAdvanceKey =
   | 'scriptToSettings'
@@ -70,13 +70,30 @@ const buildLegacyResult = (result: EditorAdvanceResult): LegacyEditorAdvanceResu
   }
 }
 
+const buildLegacyTagOptions = (assets: SettingAsset[]): StoryboardTagOptions => ({
+  characters: assets
+    .filter((asset) => asset.type === 'character')
+    .map((asset) => ({ id: asset.id, name: asset.title, type: asset.type })),
+  scenes: assets
+    .filter((asset) => asset.type === 'scene')
+    .map((asset) => ({ id: asset.id, name: asset.title, type: asset.type })),
+  props: assets
+    .filter((asset) => asset.type === 'prop')
+    .map((asset) => ({ id: asset.id, name: asset.title, type: asset.type })),
+})
+
+const resolveLegacyAdvanceShots = (draft: EditorDraft): StoryboardShot[] =>
+  resolveStoryboardShots(draft.shots, buildLegacyTagOptions(draft.settingAssets), draft.settingAssets)
+
 const validateLegacyEditorAdvance = (input: LegacyEditorAdvancePayload): LegacyEditorAdvanceResult => {
   if (input.from === 'dubbing' && input.to === 'complete') {
     return buildLegacyResult(validateEditorAdvance('dubbingToComplete', { cards: resolveDubbingCards(input.draft) }))
   }
 
   if (input.from === 'script' && input.to === 'settings') {
-    return buildLegacyResult(validateEditorAdvance('scriptToSettings', { generatedScript: input.draft.script.generated || input.draft.script.content }))
+    return buildLegacyResult(
+      validateEditorAdvance('scriptToSettings', { generatedScript: input.draft.script.generated || input.draft.script.content }),
+    )
   }
 
   if (input.from === 'settings' && input.to === 'storyboard') {
@@ -84,11 +101,20 @@ const validateLegacyEditorAdvance = (input: LegacyEditorAdvancePayload): LegacyE
   }
 
   if (input.from === 'storyboard' && input.to === 'video') {
-    return buildLegacyResult(validateEditorAdvance('storyboardToVideo', { shots: input.draft.shots as unknown as StoryboardShot[] }))
+    return buildLegacyResult(
+      validateEditorAdvance('storyboardToVideo', {
+        shots: resolveLegacyAdvanceShots(input.draft),
+        storyboardMode: input.draft.storyboardGenerationMode,
+      }),
+    )
   }
 
   if (input.from === 'video' && input.to === 'dubbing') {
-    return buildLegacyResult(validateEditorAdvance('videoToDubbing', { shots: input.draft.shots as unknown as StoryboardShot[] }))
+    return buildLegacyResult(
+      validateEditorAdvance('videoToDubbing', {
+        shots: resolveLegacyAdvanceShots(input.draft),
+      }),
+    )
   }
 
   return {

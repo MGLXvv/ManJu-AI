@@ -20,7 +20,7 @@ describe('storyboard module api', () => {
   it('returns default storyboard shots without manual review marks', async () => {
     const defaults = await storyboardApi.listDefaults()
 
-    expect(defaults.shots.every((shot) => shot.isFavorite === false)).toBe(true)
+    expect(defaults.shots.every((shot) => shot.storyboardReviewed === false)).toBe(true)
   })
 
   it('includes at least one 9:16 default storyboard shot with portrait image data', async () => {

@@ -16,4 +16,9 @@ describe('storyboardLeaveConfirmState', () => {
     expect(shouldInterceptStoryboardLeave(true, true)).toBe(false)
     expect(shouldInterceptStoryboardLeave(true, false)).toBe(true)
   })
+
+  it('treats omitted bypass flag as false', () => {
+    expect(shouldInterceptStoryboardLeave(false)).toBe(false)
+    expect(shouldInterceptStoryboardLeave(true)).toBe(true)
+  })
 })

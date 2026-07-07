@@ -1,4 +1,4 @@
-﻿import type { DubbingDraft } from './dubbing'
+import type { DubbingDraft } from './dubbing'
 import type { SettingAsset } from './settingAsset'
 import type {
   StoryboardImageEditRecord,
@@ -55,8 +55,6 @@ export interface Shot {
   isHidden?: boolean
   isLocked?: boolean
   storyboardReviewed?: boolean
-  /** @deprecated 旧草稿兼容字段，请使用 storyboardReviewed */
-  isFavorite?: boolean
   videoReviewed?: boolean
   referenceImages?: StoryboardReferenceImage[]
   editHistory?: StoryboardImageEditRecord[]

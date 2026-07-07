@@ -1,4 +1,4 @@
-﻿import { createDefaultEditorDraft } from '@/mocks/editor.mock'
+import { createDefaultEditorDraft } from '@/mocks/editor.mock'
 import type { DubbingDraft, DubbingRoleCardDraft, DubbingRoleCardModel, DubbingRoleLineDraft } from '@/types/dubbing'
 import type { EditorDraft, PropSetting, ScriptDraft, Shot } from '@/types/editor'
 import type { SettingAsset } from '@/types/settingAsset'
@@ -106,7 +106,7 @@ export const buildStoryboardDraftShots = (shots: StoryboardShot[]): Shot[] =>
     ratio: shot.ratio,
     isHidden: shot.isHidden ?? false,
     isLocked: shot.isLocked ?? false,
-    storyboardReviewed: shot.storyboardReviewed ?? shot.isFavorite ?? false,
+    storyboardReviewed: shot.storyboardReviewed ?? false,
     videoReviewed: shot.videoReviewed ?? false,
     referenceImages: shot.referenceImages.map(cloneReferenceImage),
     editHistory: shot.editHistory?.map(cloneEditRecord) ?? [],

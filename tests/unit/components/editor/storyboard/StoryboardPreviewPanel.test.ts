@@ -26,7 +26,7 @@ const baseShot: StoryboardShot = {
   videoUrl: '',
   isHidden: false,
   isLocked: false,
-  isFavorite: false,
+  storyboardReviewed: false,
 }
 
 const renderComponent = async (props: any) =>

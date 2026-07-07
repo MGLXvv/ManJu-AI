@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { GENERATION_TASK_STATUSES } from '@/types/api-enums'
 import { generationApi } from '@/api/generation.api'
 
@@ -77,7 +77,7 @@ describe('generation task api', () => {
           ratio: '16:9',
           status: 'success',
           isHidden: false,
-          isFavorite: false,
+          storyboardReviewed: false,
           isLocked: false,
           createdAt: '2026-03-12 17:16',
           referenceImages: [],

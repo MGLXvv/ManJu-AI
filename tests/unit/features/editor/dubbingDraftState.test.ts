@@ -46,7 +46,7 @@ const makeShot = (overrides: Partial<Shot> = {}): Shot => ({
   style: 'Comic',
   ratio: '16:9',
   isLocked: false,
-  isFavorite: false,
+  storyboardReviewed: false,
   referenceImages: [],
   createdAt: '2026-03-12 17:16',
   ...overrides,

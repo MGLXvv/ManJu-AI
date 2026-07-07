@@ -1,5 +1,5 @@
 import type { StoryboardMode } from '@/features/editor/storyboardModeState'
-import type { StoryboardShot } from '@/types/storyboard'
+import type { StoryboardRatio, StoryboardShot } from '@/types/storyboard'
 
 export interface StoryboardParameterValidationResult {
   ok: boolean
@@ -8,15 +8,21 @@ export interface StoryboardParameterValidationResult {
   shotId?: string
 }
 
-type MultiParamShotLike = StoryboardShot & {
+type MultiParamShotLike = Partial<StoryboardShot> & {
+  id: string
+  index: number
+  description?: string
   characterIds?: string[]
   sceneIds?: string[]
   propIds?: string[]
 }
 
-const VALID_RATIOS = new Set(['16:9', '9:16'])
+const VALID_RATIOS = new Set<StoryboardRatio>(['16:9', '9:16'])
 
-const buildShotLabel = (shot: StoryboardShot): string => shot.title?.trim() || `镜头${shot.index}`
+const buildShotLabel = (shot: MultiParamShotLike): string => shot.title?.trim() || `镜头${shot.index}`
+
+const resolveShotPromptText = (shot: MultiParamShotLike): string => (shot.prompt ?? shot.description ?? '').trim()
+const resolveShotStyleText = (shot: MultiParamShotLike): string => (shot.style ?? '').trim()
 
 const hasCharacterParameter = (shot: MultiParamShotLike): boolean => {
   if ((shot.characters?.length ?? 0) > 0) {
@@ -39,37 +45,38 @@ const hasSceneParameter = (shot: MultiParamShotLike): boolean => {
     return true
   }
 
-  return Boolean(shot.prompt.trim())
+  return Boolean(resolveShotPromptText(shot))
 }
 
-export const resolveMissingMultiParamFields = (shot: StoryboardShot): string[] => {
-  const target = shot as MultiParamShotLike
+export const resolveMissingMultiParamFields = (shot: StoryboardShot | MultiParamShotLike): string[] => {
   const missingFields: string[] = []
 
-  if (!hasCharacterParameter(target)) {
+  if (!hasCharacterParameter(shot)) {
     missingFields.push('角色')
   }
 
-  if (!hasSceneParameter(target)) {
+  if (!hasSceneParameter(shot)) {
     missingFields.push('场景')
   }
 
-  if (!shot.prompt.trim()) {
+  if (!resolveShotPromptText(shot)) {
     missingFields.push('画面描述')
   }
 
-  if (!shot.style.trim()) {
+  if (!resolveShotStyleText(shot)) {
     missingFields.push('图像风格')
   }
 
-  if (!VALID_RATIOS.has(shot.ratio)) {
+  if (!shot.ratio || !VALID_RATIOS.has(shot.ratio)) {
     missingFields.push('画面比例')
   }
 
   return missingFields
 }
 
-export const validateMultiParamShotParameters = (shot: StoryboardShot): StoryboardParameterValidationResult => {
+export const validateMultiParamShotParameters = (
+  shot: StoryboardShot | MultiParamShotLike,
+): StoryboardParameterValidationResult => {
   const missingFields = resolveMissingMultiParamFields(shot)
   if (missingFields.length === 0) {
     return {
@@ -82,7 +89,7 @@ export const validateMultiParamShotParameters = (shot: StoryboardShot): Storyboa
 
   return {
     ok: false,
-    message: `${buildShotLabel(shot)} 多参配置不完整，请补全：${missingFields.join('、')}`,
+    message: `${buildShotLabel(shot)} 多参配置不完整，请补充：${missingFields.join('、')}`,
     missingFields,
     shotId: shot.id,
   }

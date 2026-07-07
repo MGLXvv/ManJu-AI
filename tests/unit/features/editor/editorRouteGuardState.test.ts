@@ -52,7 +52,7 @@ const makeShot = (overrides: Partial<Shot> = {}): Shot => ({
   ratio: '16:9',
   isHidden: false,
   isLocked: false,
-  isFavorite: false,
+  storyboardReviewed: false,
   referenceImages: [],
   createdAt: '2026-03-12 17:16',
   ...overrides,
@@ -229,7 +229,7 @@ describe('editorRouteGuardState', () => {
         makeSettingAsset({ id: 'scene-1', type: 'scene', title: '场景1' }),
       ],
       storyboardGenerationMode: 'image',
-      shots: [makeShot({ imageUrl: 'mock-image://shot-1', status: 'success', isFavorite: false })],
+      shots: [makeShot({ imageUrl: 'mock-image://shot-1', status: 'success', storyboardReviewed: false })],
     })
 
     const blocked = resolveEditorRouteGuard('editor-video', draft)
@@ -256,7 +256,7 @@ describe('editorRouteGuardState', () => {
         makeSettingAsset({ id: 'scene-1', type: 'scene', title: '场景1' }),
       ],
       storyboardGenerationMode: 'image',
-      shots: [makeShot({ imageUrl: 'mock-image://shot-1', status: 'success', isFavorite: true })],
+      shots: [makeShot({ imageUrl: 'mock-image://shot-1', status: 'success', storyboardReviewed: true })],
     })
 
     const blocked = resolveEditorRouteGuard('editor-dubbing', draft)
@@ -282,7 +282,7 @@ describe('editorRouteGuardState', () => {
         makeSettingAsset({ id: 'scene-1', type: 'scene', title: '场景1' }),
       ],
       storyboardGenerationMode: 'image',
-      shots: [makeShot({ imageUrl: 'mock-image://shot-1', videoUrl: 'mock-video://shot-1', status: 'success', isFavorite: true })],
+      shots: [makeShot({ imageUrl: 'mock-image://shot-1', videoUrl: 'mock-video://shot-1', status: 'success', storyboardReviewed: true, videoReviewed: true })],
       dubbing: makeDubbingDraft([
         {
           id: 'character-1',
@@ -324,7 +324,7 @@ describe('editorRouteGuardState', () => {
         makeSettingAsset({ id: 'scene-1', type: 'scene', title: '场景1' }),
       ],
       storyboardGenerationMode: 'image',
-      shots: [makeShot({ imageUrl: 'mock-image://shot-1', videoUrl: 'mock-video://shot-1', status: 'success', isFavorite: true })],
+      shots: [makeShot({ imageUrl: 'mock-image://shot-1', videoUrl: 'mock-video://shot-1', status: 'success', storyboardReviewed: true, videoReviewed: true })],
       dubbing: makeDubbingDraft([
         {
           id: 'character-1',

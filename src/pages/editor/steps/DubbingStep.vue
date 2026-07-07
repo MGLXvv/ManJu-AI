@@ -545,7 +545,7 @@ onBeforeRouteLeave((to) => {
     return true
   }
 
-  if (shouldInterceptStoryboardLeave({ isDirty: isDirty.value, isLeavingStoryboardStep: isLeavingDubbingStep(to) })) {
+  if (isLeavingDubbingStep(to) && shouldInterceptStoryboardLeave(isDirty.value, bypassLeaveGuard.value)) {
     handleBlockedNavigation(to.fullPath)
     return false
   }

@@ -304,11 +304,9 @@ export const useStoryboardStore = defineStore('storyboard', () => {
   const toggleStoryboardReviewed = (id: string): void => {
     const target = shots.value.find((item) => item.id === id)
     if (!target) return
-    patchShotById(id, { storyboardReviewed: !(target.storyboardReviewed ?? target.isFavorite ?? false) })
+    patchShotById(id, { storyboardReviewed: !(target.storyboardReviewed ?? false) })
   }
 
-  /** @deprecated 兼容旧调用，请使用 toggleStoryboardReviewed */
-  const toggleFavorite = toggleStoryboardReviewed
 
   const toggleLock = (id: string): void => {
     const target = shots.value.find((item) => item.id === id)
@@ -582,7 +580,6 @@ export const useStoryboardStore = defineStore('storyboard', () => {
     addActiveShotAttachment,
     removeActiveShotAttachment,
     toggleStoryboardReviewed,
-    toggleFavorite,
     toggleLock,
     toggleHidden,
     createBlankShot,

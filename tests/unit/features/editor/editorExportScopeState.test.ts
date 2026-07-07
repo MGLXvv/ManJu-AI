@@ -35,7 +35,7 @@ const makeShot = (): Shot => ({
   ratio: '16:9',
   isHidden: false,
   isLocked: false,
-  isFavorite: true,
+  storyboardReviewed: true,
   referenceImages: [
     {
       id: 'ref-1',

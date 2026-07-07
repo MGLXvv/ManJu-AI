@@ -33,7 +33,7 @@ describe('editor module api', () => {
         style: '国风漫画',
         ratio: '16:9',
         isLocked: false,
-        isFavorite: false,
+        storyboardReviewed: false,
         referenceImages: [],
         createdAt: '2026年3月12日 17:16',
       },

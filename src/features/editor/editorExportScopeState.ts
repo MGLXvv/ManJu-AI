@@ -29,7 +29,6 @@ export interface ScopedEditorExportPayload {
 
 const cloneScopedShots = (shots: Shot[], scope: EditorExportScope): Shot[] =>
   shots.map((shot) => {
-    const storyboardReviewed = shot.storyboardReviewed ?? shot.isFavorite ?? false
     const nextShot: Shot = {
       id: shot.id,
       index: shot.index,
@@ -44,8 +43,7 @@ const cloneScopedShots = (shots: Shot[], scope: EditorExportScope): Shot[] =>
       ratio: shot.ratio,
       isHidden: shot.isHidden,
       isLocked: shot.isLocked,
-      storyboardReviewed,
-      isFavorite: storyboardReviewed,
+      storyboardReviewed: shot.storyboardReviewed ?? false,
       referenceImages: shot.referenceImages?.map((item) => ({ ...item })),
       createdAt: shot.createdAt,
     }

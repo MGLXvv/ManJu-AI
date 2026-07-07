@@ -23,7 +23,7 @@ const buildShot = (overrides: Partial<StoryboardShot> = {}): StoryboardShot => (
   status: 'pending-review',
   isHidden: false,
   isLocked: false,
-  isFavorite: false,
+  storyboardReviewed: false,
   referenceImages: [],
   createdAt: '2026年3月12日 17:16',
   ...overrides,

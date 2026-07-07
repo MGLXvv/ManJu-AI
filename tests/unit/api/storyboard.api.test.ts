@@ -26,7 +26,7 @@ describe('storyboardApi', () => {
   it('returns default storyboard shots without manual review marks', async () => {
     const defaults = await storyboardApi.listDefaults()
 
-    expect(defaults.shots.every((shot) => shot.isFavorite === false)).toBe(true)
+    expect(defaults.shots.every((shot) => shot.storyboardReviewed === false)).toBe(true)
   })
 
   it('generates a mock video url for the shot', async () => {
@@ -34,7 +34,7 @@ describe('storyboardApi', () => {
 
     const result = await storyboardApi.generateVideo(source)
 
-    expect(result.videoUrl.startsWith(`mock-video://${source.id}/`)).toBe(true)
+    expect(result.videoUrl).toContain('/mock-media/')
     expect(result.shot.videoUrl).toBe(result.videoUrl)
     expect(result.shot.status).toBe('success')
   })

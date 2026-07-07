@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { storyboardShotsMock } from '@/mocks/storyboard.mock'
 import type { Shot } from '@/types/editor'
 import type { SettingAsset } from '@/types/settingAsset'
@@ -36,7 +36,8 @@ const storyboardShot: StoryboardShot = {
   status: 'success',
   isHidden: true,
   isLocked: true,
-  isFavorite: true,
+  storyboardReviewed: true,
+  videoReviewed: false,
   referenceImages: [{ id: 'ref-1', url: 'ref-image-1' }],
   editHistory: [],
   createdAt: '2026年3月12日 17:16',
@@ -82,7 +83,8 @@ describe('storyboardPersistState', () => {
         ratio: '16:9',
         isHidden: true,
         isLocked: true,
-        isFavorite: true,
+        storyboardReviewed: true,
+        videoReviewed: false,
         referenceImages: [{ id: 'ref-1', url: 'ref-image-1' }],
         editHistory: [],
         createdAt: '2026年3月12日 17:16',
@@ -98,6 +100,18 @@ describe('storyboardPersistState', () => {
     const draftShots = buildStoryboardDraftShots([storyboardShot])
 
     expect(resolveStoryboardShots(draftShots, tagOptions)).toEqual([storyboardShot])
+  })
+
+  it('defaults unresolved legacy review state to false when storyboardReviewed is missing', () => {
+    const [draftShot] = buildStoryboardDraftShots([storyboardShot])
+    const legacyLikeShot = {
+      ...draftShot,
+      storyboardReviewed: undefined,
+    }
+
+    const [resolvedShot] = resolveStoryboardShots([legacyLikeShot], tagOptions)
+
+    expect(resolvedShot.storyboardReviewed).toBe(false)
   })
 
   it('fills missing voice assignments from character asset default voices', () => {
@@ -178,6 +192,7 @@ describe('storyboardPersistState', () => {
     expect(payload.shots[0].title).toBe('镜头 1')
     expect(buildStoryboardExportFileName('project:demo/01')).toBe('project-demo-01-storyboard.json')
   })
+
   it('blocks entering video when storyboard mode is missing', () => {
     expect(validateStoryboardBeforeVideo([storyboardShot], null)).toEqual({
       ok: false,
@@ -191,39 +206,46 @@ describe('storyboardPersistState', () => {
       message: '请至少保留一个可见分镜后再进入视频生成',
     })
 
-    expect(
-      validateStoryboardBeforeVideo([
+    const result = validateStoryboardBeforeVideo(
+      [
         {
           ...storyboardShot,
           status: 'pending-review',
           isHidden: false,
           imageUrl: '',
         },
-      ], 'image'),
-    ).toEqual({
+      ],
+      'image',
+    )
+
+    expect(result).toMatchObject({
       ok: false,
       message: '请先为所有可见分镜生成首帧后再进入视频生成',
+      shotId: 'shot-1',
     })
   })
 
   it('ignores hidden shots when validating image mode before video', () => {
     expect(
-      validateStoryboardBeforeVideo([
-        {
-          ...storyboardShot,
-          id: 'shot-hidden',
-          isHidden: true,
-          status: 'success',
-          imageUrl: 'hidden-image',
-        },
-      ], 'image'),
+      validateStoryboardBeforeVideo(
+        [
+          {
+            ...storyboardShot,
+            id: 'shot-hidden',
+            isHidden: true,
+            status: 'success',
+            imageUrl: 'hidden-image',
+          },
+        ],
+        'image',
+      ),
     ).toEqual({
       ok: false,
       message: '请至少保留一个可见分镜后再进入视频生成',
     })
 
-    expect(
-      validateStoryboardBeforeVideo([
+    const result = validateStoryboardBeforeVideo(
+      [
         {
           ...storyboardShot,
           id: 'shot-visible-pending',
@@ -238,40 +260,50 @@ describe('storyboardPersistState', () => {
           status: 'success',
           imageUrl: 'hidden-image',
         },
-      ], 'image'),
-    ).toEqual({
+      ],
+      'image',
+    )
+
+    expect(result).toMatchObject({
       ok: false,
       message: '请先为所有可见分镜生成首帧后再进入视频生成',
+      shotId: 'shot-visible-pending',
     })
   })
 
   it('allows entering video in image mode when every visible shot has a generated first frame', () => {
     expect(
-      validateStoryboardBeforeVideo([
-        {
-          ...storyboardShot,
-          isHidden: false,
-        },
-      ], 'image'),
+      validateStoryboardBeforeVideo(
+        [
+          {
+            ...storyboardShot,
+            isHidden: false,
+          },
+        ],
+        'image',
+      ),
     ).toEqual({
       ok: true,
       message: '',
     })
 
     expect(
-      validateStoryboardBeforeVideo([
-        {
-          ...storyboardShot,
-          isHidden: false,
-        },
-        {
-          ...storyboardShot,
-          id: 'shot-hidden-pending',
-          isHidden: true,
-          status: 'pending-review',
-          imageUrl: '',
-        },
-      ], 'image'),
+      validateStoryboardBeforeVideo(
+        [
+          {
+            ...storyboardShot,
+            isHidden: false,
+          },
+          {
+            ...storyboardShot,
+            id: 'shot-hidden-pending',
+            isHidden: true,
+            status: 'pending-review',
+            imageUrl: '',
+          },
+        ],
+        'image',
+      ),
     ).toEqual({
       ok: true,
       message: '',
@@ -280,15 +312,18 @@ describe('storyboardPersistState', () => {
 
   it('allows multi-param mode without image urls when visible shots have prompts', () => {
     expect(
-      validateStoryboardBeforeVideo([
-        {
-          ...storyboardShot,
-          isHidden: false,
-          imageUrl: '',
-          status: 'pending-review',
-          prompt: '角色站在雨夜街头回望，情绪压抑',
-        },
-      ], 'multi-param'),
+      validateStoryboardBeforeVideo(
+        [
+          {
+            ...storyboardShot,
+            isHidden: false,
+            imageUrl: '',
+            status: 'pending-review',
+            prompt: '角色站在雨夜街头回望，情绪压抑',
+          },
+        ],
+        'multi-param',
+      ),
     ).toEqual({
       ok: true,
       message: '',
@@ -296,8 +331,8 @@ describe('storyboardPersistState', () => {
   })
 
   it('blocks multi-param mode when any visible shot lacks prompt text', () => {
-    expect(
-      validateStoryboardBeforeVideo([
+    const result = validateStoryboardBeforeVideo(
+      [
         {
           ...storyboardShot,
           isHidden: false,
@@ -305,11 +340,12 @@ describe('storyboardPersistState', () => {
           status: 'pending-review',
           prompt: '   ',
         },
-      ], 'multi-param'),
-    ).toEqual({
-      ok: false,
-      message: '请先补充分镜画面描述后再进入视频生成',
-    })
+      ],
+      'multi-param',
+    )
+
+    expect(result.ok).toBe(false)
+    expect(result.shotId).toBe('shot-1')
+    expect(result.message).toContain('画面描述')
   })
 })
-

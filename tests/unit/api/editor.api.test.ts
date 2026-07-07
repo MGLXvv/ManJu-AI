@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { createDefaultEditorDraft } from '@/mocks/editor.mock'
 import { API_ERROR_CODES } from '@/types/api-enums'
 import { projectApi } from '@/api/project.api'
@@ -32,7 +32,7 @@ describe('project and editor contracts', () => {
         style: '国风漫画',
         ratio: '16:9',
         isLocked: false,
-        isFavorite: false,
+        storyboardReviewed: false,
         referenceImages: [],
         createdAt: '2026年3月12日 17:16',
       },

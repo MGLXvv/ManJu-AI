@@ -22,7 +22,6 @@ type LegacyStoryboardShotStatus = Shot['status'] | 'idle' | 'pending'
 
 type LegacyPersistedStoryboardShot = Omit<Shot, 'status'> & {
   status: LegacyStoryboardShotStatus
-  isFavorite?: boolean
 }
 
 const cloneReferenceImage = (image: StoryboardReferenceImage): StoryboardReferenceImage => ({ ...image })
@@ -127,7 +126,7 @@ export const resolveStoryboardShots = (
       status: normalizeLegacyStoryboardStatus(shot.status),
       isHidden: shot.isHidden ?? false,
       isLocked: shot.isLocked ?? false,
-      storyboardReviewed: shot.storyboardReviewed ?? shot.isFavorite ?? false,
+      storyboardReviewed: shot.storyboardReviewed ?? false,
       videoReviewed: shot.videoReviewed ?? false,
       referenceImages: (shot.referenceImages ?? []).map(cloneReferenceImage),
       editHistory: (shot.editHistory ?? []).map(cloneEditRecord),
@@ -176,7 +175,7 @@ export const validateStoryboardBeforeVideo = (
     }
   }
 
-  const firstUnreviewedShot = visibleShots.find((shot) => !(shot.storyboardReviewed ?? shot.isFavorite))
+  const firstUnreviewedShot = visibleShots.find((shot) => !shot.storyboardReviewed)
   if (firstUnreviewedShot) {
     return {
       ok: false,

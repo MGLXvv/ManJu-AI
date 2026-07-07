@@ -98,7 +98,7 @@ describe('storyboard store', () => {
     const target = store.shots[0]
     await store.generateVideoById(target.id)
 
-    expect(store.shots.find((shot) => shot.id === target.id)?.videoUrl).toContain('mock-video://')
+    expect(store.shots.find((shot) => shot.id === target.id)?.videoUrl).toContain('/mock-media/')
     expect(store.shots.find((shot) => shot.id === target.id)?.status).toBe('success')
   })
 
@@ -138,7 +138,7 @@ describe('storyboard store', () => {
     editorStore.currentProjectId = 'project-storyboard-batch-optimize'
 
     const [firstShot, secondShot] = store.shots
-    const firstPrompt = '夜晚街道霓虹灯闪烁，角色在雨中停步回头'
+    const firstPrompt = 'night street with neon reflections and a character turning back in the rain'
     const secondPrompt = '#mock-optimize-fail'
 
     store.selectShot(firstShot.id)
@@ -148,7 +148,7 @@ describe('storyboard store', () => {
 
     await store.optimizeShotPromptsByIds([firstShot.id, secondShot.id])
 
-    expect(store.shots.find((shot) => shot.id === firstShot.id)?.prompt).toContain('镜头')
+    expect(store.shots.find((shot) => shot.id === firstShot.id)?.prompt).toContain('night street')
     expect(store.shots.find((shot) => shot.id === secondShot.id)?.prompt).toBe(secondPrompt)
   })
 
@@ -158,9 +158,9 @@ describe('storyboard store', () => {
     editorStore.currentProjectId = 'project-storyboard-batch-filter'
 
     const [firstShot, secondShot, thirdShot] = store.shots
-    const firstPrompt = '雨夜车站，角色独自等待列车进站'
+    const firstPrompt = 'rainy station platform with a character waiting alone for the train'
     const secondPrompt = '   '
-    const thirdPrompt = '清晨天台逆光特写，角色转身微笑'
+    const thirdPrompt = 'sunrise rooftop backlight close-up with the character turning and smiling slightly'
 
     store.selectShot(firstShot.id)
     store.updateActiveShotPrompt(firstPrompt)
@@ -172,7 +172,7 @@ describe('storyboard store', () => {
 
     await store.optimizeShotPromptsByIds([firstShot.id, secondShot.id, thirdShot.id])
 
-    expect(store.shots.find((shot) => shot.id === firstShot.id)?.prompt).toContain('镜头')
+    expect(store.shots.find((shot) => shot.id === firstShot.id)?.prompt).toContain('rainy station platform')
     expect(store.shots.find((shot) => shot.id === secondShot.id)?.prompt).toBe(secondPrompt)
     expect(store.shots.find((shot) => shot.id === thirdShot.id)?.prompt).toBe(thirdPrompt)
   })
@@ -206,21 +206,21 @@ describe('storyboard store', () => {
     const originalImageUrl = target.imageUrl ?? ''
     const result = buildStoryboardEditedImage({
       sourceUrl: originalImageUrl,
-      prompt: '  强化主角眼神   并补一点冷色边光  ',
+      prompt: '  sharpen the lead gaze and add a little cool rim light  ',
       title: target.title,
       selection: { x: 84, y: 10, width: 24, height: 30 },
     })
 
     await store.applyEditedImageToShot(target.id, {
       imageUrl: result.imageUrl,
-      prompt: '  强化主角眼神   并补一点冷色边光  ',
+      prompt: '  sharpen the lead gaze and add a little cool rim light  ',
       selection: { x: 84, y: 10, width: 24, height: 30 },
     })
 
     const updated = store.shots.find((shot) => shot.id === target.id)
     expect(updated?.imageUrl).toBe(result.imageUrl)
     expect(updated?.editHistory).toHaveLength(1)
-    expect(updated?.editHistory?.[0]?.prompt).toBe('强化主角眼神 并补一点冷色边光')
+    expect(updated?.editHistory?.[0]?.prompt).toBe('sharpen the lead gaze and add a little cool rim light')
     expect(updated?.editHistory?.[0]?.sourceImageUrl).toBe(originalImageUrl)
     expect(updated?.editHistory?.[0]?.resultImageUrl).toBe(result.imageUrl)
     expect(updated?.editHistory?.[0]?.selection).toEqual({
@@ -240,7 +240,7 @@ describe('storyboard store', () => {
     await expect(
       store.applyEditedImageToShot(target.id, {
         imageUrl: 'data:image/svg+xml,edited',
-        prompt: '强化主角眼神',
+        prompt: 'sharpen the lead gaze',
         selection: { x: 12, y: 16, width: 20, height: 22 },
       }),
     ).resolves.toBeUndefined()

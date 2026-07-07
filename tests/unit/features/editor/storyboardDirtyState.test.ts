@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import type { StoryboardShot } from '@/types/storyboard'
 import { buildStoryboardDraftSnapshot, hasUnsavedStoryboardChanges } from '@/features/editor/storyboardDirtyState'
 
@@ -21,7 +21,7 @@ const sampleShot = (): StoryboardShot => ({
   status: 'success',
   isHidden: false,
   isLocked: false,
-  isFavorite: false,
+  storyboardReviewed: false,
   referenceImages: [{ id: 'ref-1', url: 'ref-image-1' }],
   editHistory: [],
   createdAt: '2026年3月12日 17:16',
@@ -50,7 +50,8 @@ describe('storyboardDirtyState', () => {
           ratio: '16:9',
           isHidden: false,
           isLocked: false,
-          isFavorite: false,
+          storyboardReviewed: false,
+          videoReviewed: false,
           referenceImages: [{ id: 'ref-1', url: 'ref-image-1' }],
           editHistory: [],
           createdAt: '2026年3月12日 17:16',

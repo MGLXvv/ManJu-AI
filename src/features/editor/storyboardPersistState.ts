@@ -15,6 +15,7 @@ import type {
 export interface StoryboardVideoValidationResult {
   ok: boolean
   message: string
+  shotId?: string
 }
 
 type LegacyStoryboardShotStatus = Shot['status'] | 'idle' | 'pending'
@@ -156,9 +157,11 @@ export const validateStoryboardBeforeVideo = (
   }
 
   if (mode === 'image' && visibleShots.some((shot) => shot.status !== 'success' || !shot.imageUrl)) {
+    const firstInvalidShot = visibleShots.find((shot) => shot.status !== 'success' || !shot.imageUrl)
     return {
       ok: false,
       message: '请先为所有可见分镜生成首帧后再进入视频生成',
+      shotId: firstInvalidShot?.id,
     }
   }
 
@@ -168,14 +171,17 @@ export const validateStoryboardBeforeVideo = (
       return {
         ok: false,
         message: result.message,
+        shotId: result.shotId,
       }
     }
   }
 
-  if (visibleShots.some((shot) => !(shot.storyboardReviewed ?? shot.isFavorite))) {
+  const firstUnreviewedShot = visibleShots.find((shot) => !(shot.storyboardReviewed ?? shot.isFavorite))
+  if (firstUnreviewedShot) {
     return {
       ok: false,
       message: '请先完成人工审核并标记所有可见分镜后再进入视频生成',
+      shotId: firstUnreviewedShot.id,
     }
   }
 

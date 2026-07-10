@@ -1,8 +1,10 @@
-import { settingApi } from '@/api/setting.api'
-import { hasAnyMockFailureToken } from '@/features/shared/mockFailureState'
 import { API_ERROR_CODES, GENERATION_TASK_STATUSES } from '@/types/api-enums'
 import type { SettingAssetGeneratePayload } from '@/services/generation/generationPayload.types'
 import type { GenerationTask } from '../generation.types'
+import {
+  generateMockSettingAssetImage,
+  shouldFailSettingAssetGeneration,
+} from './mockGeneration.helpers'
 import type { MockGenerationTaskSettlement } from './types'
 
 export const resolveSettingAssetMockTask = async (
@@ -18,7 +20,7 @@ export const resolveSettingAssetMockTask = async (
   const description = String(payload?.description ?? targetAsset?.roleName ?? '')
   const prompt = String(payload?.prompt ?? targetAsset?.prompt ?? '')
 
-  if (hasAnyMockFailureToken([name, description, prompt], ['#mock-image-fail'])) {
+  if (shouldFailSettingAssetGeneration(name, description, prompt) || !targetAsset) {
     return {
       status: GENERATION_TASK_STATUSES.failed,
       progress: 100,
@@ -27,16 +29,7 @@ export const resolveSettingAssetMockTask = async (
     }
   }
 
-  if (!targetAsset) {
-    return {
-      status: GENERATION_TASK_STATUSES.failed,
-      progress: 100,
-      errorMessage: API_ERROR_CODES.settingImageGenerateFailed,
-      result: task.result,
-    }
-  }
-
-  const result = await settingApi.generateAssetImage(targetAsset)
+  const result = generateMockSettingAssetImage(targetAsset)
   return {
     status: GENERATION_TASK_STATUSES.success,
     progress: 100,

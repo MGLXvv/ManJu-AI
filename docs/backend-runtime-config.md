@@ -13,69 +13,68 @@ Actual behavior is defined in `src/api/shared/apiMode.ts`:
 import.meta.env.VITE_API_MODE === 'http' ? 'http' : 'mock'
 ```
 
-That means:
-
-- when `VITE_API_MODE=http`, the front-end uses HTTP API implementations for standardized modules
-- when `VITE_API_MODE` is missing or any value other than `http`, the front-end defaults to `mock`
+When the variable is missing or is not exactly `http`, the application intentionally falls back to local mock mode.
 
 ## API Base URL
 
-HTTP requests use `VITE_API_BASE_URL`.
-
-Actual behavior is defined in `src/api/http.ts`:
+All HTTP modules share the Axios client in `src/api/http.ts`:
 
 ```ts
-baseURL: import.meta.env.VITE_API_BASE_URL || '/api'
+baseURL: import.meta.env.VITE_API_BASE_URL || '/admin-api'
 ```
 
-That means:
+Rules:
 
-- when `VITE_API_BASE_URL` is set, HTTP requests use that value as the API base URL
-- when `VITE_API_BASE_URL` is missing, the front-end defaults to `/api`
+- Set `VITE_API_BASE_URL` to an absolute URL for direct local-backend access.
+- Omit it when the development or production reverse proxy exposes the backend at `/admin-api`.
+- Do not append module paths such as `/aidrama` or `/projects` to the base URL. Those paths belong to each `*.http.ts` module.
+- Avoid a trailing slash to prevent double-slash request URLs in logs and proxy rules.
 
 ## Local Mock Mode
 
-Use this mode for front-end-only development or product demos.
-
-Example `.env.local`:
+Use this mode for front-end-only development or product demonstrations:
 
 ```dotenv
 VITE_API_MODE=mock
 ```
 
-Behavior:
+API modules use local mock implementations, and many mock flows persist state through `localStorage`. No backend is required.
 
-- API modules use local mock implementations
-- many mock flows persist data through localStorage
-- no backend is required
-
-## Backend HTTP Mode
-
-Use this mode for backend integration.
-
-Example `.env.local`:
+## Direct Local Backend
 
 ```dotenv
 VITE_API_MODE=http
-VITE_API_BASE_URL=http://localhost:3000/api
+VITE_API_BASE_URL=http://localhost:48080/admin-api
 ```
 
-Behavior:
+A project-list request is then resolved as:
 
-- standardized API modules use their HTTP implementations
-- requests are sent through the shared axios instance
-- auth/session interceptors still apply in HTTP mode
+```text
+http://localhost:48080/admin-api/aidrama/projects
+```
 
-## Request Behavior Summary
+## Reverse Proxy Or Same-Origin Backend
 
-- default mode: `mock`
-- HTTP mode trigger: `VITE_API_MODE=http`
-- default base URL in HTTP mode: `/api`
-- custom backend base URL: set `VITE_API_BASE_URL`
+```dotenv
+VITE_API_MODE=http
+```
 
-## Standardized API Modules With Mock/HTTP Support
+The browser requests `/admin-api/...`. Vite, Nginx, or the deployment gateway must proxy that prefix to the backend service.
 
-The following modules already support mock/http switching:
+## Shared Request Behavior
+
+The shared client currently provides:
+
+- 30-second timeout
+- `Authorization: Bearer <token>` injection when a session token exists
+- `X-Requested-With: XMLHttpRequest`
+- unwrapping of `{ code, msg, data }` responses when `code === 0`
+- normalized API errors
+- centralized handling of HTTP or business-code `401` and `403`
+
+## Standardized Modules
+
+The following modules already support mock/HTTP switching:
 
 - `auth`
 - `editor`
@@ -89,25 +88,4 @@ The following modules already support mock/http switching:
 - `asset`
 - `scriptTemplate`
 
-## Example Configurations
-
-### Front-End Only
-
-```dotenv
-VITE_API_MODE=mock
-```
-
-### Local Backend
-
-```dotenv
-VITE_API_MODE=http
-VITE_API_BASE_URL=http://localhost:3000/api
-```
-
-### Reverse Proxy Or Same-Origin Backend
-
-```dotenv
-VITE_API_MODE=http
-```
-
-In this case the front-end will request `/api/...`.
+For the complete integration workflow, see `docs/frontend-backend-integration-guide.md`.

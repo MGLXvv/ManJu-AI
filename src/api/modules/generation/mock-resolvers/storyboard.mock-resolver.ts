@@ -1,8 +1,3 @@
-import { storyboardApi } from '@/api/storyboard.api'
-import {
-  optimizeMockStoryboardPrompt,
-  shouldMockStoryboardGenerateFail,
-} from '@/features/editor/storyboardGenerationState'
 import { API_ERROR_CODES, GENERATION_TASK_STATUSES } from '@/types/api-enums'
 import type {
   StoryboardGeneratePayload,
@@ -10,6 +5,12 @@ import type {
   StoryboardUpscalePayload,
 } from '@/services/generation/generationPayload.types'
 import type { GenerationTask } from '../generation.types'
+import {
+  generateMockStoryboardImage,
+  optimizeMockStoryboardPrompt,
+  shouldFailStoryboardGeneration,
+  upscaleMockStoryboardImage,
+} from './mockGeneration.helpers'
 import type { MockGenerationTaskSettlement } from './types'
 
 export const resolveStoryboardMockTask = async (
@@ -17,13 +18,10 @@ export const resolveStoryboardMockTask = async (
 ): Promise<MockGenerationTaskSettlement | null> => {
   if (task.type === 'storyboard_optimize') {
     const payload = task.payload as Partial<StoryboardOptimizePayload> | undefined
-    const prompt = String(payload?.prompt ?? '')
-    const optimizedPrompt = optimizeMockStoryboardPrompt(prompt)
-
     return {
       status: GENERATION_TASK_STATUSES.success,
       progress: 100,
-      result: { prompt: optimizedPrompt },
+      result: { prompt: optimizeMockStoryboardPrompt(String(payload?.prompt ?? '')) },
       errorMessage: undefined,
     }
   }
@@ -34,7 +32,7 @@ export const resolveStoryboardMockTask = async (
     const title = String(payload?.title ?? targetShot?.title ?? '')
     const prompt = String(payload?.prompt ?? targetShot?.prompt ?? '')
 
-    if (shouldMockStoryboardGenerateFail({ title, prompt })) {
+    if (shouldFailStoryboardGeneration(title, prompt) || !targetShot) {
       return {
         status: GENERATION_TASK_STATUSES.failed,
         progress: 100,
@@ -43,16 +41,7 @@ export const resolveStoryboardMockTask = async (
       }
     }
 
-    if (!targetShot) {
-      return {
-        status: GENERATION_TASK_STATUSES.failed,
-        progress: 100,
-        errorMessage: API_ERROR_CODES.storyboardGenerateFailed,
-        result: task.result,
-      }
-    }
-
-    const result = await storyboardApi.generateShotImage(targetShot)
+    const result = generateMockStoryboardImage(targetShot)
     return {
       status: GENERATION_TASK_STATUSES.success,
       progress: 100,
@@ -80,7 +69,7 @@ export const resolveStoryboardMockTask = async (
       }
     }
 
-    if (title.includes('#mock-upscale-fail')) {
+    if (title.includes('#mock-upscale-fail') || !targetShot) {
       return {
         status: GENERATION_TASK_STATUSES.failed,
         progress: 100,
@@ -89,16 +78,7 @@ export const resolveStoryboardMockTask = async (
       }
     }
 
-    if (!targetShot) {
-      return {
-        status: GENERATION_TASK_STATUSES.failed,
-        progress: 100,
-        errorMessage: API_ERROR_CODES.storyboardUpscaleFailed,
-        result: task.result,
-      }
-    }
-
-    const result = await storyboardApi.upscaleShotImage(targetShot)
+    const result = upscaleMockStoryboardImage(targetShot)
     return {
       status: GENERATION_TASK_STATUSES.success,
       progress: 100,

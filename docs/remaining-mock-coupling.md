@@ -1,49 +1,54 @@
 # Remaining Mock Coupling
 
-## Purpose
+## Status
 
-This file records the mock-layer dependencies that are still intentionally reused inside generation mock resolvers.
+The generation mock resolver layer has been decoupled from editor feature helpers and legacy domain API entrypoints.
 
-These are transitional couplings inside the mock implementation only.
-Pages and stores should already be decoupled from these older mock helpers.
+The following former dependencies have been removed:
 
-## Current Allowed Transitional Couplings
+- `script.mock-resolver.ts` no longer imports `generateMockScript` or `optimizeMockScript` from `src/features/editor/scriptGenerationState.ts`
+- `storyboard.mock-resolver.ts` no longer imports `storyboardApi`, `optimizeMockStoryboardPrompt`, or `shouldMockStoryboardGenerateFail`
+- `settingAsset.mock-resolver.ts` no longer imports `settingApi` or `hasAnyMockFailureToken`
 
-### `script.mock-resolver.ts`
+Mock generation behavior is now implemented inside:
 
-- `generateMockScript`
-- `optimizeMockScript`
-- Source: `src/features/editor/scriptGenerationState.ts`
-- Note: page and service callers no longer depend on these helpers directly; they are only reused by mock task settlement.
+- `src/api/modules/generation/mock-resolvers/mockGeneration.helpers.ts`
 
-### `storyboard.mock-resolver.ts`
+The helper owns pure mock-only behavior for:
 
-- `storyboardApi.generateShotImage`
-- `storyboardApi.upscaleShotImage`
-- `optimizeMockStoryboardPrompt`
-- `shouldMockStoryboardGenerateFail`
-- Sources:
-  - `src/api/storyboard.api.ts`
-  - `src/features/editor/storyboardGenerationState.ts`
-- Note: page and store layers no longer call these helpers directly for generation flows. They remain in the mock resolver for result generation and mock-failure behavior.
+- script generation and optimization
+- storyboard prompt optimization and failure-token checks
+- storyboard image generation and upscale result construction
+- setting asset image generation and failure-token checks
+- mock result cloning required to avoid mutating editor state objects
 
-### `settingAsset.mock-resolver.ts`
+## Current Dependency Boundary
 
-- `settingApi.generateAssetImage`
-- `hasAnyMockFailureToken`
-- Sources:
-  - `src/api/setting.api.ts`
-  - `src/features/shared/mockFailureState.ts`
-- Note: the settings page and `settingAssets` store no longer depend on these helpers directly for asset generation.
+The intended dependency direction is now:
 
-## Follow-Up Cleanup Direction
+```text
+generation.mock
+  -> mock-resolvers
+    -> mockGeneration.helpers
+      -> domain types and shared API enums
+```
 
-1. `storyboardApi` should eventually retain only storyboard data operations, reference-image operations, upload operations, and edit operations.
-2. `settingApi` should eventually retain only setting asset data operations.
-3. Mock image generation and mock-failure rules can be consolidated into dedicated mock helper files under the generation mock resolver layer.
-4. `video` and `dubbing` resolvers should be added only after product and backend rules are confirmed.
+The generation mock resolver layer must not import from:
 
-## Non-Goals
+- `src/features/editor/*`
+- root compatibility API files such as `src/api/storyboard.api.ts`
+- other domain API implementations such as `storyboardMockApi` or `settingMockApi`
 
-- This document does not require immediate refactoring.
-- This document exists to prevent the false assumption that every legacy mock dependency has already been fully removed.
+## Remaining Mock-Specific Constraints
+
+The mock task payload currently still carries complete `shot` and `asset` objects for local settlement. This is intentional for front-end-only mode and is not a dependency on editor stores or pages.
+
+Backend HTTP implementations should continue to treat those complete objects as optional transitional payload fields. The stable backend contract should prefer scalar identifiers and explicit input fields documented in `docs/generation-task-contract.md`.
+
+## Maintenance Rules
+
+1. Add new generation mock behavior to `mockGeneration.helpers.ts` or another generation-local helper.
+2. Do not call a domain API from a generation mock resolver.
+3. Do not import page, store, or editor feature state into the API module.
+4. Keep failure-token behavior in the mock layer only.
+5. Preserve the same result guards and task result shapes used by HTTP mode.

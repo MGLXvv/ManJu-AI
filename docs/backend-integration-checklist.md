@@ -5,14 +5,15 @@
 - Front-end defaults to `mock` mode unless `VITE_API_MODE=http` is set
 - When `VITE_API_MODE=http`, standardized API modules use their HTTP implementations
 - Backend base URL is controlled by `VITE_API_BASE_URL`
-- If `VITE_API_BASE_URL` is missing, the HTTP client defaults to `/api`
+- If `VITE_API_BASE_URL` is missing, the HTTP client defaults to `/admin-api`
+- Business module paths must not repeat the `/admin-api` gateway prefix
 
 ## Minimum Backend Startup Target
 
 The recommended minimum backend startup target is:
 
-- `GET /projects`
-- `POST /projects`
+- `GET /aidrama/projects`
+- `POST /aidrama/projects`
 - `GET /generation/tasks`
 - `POST /generation/tasks`
 - `GET /generation/tasks/:id`
@@ -23,6 +24,18 @@ After these are stable, continue with:
 - setting and voice APIs
 - storyboard auxiliary APIs
 - remaining management modules
+
+## Project Resource APIs
+
+The current front-end project module reserves the following routes:
+
+- `GET /aidrama/projects`
+- `GET /aidrama/projects/:id`
+- `POST /aidrama/projects`
+- `PUT /aidrama/projects/:id`
+- `DELETE /aidrama/projects/:id`
+- `POST /aidrama/projects/import`
+- `GET /aidrama/projects/:id/export`
 
 ## Required Generation Task APIs
 
@@ -162,3 +175,5 @@ The current front-end mock may also carry full objects for local settlement:
 - `card`
 
 Backend implementations should treat these as optional transitional fields and should not require them when the backend can reconstruct state from the required scalar payload fields.
+
+For the front-end integration procedure and troubleshooting guide, see `docs/frontend-backend-integration-guide.md`.

@@ -1,6 +1,7 @@
 import { createApiError } from '@/api/errors'
 import { apiMode } from '@/api/shared/apiMode'
 import { API_ERROR_CODES } from '@/types/api-enums'
+import type { DubbingRoleLineDraft } from '@/types/dubbing'
 import type { EditorDraft, Shot as EditorShot } from '@/types/editor'
 import type { MediaKind, MediaStorageKind, MediaUploadContext, MediaUploadResult, StoredMediaRecord } from '@/types/media'
 import type { ResourceAsset } from '@/types/resource'
@@ -68,6 +69,11 @@ const hydrateEditorShot = async (shot: EditorShot): Promise<EditorShot> => ({
   editHistory: await Promise.all((shot.editHistory ?? []).map(hydrateEditRecord)),
 })
 
+const hydrateDubbingLine = async (line: DubbingRoleLineDraft): Promise<DubbingRoleLineDraft> => ({
+  ...line,
+  audioUrl: await resolveUrl(line.audioMediaId, line.audioUrl),
+})
+
 const hydrateSettingAsset = async (asset: SettingAsset): Promise<SettingAsset> => {
   const imageUrls = await Promise.all(
     (asset.imageUrls ?? []).map((url, index) => resolveUrl(asset.imageMediaIds?.[index], url)),
@@ -99,6 +105,11 @@ const sanitizeEditorShot = (shot: EditorShot): EditorShot => ({
   videoUrl: isTransientMediaUrl(shot.videoUrl) ? '' : shot.videoUrl,
   referenceImages: (shot.referenceImages ?? []).map(sanitizeReference),
   editHistory: (shot.editHistory ?? []).map(sanitizeEditRecord),
+})
+
+const sanitizeDubbingLine = (line: DubbingRoleLineDraft): DubbingRoleLineDraft => ({
+  ...line,
+  audioUrl: isTransientMediaUrl(line.audioUrl) ? '' : line.audioUrl,
 })
 
 const sanitizeSettingAsset = (asset: SettingAsset): SettingAsset => ({
@@ -216,6 +227,13 @@ export const sanitizeEditorDraftMedia = (draft: EditorDraft): EditorDraft => {
   const next = cloneJson(draft)
   next.settingAssets = next.settingAssets.map(sanitizeSettingAsset)
   next.shots = next.shots.map(sanitizeEditorShot)
+  next.dubbing = {
+    ...next.dubbing,
+    cards: next.dubbing.cards.map((card) => ({
+      ...card,
+      lines: card.lines.map(sanitizeDubbingLine),
+    })),
+  }
   return next
 }
 
@@ -223,6 +241,15 @@ export const hydrateEditorDraftMedia = async (draft: EditorDraft): Promise<Edito
   const next = cloneJson(draft)
   next.settingAssets = await Promise.all(next.settingAssets.map(hydrateSettingAsset))
   next.shots = await Promise.all(next.shots.map(hydrateEditorShot))
+  next.dubbing = {
+    ...next.dubbing,
+    cards: await Promise.all(
+      next.dubbing.cards.map(async (card) => ({
+        ...card,
+        lines: await Promise.all(card.lines.map(hydrateDubbingLine)),
+      })),
+    ),
+  }
   return next
 }
 

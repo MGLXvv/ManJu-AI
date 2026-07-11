@@ -10,7 +10,12 @@
   },
   "scripts": {
     "test": "vitest run",
+    "test:contracts": "vitest run tests/unit/contracts",
+    "test:e2e:mock": "node tools/e2e/mock-main-flow.mjs",
     "typecheck": "vue-tsc -b",
+    "check:http-mock-boundary": "node tools/quality/check-http-mock-boundary.mjs",
+    "check:integration-consistency": "node tools/quality/check-integration-consistency.mjs",
+    "check:quality": "pnpm check:http-mock-boundary && pnpm check:integration-consistency && pnpm typecheck && pnpm test && pnpm build",
     "capture": "node tools/capture-modao.mjs",
     "dev": "vite --host 0.0.0.0",
     "build": "vue-tsc -b && vite build",

@@ -1,3 +1,4 @@
+import { mediaBlobRepository } from '@/services/media/mediaBlobRepository'
 import type { StoryboardImageEditRecord, StoryboardImageEditSelection } from '@/types/storyboard'
 
 export interface StoryboardSaveStateInput {
@@ -120,14 +121,21 @@ export const buildStoryboardImageEditRecord = ({
   resultImageUrl,
   id,
   now,
-}: BuildStoryboardImageEditRecordInput): StoryboardImageEditRecord => ({
-  id: id ?? `edit-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-  prompt: normalizePrompt(prompt),
-  selection: clampStoryboardSelection(selection),
-  sourceImageUrl,
-  resultImageUrl,
-  createdAt: now ?? new Date().toISOString(),
-})
+}: BuildStoryboardImageEditRecordInput): StoryboardImageEditRecord => {
+  const sourceMediaId = mediaBlobRepository.findIdByUrl(sourceImageUrl)
+  const resultMediaId = mediaBlobRepository.findIdByUrl(resultImageUrl)
+
+  return {
+    id: id ?? `edit-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    prompt: normalizePrompt(prompt),
+    selection: clampStoryboardSelection(selection),
+    sourceImageUrl,
+    ...(sourceMediaId ? { sourceMediaId } : {}),
+    resultImageUrl,
+    ...(resultMediaId ? { resultMediaId } : {}),
+    createdAt: now ?? new Date().toISOString(),
+  }
+}
 
 export const buildStoryboardUpscaledImage = ({
   sourceUrl,

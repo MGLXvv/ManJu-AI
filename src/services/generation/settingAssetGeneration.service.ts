@@ -2,13 +2,13 @@ import { isLocalAssetId } from '@/api/modules/editor/asset.mapper'
 import { isMockMode } from '@/api/shared/apiMode'
 import { assetImageTaskService } from '@/services/editor/assetImageTask.service'
 import { resolveImmediateAiTaskResultUrl } from '@/services/editor/aiTaskResultState'
-import { assetWorkflowService } from '@/services/editor/assetWorkflow.service'
 import { GENERATION_TASK_TYPES } from '@/types/api-enums'
 import type { SettingAsset } from '@/types/settingAsset'
 import type { SettingAssetGeneratePayload } from './generationPayload.types'
 import { assertSettingAssetResult } from './generationResultGuards'
-import type { SettingAssetImageResult } from './generationResult.types'
+import type { SettingAssetImageResult, SettingAssetImageTaskResult } from './generationResult.types'
 import { createAndWaitGenerationTask } from './generationTaskRunner'
+import { generationWorkspaceRefreshService } from './generationWorkspaceRefresh.service'
 
 export interface GenerateSettingAssetImageInput {
   projectId: string
@@ -39,7 +39,10 @@ export const settingAssetGenerationService = {
         },
       )
 
-      return assertSettingAssetResult(task.result as Partial<SettingAssetImageResult> | undefined)
+      const taskResult = assertSettingAssetResult(
+        task.result as Partial<SettingAssetImageTaskResult> | undefined,
+      )
+      return generationWorkspaceRefreshService.resolveSettingAsset(input.projectId, input.asset, taskResult)
     }
 
     if (isLocalAssetId(input.asset.id)) {
@@ -47,21 +50,23 @@ export const settingAssetGenerationService = {
     }
 
     const task = await assetImageTaskService.createAssetImageTask(input.asset.id, input.asset.prompt)
-    const workspace = await assetWorkflowService.loadAssetWorkspace(input.projectId)
-    const refreshedAsset = workspace?.find((asset) => asset.id === input.asset.id)
+    const refreshedAsset = await generationWorkspaceRefreshService.loadSettingAsset(
+      input.projectId,
+      input.asset.id,
+    )
     const imageUrl = resolveImmediateAiTaskResultUrl({
       task,
       workspaceResultUrl: refreshedAsset?.imageUrls[0],
     })
-
-    return assertSettingAssetResult({
+    const taskResult = assertSettingAssetResult({
       assetId: input.asset.id,
       imageUrl,
-      asset: refreshedAsset ?? {
-        ...input.asset,
-        imageUrls: imageUrl ? [imageUrl] : [],
-        status: imageUrl ? 'ready' : 'failed',
-      },
     })
+    return generationWorkspaceRefreshService.resolveSettingAsset(
+      input.projectId,
+      input.asset,
+      taskResult,
+      refreshedAsset,
+    )
   },
 }

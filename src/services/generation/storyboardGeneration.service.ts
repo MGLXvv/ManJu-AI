@@ -3,7 +3,6 @@ import { isMockMode } from '@/api/shared/apiMode'
 import { validateMultiParamShotParameters } from '@/features/editor/storyboardParameterValidationState'
 import { resolveImmediateAiTaskResultUrl } from '@/services/editor/aiTaskResultState'
 import { storyboardImageTaskService } from '@/services/editor/storyboardImageTask.service'
-import { storyboardWorkflowService } from '@/services/editor/storyboardWorkflow.service'
 import { GENERATION_TASK_TYPES } from '@/types/api-enums'
 import type { StoryboardShot } from '@/types/storyboard'
 import {
@@ -16,9 +15,12 @@ import {
 } from './generationResultGuards'
 import type {
   StoryboardImageResult,
+  StoryboardImageTaskResult,
   StoryboardUpscaleResult,
+  StoryboardUpscaleTaskResult,
 } from './generationResult.types'
 import { createAndWaitGenerationTask } from './generationTaskRunner'
+import { generationWorkspaceRefreshService } from './generationWorkspaceRefresh.service'
 
 export interface GenerateStoryboardImageInput {
   projectId: string
@@ -70,7 +72,10 @@ export const storyboardGenerationService = {
         },
       )
 
-      return assertStoryboardImageResult(task.result as Partial<StoryboardImageResult> | undefined)
+      const taskResult = assertStoryboardImageResult(
+        task.result as Partial<StoryboardImageTaskResult> | undefined,
+      )
+      return generationWorkspaceRefreshService.resolveStoryboardImage(input.projectId, input.shot, taskResult)
     }
 
     if (isLocalStoryboardShotId(input.shot.id)) {
@@ -78,35 +83,24 @@ export const storyboardGenerationService = {
     }
 
     const task = await storyboardImageTaskService.createStoryboardImageTask(input.shot.id, input.shot.prompt)
-    const workspacePatch = await storyboardWorkflowService.loadStoryboardWorkspace(input.projectId)
-    const refreshedDraftShot = workspacePatch?.shots.find((shot) => shot.id === input.shot.id)
+    const refreshedDraftShot = await generationWorkspaceRefreshService.loadStoryboardShot(
+      input.projectId,
+      input.shot.id,
+    )
     const imageUrl = resolveImmediateAiTaskResultUrl({
       task,
       workspaceResultUrl: refreshedDraftShot?.imageUrl,
     })
-    const refreshedShot: StoryboardShot | undefined = refreshedDraftShot
-      ? {
-          ...input.shot,
-          id: refreshedDraftShot.id,
-          index: refreshedDraftShot.index,
-          title: refreshedDraftShot.title,
-          imageUrl: refreshedDraftShot.imageUrl,
-          videoUrl: refreshedDraftShot.videoUrl,
-          durationSeconds: refreshedDraftShot.durationSeconds,
-          status: imageUrl ? 'success' : 'failed',
-          createdAt: refreshedDraftShot.createdAt || input.shot.createdAt,
-        }
-      : undefined
-
-    return assertStoryboardImageResult({
+    const taskResult = assertStoryboardImageResult({
       shotId: input.shot.id,
       imageUrl,
-      shot: refreshedShot ?? {
-        ...input.shot,
-        imageUrl,
-        status: imageUrl ? 'success' : 'failed',
-      },
     })
+    return generationWorkspaceRefreshService.resolveStoryboardImage(
+      input.projectId,
+      input.shot,
+      taskResult,
+      refreshedDraftShot,
+    )
   },
 
   async upscaleShotImage(input: UpscaleStoryboardImageInput): Promise<StoryboardUpscaleResult> {
@@ -132,6 +126,9 @@ export const storyboardGenerationService = {
       },
     )
 
-    return assertStoryboardUpscaleResult(task.result as Partial<StoryboardUpscaleResult> | undefined)
+    const taskResult = assertStoryboardUpscaleResult(
+      task.result as Partial<StoryboardUpscaleTaskResult> | undefined,
+    )
+    return generationWorkspaceRefreshService.resolveStoryboardUpscale(input.projectId, input.shot, taskResult)
   },
 }

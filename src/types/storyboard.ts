@@ -11,6 +11,7 @@ export interface StoryboardTag {
 export interface StoryboardReferenceImage {
   id: string
   url: string
+  mediaId?: string
   label?: string
   sourceShotId?: string
 }
@@ -27,7 +28,9 @@ export interface StoryboardImageEditRecord {
   prompt: string
   selection: StoryboardImageEditSelection
   sourceImageUrl: string
+  sourceMediaId?: string
   resultImageUrl: string
+  resultMediaId?: string
   createdAt: string
 }
 
@@ -51,7 +54,9 @@ export interface StoryboardShot {
   index: number
   title: string
   imageUrl?: string
+  imageMediaId?: string
   videoUrl?: string
+  videoMediaId?: string
   prompt: string
   videoPrompt?: string
   dialogue?: string

@@ -23,13 +23,13 @@ describe('storyboard module api', () => {
     expect(defaults.shots.every((shot) => shot.storyboardReviewed === false)).toBe(true)
   })
 
-  it('includes at least one 9:16 default storyboard shot with portrait image data', async () => {
+  it('includes at least one 9:16 default storyboard shot with portrait media metadata', async () => {
     const defaults = await storyboardApi.listDefaults()
     const portraitShot = defaults.shots.find((shot) => shot.ratio === '9:16')
 
     expect(portraitShot).toBeTruthy()
-    expect(decodeURIComponent(portraitShot!.imageUrl)).toContain('width="720"')
-    expect(decodeURIComponent(portraitShot!.imageUrl)).toContain('height="1280"')
+    expect(decodeURIComponent(portraitShot!.imageUrl)).toContain('ratio=9:16')
+    expect(portraitShot!.imageUrl).toContain('/mock-media/generated-placeholder.svg')
   })
 
   it('generates portrait storyboard images for 9:16 shots', async () => {
@@ -39,8 +39,8 @@ describe('storyboard module api', () => {
 
     const result = await storyboardApi.generateShotImage(source!)
 
-    expect(decodeURIComponent(result.imageUrl)).toContain('width="720"')
-    expect(decodeURIComponent(result.imageUrl)).toContain('height="1280"')
+    expect(decodeURIComponent(result.imageUrl)).toContain('ratio=9:16')
+    expect(result.imageUrl).toContain('/mock-media/generated-placeholder.svg')
     expect(result.shot.imageUrl).toBe(result.imageUrl)
   })
 

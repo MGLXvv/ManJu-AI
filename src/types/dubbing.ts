@@ -7,6 +7,7 @@ export interface DubbingRoleLineDraft {
   shotLabel: string
   text: string
   audioUrl?: string
+  audioMediaId?: string
   status: GenerationStatus
 }
 

@@ -3,13 +3,12 @@ import { API_ERROR_CODES } from '@/types/api-enums'
 import type { SettingAsset } from '@/types/settingAsset'
 import type { StoryboardShot } from '@/types/storyboard'
 import type {
-  DubbingGenerateResult,
+  DubbingGenerateTaskResult,
   ScriptGenerateResult,
-  SettingAssetImageResult,
-  StoryboardImageResult,
+  SettingAssetImageTaskResult,
+  StoryboardImageTaskResult,
   StoryboardPromptOptimizeResult,
-  StoryboardUpscaleResult,
-  VideoGenerateResult,
+  VideoGenerateTaskResult,
   VideoOptimizeResult,
 } from '@/services/generation/generationResult.types'
 import {
@@ -57,6 +56,7 @@ const makeGuardAsset = (overrides: Partial<SettingAsset> = {}): SettingAsset =>
     type: 'character',
     title: '角色-男主',
     roleName: '角色音色',
+    description: '',
     prompt: '夜色街道里的角色设定图',
     imageUrls: [],
     candidateImages: [],
@@ -71,7 +71,6 @@ const makeGuardAsset = (overrides: Partial<SettingAsset> = {}): SettingAsset =>
 describe('generationResultGuards', () => {
   it('returns script results when script content exists', () => {
     const result = assertScriptGenerateResult({ script: '第一幕：角色出场' })
-
     expect(result).toEqual<ScriptGenerateResult>({ script: '第一幕：角色出场' })
   })
 
@@ -80,59 +79,67 @@ describe('generationResultGuards', () => {
     expect(() => assertScriptOptimizeResult(undefined)).toThrow(API_ERROR_CODES.scriptOptimizeFailed)
   })
 
-  it('returns storyboard image result when image and shot exist', () => {
+  it('accepts transitional full storyboard results', () => {
     const shot = makeGuardShot()
-
     const result = assertStoryboardImageResult({
       shotId: 'shot-1',
-      imageUrl: 'data:image/svg+xml;base64,mock',
+      imageUrl: '/media/shot-1.png',
       shot,
     })
 
-    expect(result).toEqual<StoryboardImageResult>({
+    expect(result).toEqual<StoryboardImageTaskResult>({
       shotId: 'shot-1',
-      imageUrl: 'data:image/svg+xml;base64,mock',
+      imageUrl: '/media/shot-1.png',
       shot,
     })
   })
 
-  it('throws storyboard image errors for missing image or shot', () => {
+  it('accepts lightweight storyboard results without a full shot', () => {
+    expect(assertStoryboardImageResult({ shotId: 'shot-1', imageUrl: '/media/shot-1.png' })).toEqual({
+      shotId: 'shot-1',
+      imageUrl: '/media/shot-1.png',
+      shot: undefined,
+    })
+  })
+
+  it('throws storyboard image errors for missing image or target id', () => {
     expect(() => assertStoryboardImageResult({ imageUrl: 'x' })).toThrow(API_ERROR_CODES.storyboardGenerateFailed)
     expect(() => assertStoryboardImageResult({ shot: makeGuardShot() })).toThrow(API_ERROR_CODES.storyboardGenerateFailed)
   })
 
   it('returns storyboard prompt result when prompt exists', () => {
     const result = assertStoryboardPromptResult({ prompt: '镜头推进，强化光影层次' })
-
-    expect(result).toEqual<StoryboardPromptOptimizeResult>({
-      prompt: '镜头推进，强化光影层次',
-    })
+    expect(result).toEqual<StoryboardPromptOptimizeResult>({ prompt: '镜头推进，强化光影层次' })
   })
 
   it('throws storyboard optimize failed for missing prompt results', () => {
     expect(() => assertStoryboardPromptResult({})).toThrow(API_ERROR_CODES.storyboardOptimizeFailed)
   })
 
-  it('throws storyboard upscale errors for missing image or shot', () => {
+  it('accepts lightweight upscale results and rejects incomplete results', () => {
+    expect(assertStoryboardUpscaleResult({ shotId: 'shot-1', imageUrl: '/media/upscaled.png' })).toMatchObject({
+      shotId: 'shot-1',
+      imageUrl: '/media/upscaled.png',
+    })
     expect(() => assertStoryboardUpscaleResult({ imageUrl: 'x' })).toThrow(API_ERROR_CODES.storyboardUpscaleFailed)
     expect(() => assertStoryboardUpscaleResult({ shot: makeGuardShot(), imageUrl: '' })).toThrow(
       API_ERROR_CODES.storyboardUpscaleFailed,
     )
   })
 
-  it('returns setting asset result when image and asset exist', () => {
+  it('accepts transitional and lightweight setting asset results', () => {
     const asset = makeGuardAsset()
-
-    const result = assertSettingAssetResult({
+    expect(
+      assertSettingAssetResult({ assetId: 'asset-1', imageUrl: '/media/asset.png', asset }),
+    ).toEqual<SettingAssetImageTaskResult>({
       assetId: 'asset-1',
-      imageUrl: 'data:image/svg+xml;base64,mock',
+      imageUrl: '/media/asset.png',
       asset,
     })
-
-    expect(result).toEqual<SettingAssetImageResult>({
+    expect(assertSettingAssetResult({ assetId: 'asset-1', imageUrl: '/media/asset.png' })).toEqual({
       assetId: 'asset-1',
-      imageUrl: 'data:image/svg+xml;base64,mock',
-      asset,
+      imageUrl: '/media/asset.png',
+      asset: undefined,
     })
   })
 
@@ -141,30 +148,29 @@ describe('generationResultGuards', () => {
     expect(() => assertSettingAssetResult({ asset: makeGuardAsset() })).toThrow(API_ERROR_CODES.settingImageGenerateFailed)
   })
 
-  it('returns video result when video url and shot exist', () => {
-    const shot = makeGuardShot({ videoUrl: 'mock-video://shot-1' })
-
-    const result = assertVideoGenerateResult({
+  it('accepts transitional and lightweight video results', () => {
+    const shot = makeGuardShot({ videoUrl: '/media/shot-1.mp4' })
+    expect(
+      assertVideoGenerateResult({ shotId: 'shot-1', videoUrl: '/media/shot-1.mp4', shot }),
+    ).toEqual<VideoGenerateTaskResult>({
       shotId: 'shot-1',
-      videoUrl: 'mock-video://shot-1',
+      videoUrl: '/media/shot-1.mp4',
       shot,
     })
-
-    expect(result).toEqual<VideoGenerateResult>({
+    expect(assertVideoGenerateResult({ shotId: 'shot-1', videoUrl: '/media/shot-1.mp4' })).toEqual({
       shotId: 'shot-1',
-      videoUrl: 'mock-video://shot-1',
-      shot,
+      videoUrl: '/media/shot-1.mp4',
+      shot: undefined,
     })
   })
 
   it('throws video generate failed for incomplete video results', () => {
     expect(() => assertVideoGenerateResult({ shot: makeGuardShot() })).toThrow(API_ERROR_CODES.videoGenerateFailed)
-    expect(() => assertVideoGenerateResult({ videoUrl: 'mock-video://shot-1' })).toThrow(API_ERROR_CODES.videoGenerateFailed)
+    expect(() => assertVideoGenerateResult({ videoUrl: '/media/shot-1.mp4' })).toThrow(API_ERROR_CODES.videoGenerateFailed)
   })
 
   it('returns video optimize result when value exists', () => {
     const result = assertVideoOptimizeResult({ value: 'optimized text' })
-
     expect(result).toEqual<VideoOptimizeResult>({ value: 'optimized text' })
   })
 
@@ -174,8 +180,8 @@ describe('generationResultGuards', () => {
     expect(() => assertVideoOptimizeResult({ value: 42 as unknown as string })).toThrow(API_ERROR_CODES.videoOptimizeFailed)
   })
 
-  it('returns dubbing result when card id and lines exist', () => {
-    const result = assertDubbingGenerateResult({
+  it('accepts full dubbing lines and lightweight line ids', () => {
+    const full = assertDubbingGenerateResult({
       cardId: 'card-1',
       lines: [
         {
@@ -183,25 +189,24 @@ describe('generationResultGuards', () => {
           shotId: 'shot-1',
           shotLabel: '镜头 1',
           text: '第一句对白',
-          audioUrl: 'data:audio/wav;base64,mock',
+          audioUrl: '/media/line-1.mp3',
           status: 'success',
         },
       ],
     })
+    expect(full.lineIds).toEqual(['line-1'])
 
-    expect(result).toEqual<DubbingGenerateResult>({
+    expect(
+      assertDubbingGenerateResult({
+        cardId: 'card-1',
+        lineIds: ['line-1'],
+        audioByLineId: { 'line-1': '/media/line-1.mp3' },
+      }),
+    ).toEqual<DubbingGenerateTaskResult>({
       cardId: 'card-1',
-      lines: [
-        {
-          id: 'line-1',
-          shotId: 'shot-1',
-          shotLabel: '镜头 1',
-          text: '第一句对白',
-          audioUrl: 'data:audio/wav;base64,mock',
-          status: 'success',
-        },
-      ],
       lineIds: ['line-1'],
+      lines: undefined,
+      audioByLineId: { 'line-1': '/media/line-1.mp3' },
     })
   })
 

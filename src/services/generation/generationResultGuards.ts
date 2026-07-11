@@ -1,13 +1,13 @@
 import { API_ERROR_CODES } from '@/types/api-enums'
 import type {
-  DubbingGenerateResult,
+  DubbingGenerateTaskResult,
   ScriptGenerateResult,
   ScriptOptimizeResult,
-  SettingAssetImageResult,
-  StoryboardImageResult,
+  SettingAssetImageTaskResult,
+  StoryboardImageTaskResult,
   StoryboardPromptOptimizeResult,
-  StoryboardUpscaleResult,
-  VideoGenerateResult,
+  StoryboardUpscaleTaskResult,
+  VideoGenerateTaskResult,
   VideoOptimizeResult,
 } from './generationResult.types'
 
@@ -32,14 +32,15 @@ export const assertScriptOptimizeResult = (
 }
 
 export const assertStoryboardImageResult = (
-  result: Partial<StoryboardImageResult> | undefined,
-): StoryboardImageResult => {
-  if (!result?.imageUrl || !result?.shot) {
+  result: Partial<StoryboardImageTaskResult> | undefined,
+): StoryboardImageTaskResult => {
+  const shotId = result?.shotId ?? result?.shot?.id
+  if (!result?.imageUrl || !shotId) {
     throw new Error(API_ERROR_CODES.storyboardGenerateFailed)
   }
 
   return {
-    shotId: result.shotId ?? result.shot.id,
+    shotId,
     imageUrl: result.imageUrl,
     shot: result.shot,
   }
@@ -56,42 +57,45 @@ export const assertStoryboardPromptResult = (
 }
 
 export const assertStoryboardUpscaleResult = (
-  result: Partial<StoryboardUpscaleResult> | undefined,
-): StoryboardUpscaleResult => {
-  if (!result?.imageUrl || !result?.shot) {
+  result: Partial<StoryboardUpscaleTaskResult> | undefined,
+): StoryboardUpscaleTaskResult => {
+  const shotId = result?.shotId ?? result?.shot?.id
+  if (!result?.imageUrl || !shotId) {
     throw new Error(API_ERROR_CODES.storyboardUpscaleFailed)
   }
 
   return {
-    shotId: result.shotId ?? result.shot.id,
+    shotId,
     imageUrl: result.imageUrl,
     shot: result.shot,
   }
 }
 
 export const assertSettingAssetResult = (
-  result: Partial<SettingAssetImageResult> | undefined,
-): SettingAssetImageResult => {
-  if (!result?.imageUrl || !result?.asset) {
+  result: Partial<SettingAssetImageTaskResult> | undefined,
+): SettingAssetImageTaskResult => {
+  const assetId = result?.assetId ?? result?.asset?.id
+  if (!result?.imageUrl || !assetId) {
     throw new Error(API_ERROR_CODES.settingImageGenerateFailed)
   }
 
   return {
-    assetId: result.assetId ?? result.asset.id,
+    assetId,
     imageUrl: result.imageUrl,
     asset: result.asset,
   }
 }
 
 export const assertVideoGenerateResult = (
-  result: Partial<VideoGenerateResult> | undefined,
-): VideoGenerateResult => {
-  if (!result?.videoUrl || !result?.shot) {
+  result: Partial<VideoGenerateTaskResult> | undefined,
+): VideoGenerateTaskResult => {
+  const shotId = result?.shotId ?? result?.shot?.id
+  if (!result?.videoUrl || !shotId) {
     throw new Error(API_ERROR_CODES.videoGenerateFailed)
   }
 
   return {
-    shotId: result.shotId ?? result.shot.id,
+    shotId,
     videoUrl: result.videoUrl,
     shot: result.shot,
   }
@@ -108,15 +112,20 @@ export const assertVideoOptimizeResult = (
 }
 
 export const assertDubbingGenerateResult = (
-  result: Partial<DubbingGenerateResult> | undefined,
-): DubbingGenerateResult => {
-  if (!result?.cardId || !Array.isArray(result.lines)) {
+  result: Partial<DubbingGenerateTaskResult> | undefined,
+): DubbingGenerateTaskResult => {
+  const lines = Array.isArray(result?.lines) ? result.lines : undefined
+  const lineIds = Array.isArray(result?.lineIds)
+    ? result.lineIds
+    : lines?.map((line) => line.id)
+  if (!result?.cardId || !Array.isArray(lineIds)) {
     throw new Error(API_ERROR_CODES.dubbingGenerateFailed)
   }
 
   return {
     cardId: result.cardId,
-    lines: result.lines,
-    lineIds: result.lineIds ?? result.lines.map((line) => line.id),
+    lineIds,
+    lines,
+    audioByLineId: result.audioByLineId,
   }
 }

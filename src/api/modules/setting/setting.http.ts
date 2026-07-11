@@ -1,4 +1,5 @@
 import { http } from '@/api/http'
+import { assertHttpMediaUrl } from '@/services/media'
 import type {
   CreateSettingAssetInput,
   GenerateSettingAssetImageResult,
@@ -23,11 +24,21 @@ export const settingHttpApi: SettingApiContract = {
   },
 
   async uploadAssetImage(asset: SettingAsset, imageUrl: string) {
+    assertHttpMediaUrl(imageUrl, {
+      targetType: 'setting-asset',
+      targetId: asset.id,
+      kind: 'image',
+    })
     const { data } = await http.post(`/settings/assets/${asset.id}/images`, { imageUrl })
     return data.asset
   },
 
   async selectCandidateImage(asset: SettingAsset, imageUrl: string) {
+    assertHttpMediaUrl(imageUrl, {
+      targetType: 'setting-asset',
+      targetId: asset.id,
+      kind: 'image',
+    })
     const { data } = await http.post(`/settings/assets/${asset.id}/candidate-selection`, { imageUrl })
     return data.asset
   },

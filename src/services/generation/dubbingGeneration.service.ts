@@ -6,8 +6,9 @@ import { API_ERROR_CODES, GENERATION_TASK_TYPES } from '@/types/api-enums'
 import type { DubbingRoleCardModel, DubbingRoleLineDraft } from '@/types/dubbing'
 import type { DubbingGeneratePayload } from './generationPayload.types'
 import { assertDubbingGenerateResult } from './generationResultGuards'
-import type { DubbingGenerateResult } from './generationResult.types'
+import type { DubbingGenerateResult, DubbingGenerateTaskResult } from './generationResult.types'
 import { createAndWaitGenerationTask } from './generationTaskRunner'
+import { generationWorkspaceRefreshService } from './generationWorkspaceRefresh.service'
 
 export interface GenerateDubbingCardInput {
   projectId: string
@@ -39,7 +40,13 @@ export const dubbingGenerationService = {
         },
       )
 
-      return assertDubbingGenerateResult(task.result as Partial<DubbingGenerateResult> | undefined)
+      const taskResult = assertDubbingGenerateResult(
+        task.result as Partial<DubbingGenerateTaskResult> | undefined,
+      )
+      return {
+        ...taskResult,
+        lines: generationWorkspaceRefreshService.resolveDubbing(input.card, taskResult),
+      }
     }
 
     const lines: DubbingRoleLineDraft[] = []
@@ -63,10 +70,14 @@ export const dubbingGenerationService = {
       })
     }
 
-    return assertDubbingGenerateResult({
+    const taskResult = assertDubbingGenerateResult({
       cardId: input.card.id,
       lines,
       lineIds: lines.map((line) => line.id),
     })
+    return {
+      ...taskResult,
+      lines: generationWorkspaceRefreshService.resolveDubbing(input.card, taskResult),
+    }
   },
 }

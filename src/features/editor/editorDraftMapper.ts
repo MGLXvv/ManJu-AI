@@ -28,7 +28,9 @@ const cloneAudio = (asset: SettingAsset): SettingAsset['audio'] =>
 export const cloneSettingAssetDraft = (asset: SettingAsset): SettingAsset => ({
   ...asset,
   imageUrls: [...asset.imageUrls],
+  imageMediaIds: asset.imageMediaIds ? [...asset.imageMediaIds] : undefined,
   candidateImages: asset.candidateImages ? [...asset.candidateImages] : undefined,
+  candidateMediaIds: asset.candidateMediaIds ? [...asset.candidateMediaIds] : undefined,
   voiceOptions: cloneVoiceOptions(asset),
   audio: cloneAudio(asset),
 })
@@ -96,7 +98,9 @@ export const buildStoryboardDraftShots = (shots: StoryboardShot[]): Shot[] =>
     sceneIds: shot.scenes.map((item) => item.id),
     propIds: shot.props.map((item) => item.id),
     imageUrl: shot.imageUrl,
+    imageMediaId: shot.imageMediaId,
     videoUrl: shot.videoUrl,
+    videoMediaId: shot.videoMediaId,
     videoPrompt: shot.videoPrompt,
     dialogue: shot.dialogue,
     durationSeconds: shot.durationSeconds,

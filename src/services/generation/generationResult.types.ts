@@ -10,9 +10,13 @@ export interface ScriptOptimizeResult {
   script: string
 }
 
-export interface StoryboardImageResult {
+export interface StoryboardImageTaskResult {
   shotId: string
   imageUrl: string
+  shot?: StoryboardShot
+}
+
+export interface StoryboardImageResult extends StoryboardImageTaskResult {
   shot: StoryboardShot
 }
 
@@ -31,21 +35,33 @@ export interface StoryboardPromptOptimizeBatchResult {
   items: StoryboardPromptOptimizeBatchItem[]
 }
 
-export interface StoryboardUpscaleResult {
+export interface StoryboardUpscaleTaskResult {
   shotId: string
   imageUrl: string
+  shot?: StoryboardShot
+}
+
+export interface StoryboardUpscaleResult extends StoryboardUpscaleTaskResult {
   shot: StoryboardShot
 }
 
-export interface SettingAssetImageResult {
+export interface SettingAssetImageTaskResult {
   assetId: string
   imageUrl: string
+  asset?: SettingAsset
+}
+
+export interface SettingAssetImageResult extends SettingAssetImageTaskResult {
   asset: SettingAsset
 }
 
-export interface VideoGenerateResult {
+export interface VideoGenerateTaskResult {
   shotId: string
   videoUrl: string
+  shot?: StoryboardShot
+}
+
+export interface VideoGenerateResult extends VideoGenerateTaskResult {
   shot: StoryboardShot
 }
 
@@ -53,8 +69,13 @@ export interface VideoOptimizeResult {
   value: string
 }
 
-export interface DubbingGenerateResult {
+export interface DubbingGenerateTaskResult {
   cardId: string
-  lines: DubbingRoleLineDraft[]
   lineIds: string[]
+  lines?: DubbingRoleLineDraft[]
+  audioByLineId?: Record<string, string>
+}
+
+export interface DubbingGenerateResult extends DubbingGenerateTaskResult {
+  lines: DubbingRoleLineDraft[]
 }

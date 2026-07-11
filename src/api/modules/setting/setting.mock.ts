@@ -1,37 +1,18 @@
 import { delay } from '@/api/local'
 import { mapVoiceAssetsToSettingVoiceOptions } from '@/features/voice/voiceOptionState'
+import { MOCK_MEDIA_IMAGE_URL } from '@/mocks/mockMedia'
 import { cloneSettingAsset, createDefaultSettingAssets } from '@/mocks/setting.mock'
 import { mockVoices } from '@/mocks/voice.mock'
+import { mediaUploadService } from '@/services/media'
 import type {
   CreateSettingAssetInput,
   GenerateSettingAssetImageResult,
   SettingApiContract,
   SettingAsset,
-  SettingAssetType,
 } from './setting.types'
 
-const createGeneratedImage = (title: string, type: SettingAssetType, seed: number): string => {
-  const palettes: Record<SettingAssetType, [string, string]> = {
-    character: ['#2e3a62', '#684b9a'],
-    scene: ['#584226', '#b68652'],
-    prop: ['#2f3446', '#6f79a8'],
-  }
-  const [colorA, colorB] = palettes[type]
-  const encoded = encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">
-      <defs>
-        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="${colorA}" />
-          <stop offset="100%" stop-color="${colorB}" />
-        </linearGradient>
-      </defs>
-      <rect width="640" height="360" fill="url(#g)" />
-      <circle cx="${80 + (seed % 7) * 70}" cy="${58 + (seed % 5) * 48}" r="${28 + (seed % 4) * 8}" fill="rgba(255,255,255,0.2)" />
-      <text x="28" y="320" fill="rgba(255,255,255,0.88)" font-family="Segoe UI, PingFang SC, Microsoft YaHei, sans-serif" font-size="28" font-weight="700">${title}</text>
-    </svg>`,
-  )
-  return `data:image/svg+xml;charset=UTF-8,${encoded}`
-}
+const createGeneratedImage = (asset: SettingAsset): string =>
+  `${MOCK_MEDIA_IMAGE_URL}?kind=setting-api&type=${encodeURIComponent(asset.type)}&asset=${encodeURIComponent(asset.id)}&v=${Date.now()}`
 
 const resolveAssetVoiceFields = (
   input: Pick<SettingAsset, 'type' | 'voiceId' | 'voiceName' | 'selectedVoiceId'>,
@@ -56,6 +37,13 @@ const resolveAssetVoiceFields = (
     selectedVoiceId: selectedVoice?.id ?? (selectedVoiceId || undefined),
     voiceOptions,
   }
+}
+
+const prependMediaId = (id: string | undefined, existing: string[] | undefined, max: number): string[] | undefined => {
+  if (!id && !existing?.some(Boolean)) {
+    return undefined
+  }
+  return [id ?? '', ...(existing ?? [])].slice(0, max)
 }
 
 export const settingMockApi: SettingApiContract = {
@@ -107,34 +95,55 @@ export const settingMockApi: SettingApiContract = {
 
   async uploadAssetImage(asset: SettingAsset, imageUrl: string) {
     await delay(80)
+    const media = await mediaUploadService.captureUrl(
+      imageUrl,
+      { targetType: 'setting-asset', targetId: asset.id, kind: 'image' },
+      `${asset.id}-upload`,
+    )
     return cloneSettingAsset({
       ...asset,
       status: 'ready',
       imageUrls: [imageUrl, ...asset.imageUrls].slice(0, 6),
+      imageMediaIds: prependMediaId(media?.mediaId, asset.imageMediaIds, 6),
       candidateImages: [imageUrl, ...(asset.candidateImages ?? [])].slice(0, 12),
+      candidateMediaIds: prependMediaId(media?.mediaId, asset.candidateMediaIds, 12),
     })
   },
 
   async selectCandidateImage(asset: SettingAsset, imageUrl: string) {
     await delay(60)
-    const rest = asset.imageUrls.filter((item) => item !== imageUrl)
+    const currentIndex = asset.imageUrls.findIndex((item) => item === imageUrl)
+    const candidateIndex = (asset.candidateImages ?? []).findIndex((item) => item === imageUrl)
+    const selectedMediaId =
+      (currentIndex >= 0 ? asset.imageMediaIds?.[currentIndex] : undefined) ??
+      (candidateIndex >= 0 ? asset.candidateMediaIds?.[candidateIndex] : undefined)
+    const restUrls = asset.imageUrls.filter((item) => item !== imageUrl)
+    const restMediaIds = asset.imageUrls
+      .map((_, index) => asset.imageMediaIds?.[index] ?? '')
+      .filter((_, index) => index !== currentIndex)
+    const hasMediaIds = Boolean(selectedMediaId || restMediaIds.some(Boolean))
     return cloneSettingAsset({
       ...asset,
       status: 'ready',
-      imageUrls: [imageUrl, ...rest].slice(0, 6),
+      imageUrls: [imageUrl, ...restUrls].slice(0, 6),
+      imageMediaIds: hasMediaIds ? [selectedMediaId ?? '', ...restMediaIds].slice(0, 6) : undefined,
     })
   },
 
   async generateAssetImage(asset: SettingAsset): Promise<GenerateSettingAssetImageResult> {
     await delay(1400)
-    const imageUrl = createGeneratedImage(asset.title, asset.type, Math.floor(Math.random() * 1000))
+    const imageUrl = createGeneratedImage(asset)
+    const hasImageMedia = asset.imageMediaIds?.some(Boolean)
+    const hasCandidateMedia = asset.candidateMediaIds?.some(Boolean)
     return {
       imageUrl,
       asset: cloneSettingAsset({
         ...asset,
         status: 'ready',
         imageUrls: [imageUrl, ...asset.imageUrls].slice(0, 6),
+        imageMediaIds: hasImageMedia ? ['', ...(asset.imageMediaIds ?? [])].slice(0, 6) : undefined,
         candidateImages: [...(asset.candidateImages ?? []), imageUrl].slice(-12),
+        candidateMediaIds: hasCandidateMedia ? [...(asset.candidateMediaIds ?? []), ''].slice(-12) : undefined,
       }),
     }
   },

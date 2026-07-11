@@ -1,6 +1,7 @@
 import { API_ERROR_CODES } from '@/types/api-enums'
 import type { SettingAsset, SettingAssetType } from '@/api/modules/setting/setting.types'
 import type { StoryboardReferenceImage, StoryboardShot } from '@/api/modules/storyboard/storyboard.types'
+import { MOCK_MEDIA_IMAGE_URL } from '@/mocks/mockMedia'
 import type { StoryboardImageEditRecord } from '@/types/storyboard'
 
 const hasFailureToken = (values: string[], tokens: string[]): boolean =>
@@ -90,50 +91,32 @@ const prependReferenceImage = (
   ...shot.referenceImages,
 ].slice(0, 8)
 
-const createStoryboardImage = (title: string, ratio: StoryboardShot['ratio']): string => {
-  const portrait = ratio === '9:16'
-  const width = portrait ? 720 : 1280
-  const height = portrait ? 1280 : 720
-  const footerHeight = portrait ? 132 : 108
-  const fontSize = portrait ? 42 : 54
-
-  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
-      <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#3b4f77"/><stop offset="100%" stop-color="#8254c8"/></linearGradient></defs>
-      <rect width="${width}" height="${height}" fill="url(#g)" />
-      <rect x="0" y="${height - footerHeight}" width="${width}" height="${footerHeight}" fill="rgba(0,0,0,0.42)" />
-      <text x="30" y="${height - (portrait ? 48 : 40)}" fill="white" font-family="Segoe UI, PingFang SC, Microsoft YaHei, sans-serif" font-size="${fontSize}" font-weight="700">${title}</text>
-    </svg>`,
-  )}`
-}
+const createMockImageUrl = (kind: string, targetId: string): string =>
+  `${MOCK_MEDIA_IMAGE_URL}?kind=${encodeURIComponent(kind)}&target=${encodeURIComponent(targetId)}&v=${Date.now()}`
 
 export const generateMockStoryboardImage = (shot: StoryboardShot): { imageUrl: string; shot: StoryboardShot } => {
-  const imageUrl = createStoryboardImage(`镜头生成 ${Date.now() % 10000}`, shot.ratio)
+  const imageUrl = createMockImageUrl('storyboard', shot.id)
   return {
     imageUrl,
     shot: cloneStoryboardShot({
       ...shot,
       status: 'success',
       imageUrl,
+      imageMediaId: undefined,
       referenceImages: prependReferenceImage(shot, { url: imageUrl, label: '生成结果' }),
     }),
   }
 }
 
 export const upscaleMockStoryboardImage = (shot: StoryboardShot): { imageUrl: string; shot: StoryboardShot } => {
-  const sourceUrl = shot.imageUrl ?? ''
-  const imageUrl = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
-      <defs><linearGradient id="shine" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#4fd5ff" stop-opacity="0.8"/><stop offset="100%" stop-color="#fff1a6" stop-opacity="0.56"/></linearGradient></defs>
-      <rect width="1280" height="720" fill="#0b1220"/><image href="${sourceUrl}" width="1280" height="720" preserveAspectRatio="xMidYMid slice"/><rect width="1280" height="720" fill="url(#shine)" opacity="0.24"/><rect x="48" y="42" width="1184" height="636" rx="28" fill="none" stroke="#ffffff" stroke-opacity="0.9" stroke-width="8"/><rect x="0" y="588" width="1280" height="132" fill="rgba(4,8,15,0.62)"/><text x="38" y="650" fill="#ffffff" font-family="Segoe UI, PingFang SC, Microsoft YaHei, sans-serif" font-size="54" font-weight="700">${shot.title} · 高清放大</text><text x="38" y="694" fill="#d8edf7" font-family="Segoe UI, PingFang SC, Microsoft YaHei, sans-serif" font-size="28">增强清晰度、细节和边缘质感</text></svg>`,
-  )}`
-
+  const imageUrl = createMockImageUrl('storyboard-upscale', shot.id)
   return {
     imageUrl,
     shot: cloneStoryboardShot({
       ...shot,
       status: 'success',
       imageUrl,
+      imageMediaId: undefined,
       referenceImages: prependReferenceImage(shot, { url: imageUrl, label: '高清放大' }),
     }),
   }
@@ -142,35 +125,26 @@ export const upscaleMockStoryboardImage = (shot: StoryboardShot): { imageUrl: st
 const cloneSettingAsset = (asset: SettingAsset): SettingAsset => ({
   ...asset,
   imageUrls: [...asset.imageUrls],
+  imageMediaIds: asset.imageMediaIds ? [...asset.imageMediaIds] : undefined,
   candidateImages: [...(asset.candidateImages ?? [])],
+  candidateMediaIds: asset.candidateMediaIds ? [...asset.candidateMediaIds] : undefined,
   voiceOptions: asset.voiceOptions?.map((item) => ({ ...item })),
 })
-
-const createSettingAssetImage = (title: string, type: SettingAssetType): string => {
-  const palettes: Record<SettingAssetType, [string, string]> = {
-    character: ['#2e3a62', '#684b9a'],
-    scene: ['#584226', '#b68652'],
-    prop: ['#2f3446', '#6f79a8'],
-  }
-  const [colorA, colorB] = palettes[type]
-
-  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${colorA}"/><stop offset="100%" stop-color="${colorB}"/></linearGradient></defs><rect width="640" height="360" fill="url(#g)"/><text x="28" y="320" fill="rgba(255,255,255,0.88)" font-family="Segoe UI, PingFang SC, Microsoft YaHei, sans-serif" font-size="28" font-weight="700">${title}</text></svg>`,
-  )}`
-}
 
 export const shouldFailSettingAssetGeneration = (name: string, description: string, prompt: string): boolean =>
   hasFailureToken([name, description, prompt], ['#mock-image-fail'])
 
 export const generateMockSettingAssetImage = (asset: SettingAsset): { imageUrl: string; asset: SettingAsset } => {
-  const imageUrl = createSettingAssetImage(asset.title, asset.type)
+  const imageUrl = createMockImageUrl(`setting-${asset.type}`, asset.id)
   return {
     imageUrl,
     asset: cloneSettingAsset({
       ...asset,
       status: 'ready',
       imageUrls: [imageUrl, ...asset.imageUrls].slice(0, 6),
+      imageMediaIds: undefined,
       candidateImages: [...(asset.candidateImages ?? []), imageUrl].slice(-12),
+      candidateMediaIds: undefined,
     }),
   }
 }

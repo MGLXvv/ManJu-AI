@@ -1,9 +1,8 @@
-import { delay, readLocal, removeLocal, writeLocal } from '@/api/local'
+import { delay, readLocal, writeLocal } from '@/api/local'
 import type { AuthSession, AuthUser, ThirdPartyProvider } from '@/types/auth'
+import { AUTH_ERROR } from './auth.constants'
 import type { AuthApiContract } from './auth.types'
 
-const TOKEN_KEY = 'amd.auth.token'
-const USER_KEY = 'amd.auth.user'
 const ACCOUNTS_KEY = 'amd.auth.accounts'
 const CODES_KEY = 'amd.auth.codes'
 
@@ -22,15 +21,6 @@ interface MockCodeRecord {
   sentAt: number
 }
 
-export const AUTH_ERROR = {
-  INVALID_CREDENTIALS: 'AUTH_INVALID_CREDENTIALS',
-  ACCOUNT_NOT_FOUND: 'AUTH_ACCOUNT_NOT_FOUND',
-  INVALID_CODE: 'AUTH_INVALID_CODE',
-  ACCOUNT_EXISTS: 'AUTH_ACCOUNT_EXISTS',
-  ACCOUNT_MISMATCH: 'AUTH_ACCOUNT_MISMATCH',
-  CODE_RATE_LIMIT: 'AUTH_CODE_RATE_LIMIT',
-} as const
-
 const DEFAULT_ACCOUNTS: MockAccountRecord[] = [
   {
     id: 'user-1',
@@ -41,12 +31,10 @@ const DEFAULT_ACCOUNTS: MockAccountRecord[] = [
   },
 ]
 
-const buildSession = (user: AuthUser): AuthSession => {
-  const token = `mock-token-${Date.now()}`
-  writeLocal(TOKEN_KEY, token)
-  writeLocal(USER_KEY, user)
-  return { token, user }
-}
+const buildSession = (user: AuthUser): AuthSession => ({
+  token: `mock-token-${Date.now()}`,
+  user,
+})
 
 const readAccounts = (): MockAccountRecord[] => {
   const stored = readLocal<MockAccountRecord[] | null>(ACCOUNTS_KEY, null)
@@ -104,9 +92,8 @@ const findAccount = (value: string): MockAccountRecord | undefined => {
   return readAccounts().find((item) => item.account === normalized || item.username === normalized)
 }
 
-const findAccountByProvider = (provider: ThirdPartyProvider): MockAccountRecord | undefined => {
-  return readAccounts().find((item) => item.boundProviders.includes(provider))
-}
+const findAccountByProvider = (provider: ThirdPartyProvider): MockAccountRecord | undefined =>
+  readAccounts().find((item) => item.boundProviders.includes(provider))
 
 const ensureUniqueAccount = (account: string, username: string): void => {
   const accounts = readAccounts()
@@ -219,25 +206,16 @@ export const authMockApi: AuthApiContract = {
       alipay: '支付宝用户',
     } as const
 
-    const guestUser = {
-      id: `user-${payload.provider}-${Date.now()}`,
-      name: providerNameMap[payload.provider],
-    }
-
     return {
       needsRegister: false,
-      session: buildSession(guestUser),
+      session: buildSession({
+        id: `user-${payload.provider}-${Date.now()}`,
+        name: providerNameMap[payload.provider],
+      }),
     }
   },
 
   async logout() {
     await delay(80)
-    removeLocal(TOKEN_KEY)
-    removeLocal(USER_KEY)
   },
-}
-
-export const authStorageKeys = {
-  token: TOKEN_KEY,
-  user: USER_KEY,
 }

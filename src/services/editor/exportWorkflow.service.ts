@@ -25,12 +25,20 @@ export const exportWorkflowService = {
   },
 
   async createExportTask(projectId: string): Promise<EditorExportTask | null> {
+    if (isMockMode) {
+      return null
+    }
+
     requireCapability('export.task')
     const { data } = await http.post<BackendExportTaskDTO>(`/aidrama/projects/${projectId}/export`)
     return mapBackendExportTask(data)
   },
 
   async getDownloadUrl(exportTaskId: string): Promise<string> {
+    if (isMockMode) {
+      return ''
+    }
+
     requireCapability('export.task')
     const { data } = await http.get<BackendExportDownloadDTO | string>(
       `/aidrama/exports/${exportTaskId}/download-url`,

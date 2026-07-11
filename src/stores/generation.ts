@@ -59,8 +59,8 @@ export const useGenerationStore = defineStore('generation', () => {
     }
 
     const created = await generationTaskGateway.create({
-      projectId: resolvedProjectId,
       ...input,
+      projectId: resolvedProjectId,
     })
     upsertTask(created)
     return created

@@ -5,6 +5,7 @@ import {
   MOCK_MEDIA_VIDEO_16_9_URL,
   MOCK_MEDIA_VIDEO_9_16_URL,
 } from '@/mocks/mockMedia'
+import { mediaUploadService } from '@/services/media'
 import type { StoryboardImageEditRecord } from '@/types/storyboard'
 import type {
   StoryboardApiContract,
@@ -84,12 +85,20 @@ export const storyboardMockApi: StoryboardApiContract = {
 
   async uploadShotImage(shot, imageUrl) {
     await delay(80)
+    const media = await mediaUploadService.captureUrl(
+      imageUrl,
+      { targetType: 'storyboard-image', targetId: shot.id, kind: 'image' },
+      `${shot.id}-upload`,
+    )
+    const nextUrl = media?.url ?? imageUrl
     return cloneStoryboardShot({
       ...shot,
-      imageUrl,
+      imageUrl: nextUrl,
+      imageMediaId: media?.mediaId,
       status: 'success',
       referenceImages: prependReferenceImage(shot, {
-        url: imageUrl,
+        url: nextUrl,
+        mediaId: media?.mediaId,
         label: '上传图片',
         sourceShotId: shot.id,
       }),
@@ -98,21 +107,35 @@ export const storyboardMockApi: StoryboardApiContract = {
 
   async uploadShotVideo(shot, videoUrl) {
     await delay(80)
+    const media = await mediaUploadService.captureUrl(
+      videoUrl,
+      { targetType: 'storyboard-video', targetId: shot.id, kind: 'video' },
+      `${shot.id}-video`,
+    )
     return cloneStoryboardShot({
       ...shot,
-      videoUrl,
+      videoUrl: media?.url ?? videoUrl,
+      videoMediaId: media?.mediaId,
       status: 'success',
     })
   },
 
   async applyEditedImage(shot, imageUrl) {
     await delay(80)
+    const media = await mediaUploadService.captureUrl(
+      imageUrl,
+      { targetType: 'storyboard-edit', targetId: shot.id, kind: 'image' },
+      `${shot.id}-edited.svg`,
+    )
+    const nextUrl = media?.url ?? imageUrl
     return cloneStoryboardShot({
       ...shot,
-      imageUrl,
+      imageUrl: nextUrl,
+      imageMediaId: media?.mediaId,
       status: 'success',
       referenceImages: prependReferenceImage(shot, {
-        url: imageUrl,
+        url: nextUrl,
+        mediaId: media?.mediaId,
         label: '编辑结果',
         sourceShotId: shot.id,
       }),

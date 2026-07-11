@@ -8,6 +8,20 @@ import type {
   StoryboardVoiceAssignment,
 } from './storyboard'
 
+export const EDITOR_PERSISTENCE_PARTITIONS = {
+  script: 'script',
+  setting: 'setting',
+  storyboard: 'storyboard',
+  video: 'video',
+  dubbing: 'dubbing',
+  projectMeta: 'project-meta',
+} as const
+
+export type EditorPersistencePartition =
+  (typeof EDITOR_PERSISTENCE_PARTITIONS)[keyof typeof EDITOR_PERSISTENCE_PARTITIONS]
+
+export type EditorSaveReason = 'manual' | 'autosave' | 'navigation' | 'retry' | 'conflict-overwrite'
+
 export interface ScriptDraft {
   content: string
   prompt: string
@@ -63,6 +77,7 @@ export interface Shot {
 
 export interface EditorDraft {
   projectId: string
+  revision?: number
   script: ScriptDraft
   characters: CharacterSetting[]
   scenes: SceneSetting[]
@@ -73,7 +88,14 @@ export interface EditorDraft {
   dubbing: DubbingDraft
 }
 
+export interface SaveDraftOptions {
+  expectedRevision?: number
+  partitions?: EditorPersistencePartition[]
+  reason?: EditorSaveReason
+}
+
 export interface SaveDraftResult {
   draft: EditorDraft
   savedAt: string
+  revision: number
 }

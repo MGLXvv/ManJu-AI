@@ -21,7 +21,7 @@ export const editorMockApi: EditorApiContract = {
     return response.draft
   },
 
-  async saveDraft(projectId, draft) {
+  async saveDraft(projectId, draft, options = {}) {
     await delay(80)
     const request: EditorSaveDraftRequestDTO = { projectId, draft }
 
@@ -51,10 +51,28 @@ export const editorMockApi: EditorApiContract = {
     }
 
     const drafts = getDraftMap()
+    const current = normalizeEditorDraft(request.projectId, drafts[request.projectId])
+    const currentRevision = current.revision ?? 0
+
+    if (options.expectedRevision !== undefined && options.expectedRevision !== currentRevision) {
+      throw createApiError({
+        message: 'Editor draft revision conflict',
+        code: API_ERROR_CODES.editorSaveConflict,
+        status: 409,
+        details: {
+          projectId: request.projectId,
+          expectedRevision: options.expectedRevision,
+          currentRevision,
+        },
+      })
+    }
+
     const normalized = normalizeEditorDraft(request.projectId, request.draft)
     const savedAt = new Date().toISOString()
-    const next = {
+    const revision = currentRevision + 1
+    const next: EditorDraft = {
       ...normalized,
+      revision,
       script: {
         ...normalized.script,
         updatedAt: savedAt,
@@ -65,8 +83,8 @@ export const editorMockApi: EditorApiContract = {
     const response: EditorSaveDraftResponseDTO = {
       draft: next,
       savedAt,
+      revision,
     }
     return response
   },
 }
-

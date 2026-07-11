@@ -2,6 +2,7 @@
 
 export const createDefaultEditorDraft = (projectId: string): EditorDraft => ({
   projectId,
+  revision: 0,
   script: {
     content: '',
     prompt: '',

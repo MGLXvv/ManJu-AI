@@ -1,37 +1,14 @@
+import { MOCK_MEDIA_IMAGE_URL } from './mockMedia'
 import type { StoryboardShot, StoryboardShotStatus, StoryboardTag, StoryboardTagOptions } from '@/types/storyboard'
 
 const makeImage = (
   label: string,
-  colorA: string,
-  colorB: string,
+  _colorA: string,
+  _colorB: string,
   seed: number,
   ratio: StoryboardShot['ratio'] = '16:9',
-): string => {
-  const isPortrait = ratio === '9:16'
-  const width = isPortrait ? 720 : 1280
-  const height = isPortrait ? 1280 : 720
-  const footerHeight = isPortrait ? 132 : 108
-  const footerY = height - footerHeight
-  const fontSize = isPortrait ? 42 : 54
-  const textY = height - (isPortrait ? 48 : 40)
-  const circleCx = isPortrait ? 120 + (seed % 4) * 120 : 180 + (seed % 7) * 130
-  const circleCy = isPortrait ? 160 + (seed % 6) * 130 : 120 + (seed % 5) * 90
-  const circleR = 36 + (seed % 4) * 10
-
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
-    <defs>
-      <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="${colorA}" />
-        <stop offset="100%" stop-color="${colorB}" />
-      </linearGradient>
-    </defs>
-    <rect width="${width}" height="${height}" fill="url(#g)" />
-    <circle cx="${circleCx}" cy="${circleCy}" r="${circleR}" fill="rgba(255,255,255,0.16)" />
-    <rect x="0" y="${footerY}" width="${width}" height="${footerHeight}" fill="rgba(0,0,0,0.42)" />
-    <text x="30" y="${textY}" fill="white" font-family="Segoe UI, PingFang SC, Microsoft YaHei, sans-serif" font-size="${fontSize}" font-weight="700">${label}</text>
-  </svg>`
-  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`
-}
+): string =>
+  `${MOCK_MEDIA_IMAGE_URL}&kind=storyboard-default&label=${encodeURIComponent(label)}&seed=${seed}&ratio=${encodeURIComponent(ratio)}`
 
 const makeTag = (id: string, name: string, type: StoryboardTag['type']): StoryboardTag => ({
   id,

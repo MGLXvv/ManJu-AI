@@ -94,14 +94,15 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AppConfirmDialog from '@/components/common/AppConfirmDialog.vue'
-import { buildDeleteDialogCopy, buildDeleteToastMessage } from '@/features/dashboard/projectDeleteState'
-import { buildProjectExportFileName, parseImportedProjects } from '@/features/dashboard/projectTransferState'
-import { mapSystemStylesToProjectStyleOptions } from '@/features/project/projectStyleState'
-import { buildProjectArtifactEnvelope } from '@/features/shared/projectArtifactState'
 import BatchSelectionToolbar from '@/components/editor/common/BatchSelectionToolbar.vue'
 import CreateProjectModal from '@/components/dashboard/CreateProjectModal.vue'
 import ProjectGrid from '@/components/dashboard/ProjectGrid.vue'
 import ProjectToolbar from '@/components/dashboard/ProjectToolbar.vue'
+import { buildDeleteDialogCopy, buildDeleteToastMessage } from '@/features/dashboard/projectDeleteState'
+import { buildProjectExportFileName, parseImportedProjects } from '@/features/dashboard/projectTransferState'
+import { resolveCapability, type CapabilityKey } from '@/features/capabilities/capabilityRegistry'
+import { mapSystemStylesToProjectStyleOptions } from '@/features/project/projectStyleState'
+import { buildProjectArtifactEnvelope } from '@/features/shared/projectArtifactState'
 import { useProjectStore } from '@/stores/project'
 import { useSystemStore } from '@/stores/system'
 import { useUiFeedbackStore } from '@/stores/uiFeedback'
@@ -129,6 +130,13 @@ const pagedProjects = computed(() => {
 })
 const visibleProjectIds = computed(() => pagedProjects.value.map((project) => project.id))
 const allVisibleSelected = computed(() => visibleProjectIds.value.length > 0 && visibleProjectIds.value.every((id) => selectedIds.value.includes(id)))
+
+const checkCapability = (key: CapabilityKey): boolean => {
+  const capability = resolveCapability(key)
+  if (capability.available) return true
+  uiFeedback.showToast(capability.message, { tone: 'error' })
+  return false
+}
 
 watch(
   () => visibleProjectIds.value,
@@ -184,11 +192,13 @@ const handleCreateProject = async (payload: CreateProjectPayload): Promise<void>
 }
 
 const onImportProject = (): void => {
-  if (batchMode.value) return
+  if (batchMode.value || !checkCapability('project.import')) return
   importInput.value?.click()
 }
 
 const exportSingleProject = async (id: string): Promise<void> => {
+  if (!checkCapability('project.export')) return
+
   const project = await store.exportProject(id)
   if (!project) {
     uiFeedback.showToast('导出失败，未找到当前项目', { tone: 'error' })
@@ -219,6 +229,11 @@ const onImportFileChange = async (event: Event): Promise<void> => {
   const target = event.target as HTMLInputElement | null
   const file = target?.files?.[0]
   if (!file) return
+
+  if (!checkCapability('project.import')) {
+    target.value = ''
+    return
+  }
 
   try {
     const text = await file.text()

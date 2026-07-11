@@ -69,6 +69,28 @@ const createObjectUrl = (record: StoredMediaRecord): string => {
   return url
 }
 
+const getRecord = async (id: string): Promise<StoredMediaRecord | null> => {
+  const memoryRecord = memoryRecords.get(id)
+  if (memoryRecord) {
+    return memoryRecord
+  }
+
+  const record = await runTransaction<StoredMediaRecord | null>(
+    'readonly',
+    (store, resolve) => {
+      const request = store.get(id)
+      request.onsuccess = () => resolve((request.result as StoredMediaRecord | undefined) ?? null)
+      request.onerror = () => resolve(null)
+    },
+    () => null,
+  )
+
+  if (record) {
+    memoryRecords.set(id, record)
+  }
+  return record
+}
+
 export const mediaBlobRepository = {
   async save(record: StoredMediaRecord): Promise<MediaStorageKind> {
     memoryRecords.set(record.id, record)
@@ -90,30 +112,21 @@ export const mediaBlobRepository = {
     return stored ? 'indexeddb' : 'memory'
   },
 
-  async get(id: string): Promise<StoredMediaRecord | null> {
-    const memoryRecord = memoryRecords.get(id)
-    if (memoryRecord) {
-      return memoryRecord
-    }
+  get(id: string): Promise<StoredMediaRecord | null> {
+    return getRecord(id)
+  },
 
-    const record = await runTransaction<StoredMediaRecord | null>(
-      'readonly',
-      (store, resolve) => {
-        const request = store.get(id)
-        request.onsuccess = () => resolve((request.result as StoredMediaRecord | undefined) ?? null)
-        request.onerror = () => resolve(null)
-      },
-      () => null,
-    )
-
-    if (record) {
-      memoryRecords.set(id, record)
+  findIdByUrl(url: string): string | undefined {
+    for (const [id, candidate] of objectUrls.entries()) {
+      if (candidate === url) {
+        return id
+      }
     }
-    return record
+    return url.startsWith('mock-media://') ? url.slice('mock-media://'.length) || undefined : undefined
   },
 
   async resolveUrl(id: string): Promise<string> {
-    const record = await this.get(id)
+    const record = await getRecord(id)
     return record ? createObjectUrl(record) : ''
   },
 

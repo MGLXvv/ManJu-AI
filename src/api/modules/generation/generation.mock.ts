@@ -96,12 +96,24 @@ export const generationMockApi: GenerationApiContract = {
   async create(input) {
     const request: GenerationCreateTaskRequestDTO = input
     await delay(80)
+
+    if (request.requestId) {
+      const existing = getTasks().find(
+        (task) => task.projectId === request.projectId && task.requestId === request.requestId,
+      )
+
+      if (existing) {
+        return existing
+      }
+    }
+
     const now = new Date().toISOString()
     const task: GenerationTask = {
       id: `task-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       projectId: request.projectId,
       type: request.type,
       shotId: request.shotId,
+      requestId: request.requestId,
       status: GENERATION_TASK_STATUSES.queued,
       progress: 0,
       payload: request.payload,

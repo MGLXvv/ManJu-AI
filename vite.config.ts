@@ -37,6 +37,10 @@ export default defineConfig(({ mode }) => {
     test: {
       include: ['tests/**/*.test.ts'],
       environment: 'node',
+      env: {
+        VITE_API_MODE: 'mock',
+        VITE_STRICT_RUNTIME_CONFIG: 'true',
+      },
     },
   }
 })

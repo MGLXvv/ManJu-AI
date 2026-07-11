@@ -2,6 +2,7 @@ import { isMockMode } from '@/api/shared/apiMode'
 import { assetWorkflowService } from '@/services/editor/assetWorkflow.service'
 import { storyboardWorkflowService } from '@/services/editor/storyboardWorkflow.service'
 import type { DubbingRoleCardModel, DubbingRoleLineDraft } from '@/types/dubbing'
+import type { Shot as EditorShot } from '@/types/editor'
 import type { SettingAsset } from '@/types/settingAsset'
 import type { StoryboardShot } from '@/types/storyboard'
 import type {
@@ -16,7 +17,7 @@ import type {
   VideoGenerateTaskResult,
 } from './generationResult.types'
 
-const loadStoryboardShot = async (projectId: string, shotId: string) => {
+const loadStoryboardShot = async (projectId: string, shotId: string): Promise<EditorShot | undefined> => {
   if (isMockMode) {
     return undefined
   }
@@ -29,9 +30,22 @@ const loadStoryboardShot = async (projectId: string, shotId: string) => {
   }
 }
 
+const loadSettingAsset = async (projectId: string, assetId: string): Promise<SettingAsset | undefined> => {
+  if (isMockMode) {
+    return undefined
+  }
+
+  try {
+    const assets = await assetWorkflowService.loadAssetWorkspace(projectId)
+    return assets?.find((asset) => asset.id === assetId)
+  } catch {
+    return undefined
+  }
+}
+
 const mergeWorkspaceShot = (
   current: StoryboardShot,
-  workspaceShot: Awaited<ReturnType<typeof loadStoryboardShot>>,
+  workspaceShot: EditorShot | undefined,
 ): StoryboardShot | undefined => {
   if (!workspaceShot) {
     return undefined
@@ -56,13 +70,17 @@ const appendGeneratedMediaSlot = (ids: string[] | undefined, max: number): strin
   ids?.some(Boolean) ? [...ids, ''].slice(-max) : undefined
 
 export const generationWorkspaceRefreshService = {
+  loadStoryboardShot,
+  loadSettingAsset,
+
   async resolveStoryboardImage(
     projectId: string,
     current: StoryboardShot,
     result: StoryboardImageTaskResult,
+    workspaceShot?: EditorShot,
   ): Promise<StoryboardImageResult> {
-    const workspaceShot = mergeWorkspaceShot(current, await loadStoryboardShot(projectId, result.shotId))
-    const shot = workspaceShot ?? result.shot ?? current
+    const refreshedShot = workspaceShot ?? await loadStoryboardShot(projectId, result.shotId)
+    const shot = mergeWorkspaceShot(current, refreshedShot) ?? result.shot ?? current
     return {
       ...result,
       shot: {
@@ -78,9 +96,10 @@ export const generationWorkspaceRefreshService = {
     projectId: string,
     current: StoryboardShot,
     result: StoryboardUpscaleTaskResult,
+    workspaceShot?: EditorShot,
   ): Promise<StoryboardUpscaleResult> {
-    const workspaceShot = mergeWorkspaceShot(current, await loadStoryboardShot(projectId, result.shotId))
-    const shot = workspaceShot ?? result.shot ?? current
+    const refreshedShot = workspaceShot ?? await loadStoryboardShot(projectId, result.shotId)
+    const shot = mergeWorkspaceShot(current, refreshedShot) ?? result.shot ?? current
     return {
       ...result,
       shot: {
@@ -96,18 +115,10 @@ export const generationWorkspaceRefreshService = {
     projectId: string,
     current: SettingAsset,
     result: SettingAssetImageTaskResult,
+    workspaceAsset?: SettingAsset,
   ): Promise<SettingAssetImageResult> {
-    let workspaceAsset: SettingAsset | undefined
-    if (!isMockMode) {
-      try {
-        const assets = await assetWorkflowService.loadAssetWorkspace(projectId)
-        workspaceAsset = assets?.find((asset) => asset.id === result.assetId)
-      } catch {
-        workspaceAsset = undefined
-      }
-    }
-
-    const asset = workspaceAsset ?? result.asset ?? current
+    const refreshedAsset = workspaceAsset ?? await loadSettingAsset(projectId, result.assetId)
+    const asset = refreshedAsset ?? result.asset ?? current
     const imageUrls = result.imageUrl
       ? [result.imageUrl, ...asset.imageUrls.filter((url) => url !== result.imageUrl)].slice(0, 6)
       : asset.imageUrls
@@ -134,9 +145,10 @@ export const generationWorkspaceRefreshService = {
     projectId: string,
     current: StoryboardShot,
     result: VideoGenerateTaskResult,
+    workspaceShot?: EditorShot,
   ): Promise<VideoGenerateResult> {
-    const workspaceShot = mergeWorkspaceShot(current, await loadStoryboardShot(projectId, result.shotId))
-    const shot = workspaceShot ?? result.shot ?? current
+    const refreshedShot = workspaceShot ?? await loadStoryboardShot(projectId, result.shotId)
+    const shot = mergeWorkspaceShot(current, refreshedShot) ?? result.shot ?? current
     return {
       ...result,
       shot: {

@@ -2,7 +2,7 @@ import { createApiError } from '@/api/errors'
 import { apiMode } from '@/api/shared/apiMode'
 import { API_ERROR_CODES } from '@/types/api-enums'
 import type { EditorDraft } from '@/types/editor'
-import type { MediaKind, MediaUploadContext, MediaUploadResult, StoredMediaRecord } from '@/types/media'
+import type { MediaKind, MediaStorageKind, MediaUploadContext, MediaUploadResult, StoredMediaRecord } from '@/types/media'
 import type { ResourceAsset } from '@/types/resource'
 import type { SettingAsset } from '@/types/settingAsset'
 import type { StoryboardImageEditRecord, StoryboardReferenceImage, StoryboardShot } from '@/types/storyboard'
@@ -100,6 +100,20 @@ const sanitizeSettingAsset = (asset: SettingAsset): SettingAsset => ({
   candidateImages: (asset.candidateImages ?? []).map((url) => (isTransientMediaUrl(url) ? '' : url)),
 })
 
+const buildUploadResult = (
+  record: StoredMediaRecord,
+  url: string,
+  storage: MediaStorageKind,
+): MediaUploadResult => ({
+  mediaId: record.id,
+  url,
+  kind: record.kind,
+  mimeType: record.mimeType,
+  fileName: record.fileName,
+  size: record.size,
+  storage,
+})
+
 export class MediaUploadService {
   constructor(private readonly mode: 'mock' | 'http' = apiMode) {}
 
@@ -128,16 +142,7 @@ export class MediaUploadService {
     }
     const storage = await mediaBlobRepository.save(record)
     const url = await mediaBlobRepository.resolveUrl(mediaId)
-
-    return {
-      mediaId,
-      url,
-      kind: context.kind,
-      mimeType: record.mimeType,
-      fileName,
-      size: file.size,
-      storage,
-    }
+    return buildUploadResult(record, url, storage)
   }
 
   uploadFile(file: File, context: MediaUploadContext): Promise<MediaUploadResult> {
@@ -150,6 +155,39 @@ export class MediaUploadService {
     fileName = 'generated.svg',
   ): Promise<MediaUploadResult> {
     return this.upload(dataUrlToBlob(dataUrl), context, fileName)
+  }
+
+  async captureUrl(
+    url: string,
+    context: MediaUploadContext,
+    fileName = 'upload',
+  ): Promise<MediaUploadResult | null> {
+    if (!isTransientMediaUrl(url)) {
+      return null
+    }
+
+    const existingId = mediaBlobRepository.findIdByUrl(url)
+    if (existingId) {
+      const existing = await mediaBlobRepository.get(existingId)
+      if (existing) {
+        const restoredUrl = await mediaBlobRepository.resolveUrl(existingId)
+        return buildUploadResult(existing, restoredUrl, typeof indexedDB === 'undefined' ? 'memory' : 'indexeddb')
+      }
+    }
+
+    if (url.startsWith('data:')) {
+      return this.uploadDataUrl(url, context, fileName)
+    }
+
+    if (url.startsWith('blob:')) {
+      const response = await fetch(url)
+      if (!response.ok) {
+        throw new Error('MEDIA_BLOB_READ_FAILED')
+      }
+      return this.upload(await response.blob(), context, fileName)
+    }
+
+    return null
   }
 
   restore(mediaId: string): Promise<string> {

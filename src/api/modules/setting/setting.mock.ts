@@ -39,6 +39,13 @@ const resolveAssetVoiceFields = (
   }
 }
 
+const prependMediaId = (id: string | undefined, existing: string[] | undefined, max: number): string[] | undefined => {
+  if (!id && !existing?.some(Boolean)) {
+    return undefined
+  }
+  return [id ?? '', ...(existing ?? [])].slice(0, max)
+}
+
 export const settingMockApi: SettingApiContract = {
   async listDefaults() {
     await delay()
@@ -62,9 +69,7 @@ export const settingMockApi: SettingApiContract = {
       description: input.description,
       prompt: input.prompt,
       imageUrls: [],
-      imageMediaIds: [],
       candidateImages: [],
-      candidateMediaIds: [],
       ...voiceFields,
       status: 'empty',
       favorite: false,
@@ -95,15 +100,13 @@ export const settingMockApi: SettingApiContract = {
       { targetType: 'setting-asset', targetId: asset.id, kind: 'image' },
       `${asset.id}-upload`,
     )
-    const nextUrl = media?.url ?? imageUrl
-    const nextMediaId = media?.mediaId ?? ''
     return cloneSettingAsset({
       ...asset,
       status: 'ready',
-      imageUrls: [nextUrl, ...asset.imageUrls].slice(0, 6),
-      imageMediaIds: [nextMediaId, ...(asset.imageMediaIds ?? [])].slice(0, 6),
-      candidateImages: [nextUrl, ...(asset.candidateImages ?? [])].slice(0, 12),
-      candidateMediaIds: [nextMediaId, ...(asset.candidateMediaIds ?? [])].slice(0, 12),
+      imageUrls: [imageUrl, ...asset.imageUrls].slice(0, 6),
+      imageMediaIds: prependMediaId(media?.mediaId, asset.imageMediaIds, 6),
+      candidateImages: [imageUrl, ...(asset.candidateImages ?? [])].slice(0, 12),
+      candidateMediaIds: prependMediaId(media?.mediaId, asset.candidateMediaIds, 12),
     })
   },
 
@@ -113,32 +116,34 @@ export const settingMockApi: SettingApiContract = {
     const candidateIndex = (asset.candidateImages ?? []).findIndex((item) => item === imageUrl)
     const selectedMediaId =
       (currentIndex >= 0 ? asset.imageMediaIds?.[currentIndex] : undefined) ??
-      (candidateIndex >= 0 ? asset.candidateMediaIds?.[candidateIndex] : undefined) ??
-      ''
+      (candidateIndex >= 0 ? asset.candidateMediaIds?.[candidateIndex] : undefined)
     const restUrls = asset.imageUrls.filter((item) => item !== imageUrl)
     const restMediaIds = asset.imageUrls
       .map((_, index) => asset.imageMediaIds?.[index] ?? '')
       .filter((_, index) => index !== currentIndex)
+    const hasMediaIds = Boolean(selectedMediaId || restMediaIds.some(Boolean))
     return cloneSettingAsset({
       ...asset,
       status: 'ready',
       imageUrls: [imageUrl, ...restUrls].slice(0, 6),
-      imageMediaIds: [selectedMediaId, ...restMediaIds].slice(0, 6),
+      imageMediaIds: hasMediaIds ? [selectedMediaId ?? '', ...restMediaIds].slice(0, 6) : undefined,
     })
   },
 
   async generateAssetImage(asset: SettingAsset): Promise<GenerateSettingAssetImageResult> {
     await delay(1400)
     const imageUrl = createGeneratedImage(asset)
+    const hasImageMedia = asset.imageMediaIds?.some(Boolean)
+    const hasCandidateMedia = asset.candidateMediaIds?.some(Boolean)
     return {
       imageUrl,
       asset: cloneSettingAsset({
         ...asset,
         status: 'ready',
         imageUrls: [imageUrl, ...asset.imageUrls].slice(0, 6),
-        imageMediaIds: ['', ...(asset.imageMediaIds ?? [])].slice(0, 6),
+        imageMediaIds: hasImageMedia ? ['', ...(asset.imageMediaIds ?? [])].slice(0, 6) : undefined,
         candidateImages: [...(asset.candidateImages ?? []), imageUrl].slice(-12),
-        candidateMediaIds: [...(asset.candidateMediaIds ?? []), ''].slice(-12),
+        candidateMediaIds: hasCandidateMedia ? [...(asset.candidateMediaIds ?? []), ''].slice(-12) : undefined,
       }),
     }
   },

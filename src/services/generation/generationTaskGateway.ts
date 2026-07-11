@@ -35,6 +35,24 @@ export type GenerationTaskBatchResult<TItem, TValue> =
       reason: unknown
     }
 
+export interface GenerationTaskGateway {
+  listByProject(projectId: string): Promise<GenerationTask[]>
+  getById(taskId: string): Promise<GenerationTask | null>
+  create(input: CreateGenerationTaskInput): Promise<GenerationTask>
+  cancel(taskId: string): Promise<GenerationTask | null>
+  retry(taskId: string): Promise<GenerationTask | null>
+  waitForTask(taskId: string, options?: GenerationTaskWaitOptions): Promise<GenerationTask>
+  createAndWait(
+    input: CreateGenerationTaskInput,
+    options?: GenerationTaskWaitOptions,
+  ): Promise<GenerationTask>
+  listRecoverableByProject(projectId: string): Promise<GenerationTask[]>
+  recoverProjectTasks(
+    projectId: string,
+    options?: GenerationTaskRecoveryOptions,
+  ): Promise<GenerationTaskBatchResult<GenerationTask, GenerationTask>[]>
+}
+
 const DEFAULT_POLL_INTERVAL = 600
 const DEFAULT_TIMEOUT = 30000
 const DEFAULT_BATCH_CONCURRENCY = 3
@@ -219,7 +237,7 @@ const recoverProjectTasks = async (
   )
 }
 
-export const generationTaskGateway = {
+export const generationTaskGateway: GenerationTaskGateway = {
   listByProject,
   getById,
   create,

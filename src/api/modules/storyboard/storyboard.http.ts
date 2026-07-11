@@ -1,4 +1,5 @@
 import { http } from '@/api/http'
+import { assertHttpMediaUrl } from '@/services/media'
 import type { StoryboardApiContract, StoryboardShot } from './storyboard.types'
 
 export const storyboardHttpApi: StoryboardApiContract = {
@@ -13,16 +14,31 @@ export const storyboardHttpApi: StoryboardApiContract = {
   },
 
   async uploadShotImage(shot: StoryboardShot, imageUrl: string) {
+    assertHttpMediaUrl(imageUrl, {
+      targetType: 'storyboard-image',
+      targetId: shot.id,
+      kind: 'image',
+    })
     const { data } = await http.post(`/storyboard/shots/${shot.id}/image`, { imageUrl })
     return data.shot
   },
 
   async uploadShotVideo(shot: StoryboardShot, videoUrl: string) {
+    assertHttpMediaUrl(videoUrl, {
+      targetType: 'storyboard-video',
+      targetId: shot.id,
+      kind: 'video',
+    })
     const { data } = await http.post(`/storyboard/shots/${shot.id}/video`, { videoUrl })
     return data.shot
   },
 
   async applyEditedImage(shot: StoryboardShot, imageUrl: string) {
+    assertHttpMediaUrl(imageUrl, {
+      targetType: 'storyboard-edit',
+      targetId: shot.id,
+      kind: 'image',
+    })
     const { data } = await http.post(`/storyboard/shots/${shot.id}/edited-image`, { imageUrl })
     return data.shot
   },

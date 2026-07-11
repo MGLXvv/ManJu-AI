@@ -95,6 +95,12 @@ try {
   await dialog.getByRole('button', { name: '横版 16:9' }).click()
 
   const styleSelect = dialog.locator('select')
+  await page.waitForFunction(() => {
+    const select = document.querySelector('.create-project-modal__select')
+    return select instanceof HTMLSelectElement
+      && !select.disabled
+      && [...select.options].some((option) => Boolean(option.value) && !option.disabled)
+  })
   const styleValue = await styleSelect.locator('option:not([disabled])').first().getAttribute('value')
   if (!styleValue) throw new Error('No enabled project style is available in Mock mode.')
   await styleSelect.selectOption(styleValue)
@@ -129,6 +135,6 @@ try {
   if (serverLogs.length > 0) console.error(serverLogs.join(''))
   process.exitCode = 1
 } finally {
-  await browser?.close().catch(() => undefined)
+  if (browser) await browser.close().catch(() => undefined)
   stopServer()
 }

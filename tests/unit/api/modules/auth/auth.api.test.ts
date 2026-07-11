@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { resetLocalState } from '@/api/local'
-import { AUTH_ERROR, authApi, authStorageKeys } from '@/api/modules/auth/auth.api'
+import { readLocal, resetLocalState } from '@/api/local'
+import { AUTH_ERROR, AUTH_STORAGE_KEYS, authApi } from '@/api/modules/auth/auth.api'
 
 describe('auth module api', () => {
   beforeEach(() => {
     resetLocalState()
   })
 
-  it('logs in with password and persists a mock session', async () => {
+  it('returns a mock session without persisting it inside the api layer', async () => {
     const session = await authApi.loginByPassword({
       account: 'admin11',
       password: '123456',
@@ -18,8 +18,12 @@ describe('auth module api', () => {
       id: 'user-1',
       name: 'admin11',
     })
-    expect(authStorageKeys.token).toBe('amd.auth.token')
-    expect(authStorageKeys.user).toBe('amd.auth.user')
+    expect(readLocal<string | null>(AUTH_STORAGE_KEYS.token, null)).toBeNull()
+    expect(readLocal(AUTH_STORAGE_KEYS.user, null)).toBeNull()
+
+    const accounts = readLocal<Array<Record<string, unknown>>>('amd.auth.accounts', [])
+    expect(accounts[0]).not.toHaveProperty('password')
+    expect(accounts[0]?.passwordVerifier).toMatch(/^mock-v1-/)
   })
 
   it('supports code login after requesting a verification code', async () => {
@@ -44,12 +48,7 @@ describe('auth module api', () => {
     ).rejects.toThrow(AUTH_ERROR.ACCOUNT_EXISTS)
   })
 
-  it('logs out after a successful login', async () => {
-    await authApi.loginByPassword({
-      account: 'admin11',
-      password: '123456',
-    })
-
+  it('logs out without owning session persistence', async () => {
     await expect(authApi.logout()).resolves.toBeUndefined()
   })
 })

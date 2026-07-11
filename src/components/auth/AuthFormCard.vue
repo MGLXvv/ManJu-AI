@@ -14,17 +14,19 @@
           {{ t('auth.mode.password') }}
         </button>
 
-        <span class="auth-card__tab-separator" aria-hidden="true"></span>
+        <template v-if="showCodeLogin">
+          <span class="auth-card__tab-separator" aria-hidden="true"></span>
 
-        <button
-          type="button"
-          class="auth-card__tab"
-          :class="{ 'is-active': mode === 'code' }"
-          :disabled="loading"
-          @click="$emit('update:mode', 'code')"
-        >
-          {{ t('auth.mode.code') }}
-        </button>
+          <button
+            type="button"
+            class="auth-card__tab"
+            :class="{ 'is-active': mode === 'code' }"
+            :disabled="loading"
+            @click="$emit('update:mode', 'code')"
+          >
+            {{ t('auth.mode.code') }}
+          </button>
+        </template>
       </div>
 
       <button
@@ -126,14 +128,14 @@
         <button
           type="button"
           class="auth-card__remember-toggle"
-          :class="{ 'is-checked': rememberPassword }"
-          :aria-pressed="rememberPassword"
+          :class="{ 'is-checked': rememberAccount }"
+          :aria-pressed="rememberAccount"
           :disabled="loading"
-          @click="$emit('update:rememberPassword', !rememberPassword)"
+          @click="$emit('update:rememberAccount', !rememberAccount)"
         >
-          <FigmaIcon name="checkbox-checked" :size="14" class="auth-card__agree-icon" :class="{ 'is-visible': rememberPassword }" />
+          <FigmaIcon name="checkbox-checked" :size="14" class="auth-card__agree-icon" :class="{ 'is-visible': rememberAccount }" />
         </button>
-        <span>记住密码</span>
+        <span>记住账号</span>
       </label>
 
       <label class="auth-card__agree">
@@ -183,8 +185,9 @@ const props = withDefaults(
     password: string
     code?: string
     agreed: boolean
-    rememberPassword?: boolean
+    rememberAccount?: boolean
     showPassword?: boolean
+    showCodeLogin?: boolean
     loading?: boolean
     codeCountdown?: number
     bindProviderLabel?: string
@@ -198,8 +201,9 @@ const props = withDefaults(
   {
     username: '',
     code: '',
-    rememberPassword: false,
+    rememberAccount: false,
     showPassword: false,
+    showCodeLogin: true,
     loading: false,
     codeCountdown: 0,
     bindProviderLabel: '',
@@ -219,7 +223,7 @@ const emit = defineEmits<{
   (e: 'update:password', value: string): void
   (e: 'update:code', value: string): void
   (e: 'update:agreed', value: boolean): void
-  (e: 'update:rememberPassword', value: boolean): void
+  (e: 'update:rememberAccount', value: boolean): void
   (e: 'submit'): void
   (e: 'forgot'): void
   (e: 'code-help'): void

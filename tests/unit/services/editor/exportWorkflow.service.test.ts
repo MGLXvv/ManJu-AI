@@ -1,11 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { http } from '@/api/http'
+
+const httpMock = vi.hoisted(() => ({
+  get: vi.fn(),
+  post: vi.fn(),
+}))
 
 vi.mock('@/api/http', () => ({
-  http: {
-    get: vi.fn(),
-    post: vi.fn(),
-  },
+  http: httpMock,
+}))
+
+vi.mock('@/features/capabilities/capabilityRegistry', () => ({
+  canUseCapability: vi.fn(() => true),
+  requireCapability: vi.fn(),
 }))
 
 describe('exportWorkflowService', () => {
@@ -25,8 +31,8 @@ describe('exportWorkflowService', () => {
     expect(await exportWorkflowService.loadExportWorkspace('project-1')).toBeNull()
     expect(await exportWorkflowService.createExportTask('project-1')).toBeNull()
     expect(await exportWorkflowService.getDownloadUrl('task-1')).toBe('')
-    expect(http.get).not.toHaveBeenCalled()
-    expect(http.post).not.toHaveBeenCalled()
+    expect(httpMock.get).not.toHaveBeenCalled()
+    expect(httpMock.post).not.toHaveBeenCalled()
   })
 
   it('loads export workspace in http mode', async () => {
@@ -35,7 +41,7 @@ describe('exportWorkflowService', () => {
       isMockMode: false,
     }))
 
-    vi.mocked(http.get).mockResolvedValue({
+    httpMock.get.mockResolvedValue({
       data: {
         canExport: false,
         missingVideoCount: 2,
@@ -46,7 +52,7 @@ describe('exportWorkflowService', () => {
     const { exportWorkflowService } = await import('@/services/editor/exportWorkflow.service')
     const workspace = await exportWorkflowService.loadExportWorkspace('project-1')
 
-    expect(http.get).toHaveBeenCalledWith('/aidrama/projects/project-1/exports/workspace')
+    expect(httpMock.get).toHaveBeenCalledWith('/aidrama/projects/project-1/exports/workspace')
     expect(workspace).toMatchObject({
       canExport: false,
       missingVideoCount: 2,
@@ -60,7 +66,7 @@ describe('exportWorkflowService', () => {
       isMockMode: false,
     }))
 
-    vi.mocked(http.post).mockResolvedValue({
+    httpMock.post.mockResolvedValue({
       data: {
         id: 10,
         status: 'SUCCESS',
@@ -72,7 +78,7 @@ describe('exportWorkflowService', () => {
     const { exportWorkflowService } = await import('@/services/editor/exportWorkflow.service')
     const task = await exportWorkflowService.createExportTask('project-1')
 
-    expect(http.post).toHaveBeenCalledWith('/aidrama/projects/project-1/export')
+    expect(httpMock.post).toHaveBeenCalledWith('/aidrama/projects/project-1/export')
     expect(task).toMatchObject({
       id: '10',
       status: 'SUCCESS',
@@ -87,7 +93,7 @@ describe('exportWorkflowService', () => {
       isMockMode: false,
     }))
 
-    vi.mocked(http.get).mockResolvedValue({
+    httpMock.get.mockResolvedValue({
       data: {
         downloadUrl: 'https://example.com/mock-export.mp4',
       },
@@ -96,7 +102,7 @@ describe('exportWorkflowService', () => {
     const { exportWorkflowService } = await import('@/services/editor/exportWorkflow.service')
     const url = await exportWorkflowService.getDownloadUrl('task-10')
 
-    expect(http.get).toHaveBeenCalledWith('/aidrama/exports/task-10/download-url')
+    expect(httpMock.get).toHaveBeenCalledWith('/aidrama/exports/task-10/download-url')
     expect(url).toBe('https://example.com/mock-export.mp4')
   })
 })

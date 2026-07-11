@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createDefaultStoryboardState } from '@/api/storyboard.api'
 import { resetLocalState } from '@/api/local'
+import { MOCK_MEDIA_VIDEO_16_9_URL } from '@/mocks/mockMedia'
 import { API_ERROR_CODES } from '@/types/api-enums'
 
 describe('videoGenerationService', () => {
@@ -19,7 +20,7 @@ describe('videoGenerationService', () => {
     })
 
     expect(result.shotId).toBe(shot.id)
-    expect(result.videoUrl).toContain('mock-video://')
+    expect(result.videoUrl).toBe(MOCK_MEDIA_VIDEO_16_9_URL)
     expect(result.shot.videoUrl).toBe(result.videoUrl)
   })
 

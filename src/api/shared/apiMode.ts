@@ -1,5 +1,6 @@
-export type ApiMode = 'mock' | 'http'
+import { runtimeConfig, type ApiMode } from '@/config/runtimeConfig'
 
-export const apiMode: ApiMode = import.meta.env.VITE_API_MODE === 'http' ? 'http' : 'mock'
+export type { ApiMode }
 
+export const apiMode: ApiMode = runtimeConfig.apiMode
 export const isMockMode = apiMode === 'mock'

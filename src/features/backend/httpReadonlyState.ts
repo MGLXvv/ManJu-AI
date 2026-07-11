@@ -1,11 +1,11 @@
-﻿import { isMockMode } from '@/api/shared/apiMode'
+import { resolveCapability, type CapabilityKey } from '@/features/capabilities/capabilityRegistry'
 
 export type HttpReadonlyDomain = 'resource' | 'voice' | 'system'
 
-const READONLY_MESSAGES: Record<HttpReadonlyDomain, string> = {
-  resource: '当前 HTTP 联调阶段暂不支持资源库新增、编辑或删除',
-  voice: '当前 HTTP 联调阶段暂不支持音色新增、编辑或删除',
-  system: '当前 HTTP 联调阶段暂不支持系统管理写操作',
+const DOMAIN_CAPABILITIES: Record<HttpReadonlyDomain, CapabilityKey> = {
+  resource: 'resource.write',
+  voice: 'voice.write',
+  system: 'system.write',
 }
 
 export interface HttpReadonlyState {
@@ -14,16 +14,9 @@ export interface HttpReadonlyState {
 }
 
 export const resolveHttpReadonlyState = (domain: HttpReadonlyDomain): HttpReadonlyState => {
-  if (isMockMode) {
-    return {
-      readonly: false,
-      message: '',
-    }
-  }
-
+  const capability = resolveCapability(DOMAIN_CAPABILITIES[domain])
   return {
-    readonly: true,
-    message: READONLY_MESSAGES[domain],
+    readonly: !capability.available,
+    message: capability.message,
   }
 }
-

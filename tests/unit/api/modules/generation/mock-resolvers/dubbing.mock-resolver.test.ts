@@ -3,6 +3,7 @@ import { API_ERROR_CODES, GENERATION_TASK_STATUSES } from '@/types/api-enums'
 import type { DubbingRoleCardModel } from '@/types/dubbing'
 import type { GenerationTask } from '@/api/modules/generation/generation.types'
 import { resolveDubbingMockTask } from '@/api/modules/generation/mock-resolvers/dubbing.mock-resolver'
+import { MOCK_MEDIA_AUDIO_URL } from '@/mocks/mockMedia'
 
 const makeCard = (overrides: Partial<DubbingRoleCardModel> = {}): DubbingRoleCardModel => ({
   id: 'card-1',
@@ -66,7 +67,7 @@ describe('resolveDubbingMockTask', () => {
         expect.objectContaining({
           id: 'line-1',
           status: 'success',
-          audioUrl: expect.stringContaining('data:audio/wav;base64,'),
+          audioUrl: MOCK_MEDIA_AUDIO_URL,
         }),
       ],
     })

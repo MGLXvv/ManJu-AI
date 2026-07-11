@@ -1,5 +1,6 @@
 import { createApiError } from '@/api/errors'
 import { http } from '@/api/http'
+import { requireCapability } from '@/features/capabilities/capabilityRegistry'
 import { API_ERROR_CODES } from '@/types/api-enums'
 import type { CreateGenerationTaskInput, GenerationApiContract, GenerationTask, GenerationTaskStatus } from './generation.types'
 
@@ -34,11 +35,13 @@ export const generationHttpApi: GenerationApiContract = {
   },
 
   async cancel(id: string) {
+    requireCapability('generation.cancel')
     const { data } = await http.post(`/generation/tasks/${id}/cancel`)
     return data.task
   },
 
   async retry(id: string) {
+    requireCapability('generation.retry')
     const { data } = await http.post(`/generation/tasks/${id}/retry`)
     return data.task
   },

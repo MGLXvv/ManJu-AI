@@ -1,3 +1,3 @@
 export * from './auth.api'
-export * from './auth.mock'
+export * from './auth.constants'
 export * from './auth.types'

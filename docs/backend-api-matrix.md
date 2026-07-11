@@ -1,197 +1,50 @@
-# Backend API Matrix
+# Backend API Matrix（历史文档）
 
-## Purpose
+## 状态
 
-This matrix gives a backend-facing overview of which API domains are already ready for integration, which still rely on local mock structure, and where the main risks are.
+本文档原用于记录 API Module 是否具备 Mock/HTTP 切换结构。
 
-## Matrix
+随着后端接入风险重新评估，仅用“存在 HTTP Adapter”“支持模式切换”已经不足以判断模块是否可以真实联调。例如：
 
-### Generation
+- Generation 模块存在任务查询接口，但 HTTP 创建和完整异步轮询尚未闭环；
+- Editor 模块可以读取部分 Workspace，但保存并未覆盖完整编辑器状态；
+- Resource 模块 HTTP 模式仍主要是只读；
+- Auth 模块只有账号密码登录部分适配，会话恢复和刷新策略未冻结。
 
-- Status: standardized
-- Backend required: yes
-- Mode switch: yes
-- Runtime mode support: `mock/http supported`
-- Main endpoints:
-  - `GET /generation/tasks`
-  - `GET /generation/tasks/:id`
-  - `POST /generation/tasks`
-  - `PATCH /generation/tasks/:id`
-  - `POST /generation/tasks/:id/cancel`
-  - `POST /generation/tasks/:id/retry`
-- Main risk:
-  - none at the API-switch level
-- Notes:
-  - This is the preferred entry point for generation flows.
+因此本文档不再作为当前接口准备程度的判断依据。
 
-### Project
+## 当前有效文档
 
-- Status: standardized
-- Backend required: yes
-- Mode switch: yes
-- Runtime mode support: `mock/http supported`
-- Main endpoints:
-  - `GET /projects`
-  - `GET /projects/:id`
-  - `POST /projects`
-  - `POST /projects/import`
-  - `GET /projects/:id/export`
-  - `PATCH /projects/:id`
-  - `DELETE /projects/:id`
-- Main risk:
-  - import/export payload semantics need to remain aligned with scoped project artifact behavior
+请使用：
 
-### Storyboard
+- `docs/api-contract-status-matrix.md`：当前模块状态、风险和接入动作；
+- `docs/frontend-backend-readiness-plan.md`：P0-P6 修复顺序；
+- `docs/backend-integration-checklist.md`：接入和验收清单；
+- `docs/frontend-backend-integration-guide.md`：接口到位后的标准接入流程。
 
-- Status: standardized
-- Backend required: yes, but mixed responsibility
-- Mode switch: yes
-- Runtime mode support: `mock/http supported`
-- Main endpoints:
-  - `GET /storyboard/defaults`
-  - `POST /storyboard/shots/:id/reference/:referenceImageId/apply`
-  - `POST /storyboard/shots/:id/image`
-  - `POST /storyboard/shots/:id/video`
-  - `POST /storyboard/shots/:id/edited-image`
-  - `POST /storyboard/shots/:id/generate-image`
-  - `POST /storyboard/shots/:id/generate-video`
-  - `POST /storyboard/shots/:id/upscale-image`
-- Main risk:
-  - `generate-image / generate-video / upscale-image` overlap with generation-task flows
-- Recommendation:
-  - Treat upload/reference/edit endpoints as storyboard-domain APIs
-  - Treat direct generation endpoints as legacy-compatible endpoints
-  - Use generation task APIs as the primary backend generation entrypoint
+## 历史结论的正确解释
 
-### Voice
+旧版文档中的：
 
-- Status: standardized
-- Backend required: yes
-- Mode switch: yes
-- Runtime mode support: `mock/http supported`
-- Main endpoints:
-  - `GET /voices`
-  - `POST /voices`
-  - `PATCH /voices/:voiceId`
-  - `DELETE /voices/:voiceId`
-- Main risk:
-  - voice ID/name consistency must stay aligned with setting assets and dubbing cards
+```text
+standardized
+mock/http supported
+suitable for backend switching
+```
 
-### Editor Draft
+只表示：
 
-- Status: standardized
-- Backend required: yes
-- Mode switch: yes
-- Runtime mode support: `mock/http supported`
-- Main role:
-  - editor draft load/save
-- Main risk:
-  - draft payload must continue to preserve hidden-card and scoped-export semantics
+- 模块已经存在稳定入口；
+- 有 Mock 和 HTTP 实现位置；
+- 页面通常不需要直接调用 Axios。
 
-### Resource
+它不表示：
 
-- Status: standardized
-- Backend required: maybe
-- Mode switch: yes
-- Runtime mode support: `mock/http supported`
-- Main risk:
-  - backend scope is not yet as clear as `generation/project/storyboard/voice`
+- 后端接口已经实现；
+- 请求和响应契约已经冻结；
+- 异步任务已经可恢复；
+- 全部草稿状态已经持久化；
+- 模块已经完成真实联调；
+- 模块已经达到生产可用。
 
-### Auth
-
-- Status: standardized
-- Backend required: yes
-- Mode switch: yes
-- Runtime mode support: `mock/http supported`
-- Main risk:
-  - implementation is slightly special because mode resolution is lazy and `index.ts` still re-exports mock helpers
-
-### Setting
-
-- Status: standardized
-- Backend required: yes
-- Mode switch: yes
-- Runtime mode support: `mock/http supported`
-- Main endpoints:
-  - `GET /settings/defaults`
-  - `POST /settings/assets`
-  - `PATCH /settings/assets/:assetId`
-  - `POST /settings/assets/:assetId/images`
-  - `POST /settings/assets/:assetId/candidate-selection`
-  - `POST /settings/assets/:assetId/generate-image`
-- Main risk:
-  - image generation endpoint remains lower priority than generation-task integration
-- Recommendation:
-  - keep generation-task integration as the preferred backend path for setting image generation when possible
-
-### System
-
-- Status: standardized
-- Backend required: medium
-- Mode switch: yes
-- Runtime mode support: `mock/http supported`
-- Main endpoints:
-  - `GET /system`
-  - `POST /system/styles`
-  - `PATCH /system/styles/:styleId`
-  - `DELETE /system/styles/:styleId`
-  - `POST /system/permissions`
-  - `PATCH /system/permissions/:permissionId`
-  - `DELETE /system/permissions/:permissionId`
-  - `POST /system/messages/:messageId/read`
-  - `POST /system/messages/read-all`
-  - `DELETE /system/messages`
-- Main risk:
-  - backend ownership priority is lower than project, editor draft, and generation flows
-- Recommendation:
-  - integrate after higher-priority project and generation domains
-
-### Asset
-
-- Status: standardized
-- Backend required: maybe
-- Mode switch: yes
-- Runtime mode support: `mock/http supported`
-- Main endpoints:
-  - `GET /projects/:projectId/assets`
-  - `PUT /projects/:projectId/assets`
-- Main risk:
-  - ownership versus `resource` domain is still a product-level question
-- Recommendation:
-  - keep as a lightweight project-scoped API unless product later merges it into a larger asset/library backend
-
-### Script Template
-
-- Status: standardized
-- Backend required: maybe
-- Mode switch: yes
-- Runtime mode support: `mock/http supported`
-- Main endpoints:
-  - `GET /script-templates`
-  - `POST /script-templates`
-  - `PATCH /script-templates/:templateId`
-  - `DELETE /script-templates/:templateId`
-- Main risk:
-  - ownership priority is still lower than generation/project/storyboard integration
-- Recommendation:
-  - keep the current module boundary and decide later whether templates are system-level shared data or editor-scoped data
-
-## Recommended Order
-
-API layer is now structurally ready for backend integration.
-
-Primary backend priority:
-
-1. `auth`
-2. `project`
-3. `editor` draft
-4. `generation` task APIs
-5. `setting` and `voice`
-6. `storyboard` auxiliary APIs
-7. `system`, `asset`, and `scriptTemplate`
-
-## Boundary Reminder
-
-- Preferred generation entry: `generation` task API
-- Storyboard-domain APIs should focus on storyboard data, uploads, reference handling, and edit operations
-- If backend keeps storyboard direct-generation endpoints, they should be documented as intentionally parallel to generation-task flows rather than accidental duplicates
+后续不要在本文档继续维护重复矩阵，所有状态变化统一更新 `docs/api-contract-status-matrix.md`。

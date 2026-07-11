@@ -1,8 +1,11 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { taskApi } from '@/api/task.api'
-import { pollTaskUntilSettled } from '@/services/taskPolling'
-import { GENERATION_TASK_STATUSES } from '@/types/api-enums'
+import {
+  generationTaskGateway,
+  type GenerationTaskRecoveryOptions,
+} from '@/services/generation/generationTaskGateway'
+import { API_ERROR_CODES, GENERATION_TASK_STATUSES } from '@/types/api-enums'
 import type { CreateGenerationTaskInput, GenerationTask, GenerationTaskStatus } from '@/types/generation'
 
 export const useGenerationStore = defineStore('generation', () => {
@@ -34,7 +37,7 @@ export const useGenerationStore = defineStore('generation', () => {
     loading.value = true
     try {
       projectId.value = nextProjectId
-      tasks.value = await taskApi.listByProject(nextProjectId)
+      tasks.value = await generationTaskGateway.listByProject(nextProjectId)
     } finally {
       loading.value = false
     }
@@ -52,10 +55,10 @@ export const useGenerationStore = defineStore('generation', () => {
 
     if (projectId.value !== resolvedProjectId) {
       projectId.value = resolvedProjectId
-      tasks.value = await taskApi.listByProject(resolvedProjectId)
+      tasks.value = await generationTaskGateway.listByProject(resolvedProjectId)
     }
 
-    const created = await taskApi.create({
+    const created = await generationTaskGateway.create({
       projectId: resolvedProjectId,
       ...input,
     })
@@ -64,7 +67,7 @@ export const useGenerationStore = defineStore('generation', () => {
   }
 
   const syncTask = async (id: string): Promise<GenerationTask | null> => {
-    const next = await taskApi.getById(id)
+    const next = await generationTaskGateway.getById(id)
     if (!next) {
       return null
     }
@@ -89,7 +92,7 @@ export const useGenerationStore = defineStore('generation', () => {
   }
 
   const cancelTask = async (id: string): Promise<GenerationTask | null> => {
-    const next = await taskApi.cancel(id)
+    const next = await generationTaskGateway.cancel(id)
     if (!next) {
       return null
     }
@@ -99,7 +102,7 @@ export const useGenerationStore = defineStore('generation', () => {
   }
 
   const retryTask = async (id: string): Promise<GenerationTask | null> => {
-    const next = await taskApi.retry(id)
+    const next = await generationTaskGateway.retry(id)
     if (!next) {
       return null
     }
@@ -108,12 +111,48 @@ export const useGenerationStore = defineStore('generation', () => {
     return next
   }
 
-  const pollTask = async (id: string, intervalMs?: number): Promise<GenerationTask | null> => {
-    const next = await pollTaskUntilSettled(id, taskApi.getById, intervalMs)
-    if (next) {
+  const pollTask = async (
+    id: string,
+    intervalMs?: number,
+    signal?: AbortSignal,
+  ): Promise<GenerationTask | null> => {
+    try {
+      const next = await generationTaskGateway.waitForTask(id, {
+        interval: intervalMs,
+        signal,
+      })
       upsertTask(next)
+      return next
+    } catch (error) {
+      if (error instanceof Error && error.message === API_ERROR_CODES.generationTaskNotFound) {
+        return null
+      }
+      throw error
     }
-    return next
+  }
+
+  const recoverActiveTasks = async (options: GenerationTaskRecoveryOptions = {}) => {
+    if (!projectId.value) {
+      return []
+    }
+
+    const results = await generationTaskGateway.recoverProjectTasks(projectId.value, options)
+
+    await Promise.all(
+      results.map(async (result) => {
+        if (result.status === 'fulfilled') {
+          upsertTask(result.value)
+          return
+        }
+
+        const latest = await generationTaskGateway.getById(result.item.id)
+        if (latest) {
+          upsertTask(latest)
+        }
+      }),
+    )
+
+    return results
   }
 
   return {
@@ -129,5 +168,6 @@ export const useGenerationStore = defineStore('generation', () => {
     cancelTask,
     retryTask,
     pollTask,
+    recoverActiveTasks,
   }
 })

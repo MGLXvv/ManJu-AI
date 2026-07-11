@@ -3,8 +3,14 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "packageManager": "pnpm@10.12.1",
+  "engines": {
+    "node": ">=22.18.0",
+    "pnpm": ">=10.0.0"
+  },
   "scripts": {
     "test": "vitest run",
+    "typecheck": "vue-tsc -b",
     "capture": "node tools/capture-modao.mjs",
     "dev": "vite --host 0.0.0.0",
     "build": "vue-tsc -b && vite build",

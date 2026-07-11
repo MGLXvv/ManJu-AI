@@ -10,6 +10,12 @@ import type { SettingAsset, SettingAssetType, SettingAssetTypeFilter } from '@/t
 
 const normalizeKeyword = (value: string): string => value.trim().toLocaleLowerCase()
 
+const prependUniqueMediaId = (
+  mediaId: string,
+  existing: string[] | undefined,
+  max: number,
+): string[] => [mediaId, ...(existing ?? []).filter((id) => id !== mediaId)].slice(0, max)
+
 export { createDefaultSettingAssets } from '@/mocks/setting.mock'
 
 export const useSettingAssetsStore = defineStore('setting-assets', () => {
@@ -115,8 +121,12 @@ export const useSettingAssetsStore = defineStore('setting-assets', () => {
       ? updated
       : {
           ...updated,
-          imageMediaIds: [media.mediaId, ...(target.imageMediaIds ?? [])].slice(0, 6),
-          candidateMediaIds: [media.mediaId, ...(target.candidateMediaIds ?? [])].slice(0, 12),
+          imageMediaIds: prependUniqueMediaId(media.mediaId, updated.imageMediaIds ?? target.imageMediaIds, 6),
+          candidateMediaIds: prependUniqueMediaId(
+            media.mediaId,
+            updated.candidateMediaIds ?? target.candidateMediaIds,
+            12,
+          ),
         }
     assets.value = assets.value.map((asset) => (asset.id === id ? next : asset))
   }

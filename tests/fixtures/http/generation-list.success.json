@@ -1,0 +1,18 @@
+{
+  "tasks": [
+    {
+      "id": "task-1",
+      "projectId": "project-7",
+      "shotId": "shot-101",
+      "requestId": "request-1",
+      "type": "video",
+      "status": "running",
+      "progress": 42,
+      "payload": {
+        "prompt": "Fixture video prompt"
+      },
+      "createdAt": "2026-07-11T10:40:00.000Z",
+      "updatedAt": "2026-07-11T10:41:00.000Z"
+    }
+  ]
+}

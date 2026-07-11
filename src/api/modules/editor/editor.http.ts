@@ -27,7 +27,7 @@ export const editorHttpApi: EditorApiContract = {
     })
   },
 
-  async saveDraft(projectId: string, draft: EditorDraft) {
+  async saveDraft(projectId: string, draft: EditorDraft, options = {}) {
     await http.put(`/aidrama/projects/${projectId}/script/draft`, {
       rawText: draft.script.content,
       prompt: draft.script.prompt,
@@ -40,16 +40,19 @@ export const editorHttpApi: EditorApiContract = {
     }
 
     const savedAt = new Date().toISOString()
+    const revision = (options.expectedRevision ?? draft.revision ?? 0) + 1
 
     return {
       draft: {
         ...draft,
+        revision,
         script: {
           ...draft.script,
           updatedAt: savedAt,
         },
       },
       savedAt,
+      revision,
     }
   },
 }

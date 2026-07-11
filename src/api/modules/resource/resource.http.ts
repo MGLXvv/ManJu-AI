@@ -1,7 +1,7 @@
 ﻿import { createApiError } from '@/api/errors'
 import { http } from '@/api/http'
 import { parseBackendAssetMeta } from '@/api/modules/editor/asset.mapper'
-import { resourceFolders } from '@/mocks/resource.mock'
+import { resourceFolders } from '@/features/resource/resourceLibraryDefaults'
 import { API_ERROR_CODES } from '@/types/api-enums'
 import type { BackendAssetType, BackendResourceLibraryItemDTO, BackendResourceLibraryPageDTO } from '@/types/api-dto'
 import type { ResourceAssetSource } from '@/types/resource'

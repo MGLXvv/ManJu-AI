@@ -1,0 +1,15 @@
+export const AUTH_ERROR = {
+  INVALID_CREDENTIALS: 'AUTH_INVALID_CREDENTIALS',
+  ACCOUNT_NOT_FOUND: 'AUTH_ACCOUNT_NOT_FOUND',
+  INVALID_CODE: 'AUTH_INVALID_CODE',
+  ACCOUNT_EXISTS: 'AUTH_ACCOUNT_EXISTS',
+  ACCOUNT_MISMATCH: 'AUTH_ACCOUNT_MISMATCH',
+  CODE_RATE_LIMIT: 'AUTH_CODE_RATE_LIMIT',
+  CAPABILITY_UNAVAILABLE: 'AUTH_CAPABILITY_UNAVAILABLE',
+} as const
+
+export const AUTH_STORAGE_KEYS = {
+  token: 'amd.auth.token',
+  user: 'amd.auth.user',
+  rememberedAccount: 'amd.auth.remembered-account',
+} as const

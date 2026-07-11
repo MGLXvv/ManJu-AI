@@ -49,8 +49,11 @@ const mergeWorkspaceShot = (
   }
 }
 
-const prependGeneratedMediaSlot = (ids: string[] | undefined, max: number): string[] =>
-  ['', ...(ids ?? [])].slice(0, max)
+const prependGeneratedMediaSlot = (ids: string[] | undefined, max: number): string[] | undefined =>
+  ids?.some(Boolean) ? ['', ...ids].slice(0, max) : undefined
+
+const appendGeneratedMediaSlot = (ids: string[] | undefined, max: number): string[] | undefined =>
+  ids?.some(Boolean) ? [...ids, ''].slice(-max) : undefined
 
 export const generationWorkspaceRefreshService = {
   async resolveStoryboardImage(
@@ -109,8 +112,11 @@ export const generationWorkspaceRefreshService = {
       ? [result.imageUrl, ...asset.imageUrls.filter((url) => url !== result.imageUrl)].slice(0, 6)
       : asset.imageUrls
     const imageMediaIds = result.imageUrl
-      ? prependGeneratedMediaSlot(asset.imageMediaIds, 6)
-      : asset.imageMediaIds
+      ? prependGeneratedMediaSlot(current.imageMediaIds, 6)
+      : current.imageMediaIds
+    const candidateMediaIds = result.imageUrl && asset.candidateImages?.includes(result.imageUrl)
+      ? appendGeneratedMediaSlot(current.candidateMediaIds, 12)
+      : asset.candidateMediaIds
 
     return {
       ...result,
@@ -118,6 +124,7 @@ export const generationWorkspaceRefreshService = {
         ...asset,
         imageUrls,
         imageMediaIds,
+        candidateMediaIds,
         status: result.imageUrl ? 'ready' : 'failed',
       },
     }

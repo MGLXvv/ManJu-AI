@@ -1,11 +1,11 @@
 import { createApiError } from '@/api/errors'
 import { apiMode } from '@/api/shared/apiMode'
 import { API_ERROR_CODES } from '@/types/api-enums'
-import type { EditorDraft } from '@/types/editor'
+import type { EditorDraft, Shot as EditorShot } from '@/types/editor'
 import type { MediaKind, MediaStorageKind, MediaUploadContext, MediaUploadResult, StoredMediaRecord } from '@/types/media'
 import type { ResourceAsset } from '@/types/resource'
 import type { SettingAsset } from '@/types/settingAsset'
-import type { StoryboardImageEditRecord, StoryboardReferenceImage, StoryboardShot } from '@/types/storyboard'
+import type { StoryboardImageEditRecord, StoryboardReferenceImage } from '@/types/storyboard'
 import { mediaBlobRepository } from './mediaBlobRepository'
 
 const createMediaId = (): string =>
@@ -53,7 +53,7 @@ const hydrateEditRecord = async (record: StoryboardImageEditRecord): Promise<Sto
   resultImageUrl: await resolveUrl(record.resultMediaId, record.resultImageUrl),
 })
 
-const hydrateShot = async (shot: StoryboardShot): Promise<StoryboardShot> => ({
+const hydrateEditorShot = async (shot: EditorShot): Promise<EditorShot> => ({
   ...shot,
   imageUrl: await resolveUrl(shot.imageMediaId, shot.imageUrl),
   videoUrl: await resolveUrl(shot.videoMediaId, shot.videoUrl),
@@ -86,7 +86,7 @@ const sanitizeEditRecord = (record: StoryboardImageEditRecord): StoryboardImageE
   resultImageUrl: isTransientMediaUrl(record.resultImageUrl) ? '' : record.resultImageUrl,
 })
 
-const sanitizeShot = (shot: StoryboardShot): StoryboardShot => ({
+const sanitizeEditorShot = (shot: EditorShot): EditorShot => ({
   ...shot,
   imageUrl: isTransientMediaUrl(shot.imageUrl) ? '' : shot.imageUrl,
   videoUrl: isTransientMediaUrl(shot.videoUrl) ? '' : shot.videoUrl,
@@ -200,14 +200,14 @@ export class MediaUploadService {
 export const sanitizeEditorDraftMedia = (draft: EditorDraft): EditorDraft => {
   const next = cloneJson(draft)
   next.settingAssets = next.settingAssets.map(sanitizeSettingAsset)
-  next.shots = next.shots.map(sanitizeShot)
+  next.shots = next.shots.map(sanitizeEditorShot)
   return next
 }
 
 export const hydrateEditorDraftMedia = async (draft: EditorDraft): Promise<EditorDraft> => {
   const next = cloneJson(draft)
   next.settingAssets = await Promise.all(next.settingAssets.map(hydrateSettingAsset))
-  next.shots = await Promise.all(next.shots.map(hydrateShot))
+  next.shots = await Promise.all(next.shots.map(hydrateEditorShot))
   return next
 }
 

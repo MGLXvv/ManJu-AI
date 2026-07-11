@@ -1,22 +1,10 @@
 import type { SettingAsset, SettingAssetType, VoiceOption } from '@/types/settingAsset'
 import { mockVoices } from './voice.mock'
 import { mapVoiceAssetsToSettingVoiceOptions } from '@/features/voice/voiceOptionState'
+import { MOCK_MEDIA_IMAGE_URL } from './mockMedia'
 
-const createImage = (_label: string, colorA: string, colorB: string, seed: number): string => {
-  const encoded = encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">
-      <defs>
-        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="${colorA}" />
-          <stop offset="100%" stop-color="${colorB}" />
-        </linearGradient>
-      </defs>
-      <rect width="640" height="360" fill="url(#g)" />
-      <circle cx="${80 + (seed % 7) * 70}" cy="${58 + (seed % 5) * 48}" r="${28 + (seed % 4) * 8}" fill="rgba(255,255,255,0.2)" />
-    </svg>`,
-  )
-  return `data:image/svg+xml;charset=UTF-8,${encoded}`
-}
+const createImage = (label: string, _colorA: string, _colorB: string, seed: number): string =>
+  `${MOCK_MEDIA_IMAGE_URL}?kind=setting-default&label=${encodeURIComponent(label)}&seed=${seed}`
 
 const now = (): string => '2026-03-12 17:16'
 
@@ -27,7 +15,9 @@ const defaultCharacterVoice = mockVoices[0]
 export const cloneSettingAsset = (asset: SettingAsset): SettingAsset => ({
   ...asset,
   imageUrls: [...asset.imageUrls],
+  imageMediaIds: asset.imageMediaIds ? [...asset.imageMediaIds] : undefined,
   candidateImages: asset.candidateImages ? [...asset.candidateImages] : undefined,
+  candidateMediaIds: asset.candidateMediaIds ? [...asset.candidateMediaIds] : undefined,
   voiceOptions: asset.voiceOptions?.map((item) => ({ ...item })),
   audio: asset.audio
     ? {

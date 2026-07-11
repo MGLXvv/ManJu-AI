@@ -141,6 +141,8 @@ export const normalizeEditorDraft = (projectId: string, draft?: EditorDraft): Ed
   return {
     ...fallback,
     ...draft,
+    projectId,
+    revision: Number.isFinite(draft.revision) ? Math.max(0, Math.floor(draft.revision as number)) : 0,
     script: {
       ...fallback.script,
       ...cloneScriptDraft(draft.script ?? fallback.script),

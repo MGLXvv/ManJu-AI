@@ -4,6 +4,7 @@ export const API_ERROR_CODES = {
   generationTaskNotFound: 'GENERATION_TASK_NOT_FOUND',
   generationTaskFailed: 'GENERATION_TASK_FAILED',
   generationTaskCancelled: 'GENERATION_TASK_CANCELLED',
+  generationTaskAborted: 'GENERATION_TASK_ABORTED',
   generationTaskTimeout: 'GENERATION_TASK_TIMEOUT',
   generationTaskHttpCreateUnsupported: 'GENERATION_TASK_HTTP_CREATE_UNSUPPORTED',
   generationTaskHttpUpdateUnsupported: 'GENERATION_TASK_HTTP_UPDATE_UNSUPPORTED',

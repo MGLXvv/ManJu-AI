@@ -25,7 +25,9 @@ export interface SettingAsset {
   description: string
   prompt: string
   imageUrls: string[]
+  imageMediaIds?: string[]
   candidateImages?: string[]
+  candidateMediaIds?: string[]
   voiceId?: string
   voiceName?: string
   selectedVoiceId?: string

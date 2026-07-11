@@ -1,4 +1,18 @@
-﻿/// <reference types="vite/client" />
+/// <reference types="vite/client" />
+
+interface ImportMetaEnv {
+  readonly VITE_API_MODE?: 'mock' | 'http'
+  readonly VITE_API_BASE_URL?: string
+  readonly VITE_STRICT_RUNTIME_CONFIG?: string
+  readonly VITE_ENABLED_CAPABILITIES?: string
+  readonly VITE_DISABLED_CAPABILITIES?: string
+  readonly VITE_DEV_PROXY_TARGET?: string
+  readonly VITE_DEV_ALLOWED_HOSTS?: string
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv
+}
 
 declare module '*.vue' {
   import type { DefineComponent } from 'vue'

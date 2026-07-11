@@ -78,6 +78,46 @@ describe('generationTaskGateway', () => {
     await expect(taskPromise).rejects.toThrow(API_ERROR_CODES.generationTaskAborted)
   })
 
+  it('limits createAndWait execution to three active tasks', async () => {
+    let activeCount = 0
+    let maxActiveCount = 0
+
+    generationApiMock.create.mockImplementation(async (input) => {
+      activeCount += 1
+      maxActiveCount = Math.max(maxActiveCount, activeCount)
+      return makeTask({
+        id: input.requestId,
+        requestId: input.requestId,
+      })
+    })
+    generationApiMock.getById.mockImplementation(async (taskId: string) => {
+      await new Promise((resolve) => globalThis.setTimeout(resolve, 2))
+      activeCount -= 1
+      return makeTask({
+        id: taskId,
+        requestId: taskId,
+        status: GENERATION_TASK_STATUSES.success,
+        progress: 100,
+      })
+    })
+
+    const results = await Promise.all(
+      Array.from({ length: 5 }, (_, index) =>
+        generationTaskGateway.createAndWait(
+          {
+            projectId: 'project-1',
+            type: 'script',
+            requestId: `request-${index}`,
+          },
+          { interval: 1, timeout: 100 },
+        ),
+      ),
+    )
+
+    expect(results).toHaveLength(5)
+    expect(maxActiveCount).toBe(3)
+  })
+
   it('limits batch concurrency and isolates individual failures', async () => {
     let activeCount = 0
     let maxActiveCount = 0

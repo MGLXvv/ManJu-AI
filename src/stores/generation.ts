@@ -5,7 +5,7 @@ import {
   generationTaskGateway,
   type GenerationTaskRecoveryOptions,
 } from '@/services/generation/generationTaskGateway'
-import { API_ERROR_CODES, GENERATION_TASK_STATUSES } from '@/types/api-enums'
+import { GENERATION_TASK_STATUSES } from '@/types/api-enums'
 import type { CreateGenerationTaskInput, GenerationTask, GenerationTaskStatus } from '@/types/generation'
 
 export const useGenerationStore = defineStore('generation', () => {
@@ -124,9 +124,19 @@ export const useGenerationStore = defineStore('generation', () => {
       upsertTask(next)
       return next
     } catch (error) {
-      if (error instanceof Error && error.message === API_ERROR_CODES.generationTaskNotFound) {
+      const latest = await generationTaskGateway.getById(id)
+      if (!latest) {
         return null
       }
+
+      if (
+        latest.status === GENERATION_TASK_STATUSES.failed ||
+        latest.status === GENERATION_TASK_STATUSES.cancelled
+      ) {
+        upsertTask(latest)
+        return latest
+      }
+
       throw error
     }
   }

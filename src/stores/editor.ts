@@ -54,10 +54,18 @@ export const useEditorStore = defineStore('editor', () => {
     dirtyPartitions.value = [...state.dirtyPartitions]
     saveErrorCode.value = state.errorCode
 
-    if (draft.value && draft.value.revision !== state.revision) {
+    if (
+      draft.value &&
+      (draft.value.revision !== state.revision ||
+        (state.lastSavedAt !== null && draft.value.script.updatedAt !== state.lastSavedAt))
+    ) {
       draft.value = {
         ...draft.value,
         revision: state.revision,
+        script: {
+          ...draft.value.script,
+          updatedAt: state.lastSavedAt ?? draft.value.script.updatedAt,
+        },
       }
     }
   })

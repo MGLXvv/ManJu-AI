@@ -49,6 +49,9 @@ const mergeWorkspaceShot = (
   }
 }
 
+const prependGeneratedMediaSlot = (ids: string[] | undefined, max: number): string[] =>
+  ['', ...(ids ?? [])].slice(0, max)
+
 export const generationWorkspaceRefreshService = {
   async resolveStoryboardImage(
     projectId: string,
@@ -105,13 +108,16 @@ export const generationWorkspaceRefreshService = {
     const imageUrls = result.imageUrl
       ? [result.imageUrl, ...asset.imageUrls.filter((url) => url !== result.imageUrl)].slice(0, 6)
       : asset.imageUrls
+    const imageMediaIds = result.imageUrl
+      ? prependGeneratedMediaSlot(asset.imageMediaIds, 6)
+      : asset.imageMediaIds
 
     return {
       ...result,
       asset: {
         ...asset,
         imageUrls,
-        imageMediaIds: undefined,
+        imageMediaIds,
         status: result.imageUrl ? 'ready' : 'failed',
       },
     }

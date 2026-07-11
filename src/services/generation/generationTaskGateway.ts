@@ -53,6 +53,13 @@ export interface GenerationTaskGateway {
   ): Promise<GenerationTaskBatchResult<GenerationTask, GenerationTask>[]>
 }
 
+interface TaskExecutionQueueEntry {
+  signal?: AbortSignal
+  grant: () => void
+  reject: (reason?: unknown) => void
+  onAbort?: () => void
+}
+
 const DEFAULT_POLL_INTERVAL = 600
 const DEFAULT_TIMEOUT = 30000
 const DEFAULT_BATCH_CONCURRENCY = 3
@@ -62,11 +69,94 @@ const RECOVERABLE_TASK_STATUSES = new Set<GenerationTaskStatus>([
   GENERATION_TASK_STATUSES.running,
 ])
 
+const taskExecutionQueue: TaskExecutionQueueEntry[] = []
+let activeTaskExecutionCount = 0
+
 const createAbortError = (): Error => new Error(API_ERROR_CODES.generationTaskAborted)
 
 const assertNotAborted = (signal?: AbortSignal): void => {
   if (signal?.aborted) {
     throw createAbortError()
+  }
+}
+
+const releaseTaskExecutionSlot = (): void => {
+  activeTaskExecutionCount = Math.max(0, activeTaskExecutionCount - 1)
+
+  while (
+    activeTaskExecutionCount < DEFAULT_BATCH_CONCURRENCY &&
+    taskExecutionQueue.length > 0
+  ) {
+    const next = taskExecutionQueue.shift()
+    if (!next) {
+      return
+    }
+
+    if (next.onAbort) {
+      next.signal?.removeEventListener('abort', next.onAbort)
+    }
+
+    if (next.signal?.aborted) {
+      next.reject(createAbortError())
+      continue
+    }
+
+    activeTaskExecutionCount += 1
+    next.grant()
+  }
+}
+
+const acquireTaskExecutionSlot = (signal?: AbortSignal): Promise<() => void> => {
+  assertNotAborted(signal)
+
+  return new Promise((resolve, reject) => {
+    let released = false
+    const release = (): void => {
+      if (released) {
+        return
+      }
+
+      released = true
+      releaseTaskExecutionSlot()
+    }
+    const grant = (): void => resolve(release)
+
+    if (activeTaskExecutionCount < DEFAULT_BATCH_CONCURRENCY) {
+      activeTaskExecutionCount += 1
+      grant()
+      return
+    }
+
+    const entry: TaskExecutionQueueEntry = {
+      signal,
+      grant,
+      reject,
+    }
+
+    const onAbort = (): void => {
+      const index = taskExecutionQueue.indexOf(entry)
+      if (index >= 0) {
+        taskExecutionQueue.splice(index, 1)
+      }
+      reject(createAbortError())
+    }
+
+    entry.onAbort = onAbort
+    signal?.addEventListener('abort', onAbort, { once: true })
+    taskExecutionQueue.push(entry)
+  })
+}
+
+const withTaskExecutionSlot = async <T>(
+  operation: () => Promise<T>,
+  signal?: AbortSignal,
+): Promise<T> => {
+  const release = await acquireTaskExecutionSlot(signal)
+
+  try {
+    return await operation()
+  } finally {
+    release()
   }
 }
 
@@ -207,14 +297,15 @@ const waitForTask = async (
   throw new Error(API_ERROR_CODES.generationTaskTimeout)
 }
 
-const createAndWait = async (
+const createAndWait = (
   input: CreateGenerationTaskInput,
   options: GenerationTaskWaitOptions = {},
-): Promise<GenerationTask> => {
-  assertNotAborted(options.signal)
-  const created = await create(input)
-  return waitForTask(created.id, options)
-}
+): Promise<GenerationTask> =>
+  withTaskExecutionSlot(async () => {
+    assertNotAborted(options.signal)
+    const created = await create(input)
+    return waitForTask(created.id, options)
+  }, options.signal)
 
 const listRecoverableByProject = async (projectId: string): Promise<GenerationTask[]> => {
   const tasks = await listByProject(projectId)

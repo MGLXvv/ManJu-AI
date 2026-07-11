@@ -20,6 +20,10 @@ describe('auth module api', () => {
     })
     expect(readLocal<string | null>(AUTH_STORAGE_KEYS.token, null)).toBeNull()
     expect(readLocal(AUTH_STORAGE_KEYS.user, null)).toBeNull()
+
+    const accounts = readLocal<Array<Record<string, unknown>>>('amd.auth.accounts', [])
+    expect(accounts[0]).not.toHaveProperty('password')
+    expect(accounts[0]?.passwordVerifier).toMatch(/^mock-v1-/)
   })
 
   it('supports code login after requesting a verification code', async () => {

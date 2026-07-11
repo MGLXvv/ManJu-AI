@@ -1,235 +1,117 @@
-# API Module Audit
+# API Module Audit（结构审计说明）
 
-## Scope
+## 1. 文档定位
 
-This document audits the current front-end API layer from two angles:
+本文档只用于说明前端 API Module 的结构是否标准化，不再用于判断真实后端是否已经可以接入或模块是否生产可用。
 
-- whether a module already has a standard `modules/<name>/<name>.mock.ts + <name>.http.ts + <name>.api.ts` switch structure
-- whether the module already has a clear backend reservation point or is still implemented as a top-level local mock file
+结构标准化通常指：
 
-Global switch baseline:
+```text
+src/api/modules/<module>/
+├─ <module>.api.ts
+├─ <module>.mock.ts
+├─ <module>.http.ts
+├─ <module>.types.ts
+├─ <module>.mapper.ts（按需）
+└─ index.ts
+```
 
-- HTTP base URL: `VITE_API_BASE_URL || '/api'`
-- API mode switch: `VITE_API_MODE === 'http' ? 'http' : 'mock'`
-- Shared helper: `src/api/shared/apiMode.ts`
+标准调用方向：
 
-## A. Standardized Modules
+```text
+Page / Component
+  -> Store / Service
+  -> ApiContract
+  -> MockAdapter | HttpAdapter
+```
 
-### `generation`
+## 2. 当前结构结论
 
-- Top-level entry: `src/api/generation.api.ts`
-- Real entry: `src/api/modules/generation/generation.api.ts`
-- Structure: `mock + http + api + types + index`
-- Mode switch: yes
-- HTTP endpoints:
-  - `GET /generation/tasks`
-  - `GET /generation/tasks/:id`
-  - `POST /generation/tasks`
-  - `PATCH /generation/tasks/:id`
-  - `POST /generation/tasks/:id/cancel`
-  - `POST /generation/tasks/:id/retry`
-- Notes:
-  - This is the clearest current backend reservation point.
-  - Stable generation task types already cover `script`, `script_optimize`, `setting_asset`, `storyboard`, `storyboard_optimize`, `storyboard_upscale`, `video`, `video_optimize`, `dubbing`.
+以下模块已经具备或基本具备 Mock/HTTP 入口：
 
-### `project`
-
-- Top-level entry: `src/api/project.api.ts`
-- Real entry: `src/api/modules/project/project.api.ts`
-- Structure: `mock + http + api + types + index`
-- Mode switch: yes
-- HTTP endpoints:
-  - `GET /projects`
-  - `GET /projects/:id`
-  - `POST /projects`
-  - `POST /projects/import`
-  - `GET /projects/:id/export`
-  - `PATCH /projects/:id`
-  - `DELETE /projects/:id`
-- Notes:
-  - Import/export capability already has backend reservation points.
-  - Export payload still needs to stay aligned with project draft artifact semantics.
-
-### `storyboard`
-
-- Top-level entry: `src/api/storyboard.api.ts`
-- Real entry: `src/api/modules/storyboard/storyboard.api.ts`
-- Structure: `mock + http + api + types + index`
-- Mode switch: yes
-- HTTP endpoints:
-  - `GET /storyboard/defaults`
-  - `POST /storyboard/shots/:id/reference/:referenceImageId/apply`
-  - `POST /storyboard/shots/:id/image`
-  - `POST /storyboard/shots/:id/video`
-  - `POST /storyboard/shots/:id/edited-image`
-  - `POST /storyboard/shots/:id/generate-image`
-  - `POST /storyboard/shots/:id/generate-video`
-  - `POST /storyboard/shots/:id/upscale-image`
-- Notes:
-  - Upload/reference/edit endpoints are clearly storyboard-domain APIs.
-  - `generate-image / generate-video / upscale-image` are retained as legacy-compatible direct endpoints.
-  - Primary AI generation entrypoint should be the generation task API rather than storyboard direct generation endpoints.
-
-### `voice`
-
-- Top-level entry: `src/api/voice.api.ts`
-- Real entry: `src/api/modules/voice/voice.api.ts`
-- Structure: `mock + http + api + types + index`
-- Mode switch: yes
-- HTTP endpoints:
-  - `GET /voices`
-  - `POST /voices`
-  - `PATCH /voices/:voiceId`
-  - `DELETE /voices/:voiceId`
-- Notes:
-  - This module is already a clean backend reservation point for voice management.
-  - It is now part of the main editor flow because setting assets and dubbing both rely on consistent voice IDs and names.
-
-### `editor`
-
-- Top-level entry: `src/api/editor.api.ts`
-- Real entry: `src/api/modules/editor/editor.api.ts`
-- Structure: `mock + http + api + types + index`
-- Mode switch: yes
-- Current role:
-  - draft loading
-  - draft saving
-- Notes:
-  - Standardized enough for switching.
-  - Still primarily supports front-end draft persistence rather than media-generation behavior.
-
-### `resource`
-
-- Top-level entry: `src/api/resource.api.ts`
-- Real entry: `src/api/modules/resource/resource.api.ts`
-- Structure: `mock + http + api + types + index`
-- Mode switch: yes
-- Notes:
-  - Backend reservation point exists.
-  - Needs separate product-level confirmation before a detailed backend contract audit.
-
-## B. Standardized But Slightly Special
-
-### `auth`
-
-- Top-level entry: `src/api/auth.api.ts`
-- Real entry: `src/api/modules/auth/auth.api.ts`
-- Structure: `mock + http + api + types + index`
-- Mode switch: yes, but resolved lazily through `resolveAuthApi()`
-- Notes:
-  - This module is standardized.
-  - Its `index.ts` currently also re-exports parts of `auth.mock`, so the module is not as cleanly separated as `generation/project/storyboard/voice`.
-
-## C. Additional Standardized Modules
-
-### `setting`
-
-- Top-level entry: `src/api/setting.api.ts`
-- Real entry: `src/api/modules/setting/setting.api.ts`
-- Structure: `mock + http + api + types + index`
-- Mode switch: yes
-- HTTP endpoints:
-  - `GET /settings/defaults`
-  - `POST /settings/assets`
-  - `PATCH /settings/assets/:assetId`
-  - `POST /settings/assets/:assetId/images`
-  - `POST /settings/assets/:assetId/candidate-selection`
-  - `POST /settings/assets/:assetId/generate-image`
-- Notes:
-  - This module is now standardized for mock/http switching.
-  - Setting image generation still has a lower backend priority than the main generation-task flow.
-
-### `system`
-
-- Top-level entry: `src/api/system.api.ts`
-- Real entry: `src/api/modules/system/system.api.ts`
-- Structure: `mock + http + api + types + index`
-- Mode switch: yes
-- HTTP endpoints:
-  - `GET /system`
-  - `POST /system/styles`
-  - `PATCH /system/styles/:styleId`
-  - `DELETE /system/styles/:styleId`
-  - `POST /system/permissions`
-  - `PATCH /system/permissions/:permissionId`
-  - `DELETE /system/permissions/:permissionId`
-  - `POST /system/messages/:messageId/read`
-  - `POST /system/messages/read-all`
-  - `DELETE /system/messages`
-- Notes:
-  - This module is now standardized for mock/http switching.
-  - Backend priority remains lower than project, editor draft, and generation flows.
-
-### `asset`
-
-- Top-level entry: `src/api/asset.api.ts`
-- Real entry: `src/api/modules/asset/asset.api.ts`
-- Structure: `mock + http + api + types + index`
-- Mode switch: yes
-- HTTP endpoints:
-  - `GET /projects/:projectId/assets`
-  - `PUT /projects/:projectId/assets`
-- Notes:
-  - This is a lightweight project-scoped asset persistence module.
-  - It is now minimally standardized, but backend priority can stay lower than `generation/project/storyboard/voice`.
-
-### `scriptTemplate`
-
-- Top-level entry: `src/api/scriptTemplate.api.ts`
-- Real entry: `src/api/modules/scriptTemplate/scriptTemplate.api.ts`
-- Structure: `mock + http + api + types + index`
-- Mode switch: yes
-- HTTP endpoints:
-  - `GET /script-templates`
-  - `POST /script-templates`
-  - `PATCH /script-templates/:templateId`
-  - `DELETE /script-templates/:templateId`
-- Notes:
-  - Local default-template fallback remains in the mock layer.
-  - This module is now minimally standardized, while ownership and backend priority can remain product-dependent.
-
-## D. Compatibility Entrypoints And Utility Files
-
-These top-level files currently act as compatibility surfaces or wrappers rather than business-domain implementations:
-
-- `src/api/generation.api.ts`
-- `src/api/project.api.ts`
-- `src/api/storyboard.api.ts`
-- `src/api/voice.api.ts`
-- `src/api/editor.api.ts`
-- `src/api/resource.api.ts`
-- `src/api/auth.api.ts`
-- `src/api/task.api.ts`
-
-Utility/support files:
-
-- `src/api/http.ts`
-- `src/api/interceptors.ts`
-- `src/api/local.ts`
-- `src/api/errors.ts`
-
-## E. Audit Summary
-
-### Already suitable for backend switching
-
-- `generation`
+- `auth`
 - `project`
+- `editor`
+- `generation`
+- `setting`
 - `storyboard`
 - `voice`
-- `editor`
 - `resource`
-- `auth`
-- `setting`
-
-### Standardized modules with lower backend priority
-
 - `system`
 - `asset`
 - `scriptTemplate`
 
-## Recommended Next Steps
+该结论只表示：
 
-1. keep `generation` as the preferred backend entry for AI generation flows
-2. integrate `auth`, `project`, and `editor` draft APIs first on the backend side
-3. integrate `setting`, `voice`, and storyboard auxiliary APIs after the primary generation path is stable
-4. treat `system`, `asset`, and `scriptTemplate` as lower-priority backend domains unless product scope requires them earlier
+- 上层通常可以通过稳定入口调用；
+- HTTP 差异有明确收敛位置；
+- 后续可以在 DTO 和 Mapper 中适配真实字段。
+
+## 3. 结构标准化不等于联调完成
+
+即使模块具备完整目录，也仍可能存在：
+
+- HTTP 方法仍抛 `unsupported`；
+- 接口路径只是前端预留；
+- 后端响应 DTO 未确认；
+- HTTP 层仍引用 Mock 数据；
+- 保存只覆盖部分字段；
+- 异步任务缺少轮询和恢复；
+- 上传仍使用 Data URL；
+- 页面未根据能力状态禁用操作；
+- 缺少真实权限、错误和刷新测试。
+
+因此不要继续使用“suitable for backend switching”作为联调完成结论。
+
+## 4. 仍需治理的结构问题
+
+### Auth
+
+- 通用存储键和错误枚举不应由 `auth.mock.ts` 提供；
+- Session 持久化和 Token 刷新需要独立 Repository/Service；
+- 页面不得保存明文密码。
+
+### Generation
+
+- Mock 任务可运行，但 HTTP 创建和异步恢复尚未闭环；
+- 需要统一 `GenerationTaskGateway`；
+- 当前完整 `shot/asset/card` 结果只应视为过渡结构。
+
+### Editor
+
+- 需要统一 `EditorPersistenceService`；
+- Script、Setting、Storyboard、Video、Dubbing、Project Meta 需要明确保存责任。
+
+### Resource / Setting / Asset
+
+- 需要冻结公共资源库、项目资产和设定资产的领域边界；
+- HTTP 只读或未实现能力应通过 Capability Registry 提前暴露。
+
+### Upload
+
+- 需要独立 `MediaUploadService`；
+- 页面不应长期保存 Base64 Data URL。
+
+## 5. 当前有效状态来源
+
+模块当前是否可接入、可读取、可写入或被阻塞，以以下文档为准：
+
+- `docs/api-contract-status-matrix.md`
+- `docs/frontend-backend-readiness-plan.md`
+- `docs/backend-integration-checklist.md`
+
+## 6. 后续结构审计规则
+
+新增或修改模块时检查：
+
+- [ ] Page 和 Component 不导入 HTTP、DTO 或 Mock
+- [ ] Store 不处理后端字段兼容
+- [ ] Service 不依赖具体后端响应
+- [ ] HTTP Adapter 不导入 `*.mock.ts`
+- [ ] Mock Adapter 不导入 Page、Store 或其他业务 API
+- [ ] DTO 与前端领域模型通过 Mapper 隔离
+- [ ] 未实现能力有 Capability Status
+- [ ] 路径和 Mapper 有测试
+- [ ] 接口状态矩阵同步更新
+
+本文档后续只维护结构规则，不维护重复接口路径和模块联调状态。

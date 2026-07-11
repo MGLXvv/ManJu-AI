@@ -1,3 +1,4 @@
+import { mediaBlobRepository } from '@/services/media/mediaBlobRepository'
 import type { StoryboardImageEditRecord, StoryboardImageEditSelection } from '@/types/storyboard'
 
 export interface StoryboardSaveStateInput {
@@ -125,7 +126,9 @@ export const buildStoryboardImageEditRecord = ({
   prompt: normalizePrompt(prompt),
   selection: clampStoryboardSelection(selection),
   sourceImageUrl,
+  sourceMediaId: mediaBlobRepository.findIdByUrl(sourceImageUrl),
   resultImageUrl,
+  resultMediaId: mediaBlobRepository.findIdByUrl(resultImageUrl),
   createdAt: now ?? new Date().toISOString(),
 })
 

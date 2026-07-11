@@ -8,6 +8,11 @@ vi.mock('@/api/http', () => ({
   },
 }))
 
+vi.mock('@/features/capabilities/capabilityRegistry', () => ({
+  canUseCapability: vi.fn(() => true),
+  requireCapability: vi.fn(),
+}))
+
 describe('exportWorkflowService', () => {
   beforeEach(() => {
     vi.clearAllMocks()

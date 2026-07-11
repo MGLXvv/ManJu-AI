@@ -58,7 +58,9 @@ export interface Shot {
   sceneIds: string[]
   propIds: string[]
   imageUrl?: string
+  imageMediaId?: string
   videoUrl?: string
+  videoMediaId?: string
   videoPrompt?: string
   dialogue?: string
   durationSeconds?: number

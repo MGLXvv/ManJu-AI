@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { validateScriptImportFile, validateScriptTextContent } from '@/features/editor/scriptInputState'
+import {
+  SCRIPT_TEXT_LIMITS,
+  validateScriptImportFile,
+  validateScriptTextContent,
+} from '@/features/editor/scriptInputState'
 
 describe('scriptInputState', () => {
   it('accepts plain text files', () => {
@@ -34,11 +38,11 @@ describe('scriptInputState', () => {
     expect(result.message).toContain('内容为空')
   })
 
-  it('rejects text over 5000 characters', () => {
-    const result = validateScriptTextContent('a'.repeat(5001))
+  it('rejects text over the configured maximum length', () => {
+    const result = validateScriptTextContent('a'.repeat(SCRIPT_TEXT_LIMITS.max + 1))
 
     expect(result.ok).toBe(false)
-    expect(result.message).toContain('5000')
+    expect(result.message).toContain(String(SCRIPT_TEXT_LIMITS.max))
   })
 
   it('accepts valid text content', () => {

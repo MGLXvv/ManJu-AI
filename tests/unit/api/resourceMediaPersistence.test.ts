@@ -5,6 +5,8 @@ import type { ResourceLibraryState } from '@/types/resource'
 
 const RESOURCE_LIBRARY_KEY = 'amd.resources.library'
 
+const isTransientUrl = (value: string): boolean => value.startsWith('data:') || value.startsWith('blob:')
+
 describe('resource media persistence', () => {
   beforeEach(() => {
     resetLocalState()
@@ -24,13 +26,13 @@ describe('resource media persistence', () => {
     })
 
     expect(created.imageMediaId).toMatch(/^media-/)
-    expect(created.imageUrl).not.toContain('data:image')
+    expect(isTransientUrl(created.imageUrl)).toBe(false)
 
     const stored = readLocal<ResourceLibraryState>(RESOURCE_LIBRARY_KEY, { folders: [], assets: [] })
     const storedAsset = stored.assets.find((asset) => asset.id === created.id)
     expect(storedAsset?.imageMediaId).toBe(created.imageMediaId)
     expect(storedAsset?.imageUrl).toBe('')
-    expect(JSON.stringify(stored)).not.toContain('data:image')
+    expect(stored.assets.every((asset) => !isTransientUrl(asset.imageUrl))).toBe(true)
 
     const restored = await resourceMockApi.getLibrary()
     expect(restored.assets.find((asset) => asset.id === created.id)?.imageUrl).toBe(created.imageUrl)

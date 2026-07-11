@@ -5,6 +5,7 @@ import { cloneSettingAsset, createDefaultSettingAssets } from '@/mocks/setting.m
 import { settingAssetGenerationService } from '@/services/generation'
 import { useEditorStore } from '@/stores/editor'
 import { API_ERROR_CODES } from '@/types/api-enums'
+import type { MediaUploadResult } from '@/types/media'
 import type { SettingAsset, SettingAssetType, SettingAssetTypeFilter } from '@/types/settingAsset'
 
 const normalizeKeyword = (value: string): string => value.trim().toLocaleLowerCase()
@@ -103,13 +104,21 @@ export const useSettingAssetsStore = defineStore('setting-assets', () => {
     assets.value = assets.value.map((asset) => (idSet.has(asset.id) ? { ...asset, favorite } : asset))
   }
 
-  const uploadAssetImage = async (id: string, imageUrl: string): Promise<void> => {
+  const uploadAssetImage = async (id: string, media: string | MediaUploadResult): Promise<void> => {
     const target = assets.value.find((asset) => asset.id === id)
     if (!target) {
       return
     }
+    const imageUrl = typeof media === 'string' ? media : media.url
     const updated = await settingApi.uploadAssetImage(target, imageUrl)
-    assets.value = assets.value.map((asset) => (asset.id === id ? updated : asset))
+    const next = typeof media === 'string'
+      ? updated
+      : {
+          ...updated,
+          imageMediaIds: [media.mediaId, ...(target.imageMediaIds ?? [])].slice(0, 6),
+          candidateMediaIds: [media.mediaId, ...(target.candidateMediaIds ?? [])].slice(0, 12),
+        }
+    assets.value = assets.value.map((asset) => (asset.id === id ? next : asset))
   }
 
   const selectCandidateImage = async (id: string, imageUrl: string): Promise<void> => {

@@ -1,0 +1,7 @@
+{
+  "userId": 42,
+  "username": "fixture-user",
+  "accessToken": "fixture-access-token",
+  "refreshToken": "fixture-refresh-token",
+  "tokenType": "Bearer"
+}

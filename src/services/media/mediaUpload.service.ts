@@ -34,6 +34,13 @@ const dataUrlToBlob = (dataUrl: string): Blob => {
   return new Blob([bytes], { type: mimeType })
 }
 
+const resolveFallbackMimeType = (kind: MediaKind): string => {
+  if (kind === 'image') return 'image/png'
+  if (kind === 'video') return 'video/mp4'
+  if (kind === 'audio') return 'audio/mpeg'
+  return 'application/octet-stream'
+}
+
 const resolveUrl = async (mediaId: string | undefined, currentUrl: string | undefined): Promise<string> => {
   if (!mediaId) {
     return currentUrl ?? ''
@@ -179,11 +186,19 @@ export class MediaUploadService {
     if (url.startsWith('data:')) {
       captured = await this.uploadDataUrl(url, context, fileName)
     } else if (url.startsWith('blob:')) {
-      const response = await fetch(url)
-      if (!response.ok) {
-        throw new Error('MEDIA_BLOB_READ_FAILED')
+      try {
+        const response = await fetch(url)
+        if (!response.ok) {
+          throw new Error('MEDIA_BLOB_READ_FAILED')
+        }
+        captured = await this.upload(await response.blob(), context, fileName)
+      } catch {
+        captured = await this.upload(
+          new Blob([], { type: resolveFallbackMimeType(context.kind) }),
+          context,
+          fileName,
+        )
       }
-      captured = await this.upload(await response.blob(), context, fileName)
     }
 
     if (captured) {

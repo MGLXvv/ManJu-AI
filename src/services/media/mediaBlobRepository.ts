@@ -6,6 +6,7 @@ const STORE_NAME = 'media'
 
 const memoryRecords = new Map<string, StoredMediaRecord>()
 const objectUrls = new Map<string, string>()
+const urlAliases = new Map<string, string>()
 let databasePromise: Promise<IDBDatabase | null> | null = null
 
 const canUseIndexedDb = (): boolean => typeof indexedDB !== 'undefined'
@@ -116,7 +117,17 @@ export const mediaBlobRepository = {
     return getRecord(id)
   },
 
+  registerUrlAlias(url: string, id: string): void {
+    if (url) {
+      urlAliases.set(url, id)
+    }
+  },
+
   findIdByUrl(url: string): string | undefined {
+    const alias = urlAliases.get(url)
+    if (alias) {
+      return alias
+    }
     for (const [id, candidate] of objectUrls.entries()) {
       if (candidate === url) {
         return id
@@ -137,6 +148,11 @@ export const mediaBlobRepository = {
       URL.revokeObjectURL(objectUrl)
     }
     objectUrls.delete(id)
+    for (const [url, aliasId] of urlAliases.entries()) {
+      if (aliasId === id) {
+        urlAliases.delete(url)
+      }
+    }
 
     await runTransaction<void>(
       'readwrite',

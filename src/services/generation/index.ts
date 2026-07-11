@@ -1,6 +1,7 @@
 export * from './generationPayload.types'
 export * from './generationResult.types'
 export * from './generationResultGuards'
+export * from './generationTaskGateway'
 export * from './generationTaskRunner'
 export * from './dubbingGeneration.service'
 export * from './scriptGeneration.service'

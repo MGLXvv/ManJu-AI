@@ -1,5 +1,6 @@
 ﻿import { hasAnyMockFailureToken } from '@/features/shared/mockFailureState'
 import { normalizeEditorDraft } from '@/features/editor/editorDraftMapper'
+import { hydrateEditorDraftMedia, sanitizeEditorDraftMedia } from '@/services/media'
 import { API_ERROR_CODES } from '@/types/api-enums'
 import type { EditorGetDraftResponseDTO, EditorSaveDraftRequestDTO, EditorSaveDraftResponseDTO } from '@/types/api-dto'
 import { createApiError } from '@/api/errors'
@@ -15,8 +16,9 @@ export const editorMockApi: EditorApiContract = {
   async getDraft(projectId) {
     await delay()
     const drafts = getDraftMap()
+    const normalized = normalizeEditorDraft(projectId, drafts[projectId])
     const response: EditorGetDraftResponseDTO = {
-      draft: normalizeEditorDraft(projectId, drafts[projectId]),
+      draft: await hydrateEditorDraftMedia(normalized),
     }
     return response.draft
   },
@@ -78,7 +80,7 @@ export const editorMockApi: EditorApiContract = {
         updatedAt: savedAt,
       },
     }
-    drafts[request.projectId] = next
+    drafts[request.projectId] = sanitizeEditorDraftMedia(next)
     setDraftMap(drafts)
     const response: EditorSaveDraftResponseDTO = {
       draft: next,

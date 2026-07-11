@@ -1,15 +1,18 @@
-﻿import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 describe('resolveHttpReadonlyState', () => {
   beforeEach(() => {
     vi.resetModules()
-    vi.doUnmock('@/api/shared/apiMode')
+    vi.doUnmock('@/config/runtimeConfig')
   })
 
   it('returns writable state in mock mode', async () => {
-    vi.doMock('@/api/shared/apiMode', () => ({
-      apiMode: 'mock',
-      isMockMode: true,
+    vi.doMock('@/config/runtimeConfig', () => ({
+      runtimeConfig: {
+        apiMode: 'mock',
+        enabledCapabilities: [],
+        disabledCapabilities: [],
+      },
     }))
 
     const { resolveHttpReadonlyState } = await import('@/features/backend/httpReadonlyState')
@@ -21,9 +24,12 @@ describe('resolveHttpReadonlyState', () => {
   })
 
   it('returns readonly state with per-domain message in http mode', async () => {
-    vi.doMock('@/api/shared/apiMode', () => ({
-      apiMode: 'http',
-      isMockMode: false,
+    vi.doMock('@/config/runtimeConfig', () => ({
+      runtimeConfig: {
+        apiMode: 'http',
+        enabledCapabilities: [],
+        disabledCapabilities: [],
+      },
     }))
 
     const { resolveHttpReadonlyState } = await import('@/features/backend/httpReadonlyState')

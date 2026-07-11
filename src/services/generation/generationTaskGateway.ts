@@ -56,12 +56,14 @@ const sleep = (ms: number, signal?: AbortSignal): Promise<void> =>
   new Promise((resolve, reject) => {
     assertNotAborted(signal)
 
+    let timer: ReturnType<typeof globalThis.setTimeout>
+
     const onAbort = (): void => {
       globalThis.clearTimeout(timer)
       reject(createAbortError())
     }
 
-    const timer = globalThis.setTimeout(() => {
+    timer = globalThis.setTimeout(() => {
       signal?.removeEventListener('abort', onAbort)
       resolve()
     }, ms)
@@ -138,92 +140,93 @@ export const runGenerationTaskBatch = async <TItem, TValue>(
   return results
 }
 
-export const generationTaskGateway = {
-  listByProject(projectId: string): Promise<GenerationTask[]> {
-    return generationApi.list(projectId)
-  },
+const listByProject = (projectId: string): Promise<GenerationTask[]> => generationApi.list(projectId)
 
-  getById(taskId: string): Promise<GenerationTask | null> {
-    return generationApi.getById(taskId)
-  },
+const getById = (taskId: string): Promise<GenerationTask | null> => generationApi.getById(taskId)
 
-  create(input: CreateGenerationTaskInput): Promise<GenerationTask> {
-    return generationApi.create({
-      ...input,
-      requestId: input.requestId ?? createRequestId(input),
-    })
-  },
+const create = (input: CreateGenerationTaskInput): Promise<GenerationTask> =>
+  generationApi.create({
+    ...input,
+    requestId: input.requestId ?? createRequestId(input),
+  })
 
-  cancel(taskId: string): Promise<GenerationTask | null> {
-    return generationApi.cancel(taskId)
-  },
+const cancel = (taskId: string): Promise<GenerationTask | null> => generationApi.cancel(taskId)
 
-  retry(taskId: string): Promise<GenerationTask | null> {
-    return generationApi.retry(taskId)
-  },
+const retry = (taskId: string): Promise<GenerationTask | null> => generationApi.retry(taskId)
 
-  async waitForTask(
-    taskId: string,
-    options: GenerationTaskWaitOptions = {},
-  ): Promise<GenerationTask> {
-    const interval = options.interval ?? DEFAULT_POLL_INTERVAL
-    const timeout = options.timeout ?? DEFAULT_TIMEOUT
-    const startedAt = Date.now()
+const waitForTask = async (
+  taskId: string,
+  options: GenerationTaskWaitOptions = {},
+): Promise<GenerationTask> => {
+  const interval = options.interval ?? DEFAULT_POLL_INTERVAL
+  const timeout = options.timeout ?? DEFAULT_TIMEOUT
+  const startedAt = Date.now()
 
-    while (Date.now() - startedAt < timeout) {
-      assertNotAborted(options.signal)
+  while (Date.now() - startedAt < timeout) {
+    assertNotAborted(options.signal)
 
-      const latest = await generationApi.getById(taskId)
+    const latest = await generationApi.getById(taskId)
 
-      if (!latest) {
-        throw new Error(API_ERROR_CODES.generationTaskNotFound)
-      }
-
-      if (latest.status === GENERATION_TASK_STATUSES.success) {
-        return latest
-      }
-
-      if (latest.status === GENERATION_TASK_STATUSES.failed) {
-        throw new Error(latest.errorMessage || API_ERROR_CODES.generationTaskFailed)
-      }
-
-      if (latest.status === GENERATION_TASK_STATUSES.cancelled) {
-        throw new Error(API_ERROR_CODES.generationTaskCancelled)
-      }
-
-      await sleep(interval, options.signal)
+    if (!latest) {
+      throw new Error(API_ERROR_CODES.generationTaskNotFound)
     }
 
-    throw new Error(API_ERROR_CODES.generationTaskTimeout)
-  },
+    if (latest.status === GENERATION_TASK_STATUSES.success) {
+      return latest
+    }
 
-  async createAndWait(
-    input: CreateGenerationTaskInput,
-    options: GenerationTaskWaitOptions = {},
-  ): Promise<GenerationTask> {
-    assertNotAborted(options.signal)
-    const created = await this.create(input)
-    return this.waitForTask(created.id, options)
-  },
+    if (latest.status === GENERATION_TASK_STATUSES.failed) {
+      throw new Error(latest.errorMessage || API_ERROR_CODES.generationTaskFailed)
+    }
 
-  async listRecoverableByProject(projectId: string): Promise<GenerationTask[]> {
-    const tasks = await this.listByProject(projectId)
-    return tasks.filter((task) => RECOVERABLE_TASK_STATUSES.has(task.status))
-  },
+    if (latest.status === GENERATION_TASK_STATUSES.cancelled) {
+      throw new Error(API_ERROR_CODES.generationTaskCancelled)
+    }
 
-  async recoverProjectTasks(
-    projectId: string,
-    options: GenerationTaskRecoveryOptions = {},
-  ): Promise<GenerationTaskBatchResult<GenerationTask, GenerationTask>[]> {
-    const tasks = await this.listRecoverableByProject(projectId)
+    await sleep(interval, options.signal)
+  }
 
-    return runGenerationTaskBatch(
-      tasks,
-      (task) => this.waitForTask(task.id, options),
-      {
-        concurrency: options.concurrency,
-        signal: options.signal,
-      },
-    )
-  },
+  throw new Error(API_ERROR_CODES.generationTaskTimeout)
+}
+
+const createAndWait = async (
+  input: CreateGenerationTaskInput,
+  options: GenerationTaskWaitOptions = {},
+): Promise<GenerationTask> => {
+  assertNotAborted(options.signal)
+  const created = await create(input)
+  return waitForTask(created.id, options)
+}
+
+const listRecoverableByProject = async (projectId: string): Promise<GenerationTask[]> => {
+  const tasks = await listByProject(projectId)
+  return tasks.filter((task) => RECOVERABLE_TASK_STATUSES.has(task.status))
+}
+
+const recoverProjectTasks = async (
+  projectId: string,
+  options: GenerationTaskRecoveryOptions = {},
+): Promise<GenerationTaskBatchResult<GenerationTask, GenerationTask>[]> => {
+  const tasks = await listRecoverableByProject(projectId)
+
+  return runGenerationTaskBatch(
+    tasks,
+    (task) => waitForTask(task.id, options),
+    {
+      concurrency: options.concurrency,
+      signal: options.signal,
+    },
+  )
+}
+
+export const generationTaskGateway = {
+  listByProject,
+  getById,
+  create,
+  cancel,
+  retry,
+  waitForTask,
+  createAndWait,
+  listRecoverableByProject,
+  recoverProjectTasks,
 }

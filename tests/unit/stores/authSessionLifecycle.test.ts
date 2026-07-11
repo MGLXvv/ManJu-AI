@@ -1,7 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { resetLocalState } from '@/api/local'
-import { authSessionRepository } from '@/services/auth/authSessionRepository'
 
 const session = {
   token: 'http-token-1',
@@ -9,9 +7,10 @@ const session = {
 }
 
 describe('auth store session lifecycle', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.resetModules()
     vi.clearAllMocks()
+    const { resetLocalState } = await import('@/api/local')
     resetLocalState()
     setActivePinia(createPinia())
   })
@@ -24,6 +23,7 @@ describe('auth store session lifecycle', () => {
     }))
 
     const { useAuthStore } = await import('@/stores/auth')
+    const { authSessionRepository } = await import('@/services/auth/authSessionRepository')
     const store = useAuthStore()
 
     await store.loginByPassword({ account: 'admin', password: 'secret' })
@@ -33,6 +33,7 @@ describe('auth store session lifecycle', () => {
   })
 
   it('restores an existing session when the store module loads', async () => {
+    const { authSessionRepository } = await import('@/services/auth/authSessionRepository')
     authSessionRepository.save(session)
     vi.doMock('@/api/auth.api', () => ({ authApi: {} }))
 
@@ -45,6 +46,7 @@ describe('auth store session lifecycle', () => {
   })
 
   it('clears the local session even when backend logout fails', async () => {
+    const { authSessionRepository } = await import('@/services/auth/authSessionRepository')
     authSessionRepository.save(session)
     vi.doMock('@/api/auth.api', () => ({
       authApi: {

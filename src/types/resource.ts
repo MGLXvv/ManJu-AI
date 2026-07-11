@@ -21,6 +21,7 @@ export interface ResourceAsset {
   name: string
   prompt: string
   imageUrl: string
+  imageMediaId?: string
   selectedVoiceId?: string
   voiceOptions?: VoiceOption[]
 }
@@ -37,6 +38,7 @@ export interface CreateResourceAssetInput {
   name: string
   prompt: string
   imageUrl: string
+  imageMediaId?: string
   selectedVoiceId?: string
 }
 

@@ -1,5 +1,11 @@
 import { delay, readLocal, writeLocal } from '@/api/local'
-import { mockResourceAssets, resourceFolders, resourceVoiceOptions } from '@/mocks/resource.mock'
+import { resourceFolders } from '@/features/resource/resourceLibraryDefaults'
+import { mockResourceAssets, resourceVoiceOptions } from '@/mocks/resource.mock'
+import {
+  hydrateResourceAssetMedia,
+  mediaUploadService,
+  sanitizeResourceAssetMedia,
+} from '@/services/media'
 import type {
   CreateResourceAssetInput,
   ResourceApiContract,
@@ -44,22 +50,41 @@ const getLibraryState = (): ResourceLibraryState => {
   }
 }
 
-const setLibraryState = (state: ResourceLibraryState): void => writeLocal(RESOURCE_LIBRARY_KEY, state)
+const setLibraryState = (state: ResourceLibraryState): void =>
+  writeLocal(RESOURCE_LIBRARY_KEY, {
+    folders: state.folders.map((folder) => ({ ...folder })),
+    assets: state.assets.map((asset) => sanitizeResourceAssetMedia(cloneAsset(asset))),
+  })
+
+const hydrateState = async (state: ResourceLibraryState): Promise<ResourceLibraryState> => ({
+  folders: state.folders.map((folder) => ({ ...folder })),
+  assets: await Promise.all(state.assets.map(hydrateResourceAssetMedia)),
+})
 
 export const resourceMockApi: ResourceApiContract = {
   async getLibrary() {
     await delay()
     const state = getLibraryState()
     setLibraryState(state)
-    return cloneState(state)
+    return cloneState(await hydrateState(state))
   },
 
   async createAsset(input: CreateResourceAssetInput) {
     await delay(80)
     const state = getLibraryState()
+    const id = `resource-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+    const media = input.imageUrl
+      ? await mediaUploadService.captureUrl(
+          input.imageUrl,
+          { targetType: 'resource-asset', targetId: id, kind: 'image' },
+          `${id}-image`,
+        )
+      : null
     const nextAsset: ResourceAsset = {
-      id: `resource-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      id,
       ...input,
+      imageUrl: media?.url ?? input.imageUrl,
+      imageMediaId: media?.mediaId ?? input.imageMediaId,
       voiceOptions: input.type === 'character' ? resourceVoiceOptions.map((item) => ({ ...item })) : undefined,
     }
     state.assets.unshift(nextAsset)
@@ -75,11 +100,20 @@ export const resourceMockApi: ResourceApiContract = {
       return null
     }
 
-    const current = state.assets[targetIndex]
+    const current = await hydrateResourceAssetMedia(state.assets[targetIndex])
     const nextType = input.type ?? current.type
+    const media = input.imageUrl
+      ? await mediaUploadService.captureUrl(
+          input.imageUrl,
+          { targetType: 'resource-asset', targetId: assetId, kind: 'image' },
+          `${assetId}-image`,
+        )
+      : null
     const nextAsset: ResourceAsset = {
       ...current,
       ...input,
+      imageUrl: media?.url ?? input.imageUrl ?? current.imageUrl,
+      imageMediaId: media?.mediaId ?? input.imageMediaId ?? current.imageMediaId,
       type: nextType,
       voiceOptions:
         nextType === 'character'

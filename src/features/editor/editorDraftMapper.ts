@@ -1,4 +1,4 @@
-import { createDefaultEditorDraft } from '@/mocks/editor.mock'
+import { createDefaultEditorDraft } from '@/features/editor/editorDraftDefaults'
 import type { DubbingDraft, DubbingRoleCardDraft, DubbingRoleCardModel, DubbingRoleLineDraft } from '@/types/dubbing'
 import type { EditorDraft, PropSetting, ScriptDraft, Shot } from '@/types/editor'
 import type { SettingAsset } from '@/types/settingAsset'

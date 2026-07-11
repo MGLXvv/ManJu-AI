@@ -1,53 +1,198 @@
-# Final Delivery Checklist
+# ManJu-AI 阶段交付与最终验收清单
 
-## 1. Project Status
+## 1. 当前交付定位
 
-Current front-end delivery already covers:
+当前版本应定义为：
 
-- project creation, import, export, and dashboard list flows
-- script input and script generation
-- setting asset creation, editing, batch rules, and default voice linkage
-- storyboard mode selection and storyboard draft persistence
-- storyboard image generation, prompt optimization, batch prompt optimization, and image upscale
-- video prompt optimization, dialogue optimization, single-shot video generation, and batch-boundary handling
-- dubbing card generation, batch-boundary handling, hidden/soft-delete persistence, and completion settlement
-- complete-page summary, dubbing result export, and project draft export
-- generation service mainline based on generation tasks
-- API module standardization with mock/http switching
-- backend integration and runtime configuration documentation
+> 前端 Mock 主流程与后端接口适配框架阶段交付。
 
-Notes:
+当前版本可以用于：
 
-- `script_optimize` still exists as a reserved generation-task capability
-- the current script page does not expose script optimization as a product entry
+- UI 和交互验收；
+- Mock 模式完整流程演示；
+- 页面状态和业务步骤确认；
+- 后端接口边界讨论；
+- DTO、Mapper、Service 和 HTTP Adapter 的后续接入准备。
 
-## 2. Demo Path
+当前版本不能直接定义为：
 
-Recommended demo flow:
+- 真实 AI 生成平台已经完成；
+- 后端接口已经全部接通；
+- 生产环境已经可以发布；
+- 异步任务、草稿恢复和媒体落库已经完成；
+- 真实 TTS、视频模型和正式导出能力已经验收。
 
-1. Login
-2. Create a project
-3. Enter script source text and generate script output
-4. Go to settings and create character, scene, and prop assets
-5. Choose storyboard mode
-6. Generate storyboard images
-7. Go to video step, optimize video prompt/dialogue, and generate video
-8. Go to dubbing step and generate dubbing cards
-9. Go to complete step and export dubbing results or project draft
+## 2. 前端 Mock 阶段已覆盖
 
-## 3. Verified Commands
+- 项目创建、列表、进入、Mock 导入和导出流程；
+- 文案输入和 Mock 文案生成；
+- 设定资产创建、编辑、批量规则和音色关联；
+- 分镜模式选择、分镜数据和审核流程；
+- 分镜图生成、提示词优化、批量处理和放大交互；
+- 视频提示词、对白、单镜头生成和人工审核交互；
+- 配音卡片、角色台词、音色选择和完成校验；
+- 完成页汇总、配音结果 JSON 和项目草稿 JSON 导出；
+- 主要模块 Mock/HTTP Adapter 结构；
+- 统一请求、错误和部分 DTO/Mapper；
+- 后端接入文档和接口状态矩阵。
 
-Recent verified commands for this delivery stage:
+上述“已覆盖”优先表示 Mock 模式或前端结构已经存在，不自动表示对应真实接口已经验证。
 
-- `npm run build`
-- generation API and service tests
-- setting/system/asset/scriptTemplate API module tests
-- storyboard and generation task boundary tests
-- export and complete-summary related tests
+## 3. Mock 演示路径
 
-## 4. Delivery Readiness Summary
+1. 账号密码登录；
+2. 创建项目；
+3. 输入原始文案并生成剧本；
+4. 生成剧本分镜；
+5. 创建角色、场景和道具；
+6. 选择分镜模式；
+7. 生成分镜图并完成人工审核；
+8. 生成视频并完成人工审核；
+9. 生成配音；
+10. 进入完成页；
+11. 导出前端 JSON 结果。
 
-- primary AI generation path is structurally unified behind generation task services
-- API layer is standardized for mock/http switching across main modules
-- backend-facing docs now cover runtime config, integration order, generation entrypoint strategy, and task contract
-- current build remains green after the API standardization and documentation phases
+演示前应：
+
+- 清理旧 localStorage；
+- 确认 `VITE_API_MODE=mock`；
+- 使用固定测试数据；
+- 记录未纳入当前范围的能力；
+- 不把 Mock 媒体地址描述为真实模型输出。
+
+## 4. 前端 Mock 阶段验收
+
+- [ ] Mock 登录可用
+- [ ] 项目创建和进入可用
+- [ ] 文案生成和分镜文案可用
+- [ ] 设定资产可新增、编辑、删除和导入
+- [ ] 分镜图和审核流程可用
+- [ ] 视频生成和审核交互可用
+- [ ] 配音卡片和完成校验可用
+- [ ] 完成页和 JSON 导出可用
+- [ ] 页面刷新后 Mock 草稿按当前能力恢复
+- [ ] 错误状态可以通过 Mock 触发
+- [ ] `pnpm test` 通过
+- [ ] `pnpm build` 通过
+
+只有以上项目通过，才能标记为“前端 Mock 阶段交付通过”。
+
+## 5. 后端接入准备验收
+
+后端尚未完整交付时，前端需要先满足：
+
+- [ ] 页面和 Store 不直接调用 HTTP
+- [ ] HTTP Adapter 不依赖 Mock 文件
+- [ ] Mock 和 HTTP 使用相同前端领域契约
+- [ ] HTTP 模式不会静默回退 Mock
+- [ ] 未实现能力能够提前禁用
+- [ ] 不存在明文密码持久化
+- [ ] 统一 Session Repository 已建立
+- [ ] 统一 GenerationTaskGateway 已建立
+- [ ] 任务可以恢复、取消、重试和超时
+- [ ] 编辑器各分区有明确保存责任
+- [ ] 生成结果已与完整领域对象解耦
+- [ ] 上传不长期保存 Base64 到 localStorage
+- [ ] `.env.example`、Node 和 pnpm 版本已明确
+- [ ] CI 和 Mock 主流程 E2E 已建立
+- [ ] 接口状态矩阵与代码保持一致
+
+具体计划参见 `docs/frontend-backend-readiness-plan.md`。
+
+## 6. 真实 HTTP 联调验收
+
+每个模块必须分别完成：
+
+- [ ] 接口版本已记录
+- [ ] 路径和 Method 已确认
+- [ ] 请求 DTO 已确认
+- [ ] 响应 DTO 已确认
+- [ ] 枚举、ID、时间和分页已确认
+- [ ] DTO Mapper 已完成
+- [ ] 成功场景已验证
+- [ ] 空值场景已验证
+- [ ] 业务失败已验证
+- [ ] 401 和 403 已验证
+- [ ] 网络超时和 5xx 已验证
+- [ ] 刷新和重新进入页面后状态正确
+- [ ] HTTP 模式没有出现 Mock 数据
+- [ ] 单元测试和契约 Fixture 已补齐
+- [ ] 接口状态更新为 `verified`
+
+模块状态参见 `docs/api-contract-status-matrix.md`。
+
+## 7. 生产发布验收
+
+在以下条件全部满足前，不应标记为生产就绪：
+
+### 认证与安全
+
+- [ ] 不保存明文密码
+- [ ] Token 或 Cookie 策略通过安全评审
+- [ ] Token 刷新和退出可用
+- [ ] 权限和越权场景已验证
+- [ ] 敏感配置未提交仓库
+
+### 数据持久化
+
+- [ ] 项目、设定、分镜、视频和配音状态可恢复
+- [ ] 草稿版本冲突有处理
+- [ ] 自动保存失败有提示和重试
+- [ ] 媒体资源有稳定 ID 和 URL 策略
+
+### 异步任务
+
+- [ ] 图片、视频和配音均使用统一任务机制
+- [ ] 刷新后可恢复运行中任务
+- [ ] 取消、重试、超时和失败可用
+- [ ] 批量任务有并发限制
+- [ ] 重复提交有幂等保护
+
+### 工程质量
+
+- [ ] CI 必须通过
+- [ ] 单元测试通过
+- [ ] HTTP 契约测试通过
+- [ ] Playwright 主流程通过
+- [ ] 生产构建通过
+- [ ] 监控、日志和错误追踪已接入
+
+### 交付范围
+
+- [ ] 真实 TTS 能力已验收，或明确排除
+- [ ] 真实视频生成能力已验收，或明确排除
+- [ ] 字幕和音频编辑已验收，或明确排除
+- [ ] 剪映工程导出已验收，或明确排除
+- [ ] 团队、积分和计费已验收，或明确排除
+
+## 8. 当前暂缓或未完成能力
+
+- 真实 TTS Provider；
+- 真实视频生成模型；
+- 完整字幕时间轴编辑；
+- 音频剪辑和混音；
+- 剪映工程导出；
+- 完整批量任务暂停、取消和恢复 UI；
+- 团队空间；
+- 积分、充值和计费；
+- 注册、找回密码和第三方登录的真实接口。
+
+暂缓能力不得在验收材料中描述为已经完成。
+
+## 9. 当前结论
+
+当前可以确认：
+
+- 前端 Mock 流程和接口分层已经具备较好的继续开发基础；
+- 接口路径、文档和 Mock 边界正在通过 PR #3 统一；
+- 后端接入准备仍需要继续修复认证、运行配置、任务、持久化、上传和自动化测试；
+- 真实 HTTP 和生产交付尚未达到最终验收条件。
+
+因此当前阶段应标记为：
+
+```text
+前端 Mock 阶段：可验收
+后端接口准备阶段：进行中
+真实 HTTP 联调阶段：未完成
+生产发布阶段：未完成
+```

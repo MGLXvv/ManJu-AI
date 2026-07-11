@@ -13,34 +13,39 @@ import type {
   UpdateProjectInput,
 } from './project.types'
 
+const PROJECTS_PATH = '/aidrama/projects'
+
 export const projectHttpApi: ProjectApiContract = {
   async list(query) {
-    const { data } = await http.get<{ records?: BackendProjectDTO[] }>('/aidrama/projects', {
+    const { data } = await http.get<{ records?: BackendProjectDTO[] }>(PROJECTS_PATH, {
       params: mapBackendProjectListQuery(query),
     })
     return (data.records ?? []).map(mapBackendProjectToProject)
   },
 
   async getById(id) {
-    const { data } = await http.get<BackendProjectDTO>(`/aidrama/projects/${id}`)
+    const { data } = await http.get<BackendProjectDTO>(`${PROJECTS_PATH}/${id}`)
     return data ? mapBackendProjectToProject(data) : null
   },
 
   async create(input: CreateProjectInput) {
     const { data } = await http.post<BackendProjectDTO>(
-      '/aidrama/projects',
+      PROJECTS_PATH,
       mapCreateProjectInputToBackendPayload(input),
     )
     return mapBackendProjectToProject(data)
   },
 
   async importProjects(inputs: ImportProjectInput[]) {
-    const { data } = await http.post<{ projects?: BackendProjectDTO[] }>('/projects/import', inputs)
+    const { data } = await http.post<{ projects?: BackendProjectDTO[] }>(
+      `${PROJECTS_PATH}/import`,
+      inputs,
+    )
     return (data.projects ?? []).map(mapBackendProjectToProject)
   },
 
   async exportProject(id: string) {
-    const { data } = await http.get<BackendProjectDTO>(`/projects/${id}/export`)
+    const { data } = await http.get<BackendProjectDTO>(`${PROJECTS_PATH}/${id}/export`)
     return data ? mapBackendProjectToProject(data) : null
   },
 
@@ -52,11 +57,11 @@ export const projectHttpApi: ProjectApiContract = {
       return this.getById(id)
     }
 
-    const { data } = await http.put<BackendProjectDTO>(`/aidrama/projects/${id}`, payload)
+    const { data } = await http.put<BackendProjectDTO>(`${PROJECTS_PATH}/${id}`, payload)
     return data ? mapBackendProjectToProject(data) : null
   },
 
   async remove(id: string) {
-    await http.delete(`/aidrama/projects/${id}`)
+    await http.delete(`${PROJECTS_PATH}/${id}`)
   },
 }

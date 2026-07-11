@@ -1,28 +1,42 @@
-﻿import { fileURLToPath, URL } from 'node:url'
-import { defineConfig } from 'vite'
+import { fileURLToPath, URL } from 'node:url'
+import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
-export default defineConfig({
-  plugins: [vue()],
-  resolve: {
-    alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url)),
-    },
-  },
-  server: {
-    host: '0.0.0.0',
-    allowedHosts: [
-      'assessing-seventh-ecommerce-goals.trycloudflare.com',
-    ],
-    proxy: {
-      '/admin-api': {
-        target: 'http://10.10.3.26:48080',
-        changeOrigin: true,
+const parseList = (value: string | undefined): string[] =>
+  (value ?? '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  const allowedHosts = parseList(env.VITE_DEV_ALLOWED_HOSTS)
+  const proxyTarget = env.VITE_DEV_PROXY_TARGET?.trim()
+
+  return {
+    plugins: [vue()],
+    resolve: {
+      alias: {
+        '@': fileURLToPath(new URL('./src', import.meta.url)),
       },
     },
-  },
-  test: {
+    server: {
+      host: '0.0.0.0',
+      ...(allowedHosts.length > 0 ? { allowedHosts } : {}),
+      ...(proxyTarget
+        ? {
+            proxy: {
+              '/admin-api': {
+                target: proxyTarget,
+                changeOrigin: true,
+              },
+            },
+          }
+        : {}),
+    },
+    test: {
       include: ['tests/**/*.test.ts'],
-    environment: 'node',
-  },
+      environment: 'node',
+    },
+  }
 })

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { resetLocalState } from '@/api/local'
 import { generationApi } from '@/api/modules/generation'
+import { MOCK_MEDIA_AUDIO_URL } from '@/mocks/mockMedia'
 import { API_ERROR_CODES } from '@/types/api-enums'
 import type { DubbingRoleCardModel } from '@/types/dubbing'
 
@@ -40,7 +41,7 @@ describe('dubbingGenerationService', () => {
 
     expect(result.cardId).toBe('card-1')
     expect(result.lineIds).toEqual(['line-1'])
-    expect(result.lines[0]?.audioUrl).toContain('data:audio/wav;base64,')
+    expect(result.lines[0]?.audioUrl).toBe(MOCK_MEDIA_AUDIO_URL)
     expect(result.lines[0]?.status).toBe('success')
   })
 

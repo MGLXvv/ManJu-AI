@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { authApi, authStorageKeys } from '@/api/auth.api'
-import { readLocal, removeLocal } from '@/api/local'
+import { authApi } from '@/api/auth.api'
+import { authSessionRepository } from '@/services/auth/authSessionRepository'
 import type {
+  AuthSession,
   AuthUser,
   CodeLoginPayload,
   LoginPayload,
@@ -13,9 +14,17 @@ import type {
   ThirdPartyLoginResult,
 } from '@/types/auth'
 
-const tokenState = ref<string | null>(readLocal<string | null>(authStorageKeys.token, null))
-const userState = ref<AuthUser | null>(readLocal<AuthUser | null>(authStorageKeys.user, null))
+const persistedSession = authSessionRepository.load()
+const tokenState = ref<string | null>(persistedSession?.token ?? null)
+const userState = ref<AuthUser | null>(persistedSession?.user ?? null)
 const forbiddenState = ref(false)
+
+const applySession = (session: AuthSession): void => {
+  tokenState.value = session.token
+  userState.value = session.user
+  forbiddenState.value = false
+  authSessionRepository.save(session)
+}
 
 export const authSessionBridge = {
   getToken: (): string | null => tokenState.value,
@@ -23,8 +32,7 @@ export const authSessionBridge = {
     tokenState.value = null
     userState.value = null
     forbiddenState.value = false
-    removeLocal(authStorageKeys.token)
-    removeLocal(authStorageKeys.user)
+    authSessionRepository.clear()
   },
   markForbidden: (): void => {
     forbiddenState.value = true
@@ -43,10 +51,7 @@ export const useAuthStore = defineStore('auth', () => {
   const login = async (payload: LoginPayload): Promise<void> => {
     loading.value = true
     try {
-      const session = await authApi.login(payload)
-      token.value = session.token
-      user.value = session.user
-      forbidden.value = false
+      applySession(await authApi.login(payload))
     } finally {
       loading.value = false
     }
@@ -55,10 +60,7 @@ export const useAuthStore = defineStore('auth', () => {
   const loginByPassword = async (payload: PasswordLoginPayload): Promise<void> => {
     loading.value = true
     try {
-      const session = await authApi.loginByPassword(payload)
-      token.value = session.token
-      user.value = session.user
-      forbidden.value = false
+      applySession(await authApi.loginByPassword(payload))
     } finally {
       loading.value = false
     }
@@ -67,10 +69,7 @@ export const useAuthStore = defineStore('auth', () => {
   const loginByCode = async (payload: CodeLoginPayload): Promise<void> => {
     loading.value = true
     try {
-      const session = await authApi.loginByCode(payload)
-      token.value = session.token
-      user.value = session.user
-      forbidden.value = false
+      applySession(await authApi.loginByCode(payload))
     } finally {
       loading.value = false
     }
@@ -79,10 +78,7 @@ export const useAuthStore = defineStore('auth', () => {
   const register = async (payload: RegisterPayload): Promise<void> => {
     loading.value = true
     try {
-      const session = await authApi.register(payload)
-      token.value = session.token
-      user.value = session.user
-      forbidden.value = false
+      applySession(await authApi.register(payload))
     } finally {
       loading.value = false
     }
@@ -111,9 +107,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const result = await authApi.loginWithThirdParty(payload)
       if (result.session) {
-        token.value = result.session.token
-        user.value = result.session.user
-        forbidden.value = false
+        applySession(result.session)
       }
       return result
     } finally {
@@ -125,8 +119,8 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true
     try {
       await authApi.logout()
-      authSessionBridge.clear()
     } finally {
+      authSessionBridge.clear()
       loading.value = false
     }
   }

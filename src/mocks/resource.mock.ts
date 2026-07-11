@@ -1,36 +1,17 @@
-import type { ResourceAsset, ResourceFolder } from '@/types/resource'
+import { resourceFolders } from '@/features/resource/resourceLibraryDefaults'
+import { MOCK_MEDIA_IMAGE_URL } from '@/mocks/mockMedia'
+import type { ResourceAsset } from '@/types/resource'
 import type { VoiceOption } from '@/types/settingAsset'
 
-const createPlaceholderImage = (label: string, colorA: string, colorB: string): string => {
-  const encoded = encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="220" viewBox="0 0 320 220">
-      <defs>
-        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="${colorA}" />
-          <stop offset="100%" stop-color="${colorB}" />
-        </linearGradient>
-      </defs>
-      <rect width="320" height="220" fill="url(#g)" />
-      <circle cx="248" cy="54" r="22" fill="rgba(255,255,255,0.14)" />
-      <circle cx="80" cy="164" r="16" fill="rgba(255,255,255,0.12)" />
-      <text x="24" y="196" fill="rgba(255,255,255,0.88)" font-family="Segoe UI, PingFang SC, Microsoft YaHei, sans-serif" font-size="22" font-weight="700">${label}</text>
-    </svg>`,
-  )
-  return `data:image/svg+xml;charset=UTF-8,${encoded}`
-}
+const createPlaceholderImage = (label: string, _colorA: string, _colorB: string): string =>
+  `${MOCK_MEDIA_IMAGE_URL}?kind=resource&label=${encodeURIComponent(label)}`
+
+export { resourceFolders } from '@/features/resource/resourceLibraryDefaults'
 
 export const resourceVoiceOptions: VoiceOption[] = [
   { id: 'male-mid', name: '浑厚男中音' },
   { id: 'female-soft', name: '温柔女中音' },
   { id: 'girl-lively', name: '活泼少女音' },
-]
-
-export const resourceFolders: ResourceFolder[] = [
-  { id: 'creative-created', label: '我的创建', tab: 'creative', source: 'created' },
-  { id: 'creative-favorite', label: '我的收藏', tab: 'creative', source: 'favorite' },
-  { id: 'subject-created', label: '我的创建', tab: 'subject', source: 'created' },
-  { id: 'subject-favorite', label: '我的收藏', tab: 'subject', source: 'favorite' },
-  { id: 'subject-official', label: '官方主体', tab: 'subject', source: 'official' },
 ]
 
 export const mockResourceAssets: ResourceAsset[] = [

@@ -1,0 +1,19 @@
+{
+  "scriptWorkspace": {
+    "rawText": "Fixture source text",
+    "prompt": "Fixture prompt",
+    "content": "Fixture generated script",
+    "updateTime": "2026-07-11T10:30:00.000Z"
+  },
+  "storyboardWorkspace": {
+    "storyboards": [
+      {
+        "id": 101,
+        "title": "Fixture Shot",
+        "content": "Fixture character enters the scene",
+        "durationSeconds": 8,
+        "index": 1
+      }
+    ]
+  }
+}

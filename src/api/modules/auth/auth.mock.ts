@@ -10,8 +10,12 @@ interface MockAccountRecord {
   id: string
   username: string
   account: string
-  password: string
+  passwordVerifier: string
   boundProviders: ThirdPartyProvider[]
+}
+
+interface LegacyMockAccountRecord extends Partial<MockAccountRecord> {
+  password?: string
 }
 
 interface MockCodeRecord {
@@ -21,12 +25,23 @@ interface MockCodeRecord {
   sentAt: number
 }
 
+// This verifier only prevents plaintext storage in the front-end mock database.
+// Real password hashing and verification must remain a backend responsibility.
+const createMockPasswordVerifier = (value: string): string => {
+  let hash = 2166136261
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index)
+    hash = Math.imul(hash, 16777619)
+  }
+  return `mock-v1-${(hash >>> 0).toString(16).padStart(8, '0')}`
+}
+
 const DEFAULT_ACCOUNTS: MockAccountRecord[] = [
   {
     id: 'user-1',
     username: 'admin11',
     account: 'admin11',
-    password: '123456',
+    passwordVerifier: createMockPasswordVerifier('123456'),
     boundProviders: ['wechat'],
   },
 ]
@@ -36,18 +51,54 @@ const buildSession = (user: AuthUser): AuthSession => ({
   user,
 })
 
-const readAccounts = (): MockAccountRecord[] => {
-  const stored = readLocal<MockAccountRecord[] | null>(ACCOUNTS_KEY, null)
-  if (stored && stored.length > 0) {
-    return stored
+const normalizeStoredAccount = (value: LegacyMockAccountRecord): MockAccountRecord | null => {
+  if (!value.id || !value.username || !value.account) {
+    return null
   }
 
-  writeLocal(ACCOUNTS_KEY, DEFAULT_ACCOUNTS)
-  return DEFAULT_ACCOUNTS
+  const passwordVerifier =
+    typeof value.passwordVerifier === 'string' && value.passwordVerifier
+      ? value.passwordVerifier
+      : typeof value.password === 'string'
+        ? createMockPasswordVerifier(value.password)
+        : ''
+
+  if (!passwordVerifier) {
+    return null
+  }
+
+  return {
+    id: value.id,
+    username: value.username,
+    account: value.account,
+    passwordVerifier,
+    boundProviders: Array.isArray(value.boundProviders) ? value.boundProviders : [],
+  }
 }
 
 const writeAccounts = (accounts: MockAccountRecord[]): void => {
   writeLocal(ACCOUNTS_KEY, accounts)
+}
+
+const readAccounts = (): MockAccountRecord[] => {
+  const stored = readLocal<LegacyMockAccountRecord[] | null>(ACCOUNTS_KEY, null)
+  if (stored && stored.length > 0) {
+    const normalized = stored
+      .map(normalizeStoredAccount)
+      .filter((item): item is MockAccountRecord => item !== null)
+
+    if (normalized.length > 0) {
+      writeAccounts(normalized)
+      return normalized
+    }
+  }
+
+  const defaults = DEFAULT_ACCOUNTS.map((item) => ({
+    ...item,
+    boundProviders: [...item.boundProviders],
+  }))
+  writeAccounts(defaults)
+  return defaults
 }
 
 const readCodes = (): MockCodeRecord[] => readLocal<MockCodeRecord[]>(CODES_KEY, [])
@@ -116,7 +167,7 @@ export const authMockApi: AuthApiContract = {
     await delay()
 
     const record = findAccount(payload.account)
-    if (!record || record.password !== payload.password.trim()) {
+    if (!record || record.passwordVerifier !== createMockPasswordVerifier(payload.password.trim())) {
       throw new Error(AUTH_ERROR.INVALID_CREDENTIALS)
     }
 
@@ -152,7 +203,7 @@ export const authMockApi: AuthApiContract = {
       id: `user-${Date.now()}`,
       username: payload.username.trim(),
       account: payload.account.trim(),
-      password: payload.password.trim(),
+      passwordVerifier: createMockPasswordVerifier(payload.password.trim()),
       boundProviders: payload.bindProvider ? [payload.bindProvider] : [],
     }
 
@@ -175,7 +226,7 @@ export const authMockApi: AuthApiContract = {
       throw new Error(AUTH_ERROR.ACCOUNT_MISMATCH)
     }
 
-    record.password = payload.password.trim()
+    record.passwordVerifier = createMockPasswordVerifier(payload.password.trim())
     writeAccounts(accounts)
   },
 

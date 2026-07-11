@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3b4f77"/>
+      <stop offset="100%" stop-color="#8254c8"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="720" fill="url(#g)"/>
+  <circle cx="1060" cy="150" r="110" fill="rgba(255,255,255,0.12)"/>
+  <rect x="0" y="590" width="1280" height="130" fill="rgba(0,0,0,0.42)"/>
+  <text x="40" y="662" fill="white" font-family="Segoe UI, PingFang SC, Microsoft YaHei, sans-serif" font-size="54" font-weight="700">ManJu Mock Media</text>
+</svg>

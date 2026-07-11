@@ -90,14 +90,13 @@ export const storyboardMockApi: StoryboardApiContract = {
       { targetType: 'storyboard-image', targetId: shot.id, kind: 'image' },
       `${shot.id}-upload`,
     )
-    const nextUrl = media?.url ?? imageUrl
     return cloneStoryboardShot({
       ...shot,
-      imageUrl: nextUrl,
+      imageUrl,
       imageMediaId: media?.mediaId,
       status: 'success',
       referenceImages: prependReferenceImage(shot, {
-        url: nextUrl,
+        url: imageUrl,
         mediaId: media?.mediaId,
         label: '上传图片',
         sourceShotId: shot.id,
@@ -114,7 +113,7 @@ export const storyboardMockApi: StoryboardApiContract = {
     )
     return cloneStoryboardShot({
       ...shot,
-      videoUrl: media?.url ?? videoUrl,
+      videoUrl,
       videoMediaId: media?.mediaId,
       status: 'success',
     })
@@ -127,14 +126,13 @@ export const storyboardMockApi: StoryboardApiContract = {
       { targetType: 'storyboard-edit', targetId: shot.id, kind: 'image' },
       `${shot.id}-edited.svg`,
     )
-    const nextUrl = media?.url ?? imageUrl
     return cloneStoryboardShot({
       ...shot,
-      imageUrl: nextUrl,
+      imageUrl,
       imageMediaId: media?.mediaId,
       status: 'success',
       referenceImages: prependReferenceImage(shot, {
-        url: nextUrl,
+        url: imageUrl,
         mediaId: media?.mediaId,
         label: '编辑结果',
         sourceShotId: shot.id,

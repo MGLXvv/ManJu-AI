@@ -2,7 +2,6 @@ import { isLocalAssetId } from '@/api/modules/editor/asset.mapper'
 import { isMockMode } from '@/api/shared/apiMode'
 import { assetImageTaskService } from '@/services/editor/assetImageTask.service'
 import { resolveImmediateAiTaskResultUrl } from '@/services/editor/aiTaskResultState'
-import { assetWorkflowService } from '@/services/editor/assetWorkflow.service'
 import { GENERATION_TASK_TYPES } from '@/types/api-enums'
 import type { SettingAsset } from '@/types/settingAsset'
 import type { SettingAssetGeneratePayload } from './generationPayload.types'
@@ -51,8 +50,10 @@ export const settingAssetGenerationService = {
     }
 
     const task = await assetImageTaskService.createAssetImageTask(input.asset.id, input.asset.prompt)
-    const workspace = await assetWorkflowService.loadAssetWorkspace(input.projectId)
-    const refreshedAsset = workspace?.find((asset) => asset.id === input.asset.id)
+    const refreshedAsset = await generationWorkspaceRefreshService.loadSettingAsset(
+      input.projectId,
+      input.asset.id,
+    )
     const imageUrl = resolveImmediateAiTaskResultUrl({
       task,
       workspaceResultUrl: refreshedAsset?.imageUrls[0],
@@ -61,6 +62,11 @@ export const settingAssetGenerationService = {
       assetId: input.asset.id,
       imageUrl,
     })
-    return generationWorkspaceRefreshService.resolveSettingAsset(input.projectId, input.asset, taskResult)
+    return generationWorkspaceRefreshService.resolveSettingAsset(
+      input.projectId,
+      input.asset,
+      taskResult,
+      refreshedAsset,
+    )
   },
 }

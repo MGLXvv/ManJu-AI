@@ -1,4 +1,4 @@
-﻿import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { GENERATION_TASK_STATUSES } from '@/types/api-enums'
 import { useGenerationStore } from '@/stores/generation'
@@ -15,6 +15,7 @@ describe('generation store', () => {
     const created = await store.createTask({ type: 'storyboard', shotId: 'shot-2' })
 
     expect(created?.status).toBe(GENERATION_TASK_STATUSES.queued)
+    expect(created?.requestId).toMatch(/^generation-project-store-test-storyboard-shot-2-/)
     expect(store.projectId).toBe('project-store-test')
     expect(store.tasks.some((task) => task.id === created?.id)).toBe(true)
     expect(store.activeTasks.some((task) => task.id === created?.id)).toBe(true)

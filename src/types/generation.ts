@@ -5,6 +5,7 @@ export interface CreateGenerationTaskInput {
   projectId: string
   type: GenerationTaskType
   shotId?: string
+  requestId?: string
   payload?: Record<string, unknown>
 }
 
@@ -12,6 +13,7 @@ export interface GenerationTask {
   id: string
   projectId: string
   shotId?: string
+  requestId?: string
   type: GenerationTaskType
   status: GenerationTaskStatus
   progress: number

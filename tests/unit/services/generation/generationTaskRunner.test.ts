@@ -2,24 +2,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { API_ERROR_CODES, GENERATION_TASK_STATUSES } from '@/types/api-enums'
 import type { GenerationTask } from '@/types/generation'
 
-const { generationApiMock, apiModeState } = vi.hoisted(() => ({
+const { generationApiMock } = vi.hoisted(() => ({
   generationApiMock: {
     create: vi.fn(),
     getById: vi.fn(),
-  },
-  apiModeState: {
-    isMockMode: true,
   },
 }))
 
 vi.mock('@/api/modules/generation', () => ({
   generationApi: generationApiMock,
-}))
-
-vi.mock('@/api/shared/apiMode', () => ({
-  get isMockMode() {
-    return apiModeState.isMockMode
-  },
 }))
 
 import { createAndWaitGenerationTask, waitForGenerationTask } from '@/services/generation/generationTaskRunner'
@@ -38,7 +29,6 @@ const makeTask = (overrides: Partial<GenerationTask> = {}): GenerationTask => ({
 describe('generationTaskRunner', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    apiModeState.isMockMode = true
   })
 
   afterEach(() => {
@@ -53,7 +43,7 @@ describe('generationTaskRunner', () => {
         makeTask({
           status: GENERATION_TASK_STATUSES.success,
           progress: 100,
-          result: { script: '\u7b2c\u4e00\u5e55\uff1a\u89d2\u8272\u51fa\u573a' },
+          result: { script: '第一幕：角色出场' },
         }),
       )
 
@@ -67,12 +57,35 @@ describe('generationTaskRunner', () => {
     )
 
     expect(generationApiMock.create).toHaveBeenCalledTimes(1)
+    expect(generationApiMock.create.mock.calls[0]?.[0].requestId).toMatch(/^generation-project-1-script-/)
     expect(task.status).toBe(GENERATION_TASK_STATUSES.success)
-    expect(task.result).toEqual({ script: '\u7b2c\u4e00\u5e55\uff1a\u89d2\u8272\u51fa\u573a' })
+    expect(task.result).toEqual({ script: '第一幕：角色出场' })
   })
 
-  it('rejects generic task creation outside mock mode', async () => {
-    apiModeState.isMockMode = false
+  it('preserves an explicit request id', async () => {
+    generationApiMock.create.mockResolvedValue(makeTask({ id: 'task-1', requestId: 'request-1' }))
+    generationApiMock.getById.mockResolvedValue(
+      makeTask({ status: GENERATION_TASK_STATUSES.success, requestId: 'request-1' }),
+    )
+
+    await createAndWaitGenerationTask(
+      {
+        projectId: 'project-1',
+        type: 'script',
+        requestId: 'request-1',
+      },
+      { interval: 1, timeout: 50 },
+    )
+
+    expect(generationApiMock.create).toHaveBeenCalledWith(
+      expect.objectContaining({ requestId: 'request-1' }),
+    )
+  })
+
+  it('propagates adapter task creation errors without falling back to mock', async () => {
+    generationApiMock.create.mockRejectedValue(
+      new Error(API_ERROR_CODES.generationTaskHttpCreateUnsupported),
+    )
 
     await expect(
       createAndWaitGenerationTask({
@@ -80,9 +93,10 @@ describe('generationTaskRunner', () => {
         type: 'script',
         payload: { sourceText: 'source' },
       }),
-    ).rejects.toThrow('GENERATION_TASK_HTTP_CREATE_UNSUPPORTED')
+    ).rejects.toThrow(API_ERROR_CODES.generationTaskHttpCreateUnsupported)
 
-    expect(generationApiMock.create).not.toHaveBeenCalled()
+    expect(generationApiMock.create).toHaveBeenCalledTimes(1)
+    expect(generationApiMock.getById).not.toHaveBeenCalled()
   })
 
   it('throws generationTaskNotFound when the task cannot be fetched', async () => {

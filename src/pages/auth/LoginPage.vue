@@ -44,16 +44,17 @@
           v-model:password="currentPassword"
           v-model:code="currentCode"
           v-model:agreed="agreed"
-          v-model:remember-password="rememberPassword"
+          v-model:remember-account="rememberAccount"
           :show-password="showPassword"
+          :show-code-login="codeLoginCapability.available"
           :loading="authStore.loading"
           :code-countdown="currentCountdown"
           :bind-provider-label="bindProviderLabel"
           :form-message="formMessage"
           :form-message-tone="formMessageTone"
-          :show-register-entry="false"
-          :show-forgot-password="false"
-          :show-social-login="false"
+          :show-register-entry="registerCapability.available"
+          :show-forgot-password="resetPasswordCapability.available"
+          :show-social-login="thirdPartyCapability.available"
           :errors="errors"
           @forgot="mode = 'reset'"
           @code-help="openHelper(t('auth.helper.codeTitle'), t('auth.helper.codeBody'))"
@@ -73,48 +74,36 @@
 import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
+import { AUTH_ERROR, AUTH_STORAGE_KEYS } from '@/api/auth.api'
 import bg1 from '@/assets/auth/login-bg-1.png'
 import bg2 from '@/assets/auth/login-bg-2.png'
 import AuthFormCard, { type AuthMode } from '@/components/auth/AuthFormCard.vue'
 import AuthThirdPartyCard from '@/components/auth/AuthThirdPartyCard.vue'
-import { AUTH_ERROR } from '@/api/auth.api'
+import { resolveCapability, type CapabilityKey } from '@/features/capabilities/capabilityRegistry'
 import { useAuthStore } from '@/stores/auth'
 import type { ThirdPartyProvider } from '@/types/auth'
 
-interface RememberedPasswordPayload {
-  account: string
-  password: string
-}
-
-const REMEMBERED_PASSWORD_KEY = 'amd.auth.remembered-password'
-
-const readRememberedPassword = (): RememberedPasswordPayload | null => {
+const readRememberedAccount = (): string => {
   try {
-    const raw = window.localStorage.getItem(REMEMBERED_PASSWORD_KEY)
-    if (!raw) return null
-    const parsed = JSON.parse(raw) as Partial<RememberedPasswordPayload>
-    const account = typeof parsed.account === 'string' ? parsed.account : ''
-    const password = typeof parsed.password === 'string' ? parsed.password : ''
-    if (!account || !password) return null
-    return { account, password }
+    return window.localStorage.getItem(AUTH_STORAGE_KEYS.rememberedAccount)?.trim() ?? ''
   } catch {
-    return null
+    return ''
   }
 }
 
-const writeRememberedPassword = (payload: RememberedPasswordPayload): void => {
-  window.localStorage.setItem(REMEMBERED_PASSWORD_KEY, JSON.stringify(payload))
+const writeRememberedAccount = (account: string): void => {
+  window.localStorage.setItem(AUTH_STORAGE_KEYS.rememberedAccount, account.trim())
 }
 
-const clearRememberedPassword = (): void => {
-  window.localStorage.removeItem(REMEMBERED_PASSWORD_KEY)
+const clearRememberedAccount = (): void => {
+  window.localStorage.removeItem(AUTH_STORAGE_KEYS.rememberedAccount)
 }
 
-const rememberedPassword = readRememberedPassword()
+const rememberedAccount = readRememberedAccount()
 const { t } = useI18n()
 const mode = ref<AuthMode>('password')
 const agreed = ref(true)
-const rememberPassword = ref(Boolean(rememberedPassword))
+const rememberAccount = ref(Boolean(rememberedAccount))
 const showPassword = ref(false)
 const activeProvider = ref<ThirdPartyProvider | null>(null)
 const pendingBindProvider = ref<ThirdPartyProvider | null>(null)
@@ -124,7 +113,13 @@ const thirdPartyScanState = ref<'idle' | 'scanned' | 'confirmed' | 'expired'>('i
 const authStore = useAuthStore()
 const router = useRouter()
 
-const passwordForm = reactive({ account: rememberedPassword?.account ?? '', password: rememberedPassword?.password ?? '' })
+const passwordLoginCapability = resolveCapability('auth.passwordLogin')
+const codeLoginCapability = resolveCapability('auth.codeLogin')
+const registerCapability = resolveCapability('auth.register')
+const resetPasswordCapability = resolveCapability('auth.resetPassword')
+const thirdPartyCapability = resolveCapability('auth.thirdPartyLogin')
+
+const passwordForm = reactive({ account: rememberedAccount, password: '' })
 const codeForm = reactive({ account: '', code: '' })
 const registerForm = reactive({ username: '', account: '', code: '', password: '' })
 const resetForm = reactive({ username: '', account: '', code: '', password: '' })
@@ -329,9 +324,9 @@ watch(mode, (nextMode, prevMode) => {
   thirdPartyAction.value = null
 })
 
-watch(rememberPassword, (value) => {
+watch(rememberAccount, (value) => {
   if (!value) {
-    clearRememberedPassword()
+    clearRememberedAccount()
   }
 })
 
@@ -346,6 +341,20 @@ watch(activeProvider, (nextProvider) => {
   thirdPartyLoading.value = false
   thirdPartyAction.value = null
 })
+
+const resolveModeCapability = (): CapabilityKey => {
+  if (mode.value === 'code') return 'auth.codeLogin'
+  if (mode.value === 'register') return 'auth.register'
+  if (mode.value === 'reset') return 'auth.resetPassword'
+  return 'auth.passwordLogin'
+}
+
+const checkCapability = (key: CapabilityKey): boolean => {
+  const capability = resolveCapability(key)
+  if (capability.available) return true
+  showToast(capability.message, 'error')
+  return false
+}
 
 const validate = (): boolean => {
   const nextErrors: Partial<Record<'username' | 'account' | 'password' | 'code' | 'agree' | 'form', string>> = {}
@@ -395,6 +404,7 @@ const onRequestCode = async (): Promise<void> => {
   clearFeedback()
 
   if (mode.value !== 'code' && mode.value !== 'register' && mode.value !== 'reset') return
+  if (!checkCapability(resolveModeCapability())) return
 
   const account = currentAccount.value.trim()
   if (!account) {
@@ -417,18 +427,16 @@ const onRequestCode = async (): Promise<void> => {
 const onSubmit = async (): Promise<void> => {
   clearFeedback()
 
+  if (!checkCapability(resolveModeCapability())) return
   if (!validate()) return
 
   try {
     if (mode.value === 'password') {
       await authStore.loginByPassword({ account: passwordForm.account, password: passwordForm.password })
-      if (rememberPassword.value) {
-        writeRememberedPassword({
-          account: passwordForm.account.trim(),
-          password: passwordForm.password,
-        })
+      if (rememberAccount.value) {
+        writeRememberedAccount(passwordForm.account)
       } else {
-        clearRememberedPassword()
+        clearRememberedAccount()
       }
       await completeAndRedirect(t('auth.toast.loginSuccess'))
       return
@@ -460,8 +468,8 @@ const onSubmit = async (): Promise<void> => {
       code: resetForm.code,
       password: resetForm.password,
     })
-    clearRememberedPassword()
-    rememberPassword.value = false
+    clearRememberedAccount()
+    rememberAccount.value = false
     passwordForm.account = resetForm.account
     passwordForm.password = ''
     mode.value = 'password'
@@ -472,10 +480,12 @@ const onSubmit = async (): Promise<void> => {
 }
 
 const onSocialLogin = (provider: ThirdPartyProvider): void => {
+  if (!checkCapability('auth.thirdPartyLogin')) return
   activeProvider.value = activeProvider.value === provider ? null : provider
 }
 
 const onThirdPartyExistingLogin = async (): Promise<void> => {
+  if (!checkCapability('auth.thirdPartyLogin')) return
   if (!activeProvider.value || thirdPartyLoading.value || thirdPartyScanState.value !== 'confirmed') return
 
   clearFeedback()
@@ -496,6 +506,7 @@ const onThirdPartyExistingLogin = async (): Promise<void> => {
 }
 
 const onThirdPartyFirstLogin = async (): Promise<void> => {
+  if (!checkCapability('auth.thirdPartyLogin') || !checkCapability('auth.register')) return
   if (!activeProvider.value || thirdPartyLoading.value || thirdPartyScanState.value !== 'confirmed') return
 
   thirdPartyLoading.value = true

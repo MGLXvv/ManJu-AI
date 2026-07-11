@@ -3,6 +3,7 @@ import { createDefaultStoryboardState } from '@/api/storyboard.api'
 import { API_ERROR_CODES, GENERATION_TASK_STATUSES } from '@/types/api-enums'
 import type { GenerationTask } from '@/api/modules/generation/generation.types'
 import { resolveVideoMockTask } from '@/api/modules/generation/mock-resolvers/video.mock-resolver'
+import { MOCK_MEDIA_VIDEO_16_9_URL } from '@/mocks/mockMedia'
 
 const makeTask = (overrides: Partial<GenerationTask> = {}): GenerationTask => {
   const shot = createDefaultStoryboardState().shots[0]!
@@ -49,7 +50,7 @@ describe('resolveVideoMockTask', () => {
       },
     })
     expect(result?.result).toMatchObject({
-      videoUrl: expect.stringContaining('mock-video://'),
+      videoUrl: MOCK_MEDIA_VIDEO_16_9_URL,
       shot: expect.objectContaining({
         id: task.shotId,
       }),

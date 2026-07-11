@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { readLocal, resetLocalState } from '@/api/local'
 import { resourceMockApi } from '@/api/modules/resource/resource.mock'
+import { mediaBlobRepository } from '@/services/media/mediaBlobRepository'
 import type { ResourceLibraryState } from '@/types/resource'
 
 const RESOURCE_LIBRARY_KEY = 'amd.resources.library'
@@ -26,7 +27,8 @@ describe('resource media persistence', () => {
     })
 
     expect(created.imageMediaId).toMatch(/^media-/)
-    expect(isTransientUrl(created.imageUrl)).toBe(false)
+    expect(created.imageUrl).toBeTruthy()
+    expect(mediaBlobRepository.findIdByUrl(created.imageUrl)).toBe(created.imageMediaId)
 
     const stored = readLocal<ResourceLibraryState>(RESOURCE_LIBRARY_KEY, { folders: [], assets: [] })
     const storedAsset = stored.assets.find((asset) => asset.id === created.id)

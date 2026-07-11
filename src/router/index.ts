@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { isEditorStepRouteName, resolveEditorRouteGuard } from '@/features/editor/editorRouteGuardState'
+import { startEditorWorkspacePersistenceSync } from '@/services/editor/editorWorkspacePersistenceSync'
 import { pinia } from '@/stores'
 import { useAuthStore } from '@/stores/auth'
 import { useEditorStore } from '@/stores/editor'
@@ -12,6 +13,8 @@ export const router = createRouter({
   history: createWebHistory(),
   routes,
 })
+
+startEditorWorkspacePersistenceSync(pinia)
 
 const MIN_LOADING_MS = 420
 

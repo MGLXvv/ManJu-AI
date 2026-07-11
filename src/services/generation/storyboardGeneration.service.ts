@@ -3,7 +3,6 @@ import { isMockMode } from '@/api/shared/apiMode'
 import { validateMultiParamShotParameters } from '@/features/editor/storyboardParameterValidationState'
 import { resolveImmediateAiTaskResultUrl } from '@/services/editor/aiTaskResultState'
 import { storyboardImageTaskService } from '@/services/editor/storyboardImageTask.service'
-import { storyboardWorkflowService } from '@/services/editor/storyboardWorkflow.service'
 import { GENERATION_TASK_TYPES } from '@/types/api-enums'
 import type { StoryboardShot } from '@/types/storyboard'
 import {
@@ -84,8 +83,10 @@ export const storyboardGenerationService = {
     }
 
     const task = await storyboardImageTaskService.createStoryboardImageTask(input.shot.id, input.shot.prompt)
-    const workspacePatch = await storyboardWorkflowService.loadStoryboardWorkspace(input.projectId)
-    const refreshedDraftShot = workspacePatch?.shots.find((shot) => shot.id === input.shot.id)
+    const refreshedDraftShot = await generationWorkspaceRefreshService.loadStoryboardShot(
+      input.projectId,
+      input.shot.id,
+    )
     const imageUrl = resolveImmediateAiTaskResultUrl({
       task,
       workspaceResultUrl: refreshedDraftShot?.imageUrl,
@@ -94,7 +95,12 @@ export const storyboardGenerationService = {
       shotId: input.shot.id,
       imageUrl,
     })
-    return generationWorkspaceRefreshService.resolveStoryboardImage(input.projectId, input.shot, taskResult)
+    return generationWorkspaceRefreshService.resolveStoryboardImage(
+      input.projectId,
+      input.shot,
+      taskResult,
+      refreshedDraftShot,
+    )
   },
 
   async upscaleShotImage(input: UpscaleStoryboardImageInput): Promise<StoryboardUpscaleResult> {

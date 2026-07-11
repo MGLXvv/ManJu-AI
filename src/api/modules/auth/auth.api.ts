@@ -45,4 +45,4 @@ export const authApi: AuthApiContract = {
   },
 }
 
-export { AUTH_ERROR, authStorageKeys } from './auth.mock'
+export { AUTH_ERROR, AUTH_STORAGE_KEYS, AUTH_STORAGE_KEYS as authStorageKeys } from './auth.constants'

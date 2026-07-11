@@ -67,6 +67,10 @@ const results = await generationTaskGateway.recoverProjectTasks(projectId, {
 
 ## 有限并发与失败隔离
 
+`createAndWait` 内部使用统一执行队列，默认最多同时运行 3 个生成任务。现有文案、设定图、分镜图、视频和配音 Mock Service 都通过该入口，因此即使页面一次提交多个任务，也不会无上限创建和轮询。
+
+这也为当前视频页的并行批量生成提供了实际并发上限，而不要求页面自行维护第二套信号量。
+
 通用批处理入口：
 
 ```ts
@@ -81,7 +85,7 @@ const results = await runGenerationTaskBatch(items, worker, {
 - `fulfilled`
 - `rejected`
 
-单项失败不会终止其他任务。整体 `AbortSignal` 中止时停止继续分配任务。
+单项失败不会终止其他任务。整体 `AbortSignal` 中止时停止继续分配任务。等待执行槽位的任务也可以通过 `AbortSignal` 取消。
 
 ## requestId 与幂等
 
@@ -119,7 +123,8 @@ const results = await runGenerationTaskBatch(items, worker, {
 - HTTP Adapter 错误透传且不回退 Mock；
 - AbortSignal 中止；
 - 轮询超时、失败、取消和不存在；
-- 有限并发；
+- `createAndWait` 默认最多 3 个并发任务；
+- 通用批处理自定义有限并发；
 - 批次单项失败隔离；
 - 项目运行任务恢复；
 - Mock `requestId` 幂等；

@@ -1,5 +1,7 @@
 export const API_ERROR_CODES = {
   editorSaveFailed: 'EDITOR_SAVE_FAILED',
+  editorSaveConflict: 'EDITOR_SAVE_CONFLICT',
+  editorDraftNotLoaded: 'EDITOR_DRAFT_NOT_LOADED',
   editorLocalStorageQuotaExceeded: 'EDITOR_LOCAL_STORAGE_QUOTA_EXCEEDED',
   generationTaskNotFound: 'GENERATION_TASK_NOT_FOUND',
   generationTaskFailed: 'GENERATION_TASK_FAILED',
@@ -57,9 +59,11 @@ export type GenerationTaskStatus = (typeof GENERATION_TASK_STATUSES)[keyof typeo
 
 export const EDITOR_SAVE_STATES = {
   idle: 'idle',
+  dirty: 'dirty',
   saving: 'saving',
   saved: 'saved',
   error: 'error',
+  conflict: 'conflict',
 } as const
 
 export type EditorSaveState = (typeof EDITOR_SAVE_STATES)[keyof typeof EDITOR_SAVE_STATES]

@@ -1,10 +1,8 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { authApi } from '@/api/auth.api'
-import { authSessionRepository } from '@/services/auth/authSessionRepository'
+import { applyAuthSession, authSessionBridge, authSessionState } from '@/services/auth/authSessionBridge'
 import type {
-  AuthSession,
-  AuthUser,
   CodeLoginPayload,
   LoginPayload,
   PasswordLoginPayload,
@@ -14,35 +12,12 @@ import type {
   ThirdPartyLoginResult,
 } from '@/types/auth'
 
-const persistedSession = authSessionRepository.load()
-const tokenState = ref<string | null>(persistedSession?.token ?? null)
-const userState = ref<AuthUser | null>(persistedSession?.user ?? null)
-const forbiddenState = ref(false)
-
-const applySession = (session: AuthSession): void => {
-  tokenState.value = session.token
-  userState.value = session.user
-  forbiddenState.value = false
-  authSessionRepository.save(session)
-}
-
-export const authSessionBridge = {
-  getToken: (): string | null => tokenState.value,
-  clear: (): void => {
-    tokenState.value = null
-    userState.value = null
-    forbiddenState.value = false
-    authSessionRepository.clear()
-  },
-  markForbidden: (): void => {
-    forbiddenState.value = true
-  },
-}
+export { authSessionBridge }
 
 export const useAuthStore = defineStore('auth', () => {
-  const token = tokenState
-  const user = userState
-  const forbidden = forbiddenState
+  const token = authSessionState.token
+  const user = authSessionState.user
+  const forbidden = authSessionState.forbidden
   const loading = ref(false)
 
   const isAuthenticated = computed(() => Boolean(token.value))
@@ -51,7 +26,7 @@ export const useAuthStore = defineStore('auth', () => {
   const login = async (payload: LoginPayload): Promise<void> => {
     loading.value = true
     try {
-      applySession(await authApi.login(payload))
+      applyAuthSession(await authApi.login(payload))
     } finally {
       loading.value = false
     }
@@ -60,7 +35,7 @@ export const useAuthStore = defineStore('auth', () => {
   const loginByPassword = async (payload: PasswordLoginPayload): Promise<void> => {
     loading.value = true
     try {
-      applySession(await authApi.loginByPassword(payload))
+      applyAuthSession(await authApi.loginByPassword(payload))
     } finally {
       loading.value = false
     }
@@ -69,7 +44,7 @@ export const useAuthStore = defineStore('auth', () => {
   const loginByCode = async (payload: CodeLoginPayload): Promise<void> => {
     loading.value = true
     try {
-      applySession(await authApi.loginByCode(payload))
+      applyAuthSession(await authApi.loginByCode(payload))
     } finally {
       loading.value = false
     }
@@ -78,7 +53,7 @@ export const useAuthStore = defineStore('auth', () => {
   const register = async (payload: RegisterPayload): Promise<void> => {
     loading.value = true
     try {
-      applySession(await authApi.register(payload))
+      applyAuthSession(await authApi.register(payload))
     } finally {
       loading.value = false
     }
@@ -107,7 +82,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const result = await authApi.loginWithThirdParty(payload)
       if (result.session) {
-        applySession(result.session)
+        applyAuthSession(result.session)
       }
       return result
     } finally {

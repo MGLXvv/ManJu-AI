@@ -4,7 +4,6 @@ import { validateStoryboardShotVideoSource } from '@/features/editor/storyboardP
 import type { StoryboardMode } from '@/features/editor/storyboardModeState'
 import { resolveImmediateAiTaskResultUrl } from '@/services/editor/aiTaskResultState'
 import { storyboardVideoTaskService } from '@/services/editor/storyboardVideoTask.service'
-import { storyboardWorkflowService } from '@/services/editor/storyboardWorkflow.service'
 import { API_ERROR_CODES, GENERATION_TASK_TYPES } from '@/types/api-enums'
 import type { StoryboardShot } from '@/types/storyboard'
 import type { VideoGeneratePayload } from './generationPayload.types'
@@ -78,8 +77,10 @@ export const videoGenerationService = {
     }
 
     const task = await storyboardVideoTaskService.createStoryboardVideoTask(input.shot.id)
-    const workspacePatch = await storyboardWorkflowService.loadStoryboardWorkspace(input.projectId)
-    const refreshedDraftShot = workspacePatch?.shots.find((shot) => shot.id === input.shot.id)
+    const refreshedDraftShot = await generationWorkspaceRefreshService.loadStoryboardShot(
+      input.projectId,
+      input.shot.id,
+    )
     const videoUrl = resolveImmediateAiTaskResultUrl({
       task,
       workspaceResultUrl: refreshedDraftShot?.videoUrl,
@@ -88,6 +89,11 @@ export const videoGenerationService = {
       shotId: input.shot.id,
       videoUrl,
     })
-    return generationWorkspaceRefreshService.resolveVideo(input.projectId, input.shot, taskResult)
+    return generationWorkspaceRefreshService.resolveVideo(
+      input.projectId,
+      input.shot,
+      taskResult,
+      refreshedDraftShot,
+    )
   },
 }

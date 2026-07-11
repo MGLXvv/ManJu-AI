@@ -114,7 +114,10 @@ export const assertVideoOptimizeResult = (
 export const assertDubbingGenerateResult = (
   result: Partial<DubbingGenerateTaskResult> | undefined,
 ): DubbingGenerateTaskResult => {
-  const lineIds = result?.lineIds ?? result?.lines?.map((line) => line.id)
+  const lines = Array.isArray(result?.lines) ? result.lines : undefined
+  const lineIds = Array.isArray(result?.lineIds)
+    ? result.lineIds
+    : lines?.map((line) => line.id)
   if (!result?.cardId || !Array.isArray(lineIds)) {
     throw new Error(API_ERROR_CODES.dubbingGenerateFailed)
   }
@@ -122,7 +125,7 @@ export const assertDubbingGenerateResult = (
   return {
     cardId: result.cardId,
     lineIds,
-    lines: result.lines,
+    lines,
     audioByLineId: result.audioByLineId,
   }
 }

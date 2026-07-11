@@ -1,5 +1,11 @@
 export type MediaKind = 'image' | 'video' | 'audio' | 'file'
-export type MediaTargetType = 'setting-asset' | 'storyboard-image' | 'storyboard-video' | 'resource-asset' | 'storyboard-edit'
+export type MediaTargetType =
+  | 'setting-asset'
+  | 'storyboard-image'
+  | 'storyboard-video'
+  | 'storyboard-edit'
+  | 'dubbing-audio'
+  | 'resource-asset'
 export type MediaStorageKind = 'remote' | 'indexeddb' | 'memory'
 
 export interface MediaUploadContext {

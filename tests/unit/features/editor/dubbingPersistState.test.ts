@@ -27,14 +27,14 @@ describe('dubbingPersistState', () => {
     expect(buildDubbingExportFileName('project:demo/01')).toBe('project-demo-01-dubbing.json')
   })
 
-  it('blocks entering complete when no generated audio exists', () => {
+  it('blocks entering complete when visible lines still have no generated audio', () => {
     expect(validateDubbingBeforeComplete([makeCard()])).toEqual({
       ok: false,
-      message: '请至少生成一条配音后再进入完成页',
+      message: '仍有 1 条可见台词未生成配音，请全部生成后再进入完成页',
     })
   })
 
-  it('allows entering complete when at least one generated audio exists', () => {
+  it('allows entering complete when all visible lines have generated audio', () => {
     expect(
       validateDubbingBeforeComplete([
         makeCard({

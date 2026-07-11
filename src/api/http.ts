@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { runtimeConfig } from '@/config/runtimeConfig'
-import { authSessionBridge } from '@/stores/auth'
+import { authSessionBridge } from '@/services/auth/authSessionBridge'
 import { attachInterceptors } from './interceptors'
 
 export const http = axios.create({

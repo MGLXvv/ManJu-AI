@@ -7,8 +7,9 @@ import { GENERATION_TASK_TYPES } from '@/types/api-enums'
 import type { SettingAsset } from '@/types/settingAsset'
 import type { SettingAssetGeneratePayload } from './generationPayload.types'
 import { assertSettingAssetResult } from './generationResultGuards'
-import type { SettingAssetImageResult } from './generationResult.types'
+import type { SettingAssetImageResult, SettingAssetImageTaskResult } from './generationResult.types'
 import { createAndWaitGenerationTask } from './generationTaskRunner'
+import { generationWorkspaceRefreshService } from './generationWorkspaceRefresh.service'
 
 export interface GenerateSettingAssetImageInput {
   projectId: string
@@ -39,7 +40,10 @@ export const settingAssetGenerationService = {
         },
       )
 
-      return assertSettingAssetResult(task.result as Partial<SettingAssetImageResult> | undefined)
+      const taskResult = assertSettingAssetResult(
+        task.result as Partial<SettingAssetImageTaskResult> | undefined,
+      )
+      return generationWorkspaceRefreshService.resolveSettingAsset(input.projectId, input.asset, taskResult)
     }
 
     if (isLocalAssetId(input.asset.id)) {
@@ -53,15 +57,10 @@ export const settingAssetGenerationService = {
       task,
       workspaceResultUrl: refreshedAsset?.imageUrls[0],
     })
-
-    return assertSettingAssetResult({
+    const taskResult = assertSettingAssetResult({
       assetId: input.asset.id,
       imageUrl,
-      asset: refreshedAsset ?? {
-        ...input.asset,
-        imageUrls: imageUrl ? [imageUrl] : [],
-        status: imageUrl ? 'ready' : 'failed',
-      },
     })
+    return generationWorkspaceRefreshService.resolveSettingAsset(input.projectId, input.asset, taskResult)
   },
 }

@@ -175,19 +175,21 @@ export class MediaUploadService {
       }
     }
 
+    let captured: MediaUploadResult | null = null
     if (url.startsWith('data:')) {
-      return this.uploadDataUrl(url, context, fileName)
-    }
-
-    if (url.startsWith('blob:')) {
+      captured = await this.uploadDataUrl(url, context, fileName)
+    } else if (url.startsWith('blob:')) {
       const response = await fetch(url)
       if (!response.ok) {
         throw new Error('MEDIA_BLOB_READ_FAILED')
       }
-      return this.upload(await response.blob(), context, fileName)
+      captured = await this.upload(await response.blob(), context, fileName)
     }
 
-    return null
+    if (captured) {
+      mediaBlobRepository.registerUrlAlias(url, captured.mediaId)
+    }
+    return captured
   }
 
   restore(mediaId: string): Promise<string> {

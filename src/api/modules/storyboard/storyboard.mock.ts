@@ -1,7 +1,10 @@
-import { buildStoryboardUpscaledImage } from '@/features/editor/storyboardPreviewState'
 import { storyboardShotsMock, storyboardStylesMock, storyboardTagOptions } from '@/mocks/storyboard.mock'
 import { delay } from '@/api/local'
-import { MOCK_MEDIA_VIDEO_16_9_URL, MOCK_MEDIA_VIDEO_9_16_URL } from '@/mocks/mockMedia'
+import {
+  MOCK_MEDIA_IMAGE_URL,
+  MOCK_MEDIA_VIDEO_16_9_URL,
+  MOCK_MEDIA_VIDEO_9_16_URL,
+} from '@/mocks/mockMedia'
 import type { StoryboardImageEditRecord } from '@/types/storyboard'
 import type {
   StoryboardApiContract,
@@ -34,39 +37,20 @@ export const cloneStoryboardTagOptions = (options: StoryboardTagOptions): Storyb
 
 const prependReferenceImage = (
   shot: StoryboardShot,
-  image: { url: string; label?: string; sourceShotId?: string },
+  image: { url: string; mediaId?: string; label?: string; sourceShotId?: string },
 ): StoryboardReferenceImage[] => [
   {
     id: `ref-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     url: image.url,
+    mediaId: image.mediaId,
     label: image.label,
     sourceShotId: image.sourceShotId,
   },
   ...shot.referenceImages,
 ].slice(0, 8)
 
-const createGeneratedImage = (
-  title: string,
-  seed: number,
-  ratio: StoryboardShot['ratio'] = '16:9',
-): string => {
-  const isPortrait = ratio === '9:16'
-  const width = isPortrait ? 720 : 1280
-  const height = isPortrait ? 1280 : 720
-  const footerHeight = isPortrait ? 132 : 108
-  const footerY = height - footerHeight
-  const fontSize = isPortrait ? 42 : 54
-  const textY = height - (isPortrait ? 48 : 40)
-
-  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
-      <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#3b4f77"/><stop offset="100%" stop-color="#8254c8"/></linearGradient></defs>
-      <rect width="${width}" height="${height}" fill="url(#g)" />
-      <rect x="0" y="${footerY}" width="${width}" height="${footerHeight}" fill="rgba(0,0,0,0.42)" />
-      <text x="30" y="${textY}" fill="white" font-family="Segoe UI, PingFang SC, Microsoft YaHei, sans-serif" font-size="${fontSize}" font-weight="700">${title}</text>
-    </svg>`,
-  )}`
-}
+const createGeneratedImage = (kind: string, shot: StoryboardShot): string =>
+  `${MOCK_MEDIA_IMAGE_URL}?kind=${encodeURIComponent(kind)}&shot=${encodeURIComponent(shot.id)}&ratio=${encodeURIComponent(shot.ratio)}&v=${Date.now()}`
 
 const resolveMockVideoUrl = (shot: StoryboardShot): string =>
   shot.ratio === '9:16' ? MOCK_MEDIA_VIDEO_9_16_URL : MOCK_MEDIA_VIDEO_16_9_URL
@@ -93,6 +77,7 @@ export const storyboardMockApi: StoryboardApiContract = {
     return cloneStoryboardShot({
       ...shot,
       imageUrl: target.url,
+      imageMediaId: target.mediaId,
       status: 'success',
     })
   },
@@ -136,17 +121,14 @@ export const storyboardMockApi: StoryboardApiContract = {
 
   async generateShotImage(shot) {
     await delay(1200)
-    const imageUrl = createGeneratedImage(
-      `镜头生成 ${Date.now() % 10000}`,
-      Math.floor(Math.random() * 1000),
-      shot.ratio,
-    )
+    const imageUrl = createGeneratedImage('storyboard', shot)
     return {
       imageUrl,
       shot: cloneStoryboardShot({
         ...shot,
         status: 'success',
         imageUrl,
+        imageMediaId: undefined,
         referenceImages: prependReferenceImage(shot, {
           url: imageUrl,
           label: '生成结果',
@@ -165,26 +147,24 @@ export const storyboardMockApi: StoryboardApiContract = {
         ...shot,
         status: 'success',
         videoUrl,
+        videoMediaId: undefined,
       }),
     }
   },
 
   async upscaleShotImage(shot) {
     await delay(900)
-    const result = buildStoryboardUpscaledImage({
-      sourceUrl: shot.imageUrl ?? '',
-      title: shot.title,
-    })
-
+    const imageUrl = createGeneratedImage('storyboard-upscale', shot)
     return {
-      imageUrl: result.imageUrl,
+      imageUrl,
       shot: cloneStoryboardShot({
         ...shot,
-        imageUrl: result.imageUrl,
+        imageUrl,
+        imageMediaId: undefined,
         status: 'success',
         referenceImages: prependReferenceImage(shot, {
-          url: result.imageUrl,
-          label: result.referenceLabel,
+          url: imageUrl,
+          label: '高清放大',
           sourceShotId: shot.id,
         }),
       }),

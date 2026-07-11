@@ -9,8 +9,9 @@ import { API_ERROR_CODES, GENERATION_TASK_TYPES } from '@/types/api-enums'
 import type { StoryboardShot } from '@/types/storyboard'
 import type { VideoGeneratePayload } from './generationPayload.types'
 import { assertVideoGenerateResult } from './generationResultGuards'
-import type { VideoGenerateResult } from './generationResult.types'
+import type { VideoGenerateResult, VideoGenerateTaskResult } from './generationResult.types'
 import { createAndWaitGenerationTask } from './generationTaskRunner'
+import { generationWorkspaceRefreshService } from './generationWorkspaceRefresh.service'
 
 export interface GenerateVideoInput {
   projectId: string
@@ -66,7 +67,10 @@ export const videoGenerationService = {
         },
       )
 
-      return assertVideoGenerateResult(task.result as Partial<VideoGenerateResult> | undefined)
+      const taskResult = assertVideoGenerateResult(
+        task.result as Partial<VideoGenerateTaskResult> | undefined,
+      )
+      return generationWorkspaceRefreshService.resolveVideo(input.projectId, input.shot, taskResult)
     }
 
     if (isLocalStoryboardShotId(input.shot.id)) {
@@ -80,28 +84,10 @@ export const videoGenerationService = {
       task,
       workspaceResultUrl: refreshedDraftShot?.videoUrl,
     })
-    const refreshedShot: StoryboardShot | undefined = refreshedDraftShot
-      ? {
-          ...input.shot,
-          id: refreshedDraftShot.id,
-          index: refreshedDraftShot.index,
-          title: refreshedDraftShot.title,
-          imageUrl: refreshedDraftShot.imageUrl || input.shot.imageUrl,
-          videoUrl,
-          durationSeconds: refreshedDraftShot.durationSeconds,
-          status: videoUrl ? 'success' : 'failed',
-          createdAt: refreshedDraftShot.createdAt || input.shot.createdAt,
-        }
-      : undefined
-
-    return assertVideoGenerateResult({
+    const taskResult = assertVideoGenerateResult({
       shotId: input.shot.id,
       videoUrl,
-      shot: refreshedShot ?? {
-        ...input.shot,
-        videoUrl,
-        status: videoUrl ? 'success' : 'failed',
-      },
     })
+    return generationWorkspaceRefreshService.resolveVideo(input.projectId, input.shot, taskResult)
   },
 }

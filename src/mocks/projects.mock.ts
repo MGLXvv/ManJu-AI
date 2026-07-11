@@ -1,4 +1,5 @@
-﻿import type { Project } from '@/types/project'
+﻿import { MOCK_MEDIA_IMAGE_URL } from './mockMedia'
+import type { Project } from '@/types/project'
 
 const seedNames = [
   'JOJO的奇妙冒险',
@@ -63,35 +64,8 @@ const seedNames = [
   '秦侠',
 ]
 
-const coverThemes = [
-  ['#3d4f80', '#bc7ce9'],
-  ['#3d8d84', '#91ddb5'],
-  ['#2c3349', '#91b6dd'],
-  ['#2f455e', '#8dd6ff'],
-  ['#3c2c58', '#f08bb3'],
-  ['#58332f', '#ffad6e'],
-  ['#2d5048', '#b0f862'],
-  ['#5b3c2c', '#f7c06b'],
-]
-
-const createCover = (title: string, index: number): string => {
-  const [start, end] = coverThemes[index % coverThemes.length]
-  const encoded = encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="420" height="192" viewBox="0 0 420 192">
-      <defs>
-        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="${start}" />
-          <stop offset="100%" stop-color="${end}" />
-        </linearGradient>
-      </defs>
-      <rect width="420" height="192" fill="url(#g)" />
-      <circle cx="${48 + (index % 8) * 44}" cy="${40 + (index % 6) * 16}" r="${34 + (index % 5) * 3}" fill="rgba(255,255,255,0.16)" />
-      <rect x="0" y="116" width="420" height="76" fill="rgba(0,0,0,0.46)" />
-      <text x="16" y="158" fill="white" font-family="Segoe UI, PingFang SC, Microsoft YaHei, sans-serif" font-size="26" font-weight="700">${title}</text>
-    </svg>`,
-  )
-  return `data:image/svg+xml;charset=UTF-8,${encoded}`
-}
+const createCover = (title: string, index: number): string =>
+  `${MOCK_MEDIA_IMAGE_URL}&kind=project-cover&title=${encodeURIComponent(title)}&seed=${index}`
 
 const stepPool: Project['currentStep'][] = ['script', 'settings', 'storyboard', 'video', 'dubbing']
 const durationPool = ['00:45:00', '00:32:18', '01:05:27', '00:18:42', '00:56:10']

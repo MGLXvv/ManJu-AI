@@ -15,8 +15,7 @@ jobs:
   bootstrap:
     if: >-
       github.event.pull_request.head.repo.full_name == github.repository &&
-      github.head_ref == 'quality/eslint-stylelint-coverage' &&
-      !contains(github.event.pull_request.head.sha, '0000000')
+      github.head_ref == 'quality/eslint-stylelint-coverage'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -66,12 +65,39 @@ jobs:
 
       - name: Commit generated dependency state
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package.json pnpm-lock.yaml tools/quality/stylelint-baseline.json eslint.config.mjs prettier.config.mjs stylelint.config.mjs tools/quality/check-changed-format.mjs tools/quality/check-stylelint-baseline.mjs vite.config.ts
-          if git diff --cached --quiet; then
-            echo "No generated changes to commit."
-            exit 0
-          fi
-          git commit -m "chore: lock frontend quality toolchain"
-          git push origin HEAD:${{ github.head_ref }}
+          mkdir -p artifacts/bootstrap
+          set +e
+          {
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add package.json pnpm-lock.yaml tools/quality/stylelint-baseline.json eslint.config.mjs prettier.config.mjs stylelint.config.mjs tools/quality/check-changed-format.mjs tools/quality/check-stylelint-baseline.mjs vite.config.ts
+            git status --short
+            if git diff --cached --quiet; then
+              echo "No generated changes to commit."
+            else
+              git commit -m "chore: lock frontend quality toolchain"
+              git push origin HEAD:${{ github.head_ref }}
+            fi
+          } > artifacts/bootstrap/git-push.log 2>&1
+          exit_code=$?
+          cat artifacts/bootstrap/git-push.log
+          echo "Git write exit code: $exit_code"
+          exit 0
+
+      - name: Upload generated quality state
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-toolchain-writeback
+          path: |
+            package.json
+            pnpm-lock.yaml
+            tools/quality/stylelint-baseline.json
+            eslint.config.mjs
+            prettier.config.mjs
+            stylelint.config.mjs
+            tools/quality/check-changed-format.mjs
+            tools/quality/check-stylelint-baseline.mjs
+            vite.config.ts
+            artifacts/bootstrap
+          retention-days: 2

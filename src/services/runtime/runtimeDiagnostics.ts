@@ -30,6 +30,13 @@ const createId = (now: number): string => `runtime-${now}-${++sequence}`
 const createSignature = (diagnostic: Pick<RuntimeDiagnostic, 'code' | 'category' | 'message'>): string =>
   `${diagnostic.category}:${diagnostic.code}:${diagnostic.message}`
 
+const emitCurrent = (): void => {
+  const current = diagnostics[0] ?? null
+  for (const listener of listeners) {
+    listener(current)
+  }
+}
+
 export interface ReportRuntimeErrorOptions extends NormalizeAppErrorFallback {
   now?: () => number
 }
@@ -56,9 +63,7 @@ export const reportRuntimeError = (value: unknown, options: ReportRuntimeErrorOp
   lastSignature = signature
   lastReportedAt = now
   diagnostics = [candidate, ...diagnostics].slice(0, MAX_DIAGNOSTICS)
-  for (const listener of listeners) {
-    listener(candidate)
-  }
+  emitCurrent()
   return candidate
 }
 
@@ -72,15 +77,19 @@ export const clearCurrentRuntimeError = (): void => {
   }
 
   diagnostics = diagnostics.slice(1)
-  const next = diagnostics[0] ?? null
-  for (const listener of listeners) {
-    listener(next)
-  }
+  emitCurrent()
 }
 
-export const subscribeRuntimeErrors = (listener: RuntimeDiagnosticListener, emitCurrent = true): (() => void) => {
+export const clearRuntimeErrors = (): void => {
+  diagnostics = []
+  lastSignature = ''
+  lastReportedAt = 0
+  emitCurrent()
+}
+
+export const subscribeRuntimeErrors = (listener: RuntimeDiagnosticListener, emitImmediately = true): (() => void) => {
   listeners.add(listener)
-  if (emitCurrent) {
+  if (emitImmediately) {
     listener(getCurrentRuntimeError())
   }
 

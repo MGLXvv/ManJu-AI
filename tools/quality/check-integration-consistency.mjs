@@ -107,7 +107,7 @@ for (const script of requiredScripts) {
 if (!workflow.includes('pnpm install --frozen-lockfile')) errors.push('CI must install from pnpm-lock.yaml with --frozen-lockfile.')
 if (!workflow.includes('pnpm check:source-assets')) errors.push('CI must enforce source asset budgets.')
 if (!workflow.includes('pnpm check:source-hygiene')) errors.push('CI must enforce source hygiene.')
-if (!workflow.includes('pnpm lint')) errors.push('CI must run ESLint.')
+if (!workflow.includes('pnpm lint') && !workflow.includes('pnpm exec eslint')) errors.push('CI must run ESLint.')
 if (!workflow.includes('pnpm format:check')) errors.push('CI must check changed-file formatting.')
 if (!workflow.includes('pnpm stylelint')) errors.push('CI must enforce the SCSS regression baseline.')
 if (!workflow.includes('pnpm test:coverage')) errors.push('CI must run Vitest coverage.')

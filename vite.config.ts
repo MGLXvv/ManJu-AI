@@ -41,6 +41,13 @@ export default defineConfig(({ mode }) => {
         VITE_API_MODE: 'mock',
         VITE_STRICT_RUNTIME_CONFIG: 'true',
       },
+      coverage: {
+        provider: 'v8',
+        reportsDirectory: 'artifacts/coverage',
+        reporter: ['text', 'json-summary', 'html', 'cobertura'],
+        include: ['src/**/*.{ts,vue}'],
+        exclude: ['src/assets/**', 'src/**/*.d.ts', 'src/main.ts'],
+      },
     },
   }
 })

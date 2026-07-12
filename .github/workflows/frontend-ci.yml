@@ -63,7 +63,13 @@ jobs:
         run: pnpm check:source-hygiene
 
       - name: Run ESLint
-        run: pnpm lint
+        run: |
+          mkdir -p artifacts/quality
+          set +e
+          pnpm exec eslint . --format json > artifacts/quality/eslint.json
+          exit_code=$?
+          pnpm exec eslint . --format stylish || true
+          exit $exit_code
 
       - name: Check changed file formatting
         run: pnpm format:check

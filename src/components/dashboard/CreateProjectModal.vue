@@ -522,8 +522,7 @@ const submit = async (): Promise<void> => {
   border: 0;
   border-radius: 8px;
   background:
-    radial-gradient(64.4% 133.41% at 97.53% 113.7%, rgb(255 187 77 / 60%) 0%, rgb(140 63 255 / 0%) 100%),
-    #8c3fff;
+    radial-gradient(64.4% 133.41% at 97.53% 113.7%, rgb(255 187 77 / 60%) 0%, rgb(140 63 255 / 0%) 100%), #8c3fff;
   color: #fff;
   font-size: 13px;
   line-height: 16px;

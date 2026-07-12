@@ -17,8 +17,12 @@ const allScenarios = [
   runtimeRecoveryScenario,
   accessibilityScenario,
 ]
-const requestedScenario = process.argv.find((argument) => argument.startsWith('--scenario='))?.slice('--scenario='.length)
-const scenarios = requestedScenario ? allScenarios.filter((scenario) => scenario.name === requestedScenario) : allScenarios
+const requestedScenario = process.argv
+  .find((argument) => argument.startsWith('--scenario='))
+  ?.slice('--scenario='.length)
+const scenarios = requestedScenario
+  ? allScenarios.filter((scenario) => scenario.name === requestedScenario)
+  : allScenarios
 
 if (requestedScenario && scenarios.length === 0) {
   throw new Error(`Unknown Mock E2E scenario: ${requestedScenario}`)
@@ -33,7 +37,12 @@ const writeScenarioReport = async () => {
   await mkdir(ARTIFACT_DIR, { recursive: true })
   const generatedAt = new Date().toISOString()
   const failed = scenarioResults.filter((result) => result.status === 'failed')
-  const report = { generatedAt, failed: failed.length, requestedScenario: requestedScenario ?? null, results: scenarioResults }
+  const report = {
+    generatedAt,
+    failed: failed.length,
+    requestedScenario: requestedScenario ?? null,
+    results: scenarioResults,
+  }
   const markdown = [
     '# Mock E2E Scenario Report',
     '',
@@ -76,7 +85,12 @@ try {
       console.log(`Mock E2E scenario passed: ${scenario.name}`)
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
-      scenarioResults.push({ name: scenario.name, status: 'failed', durationMs: Date.now() - startedAt, error: message })
+      scenarioResults.push({
+        name: scenario.name,
+        status: 'failed',
+        durationMs: Date.now() - startedAt,
+        error: message,
+      })
       await writeScenarioFailure(page, scenario.name)
       console.error(`Mock E2E scenario failed: ${scenario.name}: ${message}`)
     } finally {
@@ -92,7 +106,9 @@ try {
     if (server.logs.length > 0) {
       await writeFile(path.join(ARTIFACT_DIR, 'vite-server.log'), server.logs.join(''), 'utf8')
     }
-    throw new Error(`${failures.length} Mock E2E scenario(s) failed: ${failures.map((result) => result.name).join(', ')}`)
+    throw new Error(
+      `${failures.length} Mock E2E scenario(s) failed: ${failures.map((result) => result.name).join(', ')}`,
+    )
   }
 } catch (error) {
   console.error(error)

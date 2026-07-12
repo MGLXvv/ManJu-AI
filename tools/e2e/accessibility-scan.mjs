@@ -19,7 +19,12 @@ export const scanAccessibility = async (page, pageName, scopeSelector = 'body') 
 
       const isVisible = (element) => {
         const style = window.getComputedStyle(element)
-        return !element.hidden && style.display !== 'none' && style.visibility !== 'hidden' && element.getClientRects().length > 0
+        return (
+          !element.hidden &&
+          style.display !== 'none' &&
+          style.visibility !== 'hidden' &&
+          element.getClientRects().length > 0
+        )
       }
 
       const textByIds = (ids) =>
@@ -53,7 +58,8 @@ export const scanAccessibility = async (page, pageName, scopeSelector = 'body') 
 
       const targetFor = (element) => {
         if (element.id) return `#${element.id}`
-        const className = typeof element.className === 'string' ? element.className.trim().split(/\s+/).filter(Boolean).join('.') : ''
+        const className =
+          typeof element.className === 'string' ? element.className.trim().split(/\s+/).filter(Boolean).join('.') : ''
         return `${element.tagName.toLowerCase()}${className ? `.${className}` : ''}`
       }
 
@@ -141,7 +147,9 @@ export const writeAccessibilityReport = async (results) => {
       result.violations.length === 0
         ? 'No critical or serious baseline violations detected.'
         : result.violations
-            .map((violation) => `- **${violation.impact} / ${violation.rule}** ${violation.message} (${violation.target})`)
+            .map(
+              (violation) => `- **${violation.impact} / ${violation.rule}** ${violation.message} (${violation.target})`,
+            )
             .join('\n'),
       '',
     ]),

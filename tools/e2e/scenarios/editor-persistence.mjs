@@ -14,7 +14,10 @@ export const editorPersistenceScenario = {
     const persistedText = 'CI 自动保存与刷新恢复验证内容'
     await textarea.fill(persistedText)
     await page.getByRole('button', { name: '保存', exact: true }).click()
-    await page.locator('.script-workbench-card__save-state').getByText('已保存', { exact: true }).waitFor({ timeout: 15_000 })
+    await page
+      .locator('.script-workbench-card__save-state')
+      .getByText('已保存', { exact: true })
+      .waitFor({ timeout: 15_000 })
 
     const editorUrl = page.url()
     await page.reload({ waitUntil: 'networkidle' })
@@ -23,6 +26,9 @@ export const editorPersistenceScenario = {
 
     const restoredTextarea = page.locator('.script-input-panel__textarea')
     await restoredTextarea.waitFor()
-    assert((await restoredTextarea.inputValue()) === persistedText, 'Saved script content was not restored after reload.')
+    assert(
+      (await restoredTextarea.inputValue()) === persistedText,
+      'Saved script content was not restored after reload.',
+    )
   },
 }

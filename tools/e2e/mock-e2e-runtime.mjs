@@ -139,7 +139,9 @@ export const readVersionedStorage = async (page, key) =>
     const raw = localStorage.getItem(storageKey)
     if (!raw) return null
     const parsed = JSON.parse(raw)
-    return parsed && typeof parsed === 'object' && 'schemaVersion' in parsed && 'value' in parsed ? parsed.value : parsed
+    return parsed && typeof parsed === 'object' && 'schemaVersion' in parsed && 'value' in parsed
+      ? parsed.value
+      : parsed
   }, key)
 
 export const writeScenarioFailure = async (page, scenarioName) => {

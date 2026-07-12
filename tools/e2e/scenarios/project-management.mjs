@@ -65,7 +65,8 @@ export const projectManagementScenario = {
     assert(projectId, 'Created project id was not present in the editor URL.')
     const projects = await readVersionedStorage(page, 'amd.projects')
     assert(
-      Array.isArray(projects) && projects.some((project) => project.id === projectId && project.name === 'CI 可访问性项目'),
+      Array.isArray(projects) &&
+        projects.some((project) => project.id === projectId && project.name === 'CI 可访问性项目'),
       'Created project was not persisted in versioned Mock storage.',
     )
   },

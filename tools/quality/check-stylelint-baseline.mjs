@@ -1,33 +1,21 @@
-import { spawnSync } from 'node:child_process'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
+import stylelint from 'stylelint'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const BASELINE_PATH = path.join(ROOT, 'tools', 'quality', 'stylelint-baseline.json')
 const writeBaseline = process.argv.includes('--write-baseline')
-const pnpm = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm'
 
-const result = spawnSync(pnpm, ['exec', 'stylelint', 'src/**/*.scss', '--formatter', 'json', '--allow-empty-input'], {
+const result = await stylelint.lint({
+  allowEmptyInput: true,
   cwd: ROOT,
-  encoding: 'utf8',
-  maxBuffer: 50 * 1024 * 1024,
+  files: ['src/**/*.scss'],
+  formatter: 'json',
 })
 
-if (result.error) throw result.error
-
-const rawOutput = result.stdout.trim() || result.stderr.trim()
-const jsonStart = rawOutput.indexOf('[')
-const jsonEnd = rawOutput.lastIndexOf(']')
-
-if (jsonStart < 0 || jsonEnd < jsonStart) {
-  process.stderr.write(result.stderr)
-  throw new Error(`Stylelint did not return a JSON report (exit ${result.status ?? 'unknown'}).`)
-}
-
-const report = JSON.parse(rawOutput.slice(jsonStart, jsonEnd + 1))
-const violations = report.flatMap((file) => {
+const violations = result.results.flatMap((file) => {
   const absoluteSource = file.source.startsWith('file:') ? fileURLToPath(file.source) : file.source
   const source = path.relative(ROOT, absoluteSource).replaceAll('\\', '/')
 

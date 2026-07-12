@@ -124,7 +124,10 @@ export const editorLongSessionScenario = {
       endResources.mountedEditors === startResources.mountedEditors,
       'Mounted editor count did not return to the starting baseline.',
     )
-    assert(endResources.timers === startResources.timers, 'Tracked timer count did not return to the starting baseline.')
+    assert(
+      endResources.timers === startResources.timers,
+      'Tracked timer count did not return to the starting baseline.',
+    )
     assert(
       endResources.subscriptions === startResources.subscriptions,
       'Tracked subscription count did not return to the starting baseline.',

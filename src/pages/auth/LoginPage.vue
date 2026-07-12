@@ -71,12 +71,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { AUTH_ERROR, AUTH_STORAGE_KEYS } from '@/api/auth.api'
-import bg1 from '@/assets/auth/login-bg-1.png'
-import bg2 from '@/assets/auth/login-bg-2.png'
+import { loadAuthHeroBackground, type AuthHeroModule } from '@/features/auth/authHeroBackground'
 import AuthFormCard, { type AuthMode } from '@/components/auth/AuthFormCard.vue'
 import AuthThirdPartyCard from '@/components/auth/AuthThirdPartyCard.vue'
 import { resolveCapability, type CapabilityKey } from '@/features/capabilities/capabilityRegistry'
@@ -135,12 +134,19 @@ const countdownTimers: Partial<Record<'code' | 'register' | 'reset', number>> = 
 const scanTimers: number[] = []
 let toastTimer: number | null = null
 
-const heroCandidates = [bg1, bg2]
-const heroIndex = Math.floor(Math.random() * heroCandidates.length)
+const heroModules = import.meta.glob<AuthHeroModule>('../../assets/auth/login-bg-*.png', { query: '?url' })
+const heroLoaders = Object.values(heroModules)
+const heroUrl = ref('')
 
-const heroStyle = computed(() => ({
-  '--auth-login-hero-image': `url("${heroCandidates[heroIndex]}")`,
-}))
+const heroStyle = computed(() =>
+  heroUrl.value
+    ? { '--auth-login-hero-image': `url("${heroUrl.value}")` }
+    : {},
+)
+
+onMounted(async () => {
+  heroUrl.value = (await loadAuthHeroBackground(heroLoaders)) ?? ''
+})
 
 const providerLabelMap = computed<Record<ThirdPartyProvider, string>>(() => ({
   wechat: t('auth.thirdParty.providerWechat'),

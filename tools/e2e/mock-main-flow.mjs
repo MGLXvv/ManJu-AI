@@ -74,10 +74,16 @@ try {
     sessionStorage.clear()
     if ('databases' in indexedDB) {
       const databases = await indexedDB.databases()
-      await Promise.all(databases.map((database) => database.name && new Promise((resolve) => {
-        const request = indexedDB.deleteDatabase(database.name)
-        request.onsuccess = request.onerror = request.onblocked = () => resolve(undefined)
-      })))
+      await Promise.all(
+        databases.map(
+          (database) =>
+            database.name &&
+            new Promise((resolve) => {
+              const request = indexedDB.deleteDatabase(database.name)
+              request.onsuccess = request.onerror = request.onblocked = () => resolve(undefined)
+            }),
+        ),
+      )
     }
   })
   await page.reload({ waitUntil: 'networkidle' })
@@ -97,9 +103,11 @@ try {
   const styleSelect = dialog.locator('select')
   await page.waitForFunction(() => {
     const select = document.querySelector('.create-project-modal__select')
-    return select instanceof HTMLSelectElement
-      && !select.disabled
-      && [...select.options].some((option) => Boolean(option.value) && !option.disabled)
+    return (
+      select instanceof HTMLSelectElement &&
+      !select.disabled &&
+      [...select.options].some((option) => Boolean(option.value) && !option.disabled)
+    )
   })
   const styleValue = await styleSelect.locator('option:not([disabled])').first().getAttribute('value')
   if (!styleValue) throw new Error('No enabled project style is available in Mock mode.')
@@ -114,7 +122,13 @@ try {
 
   const persisted = await page.evaluate((id) => {
     const raw = localStorage.getItem('amd.projects')
-    return Boolean(raw && JSON.parse(raw).some((project) => project.id === id && project.name === 'CI Mock 主流程项目'))
+    if (!raw) return false
+
+    const parsed = JSON.parse(raw)
+    const projects =
+      parsed && typeof parsed === 'object' && 'schemaVersion' in parsed && 'value' in parsed ? parsed.value : parsed
+
+    return Array.isArray(projects) && projects.some((project) => project.id === id && project.name === 'CI Mock 主流程项目')
   }, projectId)
   if (!persisted) throw new Error('Created project was not persisted to Mock storage.')
 
@@ -126,10 +140,12 @@ try {
 } catch (error) {
   await mkdir(ARTIFACT_DIR, { recursive: true })
   if (page) {
-    await page.screenshot({
-      path: path.join(ARTIFACT_DIR, 'mock-main-flow-failure.png'),
-      fullPage: true,
-    }).catch(() => undefined)
+    await page
+      .screenshot({
+        path: path.join(ARTIFACT_DIR, 'mock-main-flow-failure.png'),
+        fullPage: true,
+      })
+      .catch(() => undefined)
   }
   console.error(error)
   if (serverLogs.length > 0) console.error(serverLogs.join(''))

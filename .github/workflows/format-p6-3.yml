@@ -5,7 +5,7 @@ on:
     branches: [master]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   render:
@@ -16,8 +16,10 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - name: Checkout
+      - name: Checkout PR branch
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -32,11 +34,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Render formatted files
+      - name: Format files in place
         run: |
           node --input-type=module <<'NODE'
-          import { mkdir, readFile, writeFile } from 'node:fs/promises'
-          import path from 'node:path'
+          import { readFile, writeFile } from 'node:fs/promises'
           import { format, resolveConfig } from 'prettier'
 
           const files = [
@@ -52,15 +53,23 @@ jobs:
             const source = await readFile(file, 'utf8')
             const config = (await resolveConfig(file)) ?? {}
             const output = await format(source, { ...config, filepath: file })
-            const target = path.join('artifacts', 'formatted-p6-3', file)
-            await mkdir(path.dirname(target), { recursive: true })
-            await writeFile(target, output, 'utf8')
+            await writeFile(file, output, 'utf8')
           }
           NODE
 
-      - name: Upload formatted files
-        uses: actions/upload-artifact@v4
-        with:
-          name: formatted-p6-3-files
-          path: artifacts/formatted-p6-3
-          retention-days: 2
+      - name: Commit formatting
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/components/dashboard/CreateProjectModal.vue
+          git add -f tools/e2e/accessibility-scan.mjs
+          git add -f tools/e2e/mock-e2e-runtime.mjs
+          git add -f tools/e2e/mock-scenario-suite.mjs
+          git add -f tools/e2e/scenarios/editor-persistence.mjs
+          git add -f tools/e2e/scenarios/project-management.mjs
+          if git diff --cached --quiet; then
+            echo "P6.3 files are already formatted."
+            exit 0
+          fi
+          git commit -m "style: format p6.3 files"
+          git push origin HEAD:${{ github.head_ref }}

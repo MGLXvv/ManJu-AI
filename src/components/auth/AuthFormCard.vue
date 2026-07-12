@@ -207,7 +207,9 @@
           </button>
         </span>
       </label>
-      <small v-if="errors.agree" class="auth-card__field-error auth-card__field-error--inline">{{ errors.agree }}</small>
+      <small v-if="errors.agree" class="auth-card__field-error auth-card__field-error--inline">{{
+        errors.agree
+      }}</small>
       <p v-if="formMessage" class="auth-card__form-message" :class="{ 'is-error': formMessageTone === 'error' }">
         {{ formMessage }}
       </p>
@@ -325,7 +327,9 @@ const submitButtonText = computed(() => {
 })
 
 const codeButtonText = computed(() =>
-  props.codeCountdown > 0 ? t('auth.action.requestCodeRetry', { count: props.codeCountdown }) : t('auth.action.requestCode'),
+  props.codeCountdown > 0
+    ? t('auth.action.requestCodeRetry', { count: props.codeCountdown })
+    : t('auth.action.requestCode'),
 )
 
 const onInput = (field: 'account' | 'username' | 'password' | 'code', event: Event): void => {

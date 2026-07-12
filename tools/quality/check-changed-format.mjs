@@ -70,6 +70,7 @@ for (const file of files) {
 
   const source = await readFile(absolutePath, 'utf8')
   const config = (await resolveConfig(absolutePath)) ?? {}
+  // Compare against Prettier's rendered output so ignored Git paths are checked consistently.
   const output = await format(source, { ...config, filepath: absolutePath })
   const formatted = source === output
   results.push({ file, formatted, skipped: false, parser: fileInfo.inferredParser })

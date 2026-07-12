@@ -32,6 +32,7 @@ export default tseslint.config(
     rules: {
       'no-undef': 'off',
       'no-unused-vars': 'off',
+      '@typescript-eslint/no-empty-object-type': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unused-vars': [
         'error',
@@ -64,6 +65,7 @@ export default tseslint.config(
     rules: {
       'no-undef': 'off',
       'no-unused-vars': 'off',
+      '@typescript-eslint/no-empty-object-type': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unused-vars': [
         'error',
@@ -74,6 +76,16 @@ export default tseslint.config(
         },
       ],
       'vue/multi-word-component-names': 'off',
+    },
+  },
+  {
+    files: ['tools/e2e/**/*.mjs'],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+        ...globals.es2024,
+      },
     },
   },
   {

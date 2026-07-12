@@ -16,12 +16,17 @@ const result = spawnSync(pnpm, ['exec', 'stylelint', 'src/**/*.scss', '--formatt
 })
 
 if (result.error) throw result.error
-if (!result.stdout.trim()) {
+
+const rawOutput = result.stdout.trim() || result.stderr.trim()
+const jsonStart = rawOutput.indexOf('[')
+const jsonEnd = rawOutput.lastIndexOf(']')
+
+if (jsonStart < 0 || jsonEnd < jsonStart) {
   process.stderr.write(result.stderr)
   throw new Error(`Stylelint did not return a JSON report (exit ${result.status ?? 'unknown'}).`)
 }
 
-const report = JSON.parse(result.stdout)
+const report = JSON.parse(rawOutput.slice(jsonStart, jsonEnd + 1))
 const violations = report.flatMap((file) => {
   const absoluteSource = file.source.startsWith('file:') ? fileURLToPath(file.source) : file.source
   const source = path.relative(ROOT, absoluteSource).replaceAll('\\', '/')

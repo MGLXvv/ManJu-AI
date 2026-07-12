@@ -7,13 +7,103 @@ on:
     branches: [master]
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: frontend-ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  p6-4-asset-bootstrap:
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.head_ref == 'quality/assets-visual-memory' &&
+      github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.18.0'
+
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.12.1 --activate
+
+      - name: Install media tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Install visual comparison dependencies
+        run: pnpm add --save-dev pixelmatch pngjs
+
+      - name: Convert login artwork to WebP
+        run: |
+          ffmpeg -hide_banner -loglevel error -y -i src/assets/auth/login-bg-1.png -c:v libwebp -quality 80 -compression_level 6 -preset picture -an src/assets/auth/login-bg-1.webp
+          ffmpeg -hide_banner -loglevel error -y -i src/assets/auth/login-bg-2.png -c:v libwebp -quality 80 -compression_level 6 -preset picture -an src/assets/auth/login-bg-2.webp
+          rm src/assets/auth/login-bg-1.png src/assets/auth/login-bg-2.png
+
+      - name: Recompress Mock videos
+        run: |
+          ffmpeg -hide_banner -loglevel error -y -i public/mock-media/16-9.mp4 -vf "scale=1280:-2,fps=24" -c:v libx264 -preset slow -crf 28 -pix_fmt yuv420p -movflags +faststart -an /tmp/16-9.mp4
+          ffmpeg -hide_banner -loglevel error -y -i public/mock-media/9-16.mp4 -vf "scale=-2:1280,fps=24" -c:v libx264 -preset slow -crf 29 -pix_fmt yuv420p -movflags +faststart -an /tmp/9-16.mp4
+          mv /tmp/16-9.mp4 public/mock-media/16-9.mp4
+          mv /tmp/9-16.mp4 public/mock-media/9-16.mp4
+
+      - name: Update login artwork loader
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('src/pages/auth/LoginPage.vue')
+          text = path.read_text(encoding='utf-8')
+          old = "../../assets/auth/login-bg-*.png"
+          new = "../../assets/auth/login-bg-*.webp"
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected one login background glob, found {text.count(old)}')
+          path.write_text(text.replace(old, new), encoding='utf-8')
+          PY
+
+      - name: Record optimized sizes
+        run: |
+          mkdir -p artifacts/assets
+          {
+            echo "Optimized P6.4 assets"
+            stat -c '%n %s bytes' src/assets/auth/login-bg-1.webp
+            stat -c '%n %s bytes' src/assets/auth/login-bg-2.webp
+            stat -c '%n %s bytes' public/mock-media/16-9.mp4
+            stat -c '%n %s bytes' public/mock-media/9-16.mp4
+            ffprobe -v error -show_entries stream=codec_name,width,height,r_frame_rate -show_entries format=duration,size -of default=noprint_wrappers=1 public/mock-media/16-9.mp4
+            ffprobe -v error -show_entries stream=codec_name,width,height,r_frame_rate -show_entries format=duration,size -of default=noprint_wrappers=1 public/mock-media/9-16.mp4
+          } | tee artifacts/assets/optimized-assets.txt
+
+      - name: Commit optimized assets
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json pnpm-lock.yaml src/pages/auth/LoginPage.vue
+          git add -A src/assets/auth public/mock-media
+          git commit -m "perf: optimize login and mock media assets"
+          git push origin HEAD:${{ github.head_ref }}
+
+      - name: Upload asset conversion report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p6-4-asset-bootstrap
+          path: artifacts/assets
+          if-no-files-found: ignore
+          retention-days: 14
+
   quality:
     name: Static checks, types, tests, build
     runs-on: ubuntu-latest

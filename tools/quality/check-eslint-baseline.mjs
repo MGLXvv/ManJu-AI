@@ -67,5 +67,7 @@ if (regressions.length > 0) {
 
 console.log(`ESLint regression check passed: ${findings.length} current findings, no increase from baseline.`)
 if (improvements.length > 0) {
-  console.log(`ESLint baseline can be reduced by ${improvements.reduce((sum, item) => sum + item.count, 0)} resolved findings.`)
+  console.log(
+    `ESLint baseline can be reduced by ${improvements.reduce((sum, item) => sum + item.count, 0)} resolved findings.`,
+  )
 }

@@ -1,3 +1,4 @@
+import { setRuntimeResourceCount } from '@/services/runtime/runtimeResourceDiagnostics'
 import type { MediaStorageKind, StoredMediaRecord } from '@/types/media'
 
 const DATABASE_NAME = 'manju-media'
@@ -8,6 +9,10 @@ const memoryRecords = new Map<string, StoredMediaRecord>()
 const objectUrls = new Map<string, string>()
 const urlAliases = new Map<string, string>()
 let databasePromise: Promise<IDBDatabase | null> | null = null
+
+const syncObjectUrlCount = (): void => {
+  setRuntimeResourceCount('objectUrls', objectUrls.size)
+}
 
 const canUseIndexedDb = (): boolean => typeof indexedDB !== 'undefined'
 
@@ -63,10 +68,12 @@ const createObjectUrl = (record: StoredMediaRecord): string => {
     return existing
   }
 
-  const url = typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function'
-    ? URL.createObjectURL(record.blob)
-    : `mock-media://${record.id}`
+  const url =
+    typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function'
+      ? URL.createObjectURL(record.blob)
+      : `mock-media://${record.id}`
   objectUrls.set(record.id, url)
+  syncObjectUrlCount()
   return url
 }
 
@@ -148,6 +155,7 @@ export const mediaBlobRepository = {
       URL.revokeObjectURL(objectUrl)
     }
     objectUrls.delete(id)
+    syncObjectUrlCount()
     for (const [url, aliasId] of urlAliases.entries()) {
       if (aliasId === id) {
         urlAliases.delete(url)
@@ -172,5 +180,6 @@ export const mediaBlobRepository = {
       }
     }
     objectUrls.clear()
+    syncObjectUrlCount()
   },
 }

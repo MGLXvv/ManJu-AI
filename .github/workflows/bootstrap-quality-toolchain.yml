@@ -1,27 +1,20 @@
 name: Bootstrap quality toolchain
 
 on:
-  push:
-    branches: [quality/eslint-stylelint-coverage]
+  pull_request:
+    branches: [master]
 
 permissions:
-  contents: write
-
-concurrency:
-  group: bootstrap-quality-toolchain-${{ github.ref }}
-  cancel-in-progress: true
+  contents: read
 
 jobs:
   bootstrap:
-    if: ${{ !contains(github.event.head_commit.message, '[skip quality bootstrap]') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
       - name: Checkout branch
         uses: actions/checkout@v4
-        with:
-          ref: quality/eslint-stylelint-coverage
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -61,14 +54,18 @@ jobs:
           vite.config.ts
           package.json
 
-      - name: Commit generated dependency state
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package.json pnpm-lock.yaml tools/quality/stylelint-baseline.json eslint.config.mjs prettier.config.mjs stylelint.config.mjs tools/quality/check-changed-format.mjs tools/quality/check-stylelint-baseline.mjs vite.config.ts
-          if git diff --cached --quiet; then
-            echo "No generated changes to commit."
-            exit 0
-          fi
-          git commit -m "chore: lock frontend quality toolchain [skip quality bootstrap]"
-          git push origin HEAD:quality/eslint-stylelint-coverage
+      - name: Upload generated quality state
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-toolchain-bootstrap
+          path: |
+            package.json
+            pnpm-lock.yaml
+            tools/quality/stylelint-baseline.json
+            eslint.config.mjs
+            prettier.config.mjs
+            stylelint.config.mjs
+            tools/quality/check-changed-format.mjs
+            tools/quality/check-stylelint-baseline.mjs
+            vite.config.ts
+          retention-days: 2

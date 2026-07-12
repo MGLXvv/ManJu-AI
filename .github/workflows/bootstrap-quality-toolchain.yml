@@ -1,27 +1,30 @@
 name: Bootstrap quality toolchain
 
 on:
-  push:
-    branches: [quality/eslint-stylelint-coverage]
+  pull_request:
+    branches: [master]
 
 permissions:
   contents: write
 
 concurrency:
-  group: bootstrap-quality-toolchain-${{ github.ref }}
+  group: bootstrap-quality-toolchain-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
   bootstrap:
-    if: ${{ !contains(github.event.head_commit.message, '[skip quality bootstrap]') }}
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.head_ref == 'quality/eslint-stylelint-coverage' &&
+      !contains(github.event.pull_request.head.sha, '0000000')
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
-      - name: Checkout branch
+      - name: Checkout PR branch
         uses: actions/checkout@v4
         with:
-          ref: quality/eslint-stylelint-coverage
+          ref: ${{ github.head_ref }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -70,5 +73,5 @@ jobs:
             echo "No generated changes to commit."
             exit 0
           fi
-          git commit -m "chore: lock frontend quality toolchain [skip quality bootstrap]"
-          git push origin HEAD:quality/eslint-stylelint-coverage
+          git commit -m "chore: lock frontend quality toolchain"
+          git push origin HEAD:${{ github.head_ref }}

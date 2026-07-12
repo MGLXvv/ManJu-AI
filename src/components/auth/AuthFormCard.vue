@@ -42,17 +42,29 @@
     </div>
 
     <form class="auth-card__form" @submit.prevent="$emit('submit')">
-      <p v-if="bindProviderLabel" class="auth-card__bind-tip">{{ t('auth.bindTip', { provider: bindProviderLabel }) }}</p>
+      <p v-if="bindProviderLabel" class="auth-card__bind-tip">
+        {{ t('auth.bindTip', { provider: bindProviderLabel }) }}
+      </p>
 
       <label v-if="needsUsername" class="auth-card__field">
         <span>{{ t('auth.field.username') }}</span>
-        <input :placeholder="t('auth.placeholder.username')" :value="username" :disabled="loading" @input="onInput('username', $event)" />
+        <input
+          :placeholder="t('auth.placeholder.username')"
+          :value="username"
+          :disabled="loading"
+          @input="onInput('username', $event)"
+        />
         <small v-if="errors.username" class="auth-card__field-error">{{ errors.username }}</small>
       </label>
 
       <label class="auth-card__field">
         <span>{{ accountLabel }}</span>
-        <input :placeholder="accountPlaceholder" :value="account" :disabled="loading" @input="onInput('account', $event)" />
+        <input
+          :placeholder="accountPlaceholder"
+          :value="account"
+          :disabled="loading"
+          @input="onInput('account', $event)"
+        />
         <small v-if="errors.account" class="auth-card__field-error">{{ errors.account }}</small>
       </label>
 
@@ -104,8 +116,19 @@
             {{ codeButtonText }}
           </button>
         </div>
-        <input :placeholder="t('auth.placeholder.code')" :value="code" :disabled="loading" @input="onInput('code', $event)" />
-        <button v-if="mode === 'code'" type="button" class="auth-card__inline-link" :disabled="loading" @click="$emit('code-help')">
+        <input
+          :placeholder="t('auth.placeholder.code')"
+          :value="code"
+          :disabled="loading"
+          @input="onInput('code', $event)"
+        />
+        <button
+          v-if="mode === 'code'"
+          type="button"
+          class="auth-card__inline-link"
+          :disabled="loading"
+          @click="$emit('code-help')"
+        >
           {{ t('auth.action.codeHelp') }}
         </button>
         <small v-if="errors.code" class="auth-card__field-error">{{ errors.code }}</small>
@@ -147,7 +170,12 @@
           :disabled="loading"
           @click="$emit('update:rememberAccount', !rememberAccount)"
         >
-          <FigmaIcon name="checkbox-checked" :size="14" class="auth-card__agree-icon" :class="{ 'is-visible': rememberAccount }" />
+          <FigmaIcon
+            name="checkbox-checked"
+            :size="14"
+            class="auth-card__agree-icon"
+            :class="{ 'is-visible': rememberAccount }"
+          />
         </button>
         <span>记住账号</span>
       </label>
@@ -161,19 +189,32 @@
           :disabled="loading"
           @click="$emit('update:agreed', !agreed)"
         >
-          <FigmaIcon name="checkbox-checked" :size="14" class="auth-card__agree-icon" :class="{ 'is-visible': agreed }" />
+          <FigmaIcon
+            name="checkbox-checked"
+            :size="14"
+            class="auth-card__agree-icon"
+            :class="{ 'is-visible': agreed }"
+          />
         </button>
         <span>
           {{ t('auth.action.agreePrefix') }}
-          <button type="button" class="auth-card__text-link" :disabled="loading" @click="$emit('open-terms')">{{ t('auth.agree.terms') }}</button>
+          <button type="button" class="auth-card__text-link" :disabled="loading" @click="$emit('open-terms')">
+            {{ t('auth.agree.terms') }}
+          </button>
           {{ ` ${t('auth.action.and')} ` }}
-          <button type="button" class="auth-card__text-link" :disabled="loading" @click="$emit('open-privacy')">{{ t('auth.agree.privacy') }}</button>
+          <button type="button" class="auth-card__text-link" :disabled="loading" @click="$emit('open-privacy')">
+            {{ t('auth.agree.privacy') }}
+          </button>
         </span>
       </label>
       <small v-if="errors.agree" class="auth-card__field-error auth-card__field-error--inline">{{ errors.agree }}</small>
-      <p v-if="formMessage" class="auth-card__form-message" :class="{ 'is-error': formMessageTone === 'error' }">{{ formMessage }}</p>
+      <p v-if="formMessage" class="auth-card__form-message" :class="{ 'is-error': formMessageTone === 'error' }">
+        {{ formMessage }}
+      </p>
 
-      <button class="auth-card__submit" type="submit" :disabled="loading">{{ submitButtonText }}</button>
+      <button class="auth-card__submit" type="submit" :disabled="loading">
+        {{ submitButtonText }}
+      </button>
     </form>
 
     <AuthSocialRow v-if="showSocialLogin" :disabled="loading" @select="$emit('social-login', $event)" />

@@ -2,40 +2,70 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { buildReportTopFileCount } from './build-budget.config.mjs'
-import { collectFileStats, formatBytes } from './file-utils.mjs'
+import { buildFileExemptions, buildReportTopFileCount } from './build-budget.config.mjs'
+import { collectFileStats, firstMatchingRule, formatBytes } from './file-utils.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const DIST_ROOT = path.join(ROOT, 'dist')
 const OUTPUT_ROOT = path.join(ROOT, 'artifacts', 'build')
 
 const files = await collectFileStats(ROOT, DIST_ROOT)
-const totals = files.reduce((result, file) => {
-  result.total += file.size
-  if (file.extension === '.js') result.javascript += file.size
-  else if (file.extension === '.css') result.css += file.size
-  else result.assets += file.size
-  return result
-}, { total: 0, javascript: 0, css: 0, assets: 0 })
+const createTotals = () => ({ total: 0, javascript: 0, css: 0, assets: 0 })
+const addToTotals = (totals, file) => {
+  totals.total += file.size
+  if (file.extension === '.js') totals.javascript += file.size
+  else if (file.extension === '.css') totals.css += file.size
+  else totals.assets += file.size
+}
+
+const rawTotals = createTotals()
+const budgetedTotals = createTotals()
+const trackedLegacyFiles = []
+
+for (const file of files) {
+  addToTotals(rawTotals, file)
+  const exemption = firstMatchingRule(file.relativePath, buildFileExemptions)
+
+  if (exemption?.excludeFromTotal) {
+    trackedLegacyFiles.push({
+      path: file.relativePath,
+      bytes: file.size,
+      displaySize: formatBytes(file.size),
+      trackingIssue: exemption.trackingIssue,
+      reason: exemption.reason,
+    })
+  } else {
+    addToTotals(budgetedTotals, file)
+  }
+}
 
 const largestFiles = [...files]
   .sort((left, right) => right.size - left.size)
   .slice(0, buildReportTopFileCount)
   .map((file) => ({ path: file.relativePath, bytes: file.size, displaySize: formatBytes(file.size) }))
 
+const displayTotals = (totals) => ({
+  total: formatBytes(totals.total),
+  javascript: formatBytes(totals.javascript),
+  css: formatBytes(totals.css),
+  assets: formatBytes(totals.assets),
+})
+
 const report = {
   generatedAt: new Date().toISOString(),
   nodeVersion: process.version,
   fileCount: files.length,
   totals: {
-    bytes: totals,
-    display: {
-      total: formatBytes(totals.total),
-      javascript: formatBytes(totals.javascript),
-      css: formatBytes(totals.css),
-      assets: formatBytes(totals.assets),
+    raw: {
+      bytes: rawTotals,
+      display: displayTotals(rawTotals),
+    },
+    budgeted: {
+      bytes: budgetedTotals,
+      display: displayTotals(budgetedTotals),
     },
   },
+  trackedLegacyFiles,
   largestFiles,
 }
 
@@ -44,12 +74,22 @@ const markdown = [
   '',
   `Generated: ${report.generatedAt}`,
   '',
-  '| Category | Size |',
-  '| --- | ---: |',
-  `| Total dist | ${report.totals.display.total} |`,
-  `| JavaScript | ${report.totals.display.javascript} |`,
-  `| CSS | ${report.totals.display.css} |`,
-  `| Other assets | ${report.totals.display.assets} |`,
+  '| Category | Raw size | Budgeted size |',
+  '| --- | ---: | ---: |',
+  `| Total dist | ${report.totals.raw.display.total} | ${report.totals.budgeted.display.total} |`,
+  `| JavaScript | ${report.totals.raw.display.javascript} | ${report.totals.budgeted.display.javascript} |`,
+  `| CSS | ${report.totals.raw.display.css} | ${report.totals.budgeted.display.css} |`,
+  `| Other assets | ${report.totals.raw.display.assets} | ${report.totals.budgeted.display.assets} |`,
+  '',
+  'Budgeted totals exclude only explicitly bounded legacy files tracked by an open issue; every excluded file still has an individual maximum size.',
+  '',
+  '## Tracked legacy files',
+  '',
+  '| File | Size | Tracking | Reason |',
+  '| --- | ---: | --- | --- |',
+  ...(trackedLegacyFiles.length > 0
+    ? trackedLegacyFiles.map((file) => `| \`${file.path}\` | ${file.displaySize} | ${file.trackingIssue} | ${file.reason} |`)
+    : ['| _None_ | — | — | — |']),
   '',
   `## Largest ${largestFiles.length} files`,
   '',
@@ -65,4 +105,6 @@ await Promise.all([
   writeFile(path.join(OUTPUT_ROOT, 'build-report.md'), markdown, 'utf8'),
 ])
 
-console.log(`Build report generated: ${report.fileCount} files, ${report.totals.display.total}.`)
+console.log(
+  `Build report generated: ${report.fileCount} files, raw ${report.totals.raw.display.total}, budgeted ${report.totals.budgeted.display.total}.`,
+)

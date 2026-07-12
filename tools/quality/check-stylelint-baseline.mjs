@@ -60,7 +60,9 @@ if (writeBaseline) {
     `${JSON.stringify({ generatedAt: new Date().toISOString(), entries }, null, 2)}\n`,
     'utf8',
   )
-  console.log(`Stylelint baseline written: ${violations.length} existing violations across ${entries.length} signatures.`)
+  console.log(
+    `Stylelint baseline written: ${violations.length} existing violations across ${entries.length} signatures.`,
+  )
   process.exit(0)
 }
 
@@ -87,5 +89,7 @@ if (regressions.length > 0) {
 
 console.log(`Stylelint regression check passed: ${violations.length} current violations, no increase from baseline.`)
 if (improvements.length > 0) {
-  console.log(`Stylelint baseline can be reduced by ${improvements.reduce((sum, item) => sum + item.count, 0)} resolved violations.`)
+  console.log(
+    `Stylelint baseline can be reduced by ${improvements.reduce((sum, item) => sum + item.count, 0)} resolved violations.`,
+  )
 }

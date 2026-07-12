@@ -17,11 +17,13 @@ jobs:
   quality:
     name: Static checks, types, tests, build
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -60,11 +62,20 @@ jobs:
       - name: Check source hygiene
         run: pnpm check:source-hygiene
 
+      - name: Run ESLint
+        run: pnpm lint
+
+      - name: Check changed file formatting
+        run: pnpm format:check
+
+      - name: Check SCSS regression baseline
+        run: pnpm stylelint
+
       - name: Type check
         run: pnpm typecheck
 
-      - name: Run unit and contract tests
-        run: pnpm test
+      - name: Run unit tests with coverage
+        run: pnpm test:coverage
 
       - name: Build and verify production bundle
         run: pnpm build:verify
@@ -75,6 +86,15 @@ jobs:
         with:
           name: frontend-quality-diagnostics
           path: artifacts/quality
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload frontend coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage-report
+          path: artifacts/coverage
           if-no-files-found: ignore
           retention-days: 14
 
@@ -90,11 +110,13 @@ jobs:
   windows-quality:
     name: Windows quality scripts
     runs-on: windows-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - name: Setup Node
         uses: actions/setup-node@v4

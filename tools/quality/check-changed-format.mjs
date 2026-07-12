@@ -1,7 +1,9 @@
-import { execFileSync, spawnSync } from 'node:child_process'
+import { execFileSync } from 'node:child_process'
+import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
+import { check, getFileInfo, resolveConfig } from 'prettier'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const supported = /\.(?:c?js|mjs|ts|tsx|vue|css|scss|json|md|ya?ml)$/i
@@ -55,12 +57,23 @@ if (files.length === 0) {
   process.exit(0)
 }
 
-const pnpm = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm'
-const result = spawnSync(pnpm, ['exec', 'prettier', '--check', ...files], {
-  cwd: ROOT,
-  encoding: 'utf8',
-  stdio: 'inherit',
-})
+const unformatted = []
 
-if (result.error) throw result.error
-process.exit(result.status ?? 1)
+for (const file of files) {
+  const absolutePath = path.join(ROOT, file)
+  const fileInfo = await getFileInfo(absolutePath)
+  if (fileInfo.ignored || !fileInfo.inferredParser) continue
+
+  const source = await readFile(absolutePath, 'utf8')
+  const config = (await resolveConfig(absolutePath)) ?? {}
+  const formatted = await check(source, { ...config, filepath: absolutePath })
+  if (!formatted) unformatted.push(file)
+}
+
+if (unformatted.length > 0) {
+  console.error('Prettier check failed for changed files:')
+  for (const file of unformatted) console.error(`- ${file}`)
+  process.exit(1)
+}
+
+console.log(`Prettier check passed for ${files.length} changed files.`)

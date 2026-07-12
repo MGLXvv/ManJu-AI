@@ -3,40 +3,64 @@
     <div v-if="open" class="create-project-modal">
       <div class="create-project-modal__overlay" @click="requestClose"></div>
 
-      <section class="create-project-modal__dialog" role="dialog" aria-modal="true" aria-label="新建项目设置">
+      <section
+        ref="dialogRef"
+        class="create-project-modal__dialog"
+        role="dialog"
+        aria-modal="true"
+        :aria-labelledby="titleId"
+        :aria-describedby="descriptionId"
+        tabindex="-1"
+      >
         <header class="create-project-modal__header">
-          <h2 class="create-project-modal__title">新建项目设置</h2>
+          <h2 :id="titleId" class="create-project-modal__title">新建项目设置</h2>
           <button class="create-project-modal__close" type="button" aria-label="关闭" @click="requestClose">×</button>
         </header>
 
-        <form class="create-project-modal__body" @submit.prevent="submit">
+        <form class="create-project-modal__body" novalidate @submit.prevent="submit">
+          <p :id="descriptionId" class="sr-only">填写项目名称、画面比例和整体风格后创建项目。</p>
+
           <label
             class="create-project-modal__field"
             :class="{ 'is-invalid': fieldErrors.name, 'is-flash': fieldErrors.name }"
             :key="`name-${invalidFlashNonce}`"
+            :for="nameInputId"
           >
             <span class="create-project-modal__label">项目名称</span>
             <input
+              :id="nameInputId"
               v-model.trim="form.name"
               class="create-project-modal__input"
               type="text"
               placeholder="请输入项目名称"
+              required
+              :aria-invalid="Boolean(fieldErrors.name)"
+              :aria-describedby="fieldErrors.name ? nameErrorId : undefined"
+              @input="fieldErrors.name = undefined"
             />
+            <span v-if="fieldErrors.name" :id="nameErrorId" class="create-project-modal__error" role="alert">
+              请输入项目名称
+            </span>
           </label>
 
           <div
             class="create-project-modal__field"
             :class="{ 'is-invalid': fieldErrors.ratio, 'is-flash': fieldErrors.ratio }"
             :key="`ratio-${invalidFlashNonce}`"
+            role="group"
+            :aria-labelledby="ratioLabelId"
+            :aria-describedby="fieldErrors.ratio ? ratioErrorId : undefined"
+            :aria-invalid="Boolean(fieldErrors.ratio)"
           >
-            <span class="create-project-modal__label">画面比例</span>
+            <span :id="ratioLabelId" class="create-project-modal__label">画面比例</span>
 
             <div class="create-project-modal__ratio-grid">
               <button
                 type="button"
                 class="create-project-modal__ratio"
                 :class="{ 'is-active': form.ratio === '16:9' }"
-                @click="form.ratio = '16:9'"
+                :aria-pressed="form.ratio === '16:9'"
+                @click="selectRatio('16:9')"
               >
                 <span class="create-project-modal__ratio-icon create-project-modal__ratio-icon--landscape"></span>
                 <span>横版 16:9</span>
@@ -46,23 +70,37 @@
                 type="button"
                 class="create-project-modal__ratio"
                 :class="{ 'is-active': form.ratio === '9:16' }"
-                @click="form.ratio = '9:16'"
+                :aria-pressed="form.ratio === '9:16'"
+                @click="selectRatio('9:16')"
               >
                 <span class="create-project-modal__ratio-icon create-project-modal__ratio-icon--portrait"></span>
                 <span>竖版 9:16</span>
               </button>
             </div>
+            <span v-if="fieldErrors.ratio" :id="ratioErrorId" class="create-project-modal__error" role="alert">
+              请选择画面比例
+            </span>
           </div>
 
           <label
             class="create-project-modal__field"
             :class="{ 'is-invalid': fieldErrors.style, 'is-flash': fieldErrors.style }"
             :key="`style-${invalidFlashNonce}`"
+            :for="styleSelectId"
           >
             <span class="create-project-modal__label">整体风格</span>
 
             <div class="create-project-modal__select-wrap">
-              <select v-model="form.style" class="create-project-modal__select" :disabled="!hasStyleOptions">
+              <select
+                :id="styleSelectId"
+                v-model="form.style"
+                class="create-project-modal__select"
+                :disabled="!hasStyleOptions"
+                required
+                :aria-invalid="Boolean(fieldErrors.style)"
+                :aria-describedby="fieldErrors.style ? styleErrorId : !hasStyleOptions ? styleHintId : undefined"
+                @change="fieldErrors.style = undefined"
+              >
                 <option value="" disabled>{{ stylePlaceholder }}</option>
                 <option v-for="option in enabledStyleOptions" :key="option.id" :value="option.value">
                   {{ option.label }}
@@ -70,9 +108,12 @@
               </select>
             </div>
 
-            <p v-if="!hasStyleOptions" class="create-project-modal__hint">
+            <p v-if="!hasStyleOptions" :id="styleHintId" class="create-project-modal__hint">
               {{ emptyStyleMessage }}
             </p>
+            <span v-else-if="fieldErrors.style" :id="styleErrorId" class="create-project-modal__error" role="alert">
+              请选择整体风格
+            </span>
           </label>
 
           <button class="create-project-modal__submit" type="submit" :disabled="!hasStyleOptions">创建项目</button>
@@ -81,6 +122,7 @@
         <AppConfirmDialog
           :open="showCancelConfirm"
           title="确定放弃设置？"
+          description="已填写的项目设置将不会保存。"
           confirm-text="确定"
           cancel-text="取消"
           confirm-tone="primary"
@@ -96,8 +138,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, nextTick, reactive, ref, useId, watch } from 'vue'
 import AppConfirmDialog from '@/components/common/AppConfirmDialog.vue'
+import { useAccessibleDialog } from '@/composables/useAccessibleDialog'
 import type { ProjectStyleOption } from '@/features/project/projectStyleState'
 import {
   createEmptyCreateProjectForm,
@@ -122,6 +165,16 @@ const emit = defineEmits<{
   (e: 'submit', payload: { name: string; ratio: '16:9' | '9:16'; style: string }): void
 }>()
 
+const titleId = useId()
+const descriptionId = useId()
+const nameInputId = useId()
+const nameErrorId = useId()
+const ratioLabelId = useId()
+const ratioErrorId = useId()
+const styleSelectId = useId()
+const styleErrorId = useId()
+const styleHintId = useId()
+
 const form = reactive(createEmptyCreateProjectForm())
 const fieldErrors = ref<CreateProjectFieldErrors>({})
 const invalidFlashNonce = ref(0)
@@ -130,6 +183,7 @@ const showCancelConfirm = ref(false)
 const enabledStyleOptions = computed(() => props.styleOptions.filter((option) => !option.disabled))
 const hasStyleOptions = computed(() => enabledStyleOptions.value.length > 0)
 const stylePlaceholder = computed(() => (hasStyleOptions.value ? '请选择整体风格' : props.emptyStyleMessage))
+const isDirty = computed(() => isCreateProjectFormDirty(form))
 
 const resetForm = (): void => {
   Object.assign(form, createEmptyCreateProjectForm())
@@ -137,7 +191,25 @@ const resetForm = (): void => {
   invalidFlashNonce.value = 0
 }
 
-const isDirty = computed(() => isCreateProjectFormDirty(form))
+const close = (): void => {
+  showCancelConfirm.value = false
+  open.value = false
+}
+
+const requestClose = (): void => {
+  if (!isDirty.value) {
+    close()
+    return
+  }
+
+  showCancelConfirm.value = true
+}
+
+const { dialogRef } = useAccessibleDialog({
+  open,
+  onRequestClose: requestClose,
+  initialFocusSelector: '.create-project-modal__input',
+})
 
 watch(open, (value) => {
   if (value) {
@@ -158,18 +230,9 @@ watch(
   { immediate: true },
 )
 
-const close = (): void => {
-  showCancelConfirm.value = false
-  open.value = false
-}
-
-const requestClose = (): void => {
-  if (!isDirty.value) {
-    close()
-    return
-  }
-
-  showCancelConfirm.value = true
+const selectRatio = (ratio: '16:9' | '9:16'): void => {
+  form.ratio = ratio
+  fieldErrors.value.ratio = undefined
 }
 
 const confirmClose = (): void => {
@@ -180,7 +243,25 @@ const cancelCloseConfirm = (): void => {
   showCancelConfirm.value = false
 }
 
-const submit = (): void => {
+const focusFirstError = async (errors: CreateProjectFieldErrors): Promise<void> => {
+  await nextTick()
+
+  if (errors.name) {
+    document.getElementById(nameInputId)?.focus()
+    return
+  }
+
+  if (errors.ratio) {
+    dialogRef.value?.querySelector<HTMLElement>('.create-project-modal__ratio')?.focus()
+    return
+  }
+
+  if (errors.style) {
+    document.getElementById(styleSelectId)?.focus()
+  }
+}
+
+const submit = async (): Promise<void> => {
   if (!hasStyleOptions.value) {
     return
   }
@@ -190,6 +271,7 @@ const submit = (): void => {
 
   if (Object.keys(nextErrors).length > 0) {
     invalidFlashNonce.value += 1
+    await focusFirstError(nextErrors)
     return
   }
 
@@ -232,6 +314,10 @@ const submit = (): void => {
   background: #0a0a0b;
   box-shadow: 0 4px 10.8px rgb(0 0 0 / 25%);
   overflow: hidden;
+}
+
+.create-project-modal__dialog:focus {
+  outline: none;
 }
 
 .create-project-modal__header {
@@ -415,11 +501,19 @@ const submit = (): void => {
   background: linear-gradient(180deg, #b0f862 0%, #8b5cf6 100%);
 }
 
-.create-project-modal__hint {
+.create-project-modal__hint,
+.create-project-modal__error {
   margin: 0;
-  color: #979797;
   font-size: 12px;
   line-height: 1.5;
+}
+
+.create-project-modal__hint {
+  color: #979797;
+}
+
+.create-project-modal__error {
+  color: #ff8fa8;
 }
 
 .create-project-modal__submit {
@@ -428,8 +522,7 @@ const submit = (): void => {
   border: 0;
   border-radius: 8px;
   background:
-    radial-gradient(64.4% 133.41% at 97.53% 113.7%, rgb(255 187 77 / 60%) 0%, rgb(140 63 255 / 0%) 100%),
-    #8c3fff;
+    radial-gradient(64.4% 133.41% at 97.53% 113.7%, rgb(255 187 77 / 60%) 0%, rgb(140 63 255 / 0%) 100%), #8c3fff;
   color: #fff;
   font-size: 13px;
   line-height: 16px;

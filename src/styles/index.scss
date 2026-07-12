@@ -2,11 +2,10 @@
 @use './theme-dark';
 @use './reset';
 @use './base';
-
+@use './accessibility';
 @use './layouts/main-layout';
 @use './layouts/editor-layout';
 @use './layouts/auth-layout';
-
 @use './components/top-bar';
 @use './components/editor-side-nav';
 @use './components/app-button';
@@ -15,7 +14,6 @@
 @use './components/play-pause-icons';
 @use './components/storyboard-video-thumbnail';
 @use './components/upload-input-guards';
-
 @use './pages/login';
 @use './pages/project-list';
 @use './pages/resource-library';
@@ -28,7 +26,6 @@
 @use './pages/video-step';
 @use './pages/dubbing-step';
 @use './pages/placeholder';
-
 @use './components/video-voice-table-scroll';
 @use './components/dubbing-page-refine';
 @use './components/dubbing-dialogue-voice-fix';

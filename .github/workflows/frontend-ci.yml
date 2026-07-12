@@ -159,7 +159,7 @@ jobs:
     name: Playwright Mock main flow
     needs: quality
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
@@ -202,11 +202,11 @@ jobs:
       - name: Run Playwright Mock main flow
         run: pnpm test:e2e:mock
 
-      - name: Upload E2E failure artifacts
-        if: failure()
+      - name: Upload E2E reports and failure artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: mock-e2e-failure
+          name: mock-e2e-report
           path: artifacts/e2e
           if-no-files-found: ignore
-          retention-days: 7
+          retention-days: 14

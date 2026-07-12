@@ -1,20 +1,27 @@
 name: Bootstrap quality toolchain
 
 on:
-  pull_request:
-    branches: [master]
+  push:
+    branches: [quality/eslint-stylelint-coverage]
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: bootstrap-quality-toolchain-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   bootstrap:
+    if: ${{ !contains(github.event.head_commit.message, '[skip quality bootstrap]') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
       - name: Checkout branch
         uses: actions/checkout@v4
+        with:
+          ref: quality/eslint-stylelint-coverage
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -40,15 +47,8 @@ jobs:
           stylelint-config-standard-scss
           @vitest/coverage-v8@4.1.7
 
-      - name: Generate SCSS baseline diagnostics
-        run: |
-          mkdir -p artifacts/bootstrap
-          set +e
-          pnpm stylelint:baseline > artifacts/bootstrap/stylelint-baseline.log 2>&1
-          exit_code=$?
-          cat artifacts/bootstrap/stylelint-baseline.log
-          echo "Stylelint baseline exit code: $exit_code"
-          exit 0
+      - name: Generate SCSS baseline
+        run: pnpm stylelint:baseline
 
       - name: Format quality configuration
         run: >-
@@ -61,21 +61,14 @@ jobs:
           vite.config.ts
           package.json
 
-      - name: Upload generated quality state
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: quality-toolchain-bootstrap
-          path: |
-            package.json
-            pnpm-lock.yaml
-            tools/quality/stylelint-baseline.json
-            eslint.config.mjs
-            prettier.config.mjs
-            stylelint.config.mjs
-            tools/quality/check-changed-format.mjs
-            tools/quality/check-stylelint-baseline.mjs
-            vite.config.ts
-            artifacts/bootstrap
-          if-no-files-found: warn
-          retention-days: 2
+      - name: Commit generated dependency state
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json pnpm-lock.yaml tools/quality/stylelint-baseline.json eslint.config.mjs prettier.config.mjs stylelint.config.mjs tools/quality/check-changed-format.mjs tools/quality/check-stylelint-baseline.mjs vite.config.ts
+          if git diff --cached --quiet; then
+            echo "No generated changes to commit."
+            exit 0
+          fi
+          git commit -m "chore: lock frontend quality toolchain [skip quality bootstrap]"
+          git push origin HEAD:quality/eslint-stylelint-coverage

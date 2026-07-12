@@ -113,6 +113,9 @@ jobs:
     timeout-minutes: 15
 
     steps:
+      - name: Configure Git line endings
+        run: git config --global core.autocrlf false
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -180,9 +183,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ steps.pnpm-store.outputs.path }}
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-
+          key: ${{ runner.os }}-playwright-chromium-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies from lockfile
         run: pnpm install --frozen-lockfile

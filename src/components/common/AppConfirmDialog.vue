@@ -2,9 +2,21 @@
   <Teleport to="body">
     <Transition name="app-confirm-dialog-fade">
       <div v-if="open" class="app-confirm-dialog__mask" @click="emit('cancel')">
-        <section class="app-confirm-dialog" :class="[`is-${size}`]" role="alertdialog" aria-modal="true" @click.stop>
-          <h3 class="app-confirm-dialog__title" :class="{ 'is-centered': centerTitle }">{{ title }}</h3>
-          <p v-if="description" class="app-confirm-dialog__desc">{{ description }}</p>
+        <section
+          ref="dialogRef"
+          class="app-confirm-dialog"
+          :class="[`is-${size}`]"
+          role="alertdialog"
+          aria-modal="true"
+          :aria-labelledby="titleId"
+          :aria-describedby="description ? descriptionId : undefined"
+          tabindex="-1"
+          @click.stop
+        >
+          <h3 :id="titleId" class="app-confirm-dialog__title" :class="{ 'is-centered': centerTitle }">
+            {{ title }}
+          </h3>
+          <p v-if="description" :id="descriptionId" class="app-confirm-dialog__desc">{{ description }}</p>
           <div class="app-confirm-dialog__actions" :class="{ 'is-centered': centerActions }">
             <button
               class="app-confirm-dialog__btn"
@@ -25,7 +37,10 @@
 </template>
 
 <script setup lang="ts">
-withDefaults(
+import { toRef, useId } from 'vue'
+import { useAccessibleDialog } from '@/composables/useAccessibleDialog'
+
+const props = withDefaults(
   defineProps<{
     open: boolean
     title: string
@@ -50,6 +65,14 @@ const emit = defineEmits<{
   (event: 'confirm'): void
   (event: 'cancel'): void
 }>()
+
+const titleId = useId()
+const descriptionId = useId()
+const { dialogRef } = useAccessibleDialog({
+  open: toRef(props, 'open'),
+  onRequestClose: () => emit('cancel'),
+  initialFocusSelector: '.app-confirm-dialog__btn.is-neutral',
+})
 </script>
 
 <style scoped>
@@ -70,6 +93,10 @@ const emit = defineEmits<{
   border-radius: 18px;
   background: #17171c;
   box-shadow: 0 24px 60px rgb(0 0 0 / 42%);
+}
+
+.app-confirm-dialog:focus {
+  outline: none;
 }
 
 .app-confirm-dialog.is-sm {

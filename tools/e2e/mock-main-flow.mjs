@@ -12,20 +12,16 @@ const ARTIFACT_DIR = path.join(ROOT, 'artifacts', 'e2e')
 const command = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm'
 const serverLogs = []
 
-const server = spawn(
-  command,
-  ['exec', 'vite', '--host', '127.0.0.1', '--port', String(PORT), '--strictPort'],
-  {
-    cwd: ROOT,
-    env: {
-      ...process.env,
-      VITE_API_MODE: 'mock',
-      VITE_STRICT_RUNTIME_CONFIG: 'true',
-    },
-    stdio: ['ignore', 'pipe', 'pipe'],
-    detached: process.platform !== 'win32',
+const server = spawn(command, ['exec', 'vite', '--host', '127.0.0.1', '--port', String(PORT), '--strictPort'], {
+  cwd: ROOT,
+  env: {
+    ...process.env,
+    VITE_API_MODE: 'mock',
+    VITE_STRICT_RUNTIME_CONFIG: 'true',
   },
-)
+  stdio: ['ignore', 'pipe', 'pipe'],
+  detached: process.platform !== 'win32',
+})
 
 for (const stream of [server.stdout, server.stderr]) {
   stream?.on('data', (chunk) => serverLogs.push(String(chunk)))
@@ -128,7 +124,9 @@ try {
     const projects =
       parsed && typeof parsed === 'object' && 'schemaVersion' in parsed && 'value' in parsed ? parsed.value : parsed
 
-    return Array.isArray(projects) && projects.some((project) => project.id === id && project.name === 'CI Mock 主流程项目')
+    return (
+      Array.isArray(projects) && projects.some((project) => project.id === id && project.name === 'CI Mock 主流程项目')
+    )
   }, projectId)
   if (!persisted) throw new Error('Created project was not persisted to Mock storage.')
 

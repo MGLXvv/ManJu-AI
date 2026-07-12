@@ -18,7 +18,9 @@ pnpm test:e2e:mock
 
 `check-source-assets.mjs` scans `src/assets` and `public` before compilation. New images, fonts, audio, and video files must remain within the limits in `build-budget.config.mjs`.
 
-The two existing login PNG files are temporary tracked exemptions rather than unlimited exclusions. Their maximum size cannot increase, and their recompression is tracked by Issue #17.
+The existing login PNG files and fixed Mock playback videos are tracked legacy resources, not unlimited exclusions. Each file has an explicit maximum that cannot increase silently, and its recompression or replacement is tracked by Issue #17.
+
+The source diagnostic is written to `artifacts/quality/source-assets.json`, including on failure.
 
 ## Build budgets and reports
 
@@ -27,7 +29,14 @@ The two existing login PNG files are temporary tracked exemptions rather than un
 - `artifacts/build/build-report.json`
 - `artifacts/build/build-report.md`
 
-`check-build-budget.mjs` validates individual JS, CSS, image, font, and media files, plus aggregate JavaScript, CSS, asset, and `dist` sizes.
+`check-build-budget.mjs` validates individual JS, CSS, image, font, and media files, plus aggregate JavaScript, CSS, asset, and `dist` sizes. It also writes `artifacts/quality/build-budget.json`.
+
+Reports show two totals:
+
+- **Raw**: every output file, including tracked legacy resources.
+- **Budgeted**: excludes only explicitly bounded legacy files whose cleanup is tracked by an open issue.
+
+Excluded legacy files still have individual maximum sizes. New assets never inherit those exemptions.
 
 Update a budget only when the increase is intentional and documented in the pull request. Do not raise a limit merely to make CI pass.
 

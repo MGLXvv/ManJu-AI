@@ -3,7 +3,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { check, getFileInfo, resolveConfig } from 'prettier'
+import { format, getFileInfo, resolveConfig } from 'prettier'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const REPORT_PATH = path.join(ROOT, 'artifacts', 'quality', 'prettier.json')
@@ -70,7 +70,9 @@ for (const file of files) {
 
   const source = await readFile(absolutePath, 'utf8')
   const config = (await resolveConfig(absolutePath)) ?? {}
-  const formatted = await check(source, { ...config, filepath: absolutePath })
+  // Compare against Prettier's rendered output so ignored Git paths are checked consistently.
+  const output = await format(source, { ...config, filepath: absolutePath })
+  const formatted = source === output
   results.push({ file, formatted, skipped: false, parser: fileInfo.inferredParser })
 }
 

@@ -62,14 +62,8 @@ jobs:
       - name: Check source hygiene
         run: pnpm check:source-hygiene
 
-      - name: Run ESLint
-        run: |
-          mkdir -p artifacts/quality
-          set +e
-          pnpm exec eslint . --format json > artifacts/quality/eslint.json
-          exit_code=$?
-          pnpm exec eslint . --format stylish || true
-          exit $exit_code
+      - name: Run ESLint regression check
+        run: pnpm lint
 
       - name: Check changed file formatting
         run: pnpm format:check

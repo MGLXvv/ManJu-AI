@@ -7,6 +7,7 @@ const MAX_HEAP_GROWTH_BYTES = 24 * 1024 * 1024
 const MAX_NODE_GROWTH = 1000
 const MAX_LISTENER_GROWTH = 200
 const MAX_DOCUMENT_GROWTH = 5
+const PROJECT_NAME = 'CI 长会话性能项目'
 
 const readPerformanceMetrics = async (session) => {
   const response = await session.send('Performance.getMetrics')
@@ -53,7 +54,7 @@ export const editorLongSessionScenario = {
 
     await resetBrowserState(page)
     await login(page)
-    const projectId = await createProject(page, 'CI 长会话性能项目')
+    const projectId = await createProject(page, PROJECT_NAME)
     const editorUrl = `${BASE_URL}/projects/${projectId}/editor/script/input`
 
     await page.goto(BASE_URL, { waitUntil: 'networkidle' })
@@ -72,7 +73,10 @@ export const editorLongSessionScenario = {
 
     for (let index = 0; index < ITERATIONS; index += 1) {
       const startedAt = performance.now()
-      await page.goto(editorUrl, { waitUntil: 'domcontentloaded' })
+      const projectCard = page.locator('.project-card').filter({ hasText: PROJECT_NAME })
+      await projectCard.waitFor()
+      await projectCard.click()
+      await page.waitForURL(editorUrl)
       await page.locator('.script-step').waitFor()
 
       await page.evaluate(() => {

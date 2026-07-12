@@ -89,7 +89,7 @@ export const editorLongSessionScenario = {
         if (url) diagnostics?.revokeObjectUrlProbe(url)
       })
 
-      await page.getByRole('link', { name: '首页' }).click()
+      await page.locator('.app-top-bar__brand').click()
       await page.getByRole('heading', { name: '我的项目' }).waitFor()
       iterationDurations.push(performance.now() - startedAt)
     }

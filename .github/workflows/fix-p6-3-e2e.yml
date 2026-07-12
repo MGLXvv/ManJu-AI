@@ -1,25 +1,23 @@
 name: Apply P6.3 E2E fixes
 
 on:
-  pull_request:
-    branches: [master]
+  push:
+    branches: [quality/accessibility-mock-e2e]
 
 permissions:
   contents: write
 
 jobs:
   fix:
-    if: >-
-      github.event.pull_request.head.repo.full_name == github.repository &&
-      github.head_ref == 'quality/accessibility-mock-e2e'
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
-      - name: Checkout PR branch
+      - name: Checkout branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
+          ref: quality/accessibility-mock-e2e
 
       - name: Apply exact replacements
         run: |
@@ -110,4 +108,4 @@ jobs:
           git add src/components/dashboard/ProjectSearchBox.vue
           git add -f tools/e2e/scenarios/editor-persistence.mjs
           git commit -m "fix: resolve p6.3 accessibility and persistence scenarios"
-          git push origin HEAD:${{ github.head_ref }}
+          git push origin HEAD:quality/accessibility-mock-e2e

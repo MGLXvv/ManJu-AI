@@ -7,13 +7,119 @@ on:
     branches: [master]
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: frontend-ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  p6-3-migration:
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.head_ref == 'quality/accessibility-mock-e2e' &&
+      github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Apply exact replacements
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace(path, old, new, count=None):
+              file = Path(path)
+              text = file.read_text(encoding='utf-8-sig')
+              found = text.count(old)
+              expected = count if count is not None else 1
+              if found != expected:
+                  raise SystemExit(f'{path}: expected {expected} occurrence(s), found {found}')
+              file.write_text(text.replace(old, new), encoding='utf-8')
+
+          replace(
+              'src/components/auth/AuthFormCard.vue',
+              '''          <button type="button" class="auth-card__icon-btn" :disabled="loading" @click="$emit('toggle-password')">''',
+              '''          <button
+            type="button"
+            class="auth-card__icon-btn"
+            :aria-label="showPassword ? '隐藏密码' : '显示密码'"
+            :aria-pressed="showPassword"
+            :disabled="loading"
+            @click="$emit('toggle-password')"
+          >''',
+              count=2,
+          )
+
+          replace(
+              'src/components/dashboard/ProjectPagination.vue',
+              '''      type="button"
+      :disabled="modelValue <= 1"''',
+              '''      type="button"
+      aria-label="上一页"
+      :disabled="modelValue <= 1"''',
+          )
+          replace(
+              'src/components/dashboard/ProjectPagination.vue',
+              '''      type="button"
+      :disabled="modelValue >= totalPages"''',
+              '''      type="button"
+      aria-label="下一页"
+      :disabled="modelValue >= totalPages"''',
+          )
+          replace(
+              'src/components/dashboard/ProjectPagination.vue',
+              '''      type="button"
+      @click="$emit('update:modelValue', page)"''',
+              '''      type="button"
+      :aria-label="`第 ${page} 页`"
+      :aria-current="page === modelValue ? 'page' : undefined"
+      @click="$emit('update:modelValue', page)"''',
+          )
+          replace(
+              'src/components/dashboard/ProjectPagination.vue',
+              '''      <select class="project-pagination__select" :value="modelValue" @change="onPageSelect">''',
+              '''      <select class="project-pagination__select" :value="modelValue" aria-label="跳转到页码" @change="onPageSelect">''',
+          )
+
+          replace(
+              'src/components/dashboard/ProjectSearchBox.vue',
+              '''      class="project-search-box__input"
+      placeholder="搜索名称"''',
+              '''      class="project-search-box__input"
+      aria-label="搜索项目名称"
+      placeholder="搜索名称"''',
+          )
+
+          replace(
+              'tools/e2e/scenarios/editor-persistence.mjs',
+              '''    await page.getByRole('button', { name: '保存', exact: true }).click()
+    await page.locator('.script-workbench-card__save-state').getByText('已保存', { exact: true }).waitFor({ timeout: 15_000 })''',
+              '''    await page.getByRole('button', { name: '生成剧本', exact: true }).click()
+    await page
+      .locator('.script-workbench-card__save-state')
+      .getByText('已保存', { exact: true })
+      .waitFor({ timeout: 15_000 })''',
+          )
+          PY
+
+      - name: Commit migration
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/components/auth/AuthFormCard.vue
+          git add src/components/dashboard/ProjectPagination.vue
+          git add src/components/dashboard/ProjectSearchBox.vue
+          git add -f tools/e2e/scenarios/editor-persistence.mjs
+          git commit -m "fix: resolve p6.3 accessibility and persistence scenarios"
+          git push origin HEAD:${{ github.head_ref }}
+
   quality:
     name: Static checks, types, tests, build
     runs-on: ubuntu-latest

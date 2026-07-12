@@ -12,7 +12,7 @@ const walk = async (directory) => {
   const files = []
   for (const entry of entries) {
     const absolute = path.join(directory, entry.name)
-    if (entry.isDirectory()) files.push(...await walk(absolute))
+    if (entry.isDirectory()) files.push(...(await walk(absolute)))
     else files.push(absolute)
   }
   return files
@@ -28,11 +28,11 @@ const capabilityRegistry = await read('src/features/capabilities/capabilityRegis
 const workflow = await read('.github/workflows/frontend-ci.yml')
 
 const runtimeEnvKeys = new Set(
-  [...`${runtimeConfig}\n${viteConfig}`.matchAll(/(?:import\.meta\.env|env)\.(VITE_[A-Z0-9_]+)/g)].map((match) => match[1]),
+  [...`${runtimeConfig}\n${viteConfig}`.matchAll(/(?:import\.meta\.env|env)\.(VITE_[A-Z0-9_]+)/g)].map(
+    (match) => match[1],
+  ),
 )
-const documentedEnvKeys = new Set(
-  [...envExample.matchAll(/^\s*#?\s*(VITE_[A-Z0-9_]+)=/gm)].map((match) => match[1]),
-)
+const documentedEnvKeys = new Set([...envExample.matchAll(/^\s*#?\s*(VITE_[A-Z0-9_]+)=/gm)].map((match) => match[1]))
 for (const key of runtimeEnvKeys) {
   if (!documentedEnvKeys.has(key)) errors.push(`Environment variable ${key} is used but missing from .env.example.`)
 }
@@ -45,7 +45,9 @@ const sourceFiles = (await walk(SRC_ROOT)).filter((file) => /\.(ts|tsx|vue)$/.te
 for (const file of sourceFiles.filter((item) => item.endsWith('.http.ts'))) {
   const source = await readFile(file, 'utf8')
   if (/['"]\/admin-api\//.test(source)) {
-    errors.push(`${path.relative(ROOT, file)} hardcodes /admin-api; endpoints must be relative to the configured gateway base.`)
+    errors.push(
+      `${path.relative(ROOT, file)} hardcodes /admin-api; endpoints must be relative to the configured gateway base.`,
+    )
   }
 }
 
@@ -64,7 +66,10 @@ for (const file of sourceFiles) {
 }
 
 const exampleLine = envExample.match(/^# Example:\s*(.+)$/m)?.[1] ?? ''
-for (const key of exampleLine.split(',').map((item) => item.trim()).filter(Boolean)) {
+for (const key of exampleLine
+  .split(',')
+  .map((item) => item.trim())
+  .filter(Boolean)) {
   if (!declaredCapabilities.has(key)) errors.push(`.env.example references undeclared capability ${key}.`)
 }
 
@@ -84,10 +89,15 @@ else if (!workflow.includes(`node-version: '${minimumNode}'`)) {
 const requiredScripts = [
   'typecheck',
   'test',
+  'test:coverage',
   'build',
   'build:verify',
   'report:build',
   'test:e2e:mock',
+  'lint',
+  'format:check',
+  'stylelint',
+  'check:standards',
   'check:http-mock-boundary',
   'check:integration-consistency',
   'check:source-assets',
@@ -99,15 +109,35 @@ for (const script of requiredScripts) {
   if (!packageJson.scripts?.[script]) errors.push(`Missing package script: ${script}.`)
 }
 
-if (!workflow.includes('pnpm install --frozen-lockfile')) errors.push('CI must install from pnpm-lock.yaml with --frozen-lockfile.')
+if (!workflow.includes('pnpm install --frozen-lockfile'))
+  errors.push('CI must install from pnpm-lock.yaml with --frozen-lockfile.')
 if (!workflow.includes('pnpm check:source-assets')) errors.push('CI must enforce source asset budgets.')
 if (!workflow.includes('pnpm check:source-hygiene')) errors.push('CI must enforce source hygiene.')
+if (!workflow.includes('pnpm lint') && !workflow.includes('pnpm exec eslint')) errors.push('CI must run ESLint.')
+if (!workflow.includes('pnpm format:check')) errors.push('CI must check changed-file formatting.')
+if (!workflow.includes('pnpm stylelint')) errors.push('CI must enforce the SCSS regression baseline.')
+if (!workflow.includes('pnpm test:coverage')) errors.push('CI must run Vitest coverage.')
+if (!workflow.includes('frontend-coverage-report')) errors.push('CI must upload the frontend coverage report artifact.')
 if (!workflow.includes('pnpm build:verify')) errors.push('CI must build and verify production budgets.')
 if (!workflow.includes('actions/cache@v4')) errors.push('CI must cache pnpm or Playwright downloads.')
 if (!workflow.includes('frontend-build-report')) errors.push('CI must upload the frontend build report artifact.')
 if (!workflow.includes('runs-on: windows-latest')) errors.push('CI must validate quality scripts on Windows.')
-if (!workflow.includes('name: Windows quality scripts')) errors.push('CI must preserve the Windows quality scripts job name.')
-if (!workflow.includes('run: pnpm check:static')) errors.push('Windows CI must run the static quality script suite.')
+if (!workflow.includes('name: Windows quality scripts'))
+  errors.push('CI must preserve the Windows quality scripts job name.')
+
+const windowsStaticCommands = [
+  'pnpm check:http-mock-boundary',
+  'pnpm check:integration-consistency',
+  'pnpm check:source-assets',
+  'pnpm check:source-hygiene',
+  'pnpm lint',
+  'pnpm format:check',
+  'pnpm stylelint',
+]
+const windowsRunsStaticSuite =
+  workflow.includes('run: pnpm check:static') ||
+  windowsStaticCommands.every((command) => workflow.includes(`run: ${command}`))
+if (!windowsRunsStaticSuite) errors.push('Windows CI must run the complete static quality script suite.')
 
 if (errors.length > 0) {
   console.error('Integration consistency check failed:')
@@ -115,4 +145,6 @@ if (errors.length > 0) {
   process.exit(1)
 }
 
-console.log(`Integration consistency check passed: ${runtimeEnvKeys.size} env keys, ${declaredCapabilities.size} capabilities.`)
+console.log(
+  `Integration consistency check passed: ${runtimeEnvKeys.size} env keys, ${declaredCapabilities.size} capabilities.`,
+)

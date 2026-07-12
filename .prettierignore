@@ -1,0 +1,8 @@
+artifacts/
+coverage/
+dist/
+node_modules/
+public/mock-media/
+src/assets/iconfont/
+pnpm-lock.yaml
+*.tsbuildinfo

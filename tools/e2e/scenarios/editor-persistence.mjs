@@ -13,7 +13,7 @@ export const editorPersistenceScenario = {
 
     const persistedText = 'CI 自动保存与刷新恢复验证内容'
     await textarea.fill(persistedText)
-    await page.getByRole('button', { name: '保存', exact: true }).click()
+    await page.getByRole('button', { name: '生成剧本', exact: true }).click()
     await page
       .locator('.script-workbench-card__save-state')
       .getByText('已保存', { exact: true })

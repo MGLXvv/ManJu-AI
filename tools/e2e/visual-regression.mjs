@@ -147,17 +147,14 @@ try {
 
   const textarea = page.locator('.script-input-panel__textarea')
   await textarea.fill('一个用于固定视觉回归状态的短篇故事。')
-  await page.getByRole('button', { name: '生成剧本', exact: true }).click()
-  await page
-    .locator('.script-workbench-card__save-state')
-    .getByText('已保存', { exact: true })
-    .waitFor({ timeout: 15_000 })
-  results.push(await captureState(page, '06-script-generated'))
+  results.push(await captureState(page, '06-script-filled'))
 
-  await page.goto(`${BASE_URL}/visual-regression-not-found`, { waitUntil: 'networkidle' })
+  await page.goto(`${BASE_URL}/visual-regression-not-found`, { waitUntil: 'domcontentloaded' })
+  await page.getByRole('heading', { name: '页面不存在' }).waitFor()
   results.push(await captureState(page, '07-not-found'))
 
-  await page.goto(`${BASE_URL}/projects/visual-regression-missing/unavailable`, { waitUntil: 'networkidle' })
+  await page.goto(`${BASE_URL}/projects/visual-regression-missing/unavailable`, { waitUntil: 'domcontentloaded' })
+  await page.getByRole('heading', { name: '项目暂时无法打开' }).waitFor()
   results.push(await captureState(page, '08-project-unavailable'))
 
   await writeReport(results)

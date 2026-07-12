@@ -1,8 +1,9 @@
-﻿<template>
+<template>
   <nav class="project-pagination" aria-label="项目分页">
     <button
       class="project-pagination__arrow is-plain"
       type="button"
+      aria-label="上一页"
       :disabled="modelValue <= 1"
       @click="$emit('update:modelValue', modelValue - 1)"
     >
@@ -15,6 +16,8 @@
       class="project-pagination__item"
       :class="{ 'is-active': page === modelValue }"
       type="button"
+      :aria-label="`第 ${page} 页`"
+      :aria-current="page === modelValue ? 'page' : undefined"
       @click="$emit('update:modelValue', page)"
     >
       {{ page }}
@@ -23,6 +26,7 @@
     <button
       class="project-pagination__arrow is-plain"
       type="button"
+      aria-label="下一页"
       :disabled="modelValue >= totalPages"
       @click="$emit('update:modelValue', modelValue + 1)"
     >
@@ -30,7 +34,7 @@
     </button>
 
     <div class="project-pagination__jump-wrap">
-      <select class="project-pagination__select" :value="modelValue" @change="onPageSelect">
+      <select class="project-pagination__select" :value="modelValue" aria-label="跳转到页码" @change="onPageSelect">
         <option v-for="page in pages" :key="`jump-${page}`" :value="page">{{ page }}</option>
       </select>
       <FigmaIcon name="chevron-down" :size="14" class="project-pagination__select-icon" />

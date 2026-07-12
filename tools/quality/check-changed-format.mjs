@@ -1,11 +1,12 @@
 import { execFileSync } from 'node:child_process'
-import { readFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { check, getFileInfo, resolveConfig } from 'prettier'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
+const REPORT_PATH = path.join(ROOT, 'artifacts', 'quality', 'prettier.json')
 const supported = /\.(?:c?js|mjs|ts|tsx|vue|css|scss|json|md|ya?ml)$/i
 const ignored = [
   /^artifacts\//,
@@ -57,19 +58,26 @@ if (files.length === 0) {
   process.exit(0)
 }
 
-const unformatted = []
+const results = []
 
 for (const file of files) {
   const absolutePath = path.join(ROOT, file)
   const fileInfo = await getFileInfo(absolutePath)
-  if (fileInfo.ignored || !fileInfo.inferredParser) continue
+  if (fileInfo.ignored || !fileInfo.inferredParser) {
+    results.push({ file, formatted: true, skipped: true, parser: fileInfo.inferredParser })
+    continue
+  }
 
   const source = await readFile(absolutePath, 'utf8')
   const config = (await resolveConfig(absolutePath)) ?? {}
   const formatted = await check(source, { ...config, filepath: absolutePath })
-  if (!formatted) unformatted.push(file)
+  results.push({ file, formatted, skipped: false, parser: fileInfo.inferredParser })
 }
 
+await mkdir(path.dirname(REPORT_PATH), { recursive: true })
+await writeFile(REPORT_PATH, `${JSON.stringify({ base, results }, null, 2)}\n`, 'utf8')
+
+const unformatted = results.filter((result) => !result.formatted).map((result) => result.file)
 if (unformatted.length > 0) {
   console.error('Prettier check failed for changed files:')
   for (const file of unformatted) console.error(`- ${file}`)

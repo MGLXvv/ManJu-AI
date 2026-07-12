@@ -11,6 +11,19 @@
 </template>
 
 <script setup lang="ts">
+import { onBeforeUnmount, onMounted } from 'vue'
 import AppTopBar from '@/components/navigation/AppTopBar.vue'
 import EditorSideNav from '@/components/navigation/EditorSideNav.vue'
+import { retainRuntimeResource } from '@/services/runtime/runtimeResourceDiagnostics'
+
+let releaseEditorMount: (() => void) | null = null
+
+onMounted(() => {
+  releaseEditorMount = retainRuntimeResource('mountedEditors')
+})
+
+onBeforeUnmount(() => {
+  releaseEditorMount?.()
+  releaseEditorMount = null
+})
 </script>

@@ -84,10 +84,15 @@ else if (!workflow.includes(`node-version: '${minimumNode}'`)) {
 const requiredScripts = [
   'typecheck',
   'test',
+  'test:coverage',
   'build',
   'build:verify',
   'report:build',
   'test:e2e:mock',
+  'lint',
+  'format:check',
+  'stylelint',
+  'check:standards',
   'check:http-mock-boundary',
   'check:integration-consistency',
   'check:source-assets',
@@ -102,6 +107,11 @@ for (const script of requiredScripts) {
 if (!workflow.includes('pnpm install --frozen-lockfile')) errors.push('CI must install from pnpm-lock.yaml with --frozen-lockfile.')
 if (!workflow.includes('pnpm check:source-assets')) errors.push('CI must enforce source asset budgets.')
 if (!workflow.includes('pnpm check:source-hygiene')) errors.push('CI must enforce source hygiene.')
+if (!workflow.includes('pnpm lint')) errors.push('CI must run ESLint.')
+if (!workflow.includes('pnpm format:check')) errors.push('CI must check changed-file formatting.')
+if (!workflow.includes('pnpm stylelint')) errors.push('CI must enforce the SCSS regression baseline.')
+if (!workflow.includes('pnpm test:coverage')) errors.push('CI must run Vitest coverage.')
+if (!workflow.includes('frontend-coverage-report')) errors.push('CI must upload the frontend coverage report artifact.')
 if (!workflow.includes('pnpm build:verify')) errors.push('CI must build and verify production budgets.')
 if (!workflow.includes('actions/cache@v4')) errors.push('CI must cache pnpm or Playwright downloads.')
 if (!workflow.includes('frontend-build-report')) errors.push('CI must upload the frontend build report artifact.')

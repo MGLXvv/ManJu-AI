@@ -1,5 +1,5 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { spawnSync } from 'node:child_process'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
@@ -9,21 +9,23 @@ const BASELINE_PATH = path.join(ROOT, 'tools', 'quality', 'stylelint-baseline.js
 const writeBaseline = process.argv.includes('--write-baseline')
 const pnpm = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm'
 
-const result = spawnSync(
-  pnpm,
-  ['exec', 'stylelint', 'src/**/*.scss', '--formatter', 'json', '--allow-empty-input'],
-  { cwd: ROOT, encoding: 'utf8' },
-)
+const result = spawnSync(pnpm, ['exec', 'stylelint', 'src/**/*.scss', '--formatter', 'json', '--allow-empty-input'], {
+  cwd: ROOT,
+  encoding: 'utf8',
+  maxBuffer: 50 * 1024 * 1024,
+})
 
 if (result.error) throw result.error
 if (!result.stdout.trim()) {
   process.stderr.write(result.stderr)
-  throw new Error('Stylelint did not return a JSON report.')
+  throw new Error(`Stylelint did not return a JSON report (exit ${result.status ?? 'unknown'}).`)
 }
 
 const report = JSON.parse(result.stdout)
 const violations = report.flatMap((file) => {
-  const source = path.relative(ROOT, file.source).replaceAll('\\', '/')
+  const absoluteSource = file.source.startsWith('file:') ? fileURLToPath(file.source) : file.source
+  const source = path.relative(ROOT, absoluteSource).replaceAll('\\', '/')
+
   return file.warnings.map((warning) => ({
     source,
     line: warning.line,

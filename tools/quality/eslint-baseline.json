@@ -1,0 +1,49 @@
+{
+  "generatedAt": "2026-07-12T04:24:00.000Z",
+  "entries": [
+    {
+      "key": "src/api/modules/editor/editor.http.ts::no-useless-assignment",
+      "count": 1
+    },
+    {
+      "key": "src/api/modules/generation/mock-resolvers/mockGeneration.helpers.ts::@typescript-eslint/no-unused-vars",
+      "count": 1
+    },
+    {
+      "key": "src/api/modules/storyboard/storyboard.types.ts::@typescript-eslint/no-unused-vars",
+      "count": 1
+    },
+    {
+      "key": "src/components/resource/ResourceLibraryToolbar.vue::@typescript-eslint/no-unused-vars",
+      "count": 1
+    },
+    {
+      "key": "src/components/system/SystemPermissionPanel.vue::@typescript-eslint/no-unused-vars",
+      "count": 1
+    },
+    {
+      "key": "src/components/system/SystemStylePanel.vue::@typescript-eslint/no-unused-vars",
+      "count": 1
+    },
+    {
+      "key": "src/mocks/resource.mock.ts::@typescript-eslint/no-unused-vars",
+      "count": 1
+    },
+    {
+      "key": "src/pages/auth/LoginPage.vue::@typescript-eslint/no-unused-vars",
+      "count": 1
+    },
+    {
+      "key": "src/services/generation/generationTaskGateway.ts::prefer-const",
+      "count": 1
+    },
+    {
+      "key": "src/stores/settingAssets.ts::@typescript-eslint/no-unused-vars",
+      "count": 1
+    },
+    {
+      "key": "tests/unit/services/generation/dubbingGeneration.service.test.ts::@typescript-eslint/no-unused-vars",
+      "count": 1
+    }
+  ]
+}

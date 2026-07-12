@@ -85,15 +85,25 @@ const requiredScripts = [
   'typecheck',
   'test',
   'build',
+  'build:verify',
+  'report:build',
   'test:e2e:mock',
   'check:http-mock-boundary',
   'check:integration-consistency',
+  'check:source-assets',
+  'check:source-hygiene',
+  'check:build-budget',
 ]
 for (const script of requiredScripts) {
   if (!packageJson.scripts?.[script]) errors.push(`Missing package script: ${script}.`)
 }
 
 if (!workflow.includes('pnpm install --frozen-lockfile')) errors.push('CI must install from pnpm-lock.yaml with --frozen-lockfile.')
+if (!workflow.includes('pnpm check:source-assets')) errors.push('CI must enforce source asset budgets.')
+if (!workflow.includes('pnpm check:source-hygiene')) errors.push('CI must enforce source hygiene.')
+if (!workflow.includes('pnpm build:verify')) errors.push('CI must build and verify production budgets.')
+if (!workflow.includes('actions/cache@v4')) errors.push('CI must cache pnpm or Playwright downloads.')
+if (!workflow.includes('frontend-build-report')) errors.push('CI must upload the frontend build report artifact.')
 
 if (errors.length > 0) {
   console.error('Integration consistency check failed:')

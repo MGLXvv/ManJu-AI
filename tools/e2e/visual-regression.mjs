@@ -142,16 +142,17 @@ try {
   results.push(await captureState(page, '04-confirm-dialog'))
   await page.getByRole('alertdialog', { name: '确定放弃设置？' }).getByRole('button', { name: '确定' }).click()
 
-  const projectId = await createProject(page, '视觉回归编辑器项目')
+  await createProject(page, '视觉回归编辑器项目')
   results.push(await captureState(page, '05-script-input'))
 
   const textarea = page.locator('.script-input-panel__textarea')
   await textarea.fill('一个用于固定视觉回归状态的短篇故事。')
   await page.getByRole('button', { name: '生成剧本', exact: true }).click()
-  await page.locator('.script-workbench-card__save-state').getByText('已保存', { exact: true }).waitFor({ timeout: 15_000 })
-  await page.goto(`${BASE_URL}/projects/${projectId}/editor/script/storyboard`, { waitUntil: 'networkidle' })
-  await page.locator('.script-step').waitFor()
-  results.push(await captureState(page, '06-script-storyboard'))
+  await page
+    .locator('.script-workbench-card__save-state')
+    .getByText('已保存', { exact: true })
+    .waitFor({ timeout: 15_000 })
+  results.push(await captureState(page, '06-script-generated'))
 
   await page.goto(`${BASE_URL}/visual-regression-not-found`, { waitUntil: 'networkidle' })
   results.push(await captureState(page, '07-not-found'))

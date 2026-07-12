@@ -29,7 +29,15 @@
   height: 100%;
   left: 0;
   top: 0;
-  background: var(--auth-login-hero-image) center / cover no-repeat;
+  background-color: #17131f;
+  background-image: var(
+    --auth-login-hero-image,
+    radial-gradient(circle at 28% 24%, rgb(155 92 255 / 32%), transparent 36%),
+    linear-gradient(135deg, #21172f 0%, #0a0a0b 64%)
+  );
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
 }
 
 .auth-login-page__shade-all {

@@ -33,6 +33,18 @@ jobs:
           corepack enable
           corepack prepare pnpm@10.12.1 --activate
 
+      - name: Resolve pnpm store
+        id: pnpm-store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
       - name: Install dependencies from lockfile
         run: pnpm install --frozen-lockfile
 
@@ -42,14 +54,63 @@ jobs:
       - name: Check integration configuration consistency
         run: pnpm check:integration-consistency
 
+      - name: Check source asset budgets
+        run: pnpm check:source-assets
+
+      - name: Check source hygiene
+        run: pnpm check:source-hygiene
+
       - name: Type check
         run: pnpm typecheck
 
       - name: Run unit and contract tests
         run: pnpm test
 
-      - name: Build production bundle
-        run: pnpm build
+      - name: Build and verify production bundle
+        run: pnpm build:verify
+
+      - name: Upload frontend quality diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-quality-diagnostics
+          path: artifacts/quality
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload frontend build report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build-report
+          path: artifacts/build
+          if-no-files-found: ignore
+          retention-days: 14
+
+  windows-quality:
+    name: Windows quality scripts
+    runs-on: windows-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.18.0'
+
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.12.1 --activate
+
+      - name: Install dependencies from lockfile
+        run: pnpm install --frozen-lockfile
+
+      - name: Run static quality scripts
+        run: pnpm check:static
 
   mock-e2e:
     name: Playwright Mock main flow
@@ -71,8 +132,26 @@ jobs:
           corepack enable
           corepack prepare pnpm@10.12.1 --activate
 
+      - name: Resolve pnpm store
+        id: pnpm-store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
       - name: Install dependencies from lockfile
         run: pnpm install --frozen-lockfile
+
+      - name: Cache Playwright Chromium
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-chromium-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install Chromium
         run: pnpm exec playwright install --with-deps chromium

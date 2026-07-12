@@ -93,6 +93,7 @@ const requiredScripts = [
   'check:source-assets',
   'check:source-hygiene',
   'check:build-budget',
+  'check:static',
 ]
 for (const script of requiredScripts) {
   if (!packageJson.scripts?.[script]) errors.push(`Missing package script: ${script}.`)
@@ -104,6 +105,9 @@ if (!workflow.includes('pnpm check:source-hygiene')) errors.push('CI must enforc
 if (!workflow.includes('pnpm build:verify')) errors.push('CI must build and verify production budgets.')
 if (!workflow.includes('actions/cache@v4')) errors.push('CI must cache pnpm or Playwright downloads.')
 if (!workflow.includes('frontend-build-report')) errors.push('CI must upload the frontend build report artifact.')
+if (!workflow.includes('runs-on: windows-latest')) errors.push('CI must validate quality scripts on Windows.')
+if (!workflow.includes('name: Windows quality scripts')) errors.push('CI must preserve the Windows quality scripts job name.')
+if (!workflow.includes('run: pnpm check:static')) errors.push('Windows CI must run the static quality script suite.')
 
 if (errors.length > 0) {
   console.error('Integration consistency check failed:')

@@ -3,6 +3,7 @@
     <input
       :value="modelValue"
       class="project-search-box__input"
+      aria-label="搜索项目名称"
       placeholder="搜索名称"
       @input="onInput"
     />

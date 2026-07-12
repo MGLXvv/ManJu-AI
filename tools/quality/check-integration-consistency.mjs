@@ -117,7 +117,19 @@ if (!workflow.includes('actions/cache@v4')) errors.push('CI must cache pnpm or P
 if (!workflow.includes('frontend-build-report')) errors.push('CI must upload the frontend build report artifact.')
 if (!workflow.includes('runs-on: windows-latest')) errors.push('CI must validate quality scripts on Windows.')
 if (!workflow.includes('name: Windows quality scripts')) errors.push('CI must preserve the Windows quality scripts job name.')
-if (!workflow.includes('run: pnpm check:static')) errors.push('Windows CI must run the static quality script suite.')
+
+const windowsStaticCommands = [
+  'pnpm check:http-mock-boundary',
+  'pnpm check:integration-consistency',
+  'pnpm check:source-assets',
+  'pnpm check:source-hygiene',
+  'pnpm lint',
+  'pnpm format:check',
+  'pnpm stylelint',
+]
+const windowsRunsStaticSuite =
+  workflow.includes('run: pnpm check:static') || windowsStaticCommands.every((command) => workflow.includes(`run: ${command}`))
+if (!windowsRunsStaticSuite) errors.push('Windows CI must run the complete static quality script suite.')
 
 if (errors.length > 0) {
   console.error('Integration consistency check failed:')

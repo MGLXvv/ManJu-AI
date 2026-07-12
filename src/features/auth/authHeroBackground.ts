@@ -10,7 +10,8 @@ export const pickAuthHeroLoader = (
 ): AuthHeroLoader | null => {
   if (loaders.length === 0) return null
 
-  const sample = Number.isFinite(random()) ? Math.min(Math.max(random(), 0), 0.999999999) : 0
+  const randomValue = random()
+  const sample = Number.isFinite(randomValue) ? Math.min(Math.max(randomValue, 0), 0.999999999) : 0
   const index = Math.floor(sample * loaders.length)
   return loaders[index] ?? loaders[0] ?? null
 }

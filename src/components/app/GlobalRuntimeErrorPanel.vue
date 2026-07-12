@@ -2,11 +2,13 @@
   <Teleport to="body">
     <div v-if="diagnostic" class="runtime-error-backdrop" role="presentation">
       <section
+        ref="dialogRef"
         class="runtime-error-panel"
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="runtime-error-title"
         aria-describedby="runtime-error-description"
+        tabindex="-1"
       >
         <div class="runtime-error-panel__badge">运行异常</div>
         <h2 id="runtime-error-title">页面遇到了一些问题</h2>
@@ -21,7 +23,7 @@
             <dd>{{ formattedTime }}</dd>
           </div>
         </dl>
-        <p v-if="corruptedEntryCount > 0" class="runtime-error-panel__hint">
+        <p v-if="corruptedEntryCount > 0" class="runtime-error-panel__hint" aria-live="polite">
           已隔离 {{ corruptedEntryCount }} 项损坏的本地数据，可以清理后重新加载。
         </p>
         <div class="runtime-error-panel__actions">
@@ -53,6 +55,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue'
 import { clearCorruptedLocalEntries, listCorruptedLocalEntries } from '@/api/local'
+import { useAccessibleDialog } from '@/composables/useAccessibleDialog'
 import {
   clearRuntimeErrors,
   getCurrentRuntimeError,
@@ -62,6 +65,7 @@ import {
 
 const diagnostic = shallowRef<RuntimeDiagnostic | null>(getCurrentRuntimeError())
 const corruptedEntryCount = ref(listCorruptedLocalEntries().length)
+const isOpen = computed(() => Boolean(diagnostic.value))
 let unsubscribe: (() => void) | null = null
 
 const formattedTime = computed(() => {
@@ -78,6 +82,12 @@ const refreshCorruptedEntryCount = (): void => {
 const dismiss = (): void => {
   clearRuntimeErrors()
 }
+
+const { dialogRef } = useAccessibleDialog({
+  open: isOpen,
+  onRequestClose: dismiss,
+  initialFocusSelector: '.runtime-error-panel__button--primary',
+})
 
 const reloadPage = (): void => {
   clearRuntimeErrors()
@@ -127,6 +137,10 @@ onBeforeUnmount(() => {
   background: #fff;
   box-shadow: 0 24px 80px rgb(15 23 42 / 24%);
   color: #172033;
+}
+
+.runtime-error-panel:focus {
+  outline: none;
 }
 
 .runtime-error-panel__badge {
@@ -213,11 +227,5 @@ onBeforeUnmount(() => {
 
 .runtime-error-panel__button--quiet {
   color: #69758a;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .runtime-error-panel__button {
-    scroll-behavior: auto;
-  }
 }
 </style>

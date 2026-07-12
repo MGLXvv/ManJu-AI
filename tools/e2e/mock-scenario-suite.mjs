@@ -10,13 +10,19 @@ import { editorPersistenceScenario } from './scenarios/editor-persistence.mjs'
 import { projectManagementScenario } from './scenarios/project-management.mjs'
 import { runtimeRecoveryScenario } from './scenarios/runtime-recovery.mjs'
 
-const scenarios = [
+const allScenarios = [
   authSessionScenario,
   projectManagementScenario,
   editorPersistenceScenario,
   runtimeRecoveryScenario,
   accessibilityScenario,
 ]
+const requestedScenario = process.argv.find((argument) => argument.startsWith('--scenario='))?.slice('--scenario='.length)
+const scenarios = requestedScenario ? allScenarios.filter((scenario) => scenario.name === requestedScenario) : allScenarios
+
+if (requestedScenario && scenarios.length === 0) {
+  throw new Error(`Unknown Mock E2E scenario: ${requestedScenario}`)
+}
 
 const scenarioResults = []
 const accessibilityResults = []
@@ -27,7 +33,7 @@ const writeScenarioReport = async () => {
   await mkdir(ARTIFACT_DIR, { recursive: true })
   const generatedAt = new Date().toISOString()
   const failed = scenarioResults.filter((result) => result.status === 'failed')
-  const report = { generatedAt, failed: failed.length, results: scenarioResults }
+  const report = { generatedAt, failed: failed.length, requestedScenario: requestedScenario ?? null, results: scenarioResults }
   const markdown = [
     '# Mock E2E Scenario Report',
     '',

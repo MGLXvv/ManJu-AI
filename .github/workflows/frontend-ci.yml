@@ -7,85 +7,13 @@ on:
     branches: [master]
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: frontend-ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  p6-4-baseline-bootstrap:
-    if: >-
-      github.event_name == 'pull_request' &&
-      github.event.pull_request.head.repo.full_name == github.repository &&
-      github.head_ref == 'quality/assets-visual-memory' &&
-      github.actor != 'github-actions[bot]'
-    runs-on: ubuntu-latest
-    timeout-minutes: 35
-
-    steps:
-      - name: Checkout PR branch
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref }}
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22.18.0'
-
-      - name: Enable pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@10.12.1 --activate
-
-      - name: Install dependencies from lockfile
-        run: pnpm install --frozen-lockfile
-
-      - name: Format P6.4 text files
-        run: |
-          pnpm exec prettier --write \
-            .github/workflows/frontend-ci.yml \
-            build-budget.config.mjs \
-            package.json \
-            src/layouts/EditorLayout.vue \
-            src/main.ts \
-            src/pages/auth/LoginPage.vue \
-            src/services/media/mediaBlobRepository.ts \
-            src/services/runtime/runtimeResourceDiagnostics.ts \
-            src/vite-env.d.ts \
-            tests/unit/runtimeResourceDiagnostics.test.ts \
-            tools/e2e/mock-scenario-suite.mjs \
-            tools/e2e/scenarios/editor-long-session.mjs \
-            tools/e2e/visual-regression.mjs
-
-      - name: Install Chromium
-        run: pnpm exec playwright install --with-deps chromium
-
-      - name: Generate visual baselines
-        run: pnpm test:visual:update
-
-      - name: Commit formatting and baselines
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .github/workflows/frontend-ci.yml build-budget.config.mjs package.json
-          git add src/layouts/EditorLayout.vue src/main.ts src/pages/auth/LoginPage.vue
-          git add src/services/media/mediaBlobRepository.ts src/services/runtime/runtimeResourceDiagnostics.ts src/vite-env.d.ts
-          git add tests/unit/runtimeResourceDiagnostics.test.ts
-          git add -f tools/e2e/mock-scenario-suite.mjs tools/e2e/scenarios/editor-long-session.mjs tools/e2e/visual-regression.mjs tools/e2e/visual-baselines
-          git commit -m "test: add p6.4 visual baselines"
-          git push origin HEAD:${{ github.head_ref }}
-
-      - name: Upload baseline generation artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: p6-4-baseline-bootstrap
-          path: artifacts/e2e
-          if-no-files-found: ignore
-          retention-days: 14
-
   quality:
     name: Static checks, types, tests, build
     runs-on: ubuntu-latest

@@ -19,7 +19,7 @@
     "test:e2e:mock:recovery": "node tools/e2e/mock-scenario-suite.mjs --scenario=runtime-recovery",
     "test:e2e:mock:long": "node tools/e2e/mock-scenario-suite.mjs --scenario=editor-long-session",
     "test:e2e:a11y": "node tools/e2e/mock-scenario-suite.mjs --scenario=accessibility",
-    "test:visual": "node tools/e2e/visual-regression.mjs --update",
+    "test:visual": "node tools/e2e/visual-regression.mjs",
     "test:visual:update": "node tools/e2e/visual-regression.mjs --update",
     "typecheck": "vue-tsc -b",
     "lint": "node tools/quality/check-eslint-baseline.mjs",

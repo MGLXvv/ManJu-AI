@@ -47,6 +47,12 @@ export default defineConfig(({ mode }) => {
         reporter: ['text', 'json-summary', 'html', 'cobertura'],
         include: ['src/**/*.{ts,vue}'],
         exclude: ['src/assets/**', 'src/**/*.d.ts', 'src/main.ts'],
+        thresholds: {
+          statements: 41,
+          branches: 37,
+          functions: 42,
+          lines: 41,
+        },
       },
     },
   }

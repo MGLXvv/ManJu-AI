@@ -20,6 +20,7 @@ const VISUAL_ARTIFACT_DIR = path.join(ARTIFACT_DIR, 'visual')
 const MAX_DIFF_RATIO = 0.01
 
 const preparePage = async (page) => {
+  await page.locator('.global-loading-overlay').waitFor({ state: 'hidden', timeout: 15_000 })
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.addStyleTag({
     content: `

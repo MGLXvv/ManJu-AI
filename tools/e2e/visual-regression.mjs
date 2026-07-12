@@ -145,7 +145,9 @@ try {
   await createProject(page, '视觉回归编辑器项目')
   results.push(await captureState(page, '05-script-input'))
 
+  await page.getByText('自由编辑', { exact: true }).click()
   const textarea = page.locator('.script-input-panel__textarea')
+  await textarea.waitFor()
   await textarea.fill('一个用于固定视觉回归状态的短篇故事。')
   results.push(await captureState(page, '06-script-filled'))
 

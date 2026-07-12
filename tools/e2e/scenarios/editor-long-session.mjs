@@ -116,7 +116,10 @@ export const editorLongSessionScenario = {
 
     await writePerformanceReport(report)
 
-    assert(endResources.objectUrls === startResources.objectUrls, 'Object URL count did not return to the starting baseline.')
+    assert(
+      endResources.objectUrls === startResources.objectUrls,
+      'Object URL count did not return to the starting baseline.',
+    )
     assert(
       endResources.mountedEditors === startResources.mountedEditors,
       'Mounted editor count did not return to the starting baseline.',

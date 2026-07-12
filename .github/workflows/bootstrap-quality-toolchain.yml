@@ -1,0 +1,74 @@
+name: Bootstrap quality toolchain
+
+on:
+  push:
+    branches: [quality/eslint-stylelint-coverage]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bootstrap-quality-toolchain-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bootstrap:
+    if: ${{ !contains(github.event.head_commit.message, '[skip quality bootstrap]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: quality/eslint-stylelint-coverage
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.18.0'
+
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.12.1 --activate
+
+      - name: Install quality dependencies
+        run: >-
+          pnpm add --save-dev
+          eslint
+          @eslint/js
+          typescript-eslint
+          eslint-plugin-vue
+          vue-eslint-parser
+          globals
+          prettier
+          stylelint
+          stylelint-config-standard-scss
+          @vitest/coverage-v8@4.1.7
+
+      - name: Generate SCSS baseline
+        run: pnpm stylelint:baseline
+
+      - name: Format quality configuration
+        run: >-
+          pnpm exec prettier --write
+          eslint.config.mjs
+          prettier.config.mjs
+          stylelint.config.mjs
+          tools/quality/check-changed-format.mjs
+          tools/quality/check-stylelint-baseline.mjs
+          vite.config.ts
+          package.json
+
+      - name: Commit generated dependency state
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json pnpm-lock.yaml tools/quality/stylelint-baseline.json eslint.config.mjs prettier.config.mjs stylelint.config.mjs tools/quality/check-changed-format.mjs tools/quality/check-stylelint-baseline.mjs vite.config.ts
+          if git diff --cached --quiet; then
+            echo "No generated changes to commit."
+            exit 0
+          fi
+          git commit -m "chore: lock frontend quality toolchain [skip quality bootstrap]"
+          git push origin HEAD:quality/eslint-stylelint-coverage

@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  AppError,
-  normalizeAppError,
-  redactDiagnosticText,
-  sanitizeDiagnosticValue,
-} from '@/services/runtime/appError'
+import { AppError, normalizeAppError, redactDiagnosticText, sanitizeDiagnosticValue } from '@/services/runtime/appError'
 
 describe('app error', () => {
   it('normalizes unknown errors with a safe fallback', () => {

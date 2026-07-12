@@ -1,10 +1,7 @@
 import { createApp } from 'vue'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { installGlobalErrorHandlers } from '@/services/runtime/installGlobalErrorHandlers'
-import {
-  getRuntimeDiagnostics,
-  resetRuntimeDiagnostics,
-} from '@/services/runtime/runtimeDiagnostics'
+import { getRuntimeDiagnostics, resetRuntimeDiagnostics } from '@/services/runtime/runtimeDiagnostics'
 
 describe('global runtime error handlers', () => {
   beforeEach(() => {

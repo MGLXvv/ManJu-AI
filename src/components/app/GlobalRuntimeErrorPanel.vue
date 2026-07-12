@@ -25,10 +25,19 @@
           已隔离 {{ corruptedEntryCount }} 项损坏的本地数据，可以清理后重新加载。
         </p>
         <div class="runtime-error-panel__actions">
-          <button class="runtime-error-panel__button runtime-error-panel__button--primary" type="button" @click="reloadPage">
+          <button
+            class="runtime-error-panel__button runtime-error-panel__button--primary"
+            type="button"
+            @click="reloadPage"
+          >
             重新加载
           </button>
-          <button v-if="corruptedEntryCount > 0" class="runtime-error-panel__button" type="button" @click="clearAndReload">
+          <button
+            v-if="corruptedEntryCount > 0"
+            class="runtime-error-panel__button"
+            type="button"
+            @click="clearAndReload"
+          >
             清理损坏缓存
           </button>
           <button class="runtime-error-panel__button" type="button" @click="goToProjects">返回项目列表</button>

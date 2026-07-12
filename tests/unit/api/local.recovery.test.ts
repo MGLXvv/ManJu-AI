@@ -12,10 +12,7 @@ import {
   writeStorageValue,
 } from '@/api/local'
 import { API_ERROR_CODES } from '@/types/api-enums'
-import {
-  getCurrentRuntimeError,
-  resetRuntimeDiagnostics,
-} from '@/services/runtime/runtimeDiagnostics'
+import { getCurrentRuntimeError, resetRuntimeDiagnostics } from '@/services/runtime/runtimeDiagnostics'
 
 class MemoryStorage implements LocalStorageLike {
   protected readonly values = new Map<string, string>()
@@ -75,7 +72,9 @@ describe('local storage recovery', () => {
 
     expect(readStorageValue(storage, 'broken-key', { fallback: true })).toEqual({ fallback: true })
     expect(storage.getItem('broken-key')).toBeNull()
-    expect(storage.getItem(`${CORRUPTED_LOCAL_STORAGE_PREFIX}${encodeURIComponent('broken-key')}`)).toBe('{invalid-json')
+    expect(storage.getItem(`${CORRUPTED_LOCAL_STORAGE_PREFIX}${encodeURIComponent('broken-key')}`)).toBe(
+      '{invalid-json',
+    )
     expect(getCurrentRuntimeError()).toMatchObject({
       code: 'LOCAL_STORAGE_CORRUPTED',
       category: 'storage',

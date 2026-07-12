@@ -1,10 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { isEditorStepRouteName, resolveEditorRouteGuard } from '@/features/editor/editorRouteGuardState'
 import { startEditorWorkspacePersistenceSync } from '@/services/editor/editorWorkspacePersistenceSync'
-import {
-  attemptChunkLoadRecovery,
-  clearChunkLoadRecoveryMarker,
-} from '@/services/runtime/chunkLoadRecovery'
+import { attemptChunkLoadRecovery, clearChunkLoadRecoveryMarker } from '@/services/runtime/chunkLoadRecovery'
 import { reportRuntimeError } from '@/services/runtime/runtimeDiagnostics'
 import { pinia } from '@/stores'
 import { useAuthStore } from '@/stores/auth'
@@ -48,9 +45,7 @@ router.beforeEach(async (to, from, next) => {
       const saved = await editorStore.flushPendingSave('navigation')
       if (!saved) {
         uiFeedback.showToast(
-          editorStore.hasSaveConflict
-            ? '草稿已在其他位置更新，请处理版本冲突后再离开'
-            : '草稿保存失败，请重试后再离开',
+          editorStore.hasSaveConflict ? '草稿已在其他位置更新，请处理版本冲突后再离开' : '草稿保存失败，请重试后再离开',
           { tone: 'error' },
         )
         loading.end()

@@ -36,12 +36,22 @@ const memoryStorageAdapter: LocalStorageLike = {
 
 export const isQuotaExceededError = (error: unknown): boolean => {
   if (typeof DOMException !== 'undefined' && error instanceof DOMException) {
-    return error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED' || error.code === 22 || error.code === 1014
+    return (
+      error.name === 'QuotaExceededError' ||
+      error.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
+      error.code === 22 ||
+      error.code === 1014
+    )
   }
 
   if (error && typeof error === 'object') {
     const value = error as { name?: string; code?: number }
-    return value.name === 'QuotaExceededError' || value.name === 'NS_ERROR_DOM_QUOTA_REACHED' || value.code === 22 || value.code === 1014
+    return (
+      value.name === 'QuotaExceededError' ||
+      value.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
+      value.code === 22 ||
+      value.code === 1014
+    )
   }
 
   return false
@@ -85,13 +95,15 @@ const quarantineCorruptedValue = (storage: LocalStorageLike, key: string, raw: s
     // Storage may be partially unavailable; the read operation still falls back safely.
   }
 
-  reportRuntimeError(new AppError({
-    code: 'LOCAL_STORAGE_CORRUPTED',
-    category: 'storage',
-    message: '检测到损坏的本地数据，已隔离并使用默认值',
-    recoverable: true,
-    context: { key },
-  }))
+  reportRuntimeError(
+    new AppError({
+      code: 'LOCAL_STORAGE_CORRUPTED',
+      category: 'storage',
+      message: '检测到损坏的本地数据，已隔离并使用默认值',
+      recoverable: true,
+      context: { key },
+    }),
+  )
 }
 
 export const readStorageValue = <T>(storage: LocalStorageLike, key: string, fallback: T): T => {
@@ -119,13 +131,15 @@ export const readStorageValue = <T>(storage: LocalStorageLike, key: string, fall
     }
 
     if (parsed.schemaVersion !== LOCAL_STORAGE_SCHEMA_VERSION) {
-      reportRuntimeError(new AppError({
-        code: 'LOCAL_STORAGE_SCHEMA_UNSUPPORTED',
-        category: 'storage',
-        message: '本地数据版本暂不兼容，已使用默认值',
-        recoverable: true,
-        context: { key, schemaVersion: parsed.schemaVersion },
-      }))
+      reportRuntimeError(
+        new AppError({
+          code: 'LOCAL_STORAGE_SCHEMA_UNSUPPORTED',
+          category: 'storage',
+          message: '本地数据版本暂不兼容，已使用默认值',
+          recoverable: true,
+          context: { key, schemaVersion: parsed.schemaVersion },
+        }),
+      )
       return fallback
     }
 
@@ -250,7 +264,9 @@ export const listCorruptedLocalEntries = (): string[] => {
 
 export const clearCorruptedLocalEntries = (): void => {
   const browserStorage = resolveBrowserStorage()
-  for (const storage of [memoryStorageAdapter, browserStorage].filter((value): value is LocalStorageLike => Boolean(value))) {
+  for (const storage of [memoryStorageAdapter, browserStorage].filter((value): value is LocalStorageLike =>
+    Boolean(value),
+  )) {
     for (const key of collectCorruptedKeys(storage)) {
       try {
         storage.removeItem(key)

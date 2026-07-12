@@ -99,7 +99,8 @@ export const normalizeAppError = (value: unknown, fallback: NormalizeAppErrorFal
   }
 
   const record = asRecord(value)
-  const sourceMessage = value instanceof Error ? value.message : typeof record?.message === 'string' ? record.message : ''
+  const sourceMessage =
+    value instanceof Error ? value.message : typeof record?.message === 'string' ? record.message : ''
   const sourceCode = typeof record?.code === 'string' ? record.code : undefined
   const sourceCategory = typeof record?.category === 'string' ? record.category : undefined
   const validCategory =

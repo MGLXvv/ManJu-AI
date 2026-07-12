@@ -16,6 +16,10 @@ const readPerformanceMetrics = async (session) => {
 
 const average = (values) => values.reduce((total, value) => total + value, 0) / Math.max(values.length, 1)
 
+const collectGarbage = async (session) => {
+  await session.send('HeapProfiler.collectGarbage')
+}
+
 const writePerformanceReport = async (report) => {
   const directory = path.join(ARTIFACT_DIR, 'performance')
   await mkdir(directory, { recursive: true })
@@ -54,8 +58,7 @@ export const editorLongSessionScenario = {
 
     await resetBrowserState(page)
     await login(page)
-    const projectId = await createProject(page, PROJECT_NAME)
-    const editorUrl = `${BASE_URL}/projects/${projectId}/editor/script/input`
+    await createProject(page, PROJECT_NAME)
 
     await page.goto(BASE_URL, { waitUntil: 'networkidle' })
     await page.getByRole('heading', { name: '我的项目' }).waitFor()
@@ -68,6 +71,8 @@ export const editorLongSessionScenario = {
 
     const session = await page.context().newCDPSession(page)
     await session.send('Performance.enable')
+    await session.send('HeapProfiler.enable')
+    await collectGarbage(session)
     const startMetrics = await readPerformanceMetrics(session)
     const iterationDurations = []
 
@@ -76,7 +81,6 @@ export const editorLongSessionScenario = {
       const projectCard = page.locator('.project-card').filter({ hasText: PROJECT_NAME })
       await projectCard.waitFor()
       await projectCard.click()
-      await page.waitForURL(editorUrl)
       await page.locator('.script-step').waitFor()
 
       await page.evaluate(() => {
@@ -85,11 +89,12 @@ export const editorLongSessionScenario = {
         if (url) diagnostics?.revokeObjectUrlProbe(url)
       })
 
-      await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
+      await page.getByRole('link', { name: '首页' }).click()
       await page.getByRole('heading', { name: '我的项目' }).waitFor()
       iterationDurations.push(performance.now() - startedAt)
     }
 
+    await collectGarbage(session)
     await page.evaluate(() => new Promise((resolve) => window.setTimeout(resolve, 100)))
     const endResources = await page.evaluate(() => window.__MANJU_DIAGNOSTICS__?.snapshot())
     assert(endResources, 'Unable to capture the ending resource snapshot.')

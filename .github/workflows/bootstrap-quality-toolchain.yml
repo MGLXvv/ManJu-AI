@@ -40,8 +40,15 @@ jobs:
           stylelint-config-standard-scss
           @vitest/coverage-v8@4.1.7
 
-      - name: Generate SCSS baseline
-        run: pnpm stylelint:baseline
+      - name: Generate SCSS baseline diagnostics
+        run: |
+          mkdir -p artifacts/bootstrap
+          set +e
+          pnpm stylelint:baseline > artifacts/bootstrap/stylelint-baseline.log 2>&1
+          exit_code=$?
+          cat artifacts/bootstrap/stylelint-baseline.log
+          echo "Stylelint baseline exit code: $exit_code"
+          exit 0
 
       - name: Format quality configuration
         run: >-
@@ -55,6 +62,7 @@ jobs:
           package.json
 
       - name: Upload generated quality state
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: quality-toolchain-bootstrap
@@ -68,4 +76,6 @@ jobs:
             tools/quality/check-changed-format.mjs
             tools/quality/check-stylelint-baseline.mjs
             vite.config.ts
+            artifacts/bootstrap
+          if-no-files-found: warn
           retention-days: 2

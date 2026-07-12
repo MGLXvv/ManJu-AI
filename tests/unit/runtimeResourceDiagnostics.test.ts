@@ -15,8 +15,8 @@ describe('runtimeResourceDiagnostics', () => {
   })
 
   afterEach(() => {
-    delete window.__MANJU_DIAGNOSTICS__
     vi.restoreAllMocks()
+    vi.unstubAllGlobals()
   })
 
   it('tracks retained resources and releases them once', () => {
@@ -38,11 +38,14 @@ describe('runtimeResourceDiagnostics', () => {
   })
 
   it('exposes object url probes through the diagnostics bridge', () => {
-    const createObjectURL = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:diagnostic-probe')
-    const revokeObjectURL = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined)
-    const uninstall = installRuntimeResourceDiagnostics()
+    const createObjectURL = vi.fn(() => 'blob:diagnostic-probe')
+    const revokeObjectURL = vi.fn()
+    vi.stubGlobal('window', {})
+    vi.stubGlobal('URL', { createObjectURL, revokeObjectURL })
 
+    const uninstall = installRuntimeResourceDiagnostics()
     const url = window.__MANJU_DIAGNOSTICS__?.createObjectUrlProbe()
+
     expect(url).toBe('blob:diagnostic-probe')
     expect(window.__MANJU_DIAGNOSTICS__?.snapshot().objectUrls).toBe(1)
 

@@ -1,0 +1,50 @@
+name: Format runtime recovery e2e
+
+on:
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.head_ref == 'quality/runtime-error-recovery'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.18.0'
+
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.12.1 --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Format E2E file
+        run: pnpm exec prettier --write tools/e2e/mock-main-flow.mjs
+
+      - name: Commit formatting
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tools/e2e/mock-main-flow.mjs
+          if git diff --cached --quiet; then
+            echo "E2E file is already formatted."
+            exit 0
+          fi
+          git commit -m "style: format runtime recovery e2e"
+          git push origin HEAD:${{ github.head_ref }}

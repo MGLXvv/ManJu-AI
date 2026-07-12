@@ -5,7 +5,7 @@ on:
     branches: [master]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   format:
@@ -16,8 +16,10 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - name: Checkout
+      - name: Checkout PR branch
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -43,16 +45,21 @@ jobs:
             tests/unit/services/runtime/appError.test.ts \
             tests/unit/services/runtime/installGlobalErrorHandlers.test.ts
 
-      - name: Upload formatted files
-        uses: actions/upload-artifact@v4
-        with:
-          name: formatted-runtime-recovery-files
-          path: |
-            src/api/local.ts
-            src/components/app/GlobalRuntimeErrorPanel.vue
-            src/router/index.ts
-            src/services/runtime/appError.ts
-            tests/unit/api/local.recovery.test.ts
-            tests/unit/services/runtime/appError.test.ts
+      - name: Commit formatting
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/api/local.ts \
+            src/components/app/GlobalRuntimeErrorPanel.vue \
+            src/router/index.ts \
+            src/services/runtime/appError.ts \
+            tests/unit/api/local.recovery.test.ts \
+            tests/unit/services/runtime/appError.test.ts \
             tests/unit/services/runtime/installGlobalErrorHandlers.test.ts
-          retention-days: 2
+          if git diff --cached --quiet; then
+            echo "Runtime recovery files are already formatted."
+            exit 0
+          fi
+          git commit -m "style: format runtime recovery files"
+          git push origin HEAD:${{ github.head_ref }}

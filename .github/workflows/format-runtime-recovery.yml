@@ -1,0 +1,58 @@
+name: Format runtime recovery files
+
+on:
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.head_ref == 'quality/runtime-error-recovery'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.18.0'
+
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.12.1 --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Format runtime recovery files
+        run: |
+          pnpm exec prettier --write \
+            src/api/local.ts \
+            src/components/app/GlobalRuntimeErrorPanel.vue \
+            src/router/index.ts \
+            src/services/runtime/appError.ts \
+            tests/unit/api/local.recovery.test.ts \
+            tests/unit/services/runtime/appError.test.ts \
+            tests/unit/services/runtime/installGlobalErrorHandlers.test.ts
+
+      - name: Upload formatted files
+        uses: actions/upload-artifact@v4
+        with:
+          name: formatted-runtime-recovery-files
+          path: |
+            src/api/local.ts
+            src/components/app/GlobalRuntimeErrorPanel.vue
+            src/router/index.ts
+            src/services/runtime/appError.ts
+            tests/unit/api/local.recovery.test.ts
+            tests/unit/services/runtime/appError.test.ts
+            tests/unit/services/runtime/installGlobalErrorHandlers.test.ts
+          retention-days: 2

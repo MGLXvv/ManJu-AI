@@ -77,7 +77,14 @@
             :disabled="loading"
             @input="onInput('password', $event)"
           />
-          <button type="button" class="auth-card__icon-btn" :disabled="loading" @click="$emit('toggle-password')">
+          <button
+            type="button"
+            class="auth-card__icon-btn"
+            :aria-label="showPassword ? '隐藏密码' : '显示密码'"
+            :aria-pressed="showPassword"
+            :disabled="loading"
+            @click="$emit('toggle-password')"
+          >
             <FigmaIcon v-if="showPassword" name="tool-view" :size="30" />
             <FigmaIcon v-else name="tool-view-off" :size="30" />
           </button>
@@ -116,7 +123,14 @@
             :disabled="loading"
             @input="onInput('password', $event)"
           />
-          <button type="button" class="auth-card__icon-btn" :disabled="loading" @click="$emit('toggle-password')">
+          <button
+            type="button"
+            class="auth-card__icon-btn"
+            :aria-label="showPassword ? '隐藏密码' : '显示密码'"
+            :aria-pressed="showPassword"
+            :disabled="loading"
+            @click="$emit('toggle-password')"
+          >
             <FigmaIcon v-if="showPassword" name="tool-view" :size="30" />
             <FigmaIcon v-else name="tool-view-off" :size="30" />
           </button>

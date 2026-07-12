@@ -1,12 +1,17 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { isEditorStepRouteName, resolveEditorRouteGuard } from '@/features/editor/editorRouteGuardState'
 import { startEditorWorkspacePersistenceSync } from '@/services/editor/editorWorkspacePersistenceSync'
+import {
+  attemptChunkLoadRecovery,
+  clearChunkLoadRecoveryMarker,
+} from '@/services/runtime/chunkLoadRecovery'
+import { reportRuntimeError } from '@/services/runtime/runtimeDiagnostics'
 import { pinia } from '@/stores'
 import { useAuthStore } from '@/stores/auth'
 import { useEditorStore } from '@/stores/editor'
 import { usePageLoadingStore } from '@/stores/pageLoading'
 import { useUiFeedbackStore } from '@/stores/uiFeedback'
-import { isGuestOnly, requiresAuth } from './routeMeta'
+import { isGuestOnly, requiresAuth, resolveRouteTitle } from './routeMeta'
 import { routes } from './routes'
 
 export const router = createRouter({
@@ -64,10 +69,17 @@ router.beforeEach(async (to, from, next) => {
         if (editorStore.currentProjectId !== projectId || !editorStore.draft) {
           await editorStore.loadDraft(projectId)
         }
-      } catch {
-        uiFeedback.showToast('项目草稿加载失败，请稍后再试', { tone: 'error' })
+      } catch (error) {
+        reportRuntimeError(error, {
+          code: 'EDITOR_WORKSPACE_LOAD_FAILED',
+          category: 'route',
+          message: '项目草稿加载失败',
+          context: { projectId },
+        })
+        loading.end()
         next({
-          name: 'projects',
+          name: 'project-unavailable',
+          params: { projectId },
           replace: true,
         })
         return
@@ -90,7 +102,13 @@ router.beforeEach(async (to, from, next) => {
   next()
 })
 
-router.afterEach(async () => {
+router.afterEach(async (to) => {
+  clearChunkLoadRecoveryMarker()
+
+  if (typeof document !== 'undefined') {
+    document.title = resolveRouteTitle(to)
+  }
+
   const loading = usePageLoadingStore(pinia)
   const elapsed = Date.now() - loading.startedAt
   const delay = Math.max(0, MIN_LOADING_MS - elapsed)
@@ -102,7 +120,18 @@ router.afterEach(async () => {
   loading.end()
 })
 
-router.onError(() => {
+router.onError((error, to) => {
   const loading = usePageLoadingStore(pinia)
   loading.end()
+
+  if (attemptChunkLoadRecovery(error, { routeKey: to?.fullPath })) {
+    return
+  }
+
+  reportRuntimeError(error, {
+    code: 'ROUTE_NAVIGATION_FAILED',
+    category: 'route',
+    message: '页面资源加载失败，请重新加载后重试',
+    context: { route: to?.fullPath },
+  })
 })

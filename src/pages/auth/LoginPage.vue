@@ -134,7 +134,7 @@ const countdownTimers: Partial<Record<'code' | 'register' | 'reset', number>> = 
 const scanTimers: number[] = []
 let toastTimer: number | null = null
 
-const heroModules = import.meta.glob<AuthHeroModule>('../../assets/auth/login-bg-*.png', { query: '?url' })
+const heroModules = import.meta.glob<AuthHeroModule>('../../assets/auth/login-bg-*.webp', { query: '?url' })
 const heroLoaders = Object.values(heroModules)
 const heroUrl = ref('')
 

@@ -134,15 +134,11 @@ const countdownTimers: Partial<Record<'code' | 'register' | 'reset', number>> = 
 const scanTimers: number[] = []
 let toastTimer: number | null = null
 
-const heroModules = import.meta.glob<AuthHeroModule>('../../assets/auth/login-bg-*.png', { query: '?url' })
+const heroModules = import.meta.glob<AuthHeroModule>('../../assets/auth/login-bg-*.webp', { query: '?url' })
 const heroLoaders = Object.values(heroModules)
 const heroUrl = ref('')
 
-const heroStyle = computed(() =>
-  heroUrl.value
-    ? { '--auth-login-hero-image': `url("${heroUrl.value}")` }
-    : {},
-)
+const heroStyle = computed(() => (heroUrl.value ? { '--auth-login-hero-image': `url("${heroUrl.value}")` } : {}))
 
 onMounted(async () => {
   heroUrl.value = (await loadAuthHeroBackground(heroLoaders)) ?? ''
@@ -154,7 +150,9 @@ const providerLabelMap = computed<Record<ThirdPartyProvider, string>>(() => ({
   alipay: t('auth.thirdParty.providerAlipay'),
 }))
 
-const bindProviderLabel = computed(() => (pendingBindProvider.value ? providerLabelMap.value[pendingBindProvider.value] : ''))
+const bindProviderLabel = computed(() =>
+  pendingBindProvider.value ? providerLabelMap.value[pendingBindProvider.value] : '',
+)
 
 const currentAccount = computed({
   get: () => {
@@ -193,7 +191,14 @@ const currentPassword = computed({
 })
 
 const currentCode = computed({
-  get: () => (mode.value === 'code' ? codeForm.code : mode.value === 'register' ? registerForm.code : mode.value === 'reset' ? resetForm.code : ''),
+  get: () =>
+    mode.value === 'code'
+      ? codeForm.code
+      : mode.value === 'register'
+        ? registerForm.code
+        : mode.value === 'reset'
+          ? resetForm.code
+          : '',
   set: (value: string) => {
     if (mode.value === 'code') codeForm.code = value
     else if (mode.value === 'register') registerForm.code = value
@@ -277,9 +282,21 @@ const clearScanTimers = (): void => {
 const startThirdPartyScanFlow = (): void => {
   clearScanTimers()
   thirdPartyScanState.value = 'idle'
-  scanTimers.push(window.setTimeout(() => { thirdPartyScanState.value = 'scanned' }, 1600))
-  scanTimers.push(window.setTimeout(() => { thirdPartyScanState.value = 'confirmed' }, 3200))
-  scanTimers.push(window.setTimeout(() => { thirdPartyScanState.value = 'expired' }, 15000))
+  scanTimers.push(
+    window.setTimeout(() => {
+      thirdPartyScanState.value = 'scanned'
+    }, 1600),
+  )
+  scanTimers.push(
+    window.setTimeout(() => {
+      thirdPartyScanState.value = 'confirmed'
+    }, 3200),
+  )
+  scanTimers.push(
+    window.setTimeout(() => {
+      thirdPartyScanState.value = 'expired'
+    }, 15000),
+  )
 }
 
 const getFormSnapshot = (targetMode: AuthMode): { account: string; username: string } => {
@@ -382,8 +399,13 @@ const validate = (): boolean => {
     if (!form.account.trim()) nextErrors.account = t('auth.validation.requiredPhoneOrEmail')
     if (!form.code.trim()) nextErrors.code = t('auth.validation.requiredCode')
     else if (form.code.trim().length < 4) nextErrors.code = t('auth.validation.invalidCode')
-    if (!form.password.trim()) nextErrors.password = mode.value === 'register' ? t('auth.validation.requiredRegisterPassword') : t('auth.validation.requiredResetPassword')
-    else if (form.password.trim().length < 6 || form.password.trim().length > 16) nextErrors.password = t('auth.validation.invalidPasswordLength')
+    if (!form.password.trim())
+      nextErrors.password =
+        mode.value === 'register'
+          ? t('auth.validation.requiredRegisterPassword')
+          : t('auth.validation.requiredResetPassword')
+    else if (form.password.trim().length < 6 || form.password.trim().length > 16)
+      nextErrors.password = t('auth.validation.invalidPasswordLength')
   }
 
   if (!agreed.value) nextErrors.agree = t('auth.validation.agreeRequired')
@@ -501,7 +523,9 @@ const onThirdPartyExistingLogin = async (): Promise<void> => {
   try {
     const result = await authStore.loginWithThirdParty({ provider: activeProvider.value, firstLogin: false })
     if (result.session) {
-      await completeAndRedirect(t('auth.toast.thirdPartySuccess', { provider: providerLabelMap.value[activeProvider.value] }))
+      await completeAndRedirect(
+        t('auth.toast.thirdPartySuccess', { provider: providerLabelMap.value[activeProvider.value] }),
+      )
     }
   } catch (error) {
     showToast(mapAuthError(error, 'auth.error.thirdPartyFallback'), 'error')

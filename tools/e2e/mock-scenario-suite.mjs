@@ -6,6 +6,7 @@ import { writeAccessibilityReport } from './accessibility-scan.mjs'
 import { ARTIFACT_DIR, startMockServer, writeScenarioFailure } from './mock-e2e-runtime.mjs'
 import { accessibilityScenario } from './scenarios/accessibility.mjs'
 import { authSessionScenario } from './scenarios/auth-session.mjs'
+import { editorLongSessionScenario } from './scenarios/editor-long-session.mjs'
 import { editorPersistenceScenario } from './scenarios/editor-persistence.mjs'
 import { projectManagementScenario } from './scenarios/project-management.mjs'
 import { runtimeRecoveryScenario } from './scenarios/runtime-recovery.mjs'
@@ -15,6 +16,7 @@ const allScenarios = [
   projectManagementScenario,
   editorPersistenceScenario,
   runtimeRecoveryScenario,
+  editorLongSessionScenario,
   accessibilityScenario,
 ]
 const requestedScenario = process.argv
@@ -63,13 +65,19 @@ const writeScenarioReport = async () => {
 
 try {
   await server.waitUntilReady()
-  browser = await chromium.launch({ headless: true })
+  browser = await chromium.launch({
+    headless: true,
+    args: ['--enable-precise-memory-info'],
+  })
 
   for (const scenario of scenarios) {
     const startedAt = Date.now()
     const context = await browser.newContext({
       viewport: { width: 1440, height: 900 },
+      deviceScaleFactor: 1,
       reducedMotion: 'reduce',
+      locale: 'zh-CN',
+      timezoneId: 'Asia/Shanghai',
     })
     const page = await context.newPage()
 

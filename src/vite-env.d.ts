@@ -8,10 +8,25 @@ interface ImportMetaEnv {
   readonly VITE_DISABLED_CAPABILITIES?: string
   readonly VITE_DEV_PROXY_TARGET?: string
   readonly VITE_DEV_ALLOWED_HOSTS?: string
+  readonly VITE_RUNTIME_DIAGNOSTICS?: string
 }
 
 interface ImportMeta {
   readonly env: ImportMetaEnv
+}
+
+interface Window {
+  __MANJU_DIAGNOSTICS__?: {
+    snapshot: () => {
+      objectUrls: number
+      timers: number
+      subscriptions: number
+      mountedEditors: number
+      capturedAt: string
+    }
+    createObjectUrlProbe: () => string
+    revokeObjectUrlProbe: (url: string) => void
+  }
 }
 
 declare module '*.vue' {

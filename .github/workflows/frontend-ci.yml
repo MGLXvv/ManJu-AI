@@ -159,7 +159,7 @@ jobs:
     name: Playwright Mock main flow
     needs: quality
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     steps:
       - name: Checkout
@@ -201,6 +201,9 @@ jobs:
 
       - name: Run Playwright Mock main flow
         run: pnpm test:e2e:mock
+
+      - name: Run visual regression
+        run: pnpm test:visual
 
       - name: Upload E2E reports and failure artifacts
         if: always()

@@ -21,6 +21,7 @@
     "test:e2e:a11y": "node tools/e2e/mock-scenario-suite.mjs --scenario=accessibility",
     "test:visual": "node tools/e2e/visual-regression.mjs",
     "test:visual:update": "node tools/e2e/visual-regression.mjs --update",
+    "integration:project-crud": "node tools/integration/project-crud.mjs",
     "typecheck": "vue-tsc -b",
     "lint": "node tools/quality/check-eslint-baseline.mjs",
     "lint:raw": "eslint . --max-warnings=0",

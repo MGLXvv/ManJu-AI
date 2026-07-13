@@ -7,7 +7,6 @@
 
 <script setup lang="ts">
 import { watch } from 'vue'
-import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import GlobalLoadingOverlay from '@/components/app/GlobalLoadingOverlay.vue'
 import GlobalRuntimeErrorPanel from '@/components/app/GlobalRuntimeErrorPanel.vue'
@@ -20,7 +19,6 @@ const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
 const uiFeedback = useUiFeedbackStore()
-const { t } = useI18n()
 
 watch(
   () => auth.isAuthenticated,
@@ -44,7 +42,7 @@ watch(
     if (!forbidden) return
     const reason = auth.consumeSessionIssue()
     if (reason === 'forbidden') {
-      uiFeedback.showToast(t('auth.error.forbidden'), { tone: 'error' })
+      uiFeedback.showToast('当前账号没有执行此操作的权限', { tone: 'error' })
     }
   },
 )
@@ -53,10 +51,10 @@ watch(
   () => route.query.reason,
   (reason) => {
     if (reason === 'expired') {
-      uiFeedback.showToast(t('auth.error.sessionExpired'), { tone: 'error' })
+      uiFeedback.showToast('登录状态已失效，请重新登录', { tone: 'error' })
     }
     if (reason === 'forbidden') {
-      uiFeedback.showToast(t('auth.error.forbidden'), { tone: 'error' })
+      uiFeedback.showToast('当前账号没有访问此页面的权限', { tone: 'error' })
     }
   },
   { immediate: true },

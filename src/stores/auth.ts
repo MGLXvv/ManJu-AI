@@ -20,6 +20,7 @@ export const useAuthStore = defineStore('auth', () => {
   const token = authSessionState.token
   const user = authSessionState.user
   const forbidden = authSessionState.forbidden
+  const sessionIssue = authSessionState.sessionIssue
   const loading = ref(false)
   const profileValidated = ref(runtimeConfig.apiMode === 'mock' && Boolean(token.value))
 
@@ -163,11 +164,13 @@ export const useAuthStore = defineStore('auth', () => {
     token,
     user,
     forbidden,
+    sessionIssue,
     userName,
     loading,
     isAuthenticated,
     sessionValidated,
     restoreSession,
+    consumeSessionIssue: authSessionBridge.consumeSessionIssue,
     login,
     loginByPassword,
     loginByCode,

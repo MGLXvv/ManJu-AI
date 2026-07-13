@@ -10,6 +10,12 @@ export const http = axios.create({
 
 attachInterceptors(http, {
   getToken: () => authSessionBridge.getToken(),
-  onUnauthorized: () => authSessionBridge.clear(),
+  onUnauthorized: () => {
+    if (authSessionBridge.getToken()) {
+      authSessionBridge.expire()
+      return
+    }
+    authSessionBridge.clear()
+  },
   onForbidden: () => authSessionBridge.markForbidden(),
 })

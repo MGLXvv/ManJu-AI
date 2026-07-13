@@ -32,8 +32,11 @@ export const mapBackendProjectToProject = (dto: BackendProjectDTO): Project => {
     ratio: dto.aspectRatio === '9:16' ? '9:16' : '16:9',
     style: dto.style?.trim() ? dto.style : 'anime',
     updatedAt: dto.updateTime || dto.createTime || '',
-    duration: typeof dto.durationSeconds === 'number' && dto.durationSeconds > 0 ? `${dto.durationSeconds}s` : undefined,
-    coverUrl: dto.coverUrl,
+    duration:
+      typeof dto.durationSeconds === 'number' && dto.durationSeconds > 0
+        ? `${dto.durationSeconds}s`
+        : undefined,
+    coverUrl: dto.coverUrl || undefined,
     favorite: false,
   }
 }
@@ -45,11 +48,9 @@ export const mapBackendProjectListQuery = (query?: ProjectListQuery): BackendPro
   status:
     query?.status === 'completed'
       ? 'COMPLETED'
-      : query?.status === 'in_progress'
-        ? 'IN_PROGRESS'
-        : query?.status === 'all'
-          ? 'ALL'
-          : undefined,
+      : query?.status === 'all' || query?.status === 'in_progress'
+        ? 'ALL'
+        : undefined,
 })
 
 export const mapCreateProjectInputToBackendPayload = (

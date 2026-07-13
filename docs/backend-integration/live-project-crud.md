@@ -22,9 +22,11 @@
 在已经连接 WireGuard、并确认可以访问 `10.10.3.26:48080` 的终端中执行：
 
 ```powershell
+$credential = Get-Credential -UserName "admin" -Message "输入 ManJu 测试环境密码"
+
 $env:MANJU_API_BASE_URL = "http://10.10.3.26:48080/admin-api"
-$env:MANJU_USERNAME = "<测试账号>"
-$env:MANJU_PASSWORD = "<测试密码>"
+$env:MANJU_USERNAME = $credential.UserName
+$env:MANJU_PASSWORD = $credential.GetNetworkCredential().Password
 $env:MANJU_ALLOW_WRITE = "true"
 
 pnpm integration:project-crud
@@ -32,9 +34,28 @@ pnpm integration:project-crud
 Remove-Item Env:MANJU_PASSWORD
 Remove-Item Env:MANJU_USERNAME
 Remove-Item Env:MANJU_ALLOW_WRITE
+$credential = $null
 ```
 
-不要把真实密码写入 `.env.integration.example`、GitHub Issue、PR、CI Secret 以外的共享文本或命令历史文件。
+不要把真实密码写入 `.env.integration.example`、GitHub Issue、PR、共享文本或 PowerShell 命令历史。
+
+### 读取报告
+
+Windows PowerShell 5.1 默认可能按照系统 ANSI 代码页读取无 BOM 的 UTF-8 文件。必须显式指定 UTF-8，否则中文 `msg` 可能乱码，并导致 `ConvertFrom-Json` 将原本有效的 JSON 误判为语法错误：
+
+```powershell
+$report = Get-Content .\artifacts\integration\project-crud-report.json -Raw -Encoding UTF8 |
+  ConvertFrom-Json
+
+$report | Select-Object generatedAt, success, baseUrl, error | Format-List
+$report.steps |
+  Select-Object name, method, endpoint, ok, httpStatus, code, msg, error |
+  Format-Table -AutoSize
+$report.project | Format-List
+$report.cleanup | Format-List
+```
+
+PowerShell 7 通常默认使用 UTF-8，但仍建议保留 `-Encoding UTF8`，使命令在不同 Windows 环境中行为一致。
 
 ## Bash
 

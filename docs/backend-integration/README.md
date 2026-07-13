@@ -18,6 +18,7 @@
 - [`protocol.md`](./protocol.md)：CommonResult、分页、Token、错误处理和数据约定；
 - [`endpoint-matrix.md`](./endpoint-matrix.md)：后端端点、准备度与前端接入状态；
 - [`implementation-audit.md`](./implementation-audit.md)：当前前端实现差异和修复优先级；
+- [`verification-log.md`](./verification-log.md)：脱敏真实响应、验证范围和未完成项；
 - [`open-questions.md`](./open-questions.md)：仍需后端确认或真实请求验证的事项。
 
 仓库根目录的 `.env.integration.example` 提供测试环境配置模板，不包含账号、密码或 Token。

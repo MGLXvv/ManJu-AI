@@ -30,6 +30,6 @@ export interface AuthApiContract {
   resetPassword(payload: ResetPasswordPayload): Promise<void>
   requestCode(account: string): Promise<{ code: string }>
   loginWithThirdParty(payload: ThirdPartyLoginPayload): Promise<ThirdPartyLoginResult>
-  getProfile(): Promise<AuthUser>
+  getProfile?(): Promise<AuthUser>
   logout(): Promise<void>
 }

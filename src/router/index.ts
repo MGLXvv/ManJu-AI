@@ -30,7 +30,14 @@ router.beforeEach(async (to, from, next) => {
   }
 
   if (requiresAuth(to) && !auth.isAuthenticated) {
-    next({ name: 'login', query: { redirect: to.fullPath } })
+    const reason = auth.consumeSessionIssue()
+    next({
+      name: 'login',
+      query: {
+        redirect: to.fullPath,
+        ...(reason ? { reason } : {}),
+      },
+    })
     return
   }
 

@@ -88,10 +88,10 @@ describe('auth HTTP session restoration', () => {
     expect(store.user?.name).toBe('Admin')
   })
 
-  it('returns false when a profile 401 has already cleared the session', async () => {
+  it('returns false and preserves the expiration reason when profile 401 clears the session', async () => {
     const { authSessionBridge } = await import('@/services/auth/authSessionBridge')
     getProfile.mockImplementation(async () => {
-      authSessionBridge.clear()
+      authSessionBridge.expire()
       throw new Error('UNAUTHORIZED')
     })
 
@@ -104,5 +104,8 @@ describe('auth HTTP session restoration', () => {
     expect(store.token).toBeNull()
     expect(store.user).toBeNull()
     expect(store.sessionValidated).toBe(false)
+    expect(store.sessionIssue).toBe('expired')
+    expect(store.consumeSessionIssue()).toBe('expired')
+    expect(store.sessionIssue).toBeNull()
   })
 })

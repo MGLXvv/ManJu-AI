@@ -1,4 +1,4 @@
-﻿export type AuthMode = 'password' | 'code' | 'register' | 'reset'
+export type AuthMode = 'password' | 'code' | 'register' | 'reset'
 export type ThirdPartyProvider = 'wechat' | 'qq' | 'alipay'
 
 export interface PasswordLoginPayload {
@@ -40,6 +40,10 @@ export interface ThirdPartyLoginPayload {
 export interface AuthUser {
   id: string
   name: string
+  username?: string
+  nickname?: string
+  roles?: string[]
+  permissions?: string[]
 }
 
 export interface AuthSession {

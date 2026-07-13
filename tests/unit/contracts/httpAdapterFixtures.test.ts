@@ -5,8 +5,10 @@ import { editorHttpApi } from '@/api/modules/editor/editor.http'
 import { generationHttpApi } from '@/api/modules/generation/generation.http'
 import { projectHttpApi } from '@/api/modules/project/project.http'
 import authLoginFixture from '../../fixtures/http/auth-login.success.json'
+import authProfileFixture from '../../fixtures/http/auth-profile.success.json'
 import editorWorkspaceFixture from '../../fixtures/http/editor-workspace.success.json'
 import generationListFixture from '../../fixtures/http/generation-list.success.json'
+import projectDetailFixture from '../../fixtures/http/project-detail.success.json'
 import projectListFixture from '../../fixtures/http/project-list.success.json'
 
 vi.mock('@/api/http', () => ({
@@ -40,11 +42,34 @@ describe('HTTP adapter contract fixtures', () => {
       user: {
         id: '42',
         name: 'fixture-user',
+        username: 'fixture-user',
       },
     })
   })
 
-  it('maps the project list fixture into frontend project fields', async () => {
+  it('maps the real profile fixture into roles and permissions', async () => {
+    vi.mocked(http.get).mockResolvedValue({ data: authProfileFixture })
+
+    const profile = await authHttpApi.getProfile?.()
+
+    expect(http.get).toHaveBeenCalledWith('/system/auth/profile')
+    expect(profile).toEqual({
+      id: '1',
+      name: 'Admin',
+      username: 'admin',
+      nickname: 'Admin',
+      roles: ['super_admin'],
+      permissions: [
+        'system:menu:read',
+        'aidrama:project:read',
+        'aidrama:project:write',
+        'aidrama:storyboard:read',
+        'aidrama:task:read',
+      ],
+    })
+  })
+
+  it('maps the real project list fixture into frontend project fields', async () => {
     vi.mocked(http.get).mockResolvedValue({ data: projectListFixture })
 
     const projects = await projectHttpApi.list({
@@ -63,15 +88,33 @@ describe('HTTP adapter contract fixtures', () => {
     })
     expect(projects).toEqual([
       expect.objectContaining({
-        id: '7',
-        name: 'Fixture Project',
+        id: '18',
+        name: 'ss',
         status: 'in_progress',
-        currentStep: 'storyboard',
+        currentStep: 'script',
         ratio: '9:16',
-        style: 'ink',
-        duration: '120s',
+        style: '电影感',
+        duration: '60s',
+        updatedAt: '2026-07-04T07:52:49',
       }),
     ])
+  })
+
+  it('maps the real project detail fixture without inventing workflow state', async () => {
+    vi.mocked(http.get).mockResolvedValue({ data: projectDetailFixture })
+
+    const project = await projectHttpApi.getById('18')
+
+    expect(http.get).toHaveBeenCalledWith('/aidrama/projects/18')
+    expect(project).toMatchObject({
+      id: '18',
+      name: 'ss',
+      status: 'in_progress',
+      currentStep: 'script',
+      ratio: '9:16',
+      style: '电影感',
+      duration: '60s',
+    })
   })
 
   it('combines script and storyboard workspace fixtures into an EditorDraft', async () => {

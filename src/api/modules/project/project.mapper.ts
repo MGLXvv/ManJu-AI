@@ -18,11 +18,7 @@ const normalizeProjectStatus = (status?: string): Project['status'] =>
 
 export const mapBackendProjectToProject = (dto: BackendProjectDTO): Project => {
   const status = normalizeProjectStatus(dto.status)
-  const currentStep = isWorkflowStep(dto.currentStep)
-    ? dto.currentStep
-    : status === 'completed'
-      ? 'complete'
-      : 'script'
+  const currentStep = isWorkflowStep(dto.currentStep) ? dto.currentStep : status === 'completed' ? 'complete' : 'script'
 
   return {
     id: String(dto.id),
@@ -32,8 +28,9 @@ export const mapBackendProjectToProject = (dto: BackendProjectDTO): Project => {
     ratio: dto.aspectRatio === '9:16' ? '9:16' : '16:9',
     style: dto.style?.trim() ? dto.style : 'anime',
     updatedAt: dto.updateTime || dto.createTime || '',
-    duration: typeof dto.durationSeconds === 'number' && dto.durationSeconds > 0 ? `${dto.durationSeconds}s` : undefined,
-    coverUrl: dto.coverUrl,
+    duration:
+      typeof dto.durationSeconds === 'number' && dto.durationSeconds > 0 ? `${dto.durationSeconds}s` : undefined,
+    coverUrl: dto.coverUrl || undefined,
     favorite: false,
   }
 }
@@ -45,16 +42,12 @@ export const mapBackendProjectListQuery = (query?: ProjectListQuery): BackendPro
   status:
     query?.status === 'completed'
       ? 'COMPLETED'
-      : query?.status === 'in_progress'
-        ? 'IN_PROGRESS'
-        : query?.status === 'all'
-          ? 'ALL'
-          : undefined,
+      : query?.status === 'all' || query?.status === 'in_progress'
+        ? 'ALL'
+        : undefined,
 })
 
-export const mapCreateProjectInputToBackendPayload = (
-  input: CreateProjectInput,
-): BackendCreateProjectPayload => ({
+export const mapCreateProjectInputToBackendPayload = (input: CreateProjectInput): BackendCreateProjectPayload => ({
   name: input.name,
   description: '',
   aspectRatio: input.ratio,
@@ -63,9 +56,7 @@ export const mapCreateProjectInputToBackendPayload = (
   durationSeconds: 60,
 })
 
-export const mapUpdateProjectInputToBackendPayload = (
-  input: UpdateProjectInput,
-): BackendUpdateProjectPayload => ({
+export const mapUpdateProjectInputToBackendPayload = (input: UpdateProjectInput): BackendUpdateProjectPayload => ({
   ...(input.name ? { name: input.name } : {}),
   ...(input.status ? { status: input.status === 'completed' ? 'COMPLETED' : 'IN_PROGRESS' } : {}),
 })

@@ -1,0 +1,13 @@
+{
+  "userId": 1,
+  "username": "admin",
+  "nickname": "Admin",
+  "roles": ["super_admin"],
+  "permissions": [
+    "system:menu:read",
+    "aidrama:project:read",
+    "aidrama:project:write",
+    "aidrama:storyboard:read",
+    "aidrama:task:read"
+  ]
+}

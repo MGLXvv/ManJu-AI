@@ -11,7 +11,7 @@ const resolveAuthApi = async (): Promise<AuthApiContract> => {
   return authHttpApi
 }
 
-export const authApi: AuthApiContract = {
+export const authApi: AuthApiContract & Required<Pick<AuthApiContract, 'getProfile'>> = {
   async login(payload) {
     return (await resolveAuthApi()).login(payload)
   },
@@ -38,6 +38,14 @@ export const authApi: AuthApiContract = {
 
   async loginWithThirdParty(payload) {
     return (await resolveAuthApi()).loginWithThirdParty(payload)
+  },
+
+  async getProfile() {
+    const api = await resolveAuthApi()
+    if (!api.getProfile) {
+      throw new Error('AUTH_PROFILE_UNSUPPORTED')
+    }
+    return api.getProfile()
   },
 
   async logout() {

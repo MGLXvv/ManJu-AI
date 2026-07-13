@@ -35,14 +35,14 @@ describe('project mapper', () => {
     })
   })
 
-  it('falls back to conservative defaults for unknown backend values', () => {
+  it('maps draft and unknown backend states to the script workbench', () => {
     const project = mapBackendProjectToProject({
       id: 'abc',
       name: 'Unknown Demo',
-      status: 'WAITING',
+      status: 'DRAFT',
       currentStep: 'unknown-step',
       aspectRatio: '1:1',
-      createTime: '2026-06-24 09:00:00',
+      createTime: '2026-07-04T07:52:49',
     })
 
     expect(project).toMatchObject({
@@ -51,7 +51,7 @@ describe('project mapper', () => {
       currentStep: 'script',
       ratio: '16:9',
       style: 'anime',
-      updatedAt: '2026-06-24 09:00:00',
+      updatedAt: '2026-07-04T07:52:49',
       favorite: false,
     })
   })
@@ -67,7 +67,7 @@ describe('project mapper', () => {
     expect(project.currentStep).toBe('complete')
   })
 
-  it('maps frontend list query to backend query params', () => {
+  it('requests all backend states for the frontend in-progress filter', () => {
     expect(
       mapBackendProjectListQuery({
         page: 2,
@@ -79,7 +79,7 @@ describe('project mapper', () => {
       pageNo: 2,
       pageSize: 20,
       keyword: 'hero',
-      status: 'IN_PROGRESS',
+      status: 'ALL',
     })
   })
 

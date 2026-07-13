@@ -1,8 +1,10 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { authApi } from '@/api/auth.api'
+import { runtimeConfig } from '@/config/runtimeConfig'
 import { applyAuthSession, authSessionBridge, authSessionState } from '@/services/auth/authSessionBridge'
 import type {
+  AuthSession,
   CodeLoginPayload,
   LoginPayload,
   PasswordLoginPayload,
@@ -19,14 +21,70 @@ export const useAuthStore = defineStore('auth', () => {
   const user = authSessionState.user
   const forbidden = authSessionState.forbidden
   const loading = ref(false)
+  const profileValidated = ref(runtimeConfig.apiMode === 'mock' && Boolean(token.value))
 
   const isAuthenticated = computed(() => Boolean(token.value))
+  const sessionValidated = computed(() => isAuthenticated.value && profileValidated.value)
   const userName = computed(() => user.value?.name ?? '用户')
+
+  const applyVerifiedSession = async (session: AuthSession): Promise<void> => {
+    applyAuthSession(session)
+
+    if (runtimeConfig.apiMode !== 'http') {
+      profileValidated.value = true
+      return
+    }
+
+    try {
+      const profile = await authApi.getProfile()
+      applyAuthSession({ token: session.token, user: profile })
+      profileValidated.value = true
+    } catch (error) {
+      profileValidated.value = false
+      authSessionBridge.clear()
+      throw error
+    }
+  }
+
+  const restoreSession = async (): Promise<boolean> => {
+    if (!token.value) {
+      profileValidated.value = false
+      return false
+    }
+
+    if (runtimeConfig.apiMode !== 'http') {
+      profileValidated.value = true
+      return true
+    }
+
+    if (profileValidated.value) {
+      return true
+    }
+
+    try {
+      const currentToken = token.value
+      const profile = await authApi.getProfile()
+      if (!currentToken || token.value !== currentToken) {
+        profileValidated.value = false
+        return false
+      }
+
+      applyAuthSession({ token: currentToken, user: profile })
+      profileValidated.value = true
+      return true
+    } catch (error) {
+      profileValidated.value = false
+      if (!token.value) {
+        return false
+      }
+      throw error
+    }
+  }
 
   const login = async (payload: LoginPayload): Promise<void> => {
     loading.value = true
     try {
-      applyAuthSession(await authApi.login(payload))
+      await applyVerifiedSession(await authApi.login(payload))
     } finally {
       loading.value = false
     }
@@ -35,7 +93,7 @@ export const useAuthStore = defineStore('auth', () => {
   const loginByPassword = async (payload: PasswordLoginPayload): Promise<void> => {
     loading.value = true
     try {
-      applyAuthSession(await authApi.loginByPassword(payload))
+      await applyVerifiedSession(await authApi.loginByPassword(payload))
     } finally {
       loading.value = false
     }
@@ -44,7 +102,7 @@ export const useAuthStore = defineStore('auth', () => {
   const loginByCode = async (payload: CodeLoginPayload): Promise<void> => {
     loading.value = true
     try {
-      applyAuthSession(await authApi.loginByCode(payload))
+      await applyVerifiedSession(await authApi.loginByCode(payload))
     } finally {
       loading.value = false
     }
@@ -53,7 +111,7 @@ export const useAuthStore = defineStore('auth', () => {
   const register = async (payload: RegisterPayload): Promise<void> => {
     loading.value = true
     try {
-      applyAuthSession(await authApi.register(payload))
+      await applyVerifiedSession(await authApi.register(payload))
     } finally {
       loading.value = false
     }
@@ -82,7 +140,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const result = await authApi.loginWithThirdParty(payload)
       if (result.session) {
-        applyAuthSession(result.session)
+        await applyVerifiedSession(result.session)
       }
       return result
     } finally {
@@ -95,6 +153,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       await authApi.logout()
     } finally {
+      profileValidated.value = false
       authSessionBridge.clear()
       loading.value = false
     }
@@ -107,6 +166,8 @@ export const useAuthStore = defineStore('auth', () => {
     userName,
     loading,
     isAuthenticated,
+    sessionValidated,
+    restoreSession,
     login,
     loginByPassword,
     loginByCode,

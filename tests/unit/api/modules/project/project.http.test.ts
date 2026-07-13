@@ -23,18 +23,19 @@ describe('projectHttpApi', () => {
     vi.resetModules()
   })
 
-  it('maps list query and normalizes backend project list', async () => {
+  it('maps list query and normalizes the confirmed list total envelope', async () => {
     get.mockResolvedValue({
       data: {
-        records: [
+        list: [
           {
             id: 1,
             name: 'Alpha',
-            status: 'IN_PROGRESS',
+            status: 'DRAFT',
             aspectRatio: '16:9',
-            createTime: '2026-06-24 10:00:00',
+            createTime: '2026-07-04T07:52:49',
           },
         ],
+        total: 1,
       },
     })
 
@@ -49,7 +50,7 @@ describe('projectHttpApi', () => {
         keyword: 'Alpha',
       },
     })
-    expect(projects[0]).toMatchObject({ id: '1', name: 'Alpha', status: 'in_progress' })
+    expect(projects[0]).toMatchObject({ id: '1', name: 'Alpha', status: 'in_progress', currentStep: 'script' })
   })
 
   it('fetches detail by backend route and maps the project dto', async () => {

@@ -28,14 +28,25 @@ export interface ImportProjectInput {
 export interface BackendProjectDTO {
   id: number | string
   name: string
+  description?: string | null
   status?: string
+  statusLabel?: string | null
+  statusTag?: string | null
+  latestTaskStatus?: string | null
+  latestErrorMessage?: string | null
   currentStep?: string
   aspectRatio?: string
   style?: string
+  language?: string
   durationSeconds?: number
-  coverUrl?: string
+  coverUrl?: string | null
   createTime?: string
   updateTime?: string
+}
+
+export interface BackendProjectPageDTO {
+  list?: BackendProjectDTO[]
+  total?: number
 }
 
 export interface BackendProjectListQuery {

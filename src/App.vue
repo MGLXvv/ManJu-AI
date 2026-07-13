@@ -48,4 +48,17 @@ watch(
     }
   },
 )
+
+watch(
+  () => route.query.reason,
+  (reason) => {
+    if (reason === 'expired') {
+      uiFeedback.showToast(t('auth.error.sessionExpired'), { tone: 'error' })
+    }
+    if (reason === 'forbidden') {
+      uiFeedback.showToast(t('auth.error.forbidden'), { tone: 'error' })
+    }
+  },
+  { immediate: true },
+)
 </script>

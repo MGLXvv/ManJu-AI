@@ -97,16 +97,16 @@ Adapter 不得默认假设 `records`、`tasks`、`voices` 或 `templates` 是列
 
 ## 错误处理
 
-| 场景 | 前端行为 |
-|---|---|
-| 业务 `code=400` | 显示后端 `msg`，保留安全错误码和 requestId |
-| `code=401` / HTTP 401 | 清理会话并跳转登录 |
-| `code=403` / HTTP 403 | 保留会话，显示无权限状态 |
-| HTTP 404 | 记录 Method、URL、脱敏 Request、Response |
-| HTTP/业务 500 | 保留发生时间、路径和安全诊断信息 |
-| 网络失败 | 不切回 Mock，提供重试或恢复入口 |
-| CONTROLLED_REJECT | 显示稳定的“当前阶段不可用”提示 |
-| NO_OP_SUCCESS | 可更新本地 UI，但不得宣称真实业务已完成 |
+| 场景                  | 前端行为                                   |
+| --------------------- | ------------------------------------------ |
+| 业务 `code=400`       | 显示后端 `msg`，保留安全错误码和 requestId |
+| `code=401` / HTTP 401 | 清理会话并跳转登录                         |
+| `code=403` / HTTP 403 | 保留会话，显示无权限状态                   |
+| HTTP 404              | 记录 Method、URL、脱敏 Request、Response   |
+| HTTP/业务 500         | 保留发生时间、路径和安全诊断信息           |
+| 网络失败              | 不切回 Mock，提供重试或恢复入口            |
+| CONTROLLED_REJECT     | 显示稳定的“当前阶段不可用”提示             |
+| NO_OP_SUCCESS         | 可更新本地 UI，但不得宣称真实业务已完成    |
 
 ## 枚举和前置条件
 

@@ -14,27 +14,43 @@
 8. 页面和 Store 基本通过 API Contract/Service 访问后端；
 9. Mock 与 HTTP 模式仍然隔离，能力开关可阻止未验证写操作。
 
-## P0：开始真实联调前必须修复
+## 本轮已修复
 
-### Project 分页响应不匹配
+### Auth Profile 与 Session 恢复
 
-当前：
+- 新增 `GET /system/auth/profile` HTTP 映射；
+- 登录后使用 Profile 补全 nickname、roles 和 permissions；
+- 应用启动时，HTTP 模式使用已有不透明 Token 请求 Profile；
+- Profile 返回 401 并由拦截器清理 Session 后，恢复结果为未登录；
+- Mock 模式不调用 Profile，不改变现有 Mock 登录和 E2E 行为；
+- 密码、Token 和 Authorization Header 不进入 Fixture 或文档。
 
-```ts
-http.get<{ records?: BackendProjectDTO[] }>('/aidrama/projects')
-return data.records ?? []
+### Project 分页与真实 DTO
+
+- 项目列表由错误的 `records` 改为确认的 `list/total`；
+- 新增真实项目列表和详情 Fixture；
+- `DRAFT` 映射为前端 `in_progress`，缺少工作流步骤时从 `script` 开始；
+- 进行中筛选暂时请求 `status=ALL`，再由前端领域状态过滤，避免把 `DRAFT` 项目排除；
+- DTO 已补充 description、statusTag、language、latestTaskStatus 和 latestErrorMessage 等真实字段。
+
+以上改动达到 `implemented`，但在 WireGuard 测试环境完成页面刷新、401、创建、更新和删除验收前，不能标记为 `verified`。
+
+## P0：本阶段仍需完成
+
+### Project 创建、更新和删除真实验收
+
+`POST /aidrama/projects` 的请求结构已按后端文档实现，但尚未实际调用。需要创建临时项目并在同一验证流程中完成：
+
+```text
+create -> detail -> update name -> delete -> confirm list no longer contains item
 ```
 
-确认契约：
+真实验收后应保存脱敏响应 Fixture，并确认：
 
-```json
-{
-  "list": [],
-  "total": 0
-}
-```
-
-影响：HTTP 模式项目列表可能始终为空，即使请求成功。
+- 创建响应是完整项目 DTO 还是仅 ID；
+- 更新允许修改的字段和状态枚举；
+- 删除后的 HTTP 状态、业务 code 和逻辑删除可见性；
+- 是否返回 requestId 或 traceId。
 
 ### Project Export / Import compat 路径不匹配
 
@@ -45,14 +61,14 @@ GET  /projects/{projectId}/export
 POST /projects/import  // controlled reject
 ```
 
-当前前端：
+当前前端仍保留：
 
 ```text
 GET  /aidrama/projects/{projectId}/export
 POST /aidrama/projects/import
 ```
 
-影响：Export compat 可能 404；Import 不应尝试真实调用。
+Export compat 尚未进入本轮认证与项目主链；Import 能力必须继续关闭。
 
 ### Project Asset Adapter 路径和模型不匹配
 
@@ -64,10 +80,6 @@ PUT /projects/{projectId}/assets
 ```
 
 确认契约使用 `/aidrama/projects/{projectId}/assets`，并以单资产 CRUD、workspace/raw、batch-delete 等形式提供，没有“PUT 整个 assets 数组”契约。
-
-### Auth Profile 未接入
-
-登录已实现，但没有使用 `GET /system/auth/profile` 验证服务端 Session。当前刷新恢复主要依赖本地会话；后端重启后 Token 失效时，需要等待下一次业务请求触发 401。
 
 ## P1：后端已 READY，但前端仍关闭或只读
 
@@ -96,11 +108,10 @@ PUT /projects/{projectId}/assets
 PRIVATE / SYSTEM / SHARED
 ```
 
-### 列表包裹字段
+### 其他列表包裹字段
 
-以下 Adapter 假设模块自定义字段，但后端通用分页说明为 `list/total`：
+Project 已通过真实 Fixture 确认为 `list/total`。以下 Adapter 仍假设模块自定义字段：
 
-- Project：`records`；
 - Generation：`tasks`；
 - Voice：`voices`；
 - Script Template：`templates`。
@@ -109,7 +120,7 @@ PRIVATE / SYSTEM / SHARED
 
 ## P1：错误处理风险
 
-`editorHttpApi.getDraft()` 捕获 Storyboard Workspace 的所有错误并返回空 `shots`。这不是切换 Mock，但会把 401、403、500、契约错误和真实空数据混为一类。HTTP 模式应只对后端明确允许的“尚无分镜”状态做空值映射，其余错误继续抛出。
+`editorHttpApi.getDraft()` 捕获 Storyboard Workspace 的所有错误并返回空 `shots`。这会把 401、403、500、契约错误和真实空数据混为一类。HTTP 模式应只对后端明确允许的“尚无分镜”状态做空值映射，其余错误继续抛出。
 
 System NO_OP 接口可能返回 `data=null`。当前 `markMessageRead`、`markAllRead` 直接读取 `data.message` / `data.messages`，需要加空值保护。
 
@@ -126,17 +137,16 @@ System NO_OP 接口可能返回 `data=null`。当前 `markMessageRead`、`markAl
 
 ## 推荐实施顺序
 
-1. Auth Profile + Project list/detail/create/update/delete；
-2. 修正分页 Mapper、路径和 Fixture；
-3. Project overview/statistics/copy/batch-delete；
-4. Script Workspace；
-5. Storyboard Workspace 与 CRUD；
-6. Project Asset 与 Resource Library；
-7. Generation Task list/detail/cancel/retry；
-8. Voice 与 Script Template；
-9. Provider Sandbox 测试工具；
-10. Export Mock 契约；
-11. 等待真实算法和媒体接口后再进入生产链路。
+1. 完成 Auth Profile + Project list/detail/create/update/delete 的真实验收；
+2. Project overview/statistics/copy/batch-delete；
+3. Script Workspace；
+4. Storyboard Workspace 与 CRUD；
+5. Project Asset 与 Resource Library；
+6. Generation Task list/detail/cancel/retry；
+7. Voice 与 Script Template；
+8. Provider Sandbox 测试工具；
+9. Export Mock 契约；
+10. 等待真实算法和媒体接口后再进入生产链路。
 
 ## 验证要求
 

@@ -21,8 +21,8 @@
 当前：
 
 ```ts
-http.get<{ records?: BackendProjectDTO[] }>("/aidrama/projects");
-return data.records ?? [];
+http.get<{ records?: BackendProjectDTO[] }>('/aidrama/projects')
+return data.records ?? []
 ```
 
 确认契约：

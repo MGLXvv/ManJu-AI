@@ -7,6 +7,7 @@ import {
 } from './project.mapper'
 import type {
   BackendProjectDTO,
+  BackendProjectPageDTO,
   CreateProjectInput,
   ImportProjectInput,
   ProjectApiContract,
@@ -17,10 +18,10 @@ const PROJECTS_PATH = '/aidrama/projects'
 
 export const projectHttpApi: ProjectApiContract = {
   async list(query) {
-    const { data } = await http.get<{ records?: BackendProjectDTO[] }>(PROJECTS_PATH, {
+    const { data } = await http.get<BackendProjectPageDTO>(PROJECTS_PATH, {
       params: mapBackendProjectListQuery(query),
     })
-    return (data.records ?? []).map(mapBackendProjectToProject)
+    return (data.list ?? []).map(mapBackendProjectToProject)
   },
 
   async getById(id) {

@@ -4,38 +4,38 @@
 
 ## Auth
 
-| 接口                               | 后端         | 前端            | 结论                                                     |
-| ---------------------------------- | ------------ | --------------- | -------------------------------------------------------- |
-| `POST /system/auth/login`          | READY        | implemented     | 已使用 `username/password`，映射不透明 Token             |
-| `GET /system/auth/profile`         | READY        | implemented     | 登录后补全用户信息，启动时校验持久化 Session             |
-| `POST /system/auth/send-code`      | READY        | unsupported     | Adapter 明确抛出 unsupported                             |
-| `POST /system/auth/code-login`     | READY        | unsupported     | Adapter 明确抛出 unsupported                             |
-| `POST /system/auth/register`       | READY        | unsupported     | Adapter 明确抛出 unsupported                             |
-| `POST /system/auth/reset-password` | READY        | unsupported     | Adapter 明确抛出 unsupported                             |
-| `POST /system/auth/social/login`   | partial      | unsupported     | 后端真实平台未正式联调，保持隐藏合理                     |
-| Refresh Token                      | unavailable  | not implemented | 后端没有换新接口，禁止前端自动刷新                       |
-| Logout                             | undocumented | local only      | 当前只清理前端会话                                       |
+| 接口                               | 后端         | 前端            | 结论                                         |
+| ---------------------------------- | ------------ | --------------- | -------------------------------------------- |
+| `POST /system/auth/login`          | READY        | implemented     | 已使用 `username/password`，映射不透明 Token |
+| `GET /system/auth/profile`         | READY        | implemented     | 登录后补全用户信息，启动时校验持久化 Session |
+| `POST /system/auth/send-code`      | READY        | unsupported     | Adapter 明确抛出 unsupported                 |
+| `POST /system/auth/code-login`     | READY        | unsupported     | Adapter 明确抛出 unsupported                 |
+| `POST /system/auth/register`       | READY        | unsupported     | Adapter 明确抛出 unsupported                 |
+| `POST /system/auth/reset-password` | READY        | unsupported     | Adapter 明确抛出 unsupported                 |
+| `POST /system/auth/social/login`   | partial      | unsupported     | 后端真实平台未正式联调，保持隐藏合理         |
+| Refresh Token                      | unavailable  | not implemented | 后端没有换新接口，禁止前端自动刷新           |
+| Logout                             | undocumented | local only      | 当前只清理前端会话                           |
 
 Profile 已有真实响应 Fixture，但刷新恢复、401 和网络失败仍需在 WireGuard 测试环境完成页面验收后才能标记为 `verified`。
 
 ## Project
 
-| 接口                                           | 后端              | 前端        | 结论                                                                  |
-| ---------------------------------------------- | ----------------- | ----------- | --------------------------------------------------------------------- |
-| `GET /aidrama/projects`                        | READY             | implemented | 已按真实 `list/total` Fixture 映射；`DRAFT` 归入前端进行中状态         |
-| `GET /aidrama/projects/{id}`                   | READY             | implemented | 已按真实详情 Fixture 验证主要字段和空值                               |
-| `POST /aidrama/projects`                       | READY             | partial     | 请求字段已按规格实现，但尚未执行真实创建                              |
-| `PUT /aidrama/projects/{id}`                   | READY             | partial     | 仅映射 name/status，真实可更新字段和状态写入尚未验证                   |
-| `DELETE /aidrama/projects/{id}`                | READY             | implemented | 路径已实现，逻辑删除仍需真实页面验收                                  |
-| `POST /aidrama/projects/batch-delete`          | READY             | missing     | 未接入                                                                |
-| `POST /aidrama/projects/{id}/copy`             | READY             | missing     | 未接入                                                                |
-| `GET /aidrama/projects/statistics`             | READY             | missing     | 未接入                                                                |
-| `GET /aidrama/projects/{id}/overview`          | READY             | missing     | 未接入                                                                |
-| `GET /aidrama/projects/{id}/tasks`             | READY             | missing     | 未接入                                                                |
-| `GET /aidrama/projects/{id}/pipeline`          | READY             | missing     | 未接入                                                                |
-| `POST /aidrama/projects/{id}/start-generation` | Mock READY        | missing     | 未接入                                                                |
-| `GET /projects/{id}/export`                    | REAL compat       | mismatch    | 后端 compat 路径无 `/aidrama`，前端仍使用旧路径                       |
-| `POST /projects/import`                        | controlled-reject | mismatch    | 前端预留路径和语义均不符；能力保持关闭                                |
+| 接口                                           | 后端              | 前端        | 结论                                                           |
+| ---------------------------------------------- | ----------------- | ----------- | -------------------------------------------------------------- |
+| `GET /aidrama/projects`                        | READY             | implemented | 已按真实 `list/total` Fixture 映射；`DRAFT` 归入前端进行中状态 |
+| `GET /aidrama/projects/{id}`                   | READY             | implemented | 已按真实详情 Fixture 验证主要字段和空值                        |
+| `POST /aidrama/projects`                       | READY             | partial     | 请求字段已按规格实现，但尚未执行真实创建                       |
+| `PUT /aidrama/projects/{id}`                   | READY             | partial     | 仅映射 name/status，真实可更新字段和状态写入尚未验证           |
+| `DELETE /aidrama/projects/{id}`                | READY             | implemented | 路径已实现，逻辑删除仍需真实页面验收                           |
+| `POST /aidrama/projects/batch-delete`          | READY             | missing     | 未接入                                                         |
+| `POST /aidrama/projects/{id}/copy`             | READY             | missing     | 未接入                                                         |
+| `GET /aidrama/projects/statistics`             | READY             | missing     | 未接入                                                         |
+| `GET /aidrama/projects/{id}/overview`          | READY             | missing     | 未接入                                                         |
+| `GET /aidrama/projects/{id}/tasks`             | READY             | missing     | 未接入                                                         |
+| `GET /aidrama/projects/{id}/pipeline`          | READY             | missing     | 未接入                                                         |
+| `POST /aidrama/projects/{id}/start-generation` | Mock READY        | missing     | 未接入                                                         |
+| `GET /projects/{id}/export`                    | REAL compat       | mismatch    | 后端 compat 路径无 `/aidrama`，前端仍使用旧路径                |
+| `POST /projects/import`                        | controlled-reject | mismatch    | 前端预留路径和语义均不符；能力保持关闭                         |
 
 进行中筛选当前请求 `status=ALL` 后在前端按领域状态过滤，避免把真实 `DRAFT` 项目误排除。后端状态筛选枚举确认后再改为精确服务端过滤。
 

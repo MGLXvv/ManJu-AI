@@ -40,6 +40,10 @@ export const authApi: AuthApiContract = {
     return (await resolveAuthApi()).loginWithThirdParty(payload)
   },
 
+  async getProfile() {
+    return (await resolveAuthApi()).getProfile()
+  },
+
   async logout() {
     return (await resolveAuthApi()).logout()
   },

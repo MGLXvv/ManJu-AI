@@ -30,18 +30,12 @@ export const projectHttpApi: ProjectApiContract = {
   },
 
   async create(input: CreateProjectInput) {
-    const { data } = await http.post<BackendProjectDTO>(
-      PROJECTS_PATH,
-      mapCreateProjectInputToBackendPayload(input),
-    )
+    const { data } = await http.post<BackendProjectDTO>(PROJECTS_PATH, mapCreateProjectInputToBackendPayload(input))
     return mapBackendProjectToProject(data)
   },
 
   async importProjects(inputs: ImportProjectInput[]) {
-    const { data } = await http.post<{ projects?: BackendProjectDTO[] }>(
-      `${PROJECTS_PATH}/import`,
-      inputs,
-    )
+    const { data } = await http.post<{ projects?: BackendProjectDTO[] }>(`${PROJECTS_PATH}/import`, inputs)
     return (data.projects ?? []).map(mapBackendProjectToProject)
   },
 

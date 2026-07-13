@@ -1,0 +1,16 @@
+{
+  "id": 18,
+  "name": "ss",
+  "description": "",
+  "coverUrl": "",
+  "status": "DRAFT",
+  "statusTag": "draft",
+  "aspectRatio": "9:16",
+  "style": "电影感",
+  "language": "zh-CN",
+  "durationSeconds": 60,
+  "latestTaskStatus": null,
+  "latestErrorMessage": null,
+  "createTime": "2026-07-04T07:52:49",
+  "updateTime": "2026-07-04T07:52:49"
+}

@@ -2,14 +2,14 @@
 
 ## 测试环境
 
-| 项目 | 值 |
-|---|---|
-| 后端 Base URL | `http://10.10.3.26:48080` |
-| Health | `GET /admin-api/health` |
-| API 前缀 | `/admin-api` |
-| 网络入口 | WireGuard 内网 IP + Spring Boot 端口 |
-| Nginx 正式入口 | 尚未配置 |
-| Provider 模式 | Image、Video、TTS 当前为 Mock/Readiness |
+| 项目           | 值                                      |
+| -------------- | --------------------------------------- |
+| 后端 Base URL  | `http://10.10.3.26:48080`               |
+| Health         | `GET /admin-api/health`                 |
+| API 前缀       | `/admin-api`                            |
+| 网络入口       | WireGuard 内网 IP + Spring Boot 端口    |
+| Nginx 正式入口 | 尚未配置                                |
+| Provider 模式  | Image、Video、TTS 当前为 Mock/Readiness |
 
 ## 启动前检查
 
@@ -74,13 +74,13 @@ Authorization: Bearer <accessToken>
 
 ## 配置职责
 
-| 层 | 责任 |
-|---|---|
-| 页面/Store | 只调用领域 API 或 Service，不拼接网关路径 |
-| HTTP Adapter | 拼接模块路径，如 `/aidrama/projects` |
-| `runtimeConfig` | 提供 `/admin-api` 基础前缀 |
-| Vite Proxy | 本地把 `/admin-api` 转发到测试服务器 |
-| Nginx | 正式环境统一域名、HTTPS 与反向代理，当前未配置 |
-| 后端 | Spring Boot Controller、鉴权和业务响应 |
+| 层              | 责任                                           |
+| --------------- | ---------------------------------------------- |
+| 页面/Store      | 只调用领域 API 或 Service，不拼接网关路径      |
+| HTTP Adapter    | 拼接模块路径，如 `/aidrama/projects`           |
+| `runtimeConfig` | 提供 `/admin-api` 基础前缀                     |
+| Vite Proxy      | 本地把 `/admin-api` 转发到测试服务器           |
+| Nginx           | 正式环境统一域名、HTTPS 与反向代理，当前未配置 |
+| 后端            | Spring Boot Controller、鉴权和业务响应         |
 
 禁止同时把 `VITE_API_BASE_URL` 配成包含 `/admin-api` 的绝对地址，又在代理或模块中重复添加 `/admin-api`。

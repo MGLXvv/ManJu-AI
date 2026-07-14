@@ -24,7 +24,7 @@
     "integration:auth-session": "node tools/integration/auth-session.mjs",
     "integration:project-crud": "node tools/integration/project-crud.mjs",
     "scaffold:http-module": "node tools/integration/scaffold-http-module.mjs",
-    "typecheck": "vue-tsc -b",
+    "typecheck": "node tools/quality/check-types.mjs",
     "lint": "node tools/quality/check-eslint-baseline.mjs",
     "lint:raw": "eslint . --max-warnings=0",
     "lint:fix": "eslint . --fix",

@@ -31,7 +31,9 @@
    说明后续人员如何基于现有 Runtime Config、Shared HTTP Client、双 Adapter、Capability、Task Gateway、Persistence 和 Upload 边界接入真实后端。
 3. [`http-module-template.md`](./http-module-template.md)  
    提供可复制的 Contract、DTO、Mapper、HTTP Adapter、Mock Adapter、测试和 Capability 模板。
-4. [`../api-contract-status-matrix.md`](../api-contract-status-matrix.md)  
+4. [`scaffold-http-module.md`](./scaffold-http-module.md)  
+   说明如何使用 `pnpm scaffold:http-module <module-name>` 安全生成模块骨架。
+5. [`../api-contract-status-matrix.md`](../api-contract-status-matrix.md)  
    查看模块级当前状态和升级规则。
 
 ## 其他文件
@@ -40,7 +42,8 @@
 - [`protocol.md`](./protocol.md)：CommonResult、分页、Token、错误处理和数据约定；
 - [`endpoint-matrix.md`](./endpoint-matrix.md)：后端文档端点与前端实现审计；
 - [`implementation-audit.md`](./implementation-audit.md)：当前前端实现差异和修复优先级；
-- [`verification-log.md`](./verification-log.md)：脱敏真实验证结果和失败证据；
+- [`verification-log.md`](./verification-log.md)：Auth 与 Project 的脱敏真实验证记录；
+- [`script-live-findings.md`](./script-live-findings.md)：Script Workspace 部分验证和未闭环结论；
 - [`live-auth-session.md`](./live-auth-session.md)：真实登录、Profile 和无效 Token 401 验证流程；
 - [`live-project-crud.md`](./live-project-crud.md)：可清理的真实项目 CRUD 验证流程；
 - [`open-questions.md`](./open-questions.md)：仍需后端确认的事项。

@@ -33,9 +33,6 @@ describe('Script Workspace CLI request adapter', () => {
 
     await adaptedFetch('http://backend.test/admin-api/aidrama/projects/1/script/draft', init)
 
-    expect(fetchImpl).toHaveBeenCalledWith(
-      'http://backend.test/admin-api/aidrama/projects/1/script/draft',
-      init,
-    )
+    expect(fetchImpl).toHaveBeenCalledWith('http://backend.test/admin-api/aidrama/projects/1/script/draft', init)
   })
 })

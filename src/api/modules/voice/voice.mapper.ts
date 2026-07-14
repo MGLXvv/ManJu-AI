@@ -10,10 +10,16 @@ export interface BackendVoiceDTO {
   updateTime?: string | null
 }
 
-export const mapBackendVoiceToVoiceAsset = (record: BackendVoiceDTO): VoiceAsset => ({
-  id: String(record.id ?? ''),
-  name: record.name ?? '',
-  audioUrl: record.audioUrl ?? '',
-  duration: typeof record.duration === 'number' ? record.duration : 0,
-  createdAt: record.createdAt ?? record.createTime ?? record.updateTime ?? '',
-})
+export const mapBackendVoiceToVoiceAsset = (record: BackendVoiceDTO): VoiceAsset => {
+  if (record.id === null || record.id === undefined || record.id === '') {
+    throw new Error('VOICE_ENTITY_ID_MISSING')
+  }
+
+  return {
+    id: String(record.id),
+    name: record.name ?? '',
+    audioUrl: record.audioUrl ?? '',
+    duration: typeof record.duration === 'number' ? record.duration : 0,
+    createdAt: record.createdAt ?? record.createTime ?? record.updateTime ?? '',
+  }
+}

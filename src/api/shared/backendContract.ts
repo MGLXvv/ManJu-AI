@@ -1,17 +1,6 @@
-export type BackendEndpointReadiness =
-  | 'READY'
-  | 'REAL'
-  | 'MOCK'
-  | 'PARTIAL'
-  | 'CONTROLLED_REJECT'
-  | 'NO_OP'
-  | 'UNKNOWN'
+export type BackendEndpointReadiness = 'READY' | 'REAL' | 'MOCK' | 'PARTIAL' | 'CONTROLLED_REJECT' | 'NO_OP' | 'UNKNOWN'
 
-export type FrontendIntegrationEvidence =
-  | 'not-started'
-  | 'adapter-only'
-  | 'fixture-verified'
-  | 'live-verified'
+export type FrontendIntegrationEvidence = 'not-started' | 'adapter-only' | 'fixture-verified' | 'live-verified'
 
 export interface BackendEndpointContract {
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'

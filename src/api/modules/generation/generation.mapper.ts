@@ -26,19 +26,32 @@ export interface BackendGenerationTaskDTO {
 const taskTypes = new Set<string>(Object.values(GENERATION_TASK_TYPES))
 const taskStatuses = new Set<string>(Object.values(GENERATION_TASK_STATUSES))
 
+const requireIdentifier = (value: string | number | null | undefined, code: string): string => {
+  if (value === null || value === undefined || value === '') {
+    throw new Error(code)
+  }
+  return String(value)
+}
+
 const normalizeTaskType = (value?: string | null): GenerationTaskType => {
   const normalized = value?.trim().toLowerCase() ?? ''
-  return taskTypes.has(normalized) ? (normalized as GenerationTaskType) : GENERATION_TASK_TYPES.script
+  if (!taskTypes.has(normalized)) {
+    throw new Error(`GENERATION_TASK_TYPE_UNSUPPORTED:${value ?? 'missing'}`)
+  }
+  return normalized as GenerationTaskType
 }
 
 const normalizeTaskStatus = (value?: string | null): GenerationTaskStatus => {
   const normalized = value?.trim().toLowerCase() ?? ''
-  return taskStatuses.has(normalized) ? (normalized as GenerationTaskStatus) : GENERATION_TASK_STATUSES.queued
+  if (!taskStatuses.has(normalized)) {
+    throw new Error(`GENERATION_TASK_STATUS_UNSUPPORTED:${value ?? 'missing'}`)
+  }
+  return normalized as GenerationTaskStatus
 }
 
 export const mapBackendGenerationTask = (task: BackendGenerationTaskDTO): GenerationTask => ({
-  id: String(task.id ?? task.taskId ?? ''),
-  projectId: String(task.projectId ?? ''),
+  id: requireIdentifier(task.id ?? task.taskId, 'GENERATION_TASK_ID_MISSING'),
+  projectId: requireIdentifier(task.projectId, 'GENERATION_TASK_PROJECT_ID_MISSING'),
   shotId:
     task.shotId !== null && task.shotId !== undefined
       ? String(task.shotId)

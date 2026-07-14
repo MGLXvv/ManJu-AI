@@ -107,8 +107,7 @@ export const mapUpdateResourceInputToBackendPayload = (
   if (input.imageUrl !== undefined) payload.imageUrl = input.imageUrl
   if (input.source !== undefined) payload.scope = mapResourceSourceToBackendScope(input.source)
 
-  const touchesExtraMeta =
-    hasOwn(input, 'prompt') || hasOwn(input, 'source') || hasOwn(input, 'selectedVoiceId')
+  const touchesExtraMeta = hasOwn(input, 'prompt') || hasOwn(input, 'source') || hasOwn(input, 'selectedVoiceId')
 
   if (touchesExtraMeta) {
     if (input.prompt === undefined || input.source === undefined) {

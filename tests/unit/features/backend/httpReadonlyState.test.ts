@@ -23,7 +23,7 @@ describe('resolveHttpReadonlyState', () => {
     })
   })
 
-  it('returns readonly state with per-domain message in http mode', async () => {
+  it('keeps Phase1 real catalog writes enabled and controlled-reject system writes readonly', async () => {
     vi.doMock('@/config/runtimeConfig', () => ({
       runtimeConfig: {
         apiMode: 'http',
@@ -35,12 +35,16 @@ describe('resolveHttpReadonlyState', () => {
     const { resolveHttpReadonlyState } = await import('@/features/backend/httpReadonlyState')
 
     expect(resolveHttpReadonlyState('voice')).toEqual({
-      readonly: true,
-      message: '当前 HTTP 联调阶段暂不支持音色新增、编辑或删除',
+      readonly: false,
+      message: '',
+    })
+    expect(resolveHttpReadonlyState('resource')).toEqual({
+      readonly: false,
+      message: '',
     })
     expect(resolveHttpReadonlyState('system')).toEqual({
       readonly: true,
-      message: '当前 HTTP 联调阶段暂不支持系统管理写操作',
+      message: 'Phase1 系统样式和权限写接口为受控拒绝',
     })
   })
 })

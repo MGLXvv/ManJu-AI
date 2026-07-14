@@ -20,6 +20,8 @@ const HTTP_LOAD_PARTITIONS = new Set<EditorPersistencePartition>([
   EDITOR_PERSISTENCE_PARTITIONS.storyboard,
 ])
 
+const HTTP_SAVE_PARTITIONS = new Set<EditorPersistencePartition>([EDITOR_PERSISTENCE_PARTITIONS.script])
+
 const assertSupportedPartitions = (
   partitions: EditorPersistencePartition[],
   supported: Set<EditorPersistencePartition>,
@@ -45,6 +47,19 @@ const resolveSaveRevision = (response: BackendScriptSaveResponse | null | undefi
 
 const resolveSavedAt = (response: BackendScriptSaveResponse | null | undefined, fallback: string): string =>
   response?.updateTime || response?.updatedAt || fallback
+
+const assertScriptContentContractConfirmed = (generatedContent: string): void => {
+  if (!generatedContent.trim()) return
+
+  throw createApiError({
+    message: 'Script generated-content persistence is waiting for a confirmed backend request DTO.',
+    code: API_ERROR_CODES.editorScriptContentContractUnconfirmed,
+    details: {
+      endpoint: '/aidrama/projects/{projectId}/script/content',
+      requiredEvidence: ['request body schema', 'successful write/read fixture', 'error response fixture'],
+    },
+  })
+}
 
 export const editorHttpApi: EditorApiContract = {
   async getDraft(projectId, options) {
@@ -77,8 +92,7 @@ export const editorHttpApi: EditorApiContract = {
     const partitions = options.partitions?.length
       ? [...new Set(options.partitions)]
       : [EDITOR_PERSISTENCE_PARTITIONS.script]
-    const supportedSavePartitions = new Set<EditorPersistencePartition>([EDITOR_PERSISTENCE_PARTITIONS.script])
-    assertSupportedPartitions(partitions, supportedSavePartitions, 'save')
+    assertSupportedPartitions(partitions, HTTP_SAVE_PARTITIONS, 'save')
 
     const fallbackRevision = options.expectedRevision ?? draft.revision ?? 0
     if (!partitions.includes(EDITOR_PERSISTENCE_PARTITIONS.script)) {
@@ -89,6 +103,8 @@ export const editorHttpApi: EditorApiContract = {
       }
     }
 
+    assertScriptContentContractConfirmed(draft.script.generated)
+
     const { data: draftSaveResponse } = await http.put<BackendScriptSaveResponse | null>(
       `/aidrama/projects/${projectId}/script/draft`,
       {
@@ -97,20 +113,9 @@ export const editorHttpApi: EditorApiContract = {
       },
     )
 
-    let latestResponse = draftSaveResponse
-    if (draft.script.generated.trim()) {
-      const { data: contentSaveResponse } = await http.put<BackendScriptSaveResponse | null>(
-        `/aidrama/projects/${projectId}/script/content`,
-        {
-          scriptContent: draft.script.generated,
-        },
-      )
-      latestResponse = contentSaveResponse ?? draftSaveResponse
-    }
-
     const now = new Date().toISOString()
-    const savedAt = resolveSavedAt(latestResponse, now)
-    const revision = resolveSaveRevision(latestResponse, fallbackRevision)
+    const savedAt = resolveSavedAt(draftSaveResponse, now)
+    const revision = resolveSaveRevision(draftSaveResponse, fallbackRevision)
 
     return {
       draft: {

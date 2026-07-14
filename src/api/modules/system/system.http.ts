@@ -20,6 +20,11 @@ const normalizeSystemState = (value: unknown) => {
   }
 }
 
+const asResponseRecord = (value: unknown): Record<string, unknown> =>
+  value !== null && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {}
+
 export const systemHttpApi: SystemApiContract = {
   async getState() {
     const { data } = await http.get('/system')
@@ -28,12 +33,12 @@ export const systemHttpApi: SystemApiContract = {
 
   async createStyle(input: CreateSystemStyleInput) {
     const { data } = await http.post('/system/styles', input)
-    return data.style
+    return asResponseRecord(data).style
   },
 
   async updateStyle(styleId: string, input: UpdateSystemStyleInput) {
     const { data } = await http.patch(`/system/styles/${styleId}`, input)
-    return data.style
+    return asResponseRecord(data).style
   },
 
   async deleteStyle(styleId: string) {
@@ -42,12 +47,12 @@ export const systemHttpApi: SystemApiContract = {
 
   async createPermission(input: CreateSystemPermissionInput) {
     const { data } = await http.post('/system/permissions', input)
-    return data.permission
+    return asResponseRecord(data).permission
   },
 
   async updatePermission(permissionId: string, input: UpdateSystemPermissionInput) {
     const { data } = await http.patch(`/system/permissions/${permissionId}`, input)
-    return data.permission
+    return asResponseRecord(data).permission
   },
 
   async deletePermission(permissionId: string) {
@@ -56,12 +61,13 @@ export const systemHttpApi: SystemApiContract = {
 
   async markMessageRead(messageId: string) {
     const { data } = await http.post(`/system/messages/${messageId}/read`)
-    return data.message ?? null
+    return asResponseRecord(data).message ?? null
   },
 
   async markAllRead() {
     const { data } = await http.post('/system/messages/read-all')
-    return Array.isArray(data.messages) ? data.messages : []
+    const messages = asResponseRecord(data).messages
+    return Array.isArray(messages) ? messages : []
   },
 
   async clearMessages() {

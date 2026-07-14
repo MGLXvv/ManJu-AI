@@ -80,12 +80,17 @@ describe('live Script Workspace verifier', () => {
       markers,
     })
 
+    expect(report.outcome).toBe('PASS')
     expect(report.success).toBe(true)
     expect(report.steps).toHaveLength(12)
     expect(report.workspace).toMatchObject({
       initialStatus: 'DRAFT',
       confirmedStatus: 'CONFIRMED',
       canEnterStoryboard: true,
+      generatedContentVerification: {
+        status: 'verified',
+        field: 'content',
+      },
     })
     expect(report.cleanup).toEqual({ attempted: false, succeeded: false })
     expect(JSON.stringify(report)).not.toContain('secret-token')
@@ -95,6 +100,63 @@ describe('live Script Workspace verifier', () => {
     const profileHeaders = fetchImpl.mock.calls[1]?.[1]?.headers as Record<string, string>
     expect(loginHeaders.Authorization).toBeUndefined()
     expect(profileHeaders.Authorization).toBe('Bearer secret-token')
+  })
+
+  it('reports PARTIAL when content write succeeds but workspace exposes no generated-content field', async () => {
+    const workspace = {
+      rawText: '',
+      prompt: '',
+      scriptStatus: 'DRAFT',
+      canEnterStoryboard: false,
+    }
+
+    const fetchImpl = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      const url = new URL(String(input))
+      const method = init?.method ?? 'GET'
+      const body = init?.body ? JSON.parse(String(init.body)) : undefined
+
+      if (url.pathname.endsWith('/system/auth/login')) return successResponse({ accessToken: 'secret-token' })
+      if (url.pathname.endsWith('/system/auth/profile')) return successResponse({ userId: 1 })
+      if (url.pathname.endsWith('/aidrama/projects') && method === 'POST') return successResponse({ id: 203 })
+      if (url.pathname.endsWith('/aidrama/projects/203/script/workspace') && method === 'GET') {
+        return successResponse({ ...workspace })
+      }
+      if (url.pathname.endsWith('/aidrama/projects/203/script/draft') && method === 'PUT') {
+        workspace.rawText = body.rawText
+        workspace.prompt = body.prompt
+        return successResponse(null)
+      }
+      if (url.pathname.endsWith('/aidrama/projects/203/script/content') && method === 'PUT') {
+        return successResponse(null)
+      }
+      if (url.pathname.endsWith('/aidrama/projects/203/script/confirm') && method === 'POST') {
+        workspace.scriptStatus = 'CONFIRMED'
+        workspace.canEnterStoryboard = true
+        return successResponse(null)
+      }
+      if (url.pathname.endsWith('/aidrama/projects/203') && method === 'DELETE') return successResponse(null)
+      if (url.pathname.endsWith('/aidrama/projects') && method === 'GET') {
+        return successResponse({ list: [], total: 0 })
+      }
+      throw new Error(`Unexpected request: ${method} ${url.pathname}`)
+    })
+
+    const report = await runScriptWorkspaceVerification(config, {
+      fetchImpl,
+      now: () => new Date('2026-07-14T03:00:00.000Z'),
+      projectName: 'frontend-script-workspace-test',
+      markers,
+    })
+
+    expect(report.outcome).toBe('PARTIAL')
+    expect(report.success).toBe(false)
+    expect(report.steps).toHaveLength(12)
+    expect(report.workspace.generatedContentVerification).toMatchObject({
+      status: 'not-observable',
+      field: null,
+    })
+    expect(report.warning?.name).toBe('GeneratedContentNotObservable')
+    expect(report.cleanup).toEqual({ attempted: false, succeeded: false })
   })
 
   it('attempts project cleanup when a Script Workspace write fails', async () => {
@@ -122,6 +184,7 @@ describe('live Script Workspace verifier', () => {
       markers,
     })
 
+    expect(report.outcome).toBe('FAIL')
     expect(report.success).toBe(false)
     expect(report.cleanup).toMatchObject({ attempted: true, succeeded: true, code: 0 })
     expect(requests.at(-1)).toBe('DELETE /admin-api/aidrama/projects/202')
@@ -139,6 +202,7 @@ describe('live Script Workspace verifier', () => {
       },
     )
 
+    expect(report.outcome).toBe('FAIL')
     expect(report.success).toBe(false)
     expect(report.error?.name).toBe('WriteConfirmationRequired')
     expect(fetchImpl).not.toHaveBeenCalled()

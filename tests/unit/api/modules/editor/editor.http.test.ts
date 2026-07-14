@@ -22,7 +22,7 @@ describe('editorHttpApi', () => {
       data: {
         rawText: 'source',
         prompt: 'prompt',
-        content: 'generated',
+        scriptContent: 'generated',
         revision: 7,
         updateTime: '2026-06-25T10:00:00.000Z',
       },
@@ -43,7 +43,7 @@ describe('editorHttpApi', () => {
         data: {
           rawText: 'source',
           prompt: 'prompt',
-          content: 'generated',
+          scriptContent: 'generated',
         },
       })
       .mockResolvedValueOnce({
@@ -121,7 +121,7 @@ describe('editorHttpApi', () => {
     expect(result.revision).toBe(3)
   })
 
-  it('saves generated script content and uses backend revision metadata when present', async () => {
+  it('saves generated script content using the backend scriptContent field', async () => {
     vi.mocked(http.put)
       .mockResolvedValueOnce({ data: { revision: 4, updateTime: '2026-07-14T01:00:00.000Z' } })
       .mockResolvedValueOnce({ data: { revision: 5, updateTime: '2026-07-14T01:01:00.000Z' } })
@@ -148,7 +148,7 @@ describe('editorHttpApi', () => {
       prompt: 'prompt',
     })
     expect(http.put).toHaveBeenNthCalledWith(2, '/aidrama/projects/project-1/script/content', {
-      content: 'generated content',
+      scriptContent: 'generated content',
     })
     expect(result.revision).toBe(5)
     expect(result.savedAt).toBe('2026-07-14T01:01:00.000Z')

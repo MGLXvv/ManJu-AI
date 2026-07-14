@@ -3,9 +3,9 @@ import { http } from '@/api/http'
 import { normalizeEditorDraft } from '@/features/editor/editorDraftMapper'
 import { API_ERROR_CODES } from '@/types/api-enums'
 import { EDITOR_PERSISTENCE_PARTITIONS, type EditorPersistencePartition } from '@/types/editor'
-import { getBackendScriptRevision, mapBackendScriptWorkspaceToDraft } from './script.mapper'
+import { mapBackendScriptWorkspaceToDraft } from './script.mapper'
 import { mapBackendStoryboardWorkspaceToDraftPatch } from './storyboard.mapper'
-import type { EditorApiContract, EditorDraft, EditorLoadDraftOptions } from './editor.types'
+import type { EditorApiContract, EditorLoadDraftOptions } from './editor.types'
 import type { BackendScriptWorkspaceDTO, BackendStoryboardWorkspaceDTO } from '@/types/api-dto'
 
 interface BackendScriptSaveResponse {
@@ -36,9 +36,7 @@ const assertSupportedPartitions = (
 }
 
 const resolveLoadPartitions = (options?: EditorLoadDraftOptions): EditorPersistencePartition[] =>
-  options?.partitions?.length
-    ? [...new Set(options.partitions)]
-    : [EDITOR_PERSISTENCE_PARTITIONS.script, EDITOR_PERSISTENCE_PARTITIONS.storyboard]
+  options?.partitions?.length ? [...new Set(options.partitions)] : [EDITOR_PERSISTENCE_PARTITIONS.script]
 
 const resolveSaveRevision = (
   response: BackendScriptSaveResponse | null | undefined,
@@ -121,7 +119,7 @@ export const editorHttpApi: EditorApiContract = {
 
     const now = new Date().toISOString()
     const savedAt = resolveSavedAt(latestResponse, now)
-    const revision = resolveSaveRevision(latestResponse, getBackendScriptRevision(latestResponse as BackendScriptWorkspaceDTO) || fallbackRevision)
+    const revision = resolveSaveRevision(latestResponse, fallbackRevision)
 
     return {
       draft: {

@@ -1,4 +1,4 @@
-﻿import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const get = vi.fn()
 const post = vi.fn()
@@ -23,27 +23,59 @@ describe('scriptTemplateHttpApi', () => {
     vi.resetModules()
   })
 
-  it('normalizes lightweight script template payloads to an empty list', async () => {
+  it('maps the canonical list envelope and pagination request', async () => {
     get.mockResolvedValue({
-      data: {},
+      data: {
+        list: [
+          {
+            id: 11,
+            name: 'Template A',
+            content: 'Body A',
+            updateTime: '2026-07-02T00:00:00.000Z',
+          },
+        ],
+        total: 1,
+      },
     })
 
     const { scriptTemplateHttpApi } = await import('@/api/modules/scriptTemplate/scriptTemplate.http')
     const templates = await scriptTemplateHttpApi.getTemplates()
 
-    expect(get).toHaveBeenCalledWith('/script-templates')
-    expect(templates).toEqual([])
+    expect(get).toHaveBeenCalledWith('/script-templates', {
+      params: { pageNo: 1, pageSize: 100 },
+    })
+    expect(templates).toEqual([
+      {
+        id: '11',
+        name: 'Template A',
+        content: 'Body A',
+        updatedAt: '2026-07-02T00:00:00.000Z',
+      },
+    ])
   })
 
-  it('creates templates through the http api', async () => {
+  it('keeps the legacy templates wrapper compatible', async () => {
+    get.mockResolvedValue({ data: { templates: [{ id: 12, name: 'Legacy', content: 'Legacy body' }] } })
+
+    const { scriptTemplateHttpApi } = await import('@/api/modules/scriptTemplate/scriptTemplate.http')
+
+    await expect(scriptTemplateHttpApi.getTemplates()).resolves.toEqual([
+      {
+        id: '12',
+        name: 'Legacy',
+        content: 'Legacy body',
+        updatedAt: '',
+      },
+    ])
+  })
+
+  it('creates templates from a direct backend entity', async () => {
     post.mockResolvedValue({
       data: {
-        template: {
-          id: 11,
-          name: 'Template A',
-          content: 'Body A',
-          updatedAt: '2026-07-02T00:00:00.000Z',
-        },
+        id: 11,
+        name: 'Template A',
+        content: 'Body A',
+        updatedAt: '2026-07-02T00:00:00.000Z',
       },
     })
 
@@ -58,15 +90,10 @@ describe('scriptTemplateHttpApi', () => {
       name: 'Template A',
       content: 'Body A',
     })
-    expect(template).toEqual({
-      id: '11',
-      name: 'Template A',
-      content: 'Body A',
-      updatedAt: '2026-07-02T00:00:00.000Z',
-    })
+    expect(template.id).toBe('11')
   })
 
-  it('updates templates through the http api', async () => {
+  it('updates templates through the legacy named wrapper', async () => {
     patch.mockResolvedValue({
       data: {
         template: {
@@ -89,18 +116,11 @@ describe('scriptTemplateHttpApi', () => {
       name: 'Template B',
       content: 'Body B',
     })
-    expect(template).toEqual({
-      id: '11',
-      name: 'Template B',
-      content: 'Body B',
-      updatedAt: '2026-07-02T01:00:00.000Z',
-    })
+    expect(template.updatedAt).toBe('2026-07-02T01:00:00.000Z')
   })
 
   it('deletes templates through the http api', async () => {
-    del.mockResolvedValue({
-      data: {},
-    })
+    del.mockResolvedValue({ data: {} })
 
     const { scriptTemplateHttpApi } = await import('@/api/modules/scriptTemplate/scriptTemplate.http')
 

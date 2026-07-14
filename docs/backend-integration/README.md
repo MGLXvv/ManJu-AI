@@ -21,6 +21,7 @@
 - [`verification-log.md`](./verification-log.md)：脱敏真实响应、验证范围和未完成项；
 - [`live-auth-session.md`](./live-auth-session.md)：真实登录、Profile 和失效 Token 401 验证流程；
 - [`live-project-crud.md`](./live-project-crud.md)：可清理的真实项目创建、查询、重命名和删除验证流程；
+- [`live-script-workspace.md`](./live-script-workspace.md)：可清理的 Script Workspace 读取、保存、确认和刷新恢复验证流程；
 - [`open-questions.md`](./open-questions.md)：仍需后端确认或真实请求验证的事项。
 
 仓库根目录的 `.env.integration.example` 提供测试环境配置模板，不包含账号、密码或 Token。

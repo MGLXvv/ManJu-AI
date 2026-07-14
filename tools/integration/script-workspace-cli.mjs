@@ -9,29 +9,35 @@ const REPORT_DIR = path.resolve('artifacts/integration')
 
 const normalizeBaseUrl = (value) => value.trim().replace(/\/+$/, '')
 
-export const createScriptContentRequestAdapter = (fetchImpl = fetch) => async (input, init = {}) => {
-  const url = new URL(String(input))
-  const method = init.method ?? 'GET'
+export const createScriptContentRequestAdapter =
+  (fetchImpl = fetch) =>
+  async (input, init = {}) => {
+    const url = new URL(String(input))
+    const method = init.method ?? 'GET'
 
-  if (method !== 'PUT' || !url.pathname.endsWith('/script/content') || init.body === undefined) {
-    return fetchImpl(input, init)
+    if (method !== 'PUT' || !url.pathname.endsWith('/script/content') || init.body === undefined) {
+      return fetchImpl(input, init)
+    }
+
+    const body = JSON.parse(String(init.body))
+    if (!Object.prototype.hasOwnProperty.call(body, 'content')) {
+      return fetchImpl(input, init)
+    }
+
+    const { content, ...rest } = body
+    return fetchImpl(input, {
+      ...init,
+      body: JSON.stringify({ ...rest, scriptContent: content }),
+    })
   }
-
-  const body = JSON.parse(String(init.body))
-  if (!Object.prototype.hasOwnProperty.call(body, 'content')) {
-    return fetchImpl(input, init)
-  }
-
-  const { content, ...rest } = body
-  return fetchImpl(input, {
-    ...init,
-    body: JSON.stringify({ ...rest, scriptContent: content }),
-  })
-}
 
 const writeReport = async (report) => {
   await mkdir(REPORT_DIR, { recursive: true })
-  await writeFile(path.join(REPORT_DIR, 'script-workspace-report.json'), `${JSON.stringify(report, null, 2)}\n`, 'utf8')
+  await writeFile(
+    path.join(REPORT_DIR, 'script-workspace-report.json'),
+    `${JSON.stringify(report, null, 2)}\n`,
+    'utf8',
+  )
 
   const lines = [
     '# Live Script Workspace Verification',

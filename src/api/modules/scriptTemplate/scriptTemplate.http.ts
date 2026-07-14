@@ -1,41 +1,35 @@
-﻿import { http } from '@/api/http'
-import type { ScriptTemplate, ScriptTemplateApiContract, ScriptTemplateInput } from './scriptTemplate.types'
+import { http } from '@/api/http'
+import { extractBackendEntity, extractBackendList } from '@/api/shared/backendPayload'
+import { mapBackendScriptTemplate, type BackendScriptTemplateDTO } from './scriptTemplate.mapper'
+import type { ScriptTemplateApiContract, ScriptTemplateInput } from './scriptTemplate.types'
 
-const normalizeTemplate = (value: unknown): ScriptTemplate => {
-  const record = value && typeof value === 'object' ? (value as Record<string, unknown>) : {}
+const SCRIPT_TEMPLATES_PATH = '/script-templates'
 
-  return {
-    id: String(record.id ?? ''),
-    name: typeof record.name === 'string' ? record.name : '',
-    content: typeof record.content === 'string' ? record.content : '',
-    updatedAt:
-      typeof record.updatedAt === 'string'
-        ? record.updatedAt
-        : typeof record.updateTime === 'string'
-          ? record.updateTime
-          : typeof record.createTime === 'string'
-            ? record.createTime
-            : '',
-  }
-}
-
+/**
+ * Phase1 exposes Script Template CRUD as a real catalog API.
+ * The canonical page envelope is `data.list`; `template`/`templates` remain temporary aliases for older fixtures.
+ */
 export const scriptTemplateHttpApi: ScriptTemplateApiContract = {
   async getTemplates() {
-    const { data } = await http.get('/script-templates')
-    return Array.isArray(data.templates) ? data.templates.map(normalizeTemplate) : []
+    const { data } = await http.get(SCRIPT_TEMPLATES_PATH, {
+      params: { pageNo: 1, pageSize: 100 },
+    })
+    return extractBackendList<BackendScriptTemplateDTO>(data, ['templates']).map(mapBackendScriptTemplate)
   },
 
   async createTemplate(input: ScriptTemplateInput) {
-    const { data } = await http.post('/script-templates', input)
-    return normalizeTemplate(data.template)
+    const { data } = await http.post(SCRIPT_TEMPLATES_PATH, input)
+    const template = extractBackendEntity<BackendScriptTemplateDTO>(data, ['template'])
+    return mapBackendScriptTemplate(template ?? {})
   },
 
   async updateTemplate(templateId: string, input: ScriptTemplateInput) {
-    const { data } = await http.patch(`/script-templates/${templateId}`, input)
-    return normalizeTemplate(data.template)
+    const { data } = await http.patch(`${SCRIPT_TEMPLATES_PATH}/${templateId}`, input)
+    const template = extractBackendEntity<BackendScriptTemplateDTO>(data, ['template'])
+    return mapBackendScriptTemplate(template ?? {})
   },
 
   async deleteTemplate(templateId: string) {
-    await http.delete(`/script-templates/${templateId}`)
+    await http.delete(`${SCRIPT_TEMPLATES_PATH}/${templateId}`)
   },
 }

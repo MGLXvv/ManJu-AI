@@ -2,6 +2,7 @@ export const API_ERROR_CODES = {
   editorSaveFailed: 'EDITOR_SAVE_FAILED',
   editorSaveConflict: 'EDITOR_SAVE_CONFLICT',
   editorDraftNotLoaded: 'EDITOR_DRAFT_NOT_LOADED',
+  editorPartitionHttpUnsupported: 'EDITOR_PARTITION_HTTP_UNSUPPORTED',
   editorLocalStorageQuotaExceeded: 'EDITOR_LOCAL_STORAGE_QUOTA_EXCEEDED',
   mediaUploadHttpUnsupported: 'MEDIA_UPLOAD_HTTP_UNSUPPORTED',
   generationTaskNotFound: 'GENERATION_TASK_NOT_FOUND',

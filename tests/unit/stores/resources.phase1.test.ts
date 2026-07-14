@@ -23,9 +23,7 @@ describe('resources store phase1 compat', () => {
 
   it('hydrates safely when http mode returns folders with no assets', async () => {
     resourceApiMock.getLibrary.mockResolvedValue({
-      folders: [
-        { id: 'creative-created', label: '我的创建', tab: 'creative', source: 'created' },
-      ],
+      folders: [{ id: 'creative-created', label: '我的创建', tab: 'creative', source: 'created' }],
       assets: [],
     })
 
@@ -51,9 +49,7 @@ describe('resources store phase1 compat', () => {
       selectedVoiceId: 'voice-1',
     }
     resourceApiMock.getLibrary.mockResolvedValue({
-      folders: [
-        { id: 'creative-favorite', label: '我的收藏', tab: 'creative', source: 'favorite' },
-      ],
+      folders: [{ id: 'creative-favorite', label: '我的收藏', tab: 'creative', source: 'favorite' }],
       assets: [existing],
     })
     resourceApiMock.updateAsset.mockImplementation(async (_id, input) => ({

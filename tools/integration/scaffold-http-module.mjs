@@ -62,9 +62,15 @@ export interface Backend${pascalName}DTO {
 }
 
 /** Keep backend field aliases in this mapper; pages and stores consume only ${pascalName}. */
-export const mapBackend${pascalName} = (dto: Backend${pascalName}DTO): ${pascalName} => ({
-  id: String(dto.id ?? ''),
-})
+export const mapBackend${pascalName} = (dto: Backend${pascalName}DTO): ${pascalName} => {
+  if (dto.id === null || dto.id === undefined || dto.id === '') {
+    throw new Error('${errorPrefix}_BACKEND_ID_MISSING')
+  }
+
+  return {
+    id: String(dto.id),
+  }
+}
 `,
     [`${moduleName}.http.ts`]: `import type { ${pascalName}ApiContract } from './${moduleName}.types'
 

@@ -1,50 +1,54 @@
 import { describe, expect, it } from 'vitest'
 import {
   getBackendScriptGeneratedContent,
+  getBackendScriptRevision,
   mapBackendScriptWorkspaceToDraft,
 } from '@/api/modules/editor/script.mapper'
 
-describe('script.mapper', () => {
-  it('maps raw text, prompt, content and update time into script draft', () => {
+describe('script workspace mapper', () => {
+  it('maps confirmed script fields and revision metadata', () => {
     const draft = mapBackendScriptWorkspaceToDraft('project-1', {
-      rawText: 'source text',
-      prompt: 'prompt text',
-      content: 'generated script',
-      updateTime: '2026-06-25T10:00:00.000Z',
-    })
+      rawText: '原始文案',
+      prompt: '生成提示词',
+      content: '生成剧本',
+      updateTime: '2026-07-14T01:00:00.000Z',
+      revision: 8,
+    } as never)
 
     expect(draft.projectId).toBe('project-1')
-    expect(draft.script.content).toBe('source text')
-    expect(draft.script.prompt).toBe('prompt text')
-    expect(draft.script.generated).toBe('generated script')
-    expect(draft.script.updatedAt).toBe('2026-06-25T10:00:00.000Z')
+    expect(draft.revision).toBe(8)
+    expect(draft.script).toMatchObject({
+      content: '原始文案',
+      prompt: '生成提示词',
+      generated: '生成剧本',
+      updatedAt: '2026-07-14T01:00:00.000Z',
+    })
+    expect(draft.settingAssets).toEqual([])
+    expect(draft.shots).toEqual([])
   })
 
-  it('falls back to scriptContent and updatedAt when content fields differ', () => {
-    expect(
-      getBackendScriptGeneratedContent({
-        scriptContent: 'compat generated script',
-      }),
-    ).toBe('compat generated script')
+  it('uses compatible generated-content, timestamp and version fields', () => {
+    expect(getBackendScriptGeneratedContent({ scriptContent: 'script-content' })).toBe('script-content')
+    expect(getBackendScriptGeneratedContent({ generatedContent: 'generated-content' })).toBe('generated-content')
 
-    const draft = mapBackendScriptWorkspaceToDraft('project-2', {
-      rawText: 'raw',
-      prompt: 'prompt',
-      scriptContent: 'compat generated script',
-      updatedAt: '2026-06-25T11:00:00.000Z',
-    })
+    const draft = mapBackendScriptWorkspaceToDraft('project-1', {
+      generatedContent: 'generated-content',
+      updatedAt: '2026-07-14T02:00:00.000Z',
+      version: 3,
+    } as never)
 
-    expect(draft.script.generated).toBe('compat generated script')
-    expect(draft.script.updatedAt).toBe('2026-06-25T11:00:00.000Z')
+    expect(draft.script.generated).toBe('generated-content')
+    expect(draft.script.updatedAt).toBe('2026-07-14T02:00:00.000Z')
+    expect(draft.revision).toBe(3)
   })
 
-  it('returns empty generated content when backend result fields are missing', () => {
-    const draft = mapBackendScriptWorkspaceToDraft('project-3', {
-      rawText: 'raw',
-      prompt: 'prompt',
-    })
+  it('falls back to empty fields and revision zero', () => {
+    const draft = mapBackendScriptWorkspaceToDraft('project-1')
 
+    expect(draft.revision).toBe(0)
+    expect(draft.script.content).toBe('')
+    expect(draft.script.prompt).toBe('')
     expect(draft.script.generated).toBe('')
-    expect(Array.isArray(draft.shots)).toBe(true)
+    expect(getBackendScriptRevision(undefined)).toBe(0)
   })
 })

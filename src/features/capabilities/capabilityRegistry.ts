@@ -42,22 +42,22 @@ const DEFINITIONS: Record<CapabilityKey, CapabilityDefinition> = {
   'auth.codeLogin': {
     mock: 'unsupported',
     http: 'unsupported',
-    message: '验证码登录尚未进入当前交付范围',
+    message: '验证码登录后端接口已存在，但前端页面与真实验证码链路尚未接入',
   },
   'auth.register': {
     mock: 'unsupported',
     http: 'unsupported',
-    message: '用户注册尚未进入当前交付范围',
+    message: '注册接口已存在，但不在当前前端交付范围',
   },
   'auth.resetPassword': {
     mock: 'unsupported',
     http: 'unsupported',
-    message: '找回密码尚未进入当前交付范围',
+    message: '重置密码接口已存在，但不在当前前端交付范围',
   },
   'auth.thirdPartyLogin': {
     mock: 'unsupported',
     http: 'unsupported',
-    message: '第三方登录尚未进入当前交付范围',
+    message: '第三方平台尚未完成真实联调',
   },
   'resource.read': {
     mock: 'available',
@@ -66,43 +66,43 @@ const DEFINITIONS: Record<CapabilityKey, CapabilityDefinition> = {
   },
   'resource.write': {
     mock: 'mock-only',
-    http: 'readonly',
-    message: '当前 HTTP 联调阶段暂不支持资源库新增、编辑或删除',
+    http: 'available',
+    message: '当前环境暂不支持资源库新增、编辑或删除',
   },
   'voice.write': {
     mock: 'mock-only',
-    http: 'readonly',
-    message: '当前 HTTP 联调阶段暂不支持音色新增、编辑或删除',
+    http: 'available',
+    message: '当前环境暂不支持音色目录新增、编辑或删除',
   },
   'system.write': {
     mock: 'mock-only',
     http: 'readonly',
-    message: '当前 HTTP 联调阶段暂不支持系统管理写操作',
+    message: 'Phase1 系统样式和权限写接口为受控拒绝',
   },
   'project.import': {
     mock: 'mock-only',
     http: 'unsupported',
-    message: '项目导入接口尚未完成真实联调',
+    message: 'Phase1 项目导入接口为受控拒绝',
   },
   'project.export': {
     mock: 'mock-only',
     http: 'unsupported',
-    message: '项目导出接口尚未完成真实联调',
+    message: '当前项目 JSON 导出契约与后端导出任务语义不一致',
   },
   'generation.cancel': {
     mock: 'mock-only',
-    http: 'unsupported',
-    message: '生成任务取消接口尚未完成真实联调',
+    http: 'available',
+    message: '当前环境暂不支持取消生成任务',
   },
   'generation.retry': {
     mock: 'mock-only',
-    http: 'unsupported',
-    message: '生成任务重试接口尚未完成真实联调',
+    http: 'available',
+    message: '当前环境暂不支持重试生成任务',
   },
   'export.task': {
     mock: 'unsupported',
     http: 'unsupported',
-    message: '项目导出任务接口尚未完成真实联调',
+    message: '当前导出接口只提供 Mock 任务和占位下载地址',
   },
   'export.jianying': {
     mock: 'unsupported',

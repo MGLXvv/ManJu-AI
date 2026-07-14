@@ -6,11 +6,12 @@
           <select v-model="localType" class="resource-editor-card__type">
             <option value="character">角色</option>
             <option value="scene">场景</option>
+            <option value="prop">道具</option>
           </select>
         </label>
       </template>
       <template v-else>
-        <span>{{ localType === 'character' ? '角色' : '场景' }}</span>
+        <span>{{ assetTypeLabel(localType) }}</span>
       </template>
     </header>
 
@@ -41,7 +42,9 @@
 
       <div class="resource-editor-card__footer">
         <button type="button" class="resource-editor-card__save" @click="handleSave">保存</button>
-        <button v-if="mode === 'edit'" type="button" class="resource-editor-card__delete" @click="$emit('delete')">删除</button>
+        <button v-if="mode === 'edit'" type="button" class="resource-editor-card__delete" @click="$emit('delete')">
+          删除
+        </button>
         <button type="button" class="resource-editor-card__cancel" @click="$emit('cancel')">取消</button>
       </div>
     </div>
@@ -64,13 +67,16 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'save', payload: {
-    type: ResourceAssetType
-    name: string
-    prompt: string
-    imageUrl: string
-    selectedVoiceId?: string
-  }): void
+  (
+    e: 'save',
+    payload: {
+      type: ResourceAssetType
+      name: string
+      prompt: string
+      imageUrl: string
+      selectedVoiceId?: string
+    },
+  ): void
   (e: 'delete'): void
   (e: 'cancel'): void
 }>()
@@ -88,6 +94,13 @@ const imageUrl = ref(props.asset?.imageUrl ?? '')
 const selectedVoiceId = ref(props.asset?.selectedVoiceId ?? voiceOptions[0]?.id ?? '')
 const uploadRef = ref<HTMLInputElement | null>(null)
 
+const assetTypeLabel = (type: ResourceAssetType): string =>
+  ({
+    character: '角色',
+    scene: '场景',
+    prop: '道具',
+  })[type]
+
 const createPlaceholderImage = (label: string, colorA: string, colorB: string): string => {
   const encoded = encodeURIComponent(
     `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="220" viewBox="0 0 320 220">
@@ -101,10 +114,13 @@ const createPlaceholderImage = (label: string, colorA: string, colorB: string): 
 }
 
 const fillGeneratedImage = (): void => {
-  imageUrl.value =
-    localType.value === 'character'
-      ? createPlaceholderImage(name.value || '角色', '#5a7f28', '#93c637')
-      : createPlaceholderImage(name.value || '场景', '#8a6c28', '#d9af3c')
+  const palette: Record<ResourceAssetType, [string, string]> = {
+    character: ['#5a7f28', '#93c637'],
+    scene: ['#8a6c28', '#d9af3c'],
+    prop: ['#5b4a86', '#9b7ed1'],
+  }
+  const [colorA, colorB] = palette[localType.value]
+  imageUrl.value = createPlaceholderImage(name.value || assetTypeLabel(localType.value), colorA, colorB)
 }
 
 const triggerUpload = (): void => {
@@ -129,7 +145,7 @@ const onFileChange = (event: Event): void => {
 const handleSave = (): void => {
   emit('save', {
     type: localType.value,
-    name: name.value.trim() || (localType.value === 'character' ? '未命名角色' : '未命名场景'),
+    name: name.value.trim() || `未命名${assetTypeLabel(localType.value)}`,
     prompt: prompt.value.trim(),
     imageUrl: imageUrl.value,
     selectedVoiceId: localType.value === 'character' ? selectedVoiceId.value : undefined,

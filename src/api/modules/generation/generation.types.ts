@@ -1,6 +1,11 @@
 import type { CreateGenerationTaskInput, GenerationTask, GenerationTaskStatus } from '@/types/generation'
 
-export type { CreateGenerationTaskInput, GenerationTask, GenerationTaskStatus } from '@/types/generation'
+export type {
+  CreateGenerationTaskInput,
+  GenerationTask,
+  GenerationTaskStatus,
+  GenerationTaskType,
+} from '@/types/generation'
 
 export interface GenerationApiContract {
   list(projectId: string): Promise<GenerationTask[]>

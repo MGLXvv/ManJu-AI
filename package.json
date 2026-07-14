@@ -11,7 +11,7 @@
   "scripts": {
     "test": "vitest run",
     "test:contracts": "vitest run tests/unit/contracts",
-    "test:coverage": "vitest run --coverage",
+    "test:coverage": "node tools/quality/run-tests-with-diagnostics.mjs",
     "test:e2e:mock": "node tools/e2e/mock-scenario-suite.mjs",
     "test:e2e:mock:auth": "node tools/e2e/mock-scenario-suite.mjs --scenario=auth-session",
     "test:e2e:mock:project": "node tools/e2e/mock-scenario-suite.mjs --scenario=project-management",
@@ -23,7 +23,8 @@
     "test:visual:update": "node tools/e2e/visual-regression.mjs --update",
     "integration:auth-session": "node tools/integration/auth-session.mjs",
     "integration:project-crud": "node tools/integration/project-crud.mjs",
-    "typecheck": "vue-tsc -b",
+    "scaffold:http-module": "node tools/integration/scaffold-http-module.mjs",
+    "typecheck": "node tools/quality/check-types.mjs",
     "lint": "node tools/quality/check-eslint-baseline.mjs",
     "lint:raw": "eslint . --max-warnings=0",
     "lint:fix": "eslint . --fix",

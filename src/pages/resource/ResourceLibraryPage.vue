@@ -108,7 +108,7 @@ import ResourceLibraryTabs from '@/components/resource/ResourceLibraryTabs.vue'
 import ResourceLibraryToolbar from '@/components/resource/ResourceLibraryToolbar.vue'
 import { useResourcesStore } from '@/stores/resources'
 import { useUiFeedbackStore } from '@/stores/uiFeedback'
-import type { ResourceAsset, ResourceAssetSource } from '@/types/resource'
+import type { ResourceAsset, ResourceAssetSource, ResourceAssetType } from '@/types/resource'
 
 const store = useResourcesStore()
 const uiFeedback = useUiFeedbackStore()
@@ -172,6 +172,14 @@ const batchActions = computed(() => {
     { key: 'delete', label: '批量删除', disabled, tone: 'danger' as const },
   ]
 })
+
+type ResourceEditorPayload = {
+  type: ResourceAssetType
+  name: string
+  prompt: string
+  imageUrl: string
+  selectedVoiceId?: string
+}
 
 watch([filteredAssets, activeTab], ([assets]) => {
   if (currentPage.value > totalPages.value) {
@@ -270,13 +278,7 @@ const cancelCreate = (): void => {
   creating.value = false
 }
 
-const saveCreate = async (payload: {
-  type: 'character' | 'scene'
-  name: string
-  prompt: string
-  imageUrl: string
-  selectedVoiceId?: string
-}): Promise<void> => {
+const saveCreate = async (payload: ResourceEditorPayload): Promise<void> => {
   if (blockReadonlyWrite()) {
     return
   }
@@ -301,16 +303,7 @@ const cancelEdit = (): void => {
   editingId.value = ''
 }
 
-const saveEdit = async (payload: {
-  id: string
-  payload: {
-    type: 'character' | 'scene'
-    name: string
-    prompt: string
-    imageUrl: string
-    selectedVoiceId?: string
-  }
-}): Promise<void> => {
+const saveEdit = async (payload: { id: string; payload: ResourceEditorPayload }): Promise<void> => {
   if (blockReadonlyWrite()) {
     return
   }

@@ -153,7 +153,7 @@ describe('HTTP adapter contract fixtures', () => {
     const tasks = await generationHttpApi.list('project-7')
 
     expect(http.get).toHaveBeenCalledWith('/generation/tasks', {
-      params: { projectId: 'project-7' },
+      params: { projectId: 'project-7', pageNo: 1, pageSize: 100 },
     })
     expect(tasks).toEqual([
       expect.objectContaining({

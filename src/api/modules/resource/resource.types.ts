@@ -8,6 +8,8 @@ import type {
 export type {
   CreateResourceAssetInput,
   ResourceAsset,
+  ResourceAssetSource,
+  ResourceAssetType,
   ResourceLibraryState,
   UpdateResourceAssetInput,
 } from '@/types/resource'

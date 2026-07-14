@@ -1,16 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { API_ERROR_CODES } from '@/types/api-enums'
 
 const get = vi.fn()
 const post = vi.fn()
-const patch = vi.fn()
+const put = vi.fn()
 const del = vi.fn()
 
 vi.mock('@/api/http', () => ({
   http: {
     get,
     post,
-    patch,
+    put,
     delete: del,
   },
 }))
@@ -19,33 +18,25 @@ describe('resourceHttpApi', () => {
   beforeEach(() => {
     get.mockReset()
     post.mockReset()
-    patch.mockReset()
+    put.mockReset()
     del.mockReset()
     vi.resetModules()
   })
 
-  it('hydrates default folders and empty assets when resource-library payload is empty', async () => {
-    get.mockResolvedValue({
-      data: {
-        list: [],
-        total: 0,
-      },
-    })
+  it('hydrates default folders and the canonical list envelope', async () => {
+    get.mockResolvedValue({ data: { list: [], total: 0 } })
 
     const { resourceHttpApi } = await import('@/api/modules/resource/resource.http')
     const state = await resourceHttpApi.getLibrary()
 
     expect(get).toHaveBeenCalledWith('/aidrama/resource-library/assets', {
-      params: {
-        pageNo: 1,
-        pageSize: 100,
-      },
+      params: { pageNo: 1, pageSize: 100 },
     })
     expect(state.folders.length).toBeGreaterThan(0)
     expect(state.assets).toEqual([])
   })
 
-  it('maps official and private library assets into the current resource page model', async () => {
+  it('preserves PRIVATE, SYSTEM, SHARED, favorite and PROP semantics', async () => {
     get.mockResolvedValue({
       data: {
         list: [
@@ -59,14 +50,20 @@ describe('resourceHttpApi', () => {
           },
           {
             id: 2,
+            assetType: 'PROP',
+            name: 'Shared Sword',
+            imageUrl: 'https://example.com/sword.png',
+            extraJson: JSON.stringify({ prompt: 'sword prompt' }),
+            scope: 'SHARED',
+          },
+          {
+            id: 3,
             assetType: 'SCENE',
-            name: 'Official City',
-            imageUrl: 'https://example.com/city.png',
-            extraJson: JSON.stringify({ prompt: 'city prompt' }),
-            scope: 'OFFICIAL',
+            name: 'Favorite City',
+            extraJson: JSON.stringify({ prompt: 'city prompt', favorite: true }),
+            scope: 'PRIVATE',
           },
         ],
-        total: 2,
       },
     })
 
@@ -74,67 +71,99 @@ describe('resourceHttpApi', () => {
     const state = await resourceHttpApi.getLibrary()
 
     expect(state.assets).toEqual([
-      expect.objectContaining({
-        id: '1',
-        tab: 'creative',
-        source: 'created',
-        type: 'character',
-        name: 'Private Hero',
-        prompt: 'hero prompt',
-      }),
-      expect.objectContaining({
-        id: '2',
-        tab: 'subject',
-        source: 'official',
-        type: 'scene',
-        name: 'Official City',
-        prompt: 'city prompt',
-      }),
+      expect.objectContaining({ id: '1', source: 'created', type: 'character' }),
+      expect.objectContaining({ id: '2', source: 'official', type: 'prop' }),
+      expect.objectContaining({ id: '3', source: 'favorite', type: 'scene' }),
     ])
   })
 
-  it('throws a controlled error when creating resource assets in http mode', async () => {
-    const { resourceHttpApi } = await import('@/api/modules/resource/resource.http')
+  it('creates resources using assetType, scope and JSON-string extraJson', async () => {
+    post.mockResolvedValue({
+      data: {
+        id: 7,
+        assetType: 'PROP',
+        name: 'Sword',
+        imageUrl: 'https://example.com/sword.png',
+        extraJson: JSON.stringify({ prompt: 'silver sword', favorite: false }),
+        scope: 'PRIVATE',
+      },
+    })
 
-    const error = await resourceHttpApi.createAsset({
+    const { resourceHttpApi } = await import('@/api/modules/resource/resource.http')
+    const created = await resourceHttpApi.createAsset({
       tab: 'creative',
-      type: 'character',
+      type: 'prop',
       source: 'created',
-      name: 'Hero',
-      prompt: 'prompt',
-      imageUrl: 'mock://asset.png',
-    }).catch((reason) => reason)
-
-    expect(post).not.toHaveBeenCalled()
-    expect(error).toMatchObject({
-      name: 'ApiError',
-      code: API_ERROR_CODES.resourceHttpWriteUnsupported,
+      name: 'Sword',
+      prompt: 'silver sword',
+      imageUrl: 'https://example.com/sword.png',
     })
+
+    expect(post).toHaveBeenCalledWith('/aidrama/resource-library/assets', {
+      assetType: 'PROP',
+      name: 'Sword',
+      description: '',
+      imageUrl: 'https://example.com/sword.png',
+      scope: 'PRIVATE',
+      extraJson: JSON.stringify({ prompt: 'silver sword', favorite: false }),
+    })
+    expect(created).toMatchObject({ id: '7', type: 'prop', source: 'created' })
   })
 
-  it('throws a controlled error when updating resource assets in http mode', async () => {
+  it('rejects create responses that do not contain a persisted entity', async () => {
+    post.mockResolvedValue({ data: null })
+
     const { resourceHttpApi } = await import('@/api/modules/resource/resource.http')
 
-    const error = await resourceHttpApi.updateAsset('resource-1', {
-      name: 'Hero 2',
-    }).catch((reason) => reason)
-
-    expect(patch).not.toHaveBeenCalled()
-    expect(error).toMatchObject({
-      name: 'ApiError',
-      code: API_ERROR_CODES.resourceHttpWriteUnsupported,
-    })
+    await expect(
+      resourceHttpApi.createAsset({
+        tab: 'creative',
+        type: 'scene',
+        source: 'created',
+        name: 'City',
+        prompt: 'city',
+        imageUrl: '',
+      }),
+    ).rejects.toThrow('RESOURCE_CREATE_RESPONSE_INVALID')
   })
 
-  it('throws a controlled error when deleting resource assets in http mode', async () => {
+  it('updates and deletes resources through the documented paths', async () => {
+    put.mockResolvedValue({
+      data: {
+        asset: {
+          id: 7,
+          assetType: 'PROP',
+          name: 'Updated Sword',
+          extraJson: JSON.stringify({ prompt: 'updated', favorite: true }),
+          scope: 'PRIVATE',
+        },
+      },
+    })
+    del.mockResolvedValue({ data: null })
+
+    const { resourceHttpApi } = await import('@/api/modules/resource/resource.http')
+    const updated = await resourceHttpApi.updateAsset('7', {
+      name: 'Updated Sword',
+      prompt: 'updated',
+      source: 'favorite',
+    })
+    await resourceHttpApi.removeAsset('7')
+
+    expect(put).toHaveBeenCalledWith('/aidrama/resource-library/assets/7', {
+      name: 'Updated Sword',
+      scope: 'PRIVATE',
+      extraJson: JSON.stringify({ prompt: 'updated', favorite: true }),
+    })
+    expect(updated).toMatchObject({ id: '7', name: 'Updated Sword', source: 'favorite' })
+    expect(del).toHaveBeenCalledWith('/aidrama/resource-library/assets/7')
+  })
+
+  it('rejects partial extraJson updates that could erase unedited metadata', async () => {
     const { resourceHttpApi } = await import('@/api/modules/resource/resource.http')
 
-    const error = await resourceHttpApi.removeAsset('resource-1').catch((reason) => reason)
-
-    expect(del).not.toHaveBeenCalled()
-    expect(error).toMatchObject({
-      name: 'ApiError',
-      code: API_ERROR_CODES.resourceHttpWriteUnsupported,
-    })
+    await expect(resourceHttpApi.updateAsset('7', { prompt: 'partial' })).rejects.toThrow(
+      'RESOURCE_EXTRA_META_UPDATE_INCOMPLETE',
+    )
+    expect(put).not.toHaveBeenCalled()
   })
 })

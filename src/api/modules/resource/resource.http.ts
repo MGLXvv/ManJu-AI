@@ -1,80 +1,60 @@
-﻿import { createApiError } from '@/api/errors'
 import { http } from '@/api/http'
-import { parseBackendAssetMeta } from '@/api/modules/editor/asset.mapper'
+import { extractBackendEntity, extractBackendList } from '@/api/shared/backendPayload'
 import { resourceFolders } from '@/features/resource/resourceLibraryDefaults'
-import { API_ERROR_CODES } from '@/types/api-enums'
-import type { BackendAssetType, BackendResourceLibraryItemDTO, BackendResourceLibraryPageDTO } from '@/types/api-dto'
-import type { ResourceAssetSource } from '@/types/resource'
-import type {
-  CreateResourceAssetInput,
-  ResourceApiContract,
-  ResourceAsset,
-  ResourceLibraryState,
-  UpdateResourceAssetInput,
-} from './resource.types'
+import type { BackendResourceLibraryItemDTO, BackendResourceLibraryPageDTO } from '@/types/api-dto'
+import {
+  mapBackendResourceAsset,
+  mapCreateResourceInputToBackendPayload,
+  mapUpdateResourceInputToBackendPayload,
+} from './resource.mapper'
+import type { ResourceApiContract, ResourceLibraryState } from './resource.types'
 
-const mapBackendTypeToResourceType = (type?: BackendAssetType): ResourceAsset['type'] =>
-  type === 'CHARACTER' ? 'character' : 'scene'
-
-const mapBackendScopeToSource = (scope?: string | null): ResourceAssetSource =>
-  scope === 'OFFICIAL' ? 'official' : 'created'
-
-const mapLibraryItemToResourceAsset = (
-  item: BackendResourceLibraryItemDTO,
-): ResourceAsset => {
-  const parsedMeta = parseBackendAssetMeta(item.extraJson)
-  const source = mapBackendScopeToSource(item.scope)
-
-  return {
-    id: String(item.id),
-    tab: source === 'official' ? 'subject' : 'creative',
-    type: mapBackendTypeToResourceType(item.assetType ?? item.type),
-    source,
-    name: item.name,
-    prompt: parsedMeta.prompt,
-    imageUrl: item.imageUrl || '',
-  }
-}
+const RESOURCE_ASSETS_PATH = '/aidrama/resource-library/assets'
 
 const createEmptyLibraryState = (): ResourceLibraryState => ({
   folders: resourceFolders.map((folder) => ({ ...folder })),
   assets: [],
 })
 
+/**
+ * Resource Library is marked READY in the Integration Pack. Its backend `assetType` and Project Asset `type`
+ * are intentionally different contracts; all translation stays in resource.mapper.ts.
+ */
 export const resourceHttpApi: ResourceApiContract = {
   async getLibrary() {
-    const { data } = await http.get<BackendResourceLibraryPageDTO>('/aidrama/resource-library/assets', {
+    const { data } = await http.get<BackendResourceLibraryPageDTO>(RESOURCE_ASSETS_PATH, {
       params: {
         pageNo: 1,
         pageSize: 100,
       },
     })
 
-    const list = Array.isArray(data?.list) ? data.list : []
     return {
       ...createEmptyLibraryState(),
-      assets: list.map(mapLibraryItemToResourceAsset),
+      assets: extractBackendList<BackendResourceLibraryItemDTO>(data).map(mapBackendResourceAsset),
     }
   },
 
-  async createAsset(_input: CreateResourceAssetInput) {
-    throw createApiError({
-      code: API_ERROR_CODES.resourceHttpWriteUnsupported,
-      message: 'Resource library write operations are not available in the current HTTP phase.',
+  async createAsset(input) {
+    const { data } = await http.post(RESOURCE_ASSETS_PATH, mapCreateResourceInputToBackendPayload(input))
+    const asset = extractBackendEntity<BackendResourceLibraryItemDTO>(data, ['asset'])
+    return mapBackendResourceAsset(asset ?? {
+      id: '',
+      name: input.name,
+      assetType: mapCreateResourceInputToBackendPayload(input).assetType,
     })
   },
 
-  async updateAsset(_assetId: string, _input: UpdateResourceAssetInput) {
-    throw createApiError({
-      code: API_ERROR_CODES.resourceHttpWriteUnsupported,
-      message: 'Resource library write operations are not available in the current HTTP phase.',
-    })
+  async updateAsset(assetId, input) {
+    const { data } = await http.put(
+      `${RESOURCE_ASSETS_PATH}/${assetId}`,
+      mapUpdateResourceInputToBackendPayload(input),
+    )
+    const asset = extractBackendEntity<BackendResourceLibraryItemDTO>(data, ['asset'])
+    return asset ? mapBackendResourceAsset(asset) : null
   },
 
-  async removeAsset(_assetId: string) {
-    throw createApiError({
-      code: API_ERROR_CODES.resourceHttpWriteUnsupported,
-      message: 'Resource library write operations are not available in the current HTTP phase.',
-    })
+  async removeAsset(assetId) {
+    await http.delete(`${RESOURCE_ASSETS_PATH}/${assetId}`)
   },
 }

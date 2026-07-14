@@ -11,6 +11,22 @@ import type {
   UpdateResourceAssetInput,
 } from '@/types/resource'
 
+const hasOwn = (value: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(value, key)
+
+const mergeResourceUpdate = (
+  current: ResourceAsset,
+  patch: UpdateResourceAssetInput,
+): CreateResourceAssetInput => ({
+  tab: patch.tab ?? current.tab,
+  type: patch.type ?? current.type,
+  source: patch.source ?? current.source,
+  name: patch.name ?? current.name,
+  prompt: patch.prompt ?? current.prompt,
+  imageUrl: patch.imageUrl ?? current.imageUrl,
+  imageMediaId: hasOwn(patch, 'imageMediaId') ? patch.imageMediaId : current.imageMediaId,
+  selectedVoiceId: hasOwn(patch, 'selectedVoiceId') ? patch.selectedVoiceId : current.selectedVoiceId,
+})
+
 export const useResourcesStore = defineStore('resources', () => {
   const folders = ref<ResourceFolder[]>([])
   const assets = ref<ResourceAsset[]>([])
@@ -59,6 +75,13 @@ export const useResourcesStore = defineStore('resources', () => {
     activeFolderId.value = visibleFolders.value[0]?.id ?? ''
   }
 
+  const applyLibraryState = (state: { folders: ResourceFolder[]; assets: ResourceAsset[] }): void => {
+    folders.value = state.folders
+    assets.value = state.assets
+    hydrated.value = true
+    syncFolderSelection()
+  }
+
   const hydrate = async (): Promise<void> => {
     if (loading.value) {
       return
@@ -66,11 +89,7 @@ export const useResourcesStore = defineStore('resources', () => {
 
     loading.value = true
     try {
-      const state = await resourceApi.getLibrary()
-      folders.value = state.folders
-      assets.value = state.assets
-      hydrated.value = true
-      syncFolderSelection()
+      applyLibraryState(await resourceApi.getLibrary())
     } finally {
       loading.value = false
     }
@@ -92,9 +111,15 @@ export const useResourcesStore = defineStore('resources', () => {
   }
 
   const updateAsset = async (id: string, patch: UpdateResourceAssetInput): Promise<ResourceAsset | null> => {
-    const updated = await resourceApi.updateAsset(id, patch)
+    const current = assets.value.find((asset) => asset.id === id)
+    if (!current) {
+      throw new Error('RESOURCE_ASSET_NOT_FOUND')
+    }
+
+    const updated = await resourceApi.updateAsset(id, mergeResourceUpdate(current, patch))
     if (!updated) {
-      return null
+      applyLibraryState(await resourceApi.getLibrary())
+      return assets.value.find((asset) => asset.id === id) ?? null
     }
 
     assets.value = assets.value.map((asset) => (asset.id === id ? updated : asset))

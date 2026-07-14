@@ -1,7 +1,7 @@
 import type { VoiceOption } from './settingAsset'
 
 export type ResourceLibraryTab = 'creative' | 'subject'
-export type ResourceAssetType = 'character' | 'scene'
+export type ResourceAssetType = 'character' | 'scene' | 'prop'
 export type ResourceAssetSource = 'created' | 'favorite' | 'official'
 export type ResourceSourceFilter = 'all' | ResourceAssetSource
 export type ResourceTypeFilter = 'all' | ResourceAssetType

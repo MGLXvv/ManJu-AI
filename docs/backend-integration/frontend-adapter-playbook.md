@@ -105,14 +105,14 @@ src/api/modules/<module>/
 
 职责：
 
-| 文件 | 职责 |
-| --- | --- |
-| `*.api.ts` | 根据运行模式选择 Mock 或 HTTP，实现稳定入口 |
-| `*.http.ts` | 发送真实请求、调用 Mapper、转换错误 |
-| `*.mock.ts` | 提供本地演示、失败场景和可重复测试数据 |
-| `*.types.ts` | 定义前端稳定 Contract、Input、Query、Result |
-| `*.mapper.ts` | 后端 DTO 与前端领域模型互转 |
-| `index.ts` | 只导出该模块对外使用的稳定类型和入口 |
+| 文件          | 职责                                        |
+| ------------- | ------------------------------------------- |
+| `*.api.ts`    | 根据运行模式选择 Mock 或 HTTP，实现稳定入口 |
+| `*.http.ts`   | 发送真实请求、调用 Mapper、转换错误         |
+| `*.mock.ts`   | 提供本地演示、失败场景和可重复测试数据      |
+| `*.types.ts`  | 定义前端稳定 Contract、Input、Query、Result |
+| `*.mapper.ts` | 后端 DTO 与前端领域模型互转                 |
+| `index.ts`    | 只导出该模块对外使用的稳定类型和入口        |
 
 ### 2.4 Capability Registry
 
@@ -228,15 +228,15 @@ restore
 
 后续人员接到一个“后端说已经完成”的接口时，先确认其证据类型。
 
-| 证据 | 能证明什么 | 不能证明什么 |
-| --- | --- | --- |
-| 后端文档表格 | Method、Path 和设计意图 | 当前部署一定可用 |
-| Swagger/OpenAPI | 当前声明的 DTO | 数据库副作用和业务闭环正确 |
-| MockMvc | Controller 层自动测试通过 | WireGuard 测试环境部署了同一版本 |
-| Smoke Suite | 某些示例请求可通过 | 页面刷新、权限、异常和真实算法可用 |
-| HTTP 200 + `code=0` | 请求被后端接受 | 数据一定保存或业务一定执行 |
-| 写后重新读取 | 数据副作用可观察 | 权限、并发和异常已覆盖 |
-| 页面完整真实流程 | 主要用户链路可用 | 所有边界场景都已验证 |
+| 证据                | 能证明什么                | 不能证明什么                       |
+| ------------------- | ------------------------- | ---------------------------------- |
+| 后端文档表格        | Method、Path 和设计意图   | 当前部署一定可用                   |
+| Swagger/OpenAPI     | 当前声明的 DTO            | 数据库副作用和业务闭环正确         |
+| MockMvc             | Controller 层自动测试通过 | WireGuard 测试环境部署了同一版本   |
+| Smoke Suite         | 某些示例请求可通过        | 页面刷新、权限、异常和真实算法可用 |
+| HTTP 200 + `code=0` | 请求被后端接受            | 数据一定保存或业务一定执行         |
+| 写后重新读取        | 数据副作用可观察          | 权限、并发和异常已覆盖             |
+| 页面完整真实流程    | 主要用户链路可用          | 所有边界场景都已验证               |
 
 必须遵守：
 
@@ -402,8 +402,7 @@ import { runtimeConfig } from '@/config/runtimeConfig'
 import { exampleHttpApi } from './example.http'
 import { exampleMockApi } from './example.mock'
 
-export const exampleApi: ExampleApiContract =
-  runtimeConfig.apiMode === 'http' ? exampleHttpApi : exampleMockApi
+export const exampleApi: ExampleApiContract = runtimeConfig.apiMode === 'http' ? exampleHttpApi : exampleMockApi
 ```
 
 上层只导入 `exampleApi` 或 Domain Service。

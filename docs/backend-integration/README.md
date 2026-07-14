@@ -54,16 +54,16 @@
 
 工程判断统一使用：
 
-| 状态 | 含义 |
-| --- | --- |
-| `LIVE_VERIFIED` | 真实测试环境已经完成主要业务闭环和清理验证 |
-| `LIVE_PARTIAL` | 真实环境只验证了部分接口、字段或副作用 |
-| `CONTRACT_READY` | 可以编写 DTO、Mapper、Fixture 和 Adapter，但尚未真实验证 |
-| `MOCK_ONLY` | 只用于页面流程、状态机或兼容测试 |
-| `CONTROLLED_REJECT` | 后端稳定拒绝，UI 不应宣称可用 |
-| `NO_OP` | 返回成功但没有真实业务副作用 |
-| `BLOCKED` | 缺少真实算法、媒体、存储或生产流程 |
-| `UNKNOWN` | 证据不足或互相矛盾 |
+| 状态                | 含义                                                     |
+| ------------------- | -------------------------------------------------------- |
+| `LIVE_VERIFIED`     | 真实测试环境已经完成主要业务闭环和清理验证               |
+| `LIVE_PARTIAL`      | 真实环境只验证了部分接口、字段或副作用                   |
+| `CONTRACT_READY`    | 可以编写 DTO、Mapper、Fixture 和 Adapter，但尚未真实验证 |
+| `MOCK_ONLY`         | 只用于页面流程、状态机或兼容测试                         |
+| `CONTROLLED_REJECT` | 后端稳定拒绝，UI 不应宣称可用                            |
+| `NO_OP`             | 返回成功但没有真实业务副作用                             |
+| `BLOCKED`           | 缺少真实算法、媒体、存储或生产流程                       |
+| `UNKNOWN`           | 证据不足或互相矛盾                                       |
 
 Runtime Capability 使用另一套用户可用性状态：
 

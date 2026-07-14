@@ -1,42 +1,36 @@
-﻿import { http } from '@/api/http'
-import type { CreateVoiceAssetInput, UpdateVoiceAssetInput, VoiceApiContract, VoiceAsset } from './voice.types'
+import { http } from '@/api/http'
+import { extractBackendEntity, extractBackendList } from '@/api/shared/backendPayload'
+import { mapBackendVoiceToVoiceAsset, type BackendVoiceDTO } from './voice.mapper'
+import type { CreateVoiceAssetInput, UpdateVoiceAssetInput, VoiceApiContract } from './voice.types'
 
-const normalizeVoice = (value: unknown): VoiceAsset => {
-  const record = value && typeof value === 'object' ? (value as Record<string, unknown>) : {}
+const VOICES_PATH = '/voices'
 
-  return {
-    id: String(record.id ?? ''),
-    name: typeof record.name === 'string' ? record.name : '',
-    audioUrl: typeof record.audioUrl === 'string' ? record.audioUrl : '',
-    duration: typeof record.duration === 'number' ? record.duration : 0,
-    createdAt:
-      typeof record.createdAt === 'string'
-        ? record.createdAt
-        : typeof record.createTime === 'string'
-          ? record.createTime
-          : typeof record.updateTime === 'string'
-            ? record.updateTime
-            : '',
-  }
-}
-
+/**
+ * Phase1 marks Voice Catalog CRUD as a real backend capability.
+ * New responses should use direct entities and `data.list`; `voice`/`voices` remain migration aliases until
+ * sanitized live fixtures are captured.
+ */
 export const voiceHttpApi: VoiceApiContract = {
   async list() {
-    const { data } = await http.get('/voices')
-    return Array.isArray(data.voices) ? data.voices.map(normalizeVoice) : []
+    const { data } = await http.get(VOICES_PATH, {
+      params: { pageNo: 1, pageSize: 100 },
+    })
+    return extractBackendList<BackendVoiceDTO>(data, ['voices']).map(mapBackendVoiceToVoiceAsset)
   },
 
   async create(input: CreateVoiceAssetInput) {
-    const { data } = await http.post('/voices', input)
-    return normalizeVoice(data.voice)
+    const { data } = await http.post(VOICES_PATH, input)
+    const voice = extractBackendEntity<BackendVoiceDTO>(data, ['voice'])
+    return mapBackendVoiceToVoiceAsset(voice ?? {})
   },
 
   async update(voiceId: string, input: UpdateVoiceAssetInput) {
-    const { data } = await http.patch(`/voices/${voiceId}`, input)
-    return data.voice ? normalizeVoice(data.voice) : null
+    const { data } = await http.patch(`${VOICES_PATH}/${voiceId}`, input)
+    const voice = extractBackendEntity<BackendVoiceDTO>(data, ['voice'])
+    return voice ? mapBackendVoiceToVoiceAsset(voice) : null
   },
 
   async remove(voiceId: string) {
-    await http.delete(`/voices/${voiceId}`)
+    await http.delete(`${VOICES_PATH}/${voiceId}`)
   },
 }

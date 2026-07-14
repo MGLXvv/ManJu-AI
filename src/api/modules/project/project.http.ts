@@ -1,4 +1,6 @@
+import { createApiError } from '@/api/errors'
 import { http } from '@/api/http'
+import { API_ERROR_CODES } from '@/types/api-enums'
 import {
   mapBackendProjectListQuery,
   mapBackendProjectToProject,
@@ -34,14 +36,23 @@ export const projectHttpApi: ProjectApiContract = {
     return mapBackendProjectToProject(data)
   },
 
-  async importProjects(inputs: ImportProjectInput[]) {
-    const { data } = await http.post<{ projects?: BackendProjectDTO[] }>(`${PROJECTS_PATH}/import`, inputs)
-    return (data.projects ?? []).map(mapBackendProjectToProject)
+  async importProjects(_inputs: ImportProjectInput[]) {
+    throw createApiError({
+      code: API_ERROR_CODES.projectImportControlledReject,
+      message: 'Project import is a Phase1 controlled-reject capability.',
+      details: { endpoint: 'POST /projects/import' },
+    })
   },
 
-  async exportProject(id: string) {
-    const { data } = await http.get<BackendProjectDTO>(`${PROJECTS_PATH}/${id}/export`)
-    return data ? mapBackendProjectToProject(data) : null
+  async exportProject(_id: string) {
+    throw createApiError({
+      code: API_ERROR_CODES.projectExportContractMismatch,
+      message: 'Project JSON export must not map the backend export-task response to a Project entity.',
+      details: {
+        compatEndpoint: 'GET /projects/{projectId}/export',
+        workflowService: 'exportWorkflowService',
+      },
+    })
   },
 
   async update(input: UpdateProjectInput) {

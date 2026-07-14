@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { API_ERROR_CODES } from '@/types/api-enums'
 
 const get = vi.fn()
 const post = vi.fn()
@@ -139,55 +140,28 @@ describe('projectHttpApi', () => {
     expect(updated).toMatchObject({ id: '8', status: 'completed' })
   })
 
-  it('exports through the project resource route', async () => {
-    get.mockResolvedValue({
-      data: {
-        id: 3,
-        name: 'Export Demo',
-        status: 'IN_PROGRESS',
-        createTime: '2026-06-24 07:00:00',
-      },
-    })
-
+  it('rejects project export because the frontend entity contract does not match export-task semantics', async () => {
     const { projectHttpApi } = await import('@/api/modules/project/project.http')
 
-    const exported = await projectHttpApi.exportProject('3')
-    expect(get).toHaveBeenCalledWith('/aidrama/projects/3/export')
-    expect(exported).toMatchObject({ id: '3', name: 'Export Demo' })
+    await expect(projectHttpApi.exportProject('3')).rejects.toMatchObject({
+      code: API_ERROR_CODES.projectExportContractMismatch,
+    })
+    expect(get).not.toHaveBeenCalled()
   })
 
-  it('imports through the project resource route', async () => {
-    post.mockResolvedValue({
-      data: {
-        projects: [
-          {
-            id: 12,
-            name: 'Imported Demo',
-            status: 'IN_PROGRESS',
-            aspectRatio: '16:9',
-            createTime: '2026-06-24 09:00:00',
-          },
-        ],
-      },
-    })
-
+  it('rejects Phase1 project import without making an HTTP request', async () => {
     const { projectHttpApi } = await import('@/api/modules/project/project.http')
-    const imported = await projectHttpApi.importProjects([
-      {
-        name: 'Imported Demo',
-        ratio: '16:9',
-        style: 'anime',
-      },
-    ])
 
-    expect(post).toHaveBeenCalledWith('/aidrama/projects/import', [
-      {
-        name: 'Imported Demo',
-        ratio: '16:9',
-        style: 'anime',
-      },
-    ])
-    expect(imported).toMatchObject([{ id: '12', name: 'Imported Demo' }])
+    await expect(
+      projectHttpApi.importProjects([
+        {
+          name: 'Imported Demo',
+          ratio: '16:9',
+          style: 'anime',
+        },
+      ]),
+    ).rejects.toMatchObject({ code: API_ERROR_CODES.projectImportControlledReject })
+    expect(post).not.toHaveBeenCalled()
   })
 
   it('deletes by backend route', async () => {

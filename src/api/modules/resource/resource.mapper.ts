@@ -44,10 +44,7 @@ const parseExtraMeta = (extraJson?: string | null): ResourceExtraMeta => {
   }
 }
 
-const mapBackendScopeToSource = (
-  scope: string | null | undefined,
-  favorite: boolean,
-): ResourceAssetSource => {
+const mapBackendScopeToSource = (scope: string | null | undefined, favorite: boolean): ResourceAssetSource => {
   if (favorite) return 'favorite'
   return scope === 'SYSTEM' || scope === 'SHARED' ? 'official' : 'created'
 }

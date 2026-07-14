@@ -100,6 +100,26 @@ describe('generationHttpApi', () => {
     expect(get).toHaveBeenNthCalledWith(2, '/generation/tasks/1')
   })
 
+  it('rejects unknown task types and statuses instead of treating them as normal work', async () => {
+    get.mockResolvedValueOnce({
+      data: {
+        list: [{ id: 1, projectId: 7, taskType: 'UNREGISTERED', status: 'RUNNING' }],
+      },
+    })
+
+    const { generationHttpApi } = await import('@/api/modules/generation/generation.http')
+
+    await expect(generationHttpApi.list('7')).rejects.toThrow('GENERATION_TASK_TYPE_UNSUPPORTED')
+
+    get.mockResolvedValueOnce({
+      data: {
+        list: [{ id: 1, projectId: 7, taskType: 'VIDEO', status: 'PAUSED' }],
+      },
+    })
+
+    await expect(generationHttpApi.list('7')).rejects.toThrow('GENERATION_TASK_STATUS_UNSUPPORTED')
+  })
+
   it('keeps legacy wrappers compatible for cancel and retry', async () => {
     post.mockResolvedValueOnce({
       data: { task: { id: 'task-1', projectId: 'project-1', type: 'script', status: 'cancelled' } },

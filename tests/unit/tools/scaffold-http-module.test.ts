@@ -39,6 +39,8 @@ describe('HTTP module scaffold', () => {
     expect(httpSource).not.toContain("http.get('")
     expect(apiSource).toContain("runtimeConfig.apiMode === 'http'")
     expect(mapperSource).toContain('mapBackendExampleCatalog')
+    expect(mapperSource).toContain('EXAMPLE_CATALOG_BACKEND_ID_MISSING')
+    expect(mapperSource).not.toContain("String(dto.id ?? '')")
   })
 
   it('supports dry-run without writing files', async () => {

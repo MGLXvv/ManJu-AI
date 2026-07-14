@@ -1,11 +1,6 @@
 <template>
   <div class="resource-grid">
-    <button
-      v-if="!batchMode && !creating"
-      type="button"
-      class="resource-grid__create"
-      @click="$emit('create')"
-    >
+    <button v-if="!batchMode && !creating" type="button" class="resource-grid__create" @click="$emit('create')">
       <span>+</span>
     </button>
 
@@ -44,12 +39,7 @@
 <script setup lang="ts">
 import ResourceAssetCard from './ResourceAssetCard.vue'
 import ResourceAssetEditorCard from './ResourceAssetEditorCard.vue'
-import type {
-  ResourceAsset,
-  ResourceAssetSource,
-  ResourceAssetType,
-  ResourceLibraryTab,
-} from '@/types/resource'
+import type { ResourceAsset, ResourceAssetSource, ResourceAssetType, ResourceLibraryTab } from '@/types/resource'
 
 defineProps<{
   assets: ResourceAsset[]

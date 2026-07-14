@@ -34,6 +34,8 @@ const resourceTypeToBackendType: Record<ResourceAssetType, BackendAssetType> = {
   prop: 'PROP',
 }
 
+const hasOwn = (value: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(value, key)
+
 const parseExtraMeta = (extraJson?: string | null): ResourceExtraMeta => {
   if (!extraJson) return {}
 
@@ -54,15 +56,24 @@ const mapResourceSourceToBackendScope = (
 ): BackendResourceAssetPayload['scope'] => (source === 'official' ? 'SYSTEM' : 'PRIVATE')
 
 export const mapBackendResourceAsset = (item: BackendResourceLibraryItemDTO): ResourceAsset => {
+  if (item.id === null || item.id === undefined || item.id === '') {
+    throw new Error('RESOURCE_ENTITY_ID_MISSING')
+  }
+
   const extra = parseExtraMeta(item.extraJson)
   const favorite = extra.favorite === true
   const source = mapBackendScopeToSource(item.scope, favorite)
   const backendType = item.assetType ?? item.type ?? 'SCENE'
+  const type = backendTypeToResourceType[backendType]
+
+  if (!type) {
+    throw new Error(`RESOURCE_ASSET_TYPE_UNSUPPORTED:${String(backendType)}`)
+  }
 
   return {
     id: String(item.id),
     tab: source === 'official' ? 'subject' : 'creative',
-    type: backendTypeToResourceType[backendType],
+    type,
     source,
     name: item.name,
     prompt: typeof extra.prompt === 'string' ? extra.prompt : '',
@@ -96,9 +107,16 @@ export const mapUpdateResourceInputToBackendPayload = (
   if (input.imageUrl !== undefined) payload.imageUrl = input.imageUrl
   if (input.source !== undefined) payload.scope = mapResourceSourceToBackendScope(input.source)
 
-  if (input.prompt !== undefined || input.source !== undefined || input.selectedVoiceId !== undefined) {
+  const touchesExtraMeta =
+    hasOwn(input, 'prompt') || hasOwn(input, 'source') || hasOwn(input, 'selectedVoiceId')
+
+  if (touchesExtraMeta) {
+    if (input.prompt === undefined || input.source === undefined) {
+      throw new Error('RESOURCE_EXTRA_META_UPDATE_INCOMPLETE')
+    }
+
     payload.extraJson = JSON.stringify({
-      prompt: input.prompt ?? '',
+      prompt: input.prompt,
       favorite: input.source === 'favorite',
       selectedVoiceId: input.selectedVoiceId,
     })

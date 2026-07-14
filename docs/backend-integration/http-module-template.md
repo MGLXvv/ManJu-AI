@@ -159,9 +159,7 @@ export const exampleHttpApi: ExampleApiContract = {
   },
 
   async getById(id) {
-    const { data } = await http.get<BackendExampleDTO | null>(
-      `/examples/${encodeURIComponent(id)}`,
-    )
+    const { data } = await http.get<BackendExampleDTO | null>(`/examples/${encodeURIComponent(id)}`)
     return data ? mapBackendExample(data) : null
   },
 
@@ -171,10 +169,7 @@ export const exampleHttpApi: ExampleApiContract = {
   },
 
   async update(id, input) {
-    const { data } = await http.put<BackendExampleDTO>(
-      `/examples/${encodeURIComponent(id)}`,
-      mapUpdateBody(input),
-    )
+    const { data } = await http.put<BackendExampleDTO>(`/examples/${encodeURIComponent(id)}`, mapUpdateBody(input))
     return mapBackendExample(data)
   },
 
@@ -228,8 +223,7 @@ import { exampleHttpApi } from './example.http'
 import { exampleMockApi } from './example.mock'
 import type { ExampleApiContract } from './example.types'
 
-export const exampleApi: ExampleApiContract =
-  runtimeConfig.apiMode === 'http' ? exampleHttpApi : exampleMockApi
+export const exampleApi: ExampleApiContract = runtimeConfig.apiMode === 'http' ? exampleHttpApi : exampleMockApi
 ```
 
 `index.ts`
@@ -346,9 +340,7 @@ describe('exampleHttpApi', () => {
 为未验证写能力增加 Capability：
 
 ```ts
-export type CapabilityKey =
-  | 'example.read'
-  | 'example.write'
+export type CapabilityKey = 'example.read' | 'example.write'
 ```
 
 默认状态示例：

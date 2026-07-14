@@ -93,8 +93,10 @@ describe('editorHttpApi', () => {
     expect(http.get).not.toHaveBeenCalled()
   })
 
-  it('saves source text and prompt without calling script content when generated is empty', async () => {
-    vi.mocked(http.put).mockResolvedValue({ data: null })
+  it('saves source text and prompt through the confirmed draft contract', async () => {
+    vi.mocked(http.put).mockResolvedValue({
+      data: { revision: 4, updateTime: '2026-07-14T01:00:00.000Z' },
+    })
 
     const result = await editorHttpApi.saveDraft(
       'project-1',
@@ -118,40 +120,32 @@ describe('editorHttpApi', () => {
       prompt: 'prompt',
     })
     expect(http.put).toHaveBeenCalledTimes(1)
-    expect(result.revision).toBe(3)
+    expect(result.revision).toBe(4)
+    expect(result.savedAt).toBe('2026-07-14T01:00:00.000Z')
   })
 
-  it('saves generated script content using the backend scriptContent field', async () => {
-    vi.mocked(http.put)
-      .mockResolvedValueOnce({ data: { revision: 4, updateTime: '2026-07-14T01:00:00.000Z' } })
-      .mockResolvedValueOnce({ data: { revision: 5, updateTime: '2026-07-14T01:01:00.000Z' } })
-
-    const result = await editorHttpApi.saveDraft(
-      'project-1',
-      {
-        ...createDefaultEditorDraft('project-1'),
-        revision: 3,
-        script: {
-          content: 'source',
-          prompt: 'prompt',
-          outline: '',
-          generated: 'generated content',
-          storyboard: '',
-          updatedAt: '',
-        },
+  it('rejects generated-content persistence until the backend request DTO is confirmed', async () => {
+    const draft = {
+      ...createDefaultEditorDraft('project-1'),
+      revision: 3,
+      script: {
+        content: 'source',
+        prompt: 'prompt',
+        outline: '',
+        generated: 'generated content',
+        storyboard: '',
+        updatedAt: '',
       },
-      { partitions: [EDITOR_PERSISTENCE_PARTITIONS.script], expectedRevision: 3 },
-    )
+    }
 
-    expect(http.put).toHaveBeenNthCalledWith(1, '/aidrama/projects/project-1/script/draft', {
-      rawText: 'source',
-      prompt: 'prompt',
-    })
-    expect(http.put).toHaveBeenNthCalledWith(2, '/aidrama/projects/project-1/script/content', {
-      scriptContent: 'generated content',
-    })
-    expect(result.revision).toBe(5)
-    expect(result.savedAt).toBe('2026-07-14T01:01:00.000Z')
+    await expect(
+      editorHttpApi.saveDraft('project-1', draft, {
+        partitions: [EDITOR_PERSISTENCE_PARTITIONS.script],
+        expectedRevision: 3,
+      }),
+    ).rejects.toMatchObject({ code: API_ERROR_CODES.editorScriptContentContractUnconfirmed })
+
+    expect(http.put).not.toHaveBeenCalled()
   })
 
   it('rejects non-script saves until their workspace adapters are implemented', async () => {

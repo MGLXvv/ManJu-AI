@@ -1,9 +1,7 @@
 export type BackendPayloadRecord = Record<string, unknown>
 
 const asRecord = (value: unknown): BackendPayloadRecord | null =>
-  value !== null && typeof value === 'object' && !Array.isArray(value)
-    ? (value as BackendPayloadRecord)
-    : null
+  value !== null && typeof value === 'object' && !Array.isArray(value) ? (value as BackendPayloadRecord) : null
 
 /**
  * Reads a paginated backend list without leaking response-wrapper differences into pages or stores.

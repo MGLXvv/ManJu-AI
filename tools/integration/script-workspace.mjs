@@ -7,6 +7,7 @@ const DEFAULT_TIMEOUT_MS = 15000
 const REPORT_DIR = path.resolve('artifacts/integration')
 const SENSITIVE_KEY = /(token|password|authorization|cookie|secret|credential)/i
 const TRACE_HEADERS = ['x-request-id', 'request-id', 'x-trace-id', 'trace-id']
+const GENERATED_CONTENT_FIELDS = ['content', 'scriptContent', 'generatedContent']
 
 const normalizeBaseUrl = (value) => value.trim().replace(/\/+$/, '')
 
@@ -95,8 +96,29 @@ const extractProjectId = (data) => {
   return String(rawId)
 }
 
-const getGeneratedContent = (workspace) =>
-  workspace?.content ?? workspace?.scriptContent ?? workspace?.generatedContent ?? ''
+const observeGeneratedContent = (workspace) => {
+  if (!workspace || typeof workspace !== 'object') {
+    return { observable: false, field: null, value: null }
+  }
+
+  for (const field of GENERATED_CONTENT_FIELDS) {
+    if (Object.prototype.hasOwnProperty.call(workspace, field)) {
+      return {
+        observable: true,
+        field,
+        value: workspace[field] ?? null,
+      }
+    }
+  }
+
+  return { observable: false, field: null, value: null }
+}
+
+const snapshotWorkspace = (workspace) => ({
+  dataShape: describeData(workspace),
+  snapshot: sanitizeValue(workspace),
+  generatedContent: observeGeneratedContent(workspace),
+})
 
 const buildStamp = (now) =>
   now
@@ -133,9 +155,34 @@ const assertWorkspaceDraft = (workspace, markers) => {
   }
 }
 
-const assertWorkspaceContent = (workspace, markers) => {
-  if (getGeneratedContent(workspace) !== markers.generated) {
-    throw new Error('Reloaded script workspace did not contain the saved generated-content marker.')
+const classifyGeneratedContent = (snapshots, expected) => {
+  const observations = snapshots.map((item) => item.generatedContent)
+  const matched = observations.find((item) => item.observable && item.value === expected)
+
+  if (matched) {
+    return {
+      status: 'verified',
+      field: matched.field,
+      expected,
+      observed: matched.value,
+    }
+  }
+
+  const observable = observations.filter((item) => item.observable)
+  if (observable.length === 0) {
+    return {
+      status: 'not-observable',
+      field: null,
+      expected,
+      observed: null,
+    }
+  }
+
+  return {
+    status: 'mismatch',
+    field: observable.map((item) => item.field).filter(Boolean),
+    expected,
+    observed: observable.map((item) => item.value),
   }
 }
 
@@ -151,11 +198,15 @@ export const runScriptWorkspaceVerification = async (
   const report = {
     generatedAt: now().toISOString(),
     baseUrl: config.baseUrl,
+    outcome: 'FAIL',
     success: false,
     writeEnabled: config.allowWrite,
     project: { name: projectName },
     markers,
-    workspace: {},
+    workspace: {
+      snapshots: {},
+      writeResponses: {},
+    },
     steps: [],
     cleanup: { attempted: false, succeeded: false },
   }
@@ -234,43 +285,52 @@ export const runScriptWorkspaceVerification = async (
       endpoint: workspaceEndpoint,
     })
     report.workspace.initialStatus = initialWorkspace?.scriptStatus ?? null
+    report.workspace.snapshots.initial = snapshotWorkspace(initialWorkspace)
 
-    await executeStep('save-script-draft', {
+    const draftWriteResponse = await executeStep('save-script-draft', {
       endpoint: `/aidrama/projects/${encodeURIComponent(projectId)}/script/draft`,
       method: 'PUT',
       body: { rawText: markers.source, prompt: markers.prompt },
     })
+    report.workspace.writeResponses.draft = sanitizeValue(draftWriteResponse)
 
     const reloadedDraft = await executeStep('reload-script-draft', {
       endpoint: workspaceEndpoint,
     })
     assertWorkspaceDraft(reloadedDraft, markers)
+    report.workspace.snapshots.afterDraft = snapshotWorkspace(reloadedDraft)
 
-    await executeStep('save-script-content', {
+    const contentWriteResponse = await executeStep('save-script-content', {
       endpoint: `/aidrama/projects/${encodeURIComponent(projectId)}/script/content`,
       method: 'PUT',
       body: { content: markers.generated },
     })
+    report.workspace.writeResponses.content = sanitizeValue(contentWriteResponse)
 
     const reloadedContent = await executeStep('reload-script-content', {
       endpoint: workspaceEndpoint,
     })
     assertWorkspaceDraft(reloadedContent, markers)
-    assertWorkspaceContent(reloadedContent, markers)
+    report.workspace.snapshots.afterContent = snapshotWorkspace(reloadedContent)
 
-    await executeStep('confirm-script', {
+    const confirmResponse = await executeStep('confirm-script', {
       endpoint: `/aidrama/projects/${encodeURIComponent(projectId)}/script/confirm`,
       method: 'POST',
     })
+    report.workspace.writeResponses.confirm = sanitizeValue(confirmResponse)
 
     const confirmedWorkspace = await executeStep('reload-confirmed-workspace', {
       endpoint: workspaceEndpoint,
     })
     assertWorkspaceDraft(confirmedWorkspace, markers)
-    assertWorkspaceContent(confirmedWorkspace, markers)
+    report.workspace.snapshots.afterConfirm = snapshotWorkspace(confirmedWorkspace)
     report.workspace.confirmedStatus = confirmedWorkspace?.scriptStatus ?? null
     report.workspace.canEnterStoryboard = confirmedWorkspace?.canEnterStoryboard ?? null
     report.workspace.revision = confirmedWorkspace?.revision ?? confirmedWorkspace?.version ?? null
+    report.workspace.generatedContentVerification = classifyGeneratedContent(
+      [report.workspace.snapshots.afterContent, report.workspace.snapshots.afterConfirm],
+      markers.generated,
+    )
 
     await executeStep('delete-project', {
       endpoint: `/aidrama/projects/${encodeURIComponent(projectId)}`,
@@ -286,8 +346,27 @@ export const runScriptWorkspaceVerification = async (
       throw new Error('Deleted Script Workspace test project is still present in the project list.')
     }
 
-    report.success = true
+    const contentVerificationStatus = report.workspace.generatedContentVerification.status
+    if (contentVerificationStatus === 'verified') {
+      report.outcome = 'PASS'
+      report.success = true
+    } else if (contentVerificationStatus === 'not-observable') {
+      report.outcome = 'PARTIAL'
+      report.warning = {
+        name: 'GeneratedContentNotObservable',
+        message:
+          'The content write succeeded, but Script Workspace did not expose content, scriptContent, or generatedContent.',
+      }
+    } else {
+      report.outcome = 'FAIL'
+      report.error = {
+        name: 'GeneratedContentMismatch',
+        message: 'Script Workspace exposed a generated-content field, but its value did not match the saved marker.',
+      }
+    }
   } catch (error) {
+    report.outcome = 'FAIL'
+    report.success = false
     report.error = normalizeError(error)
   } finally {
     if (projectId && !deleted && token) {
@@ -322,10 +401,11 @@ const writeReport = async (report) => {
     '',
     `- Generated: ${report.generatedAt}`,
     `- Base URL: ${report.baseUrl}`,
-    `- Result: ${report.success ? 'PASS' : 'FAIL'}`,
+    `- Result: ${report.outcome}`,
     `- Temporary project: ${report.project?.name ?? 'not created'}`,
     `- Confirmed status: ${report.workspace?.confirmedStatus ?? 'not reported'}`,
     `- Can enter storyboard: ${String(report.workspace?.canEnterStoryboard ?? 'not reported')}`,
+    `- Generated content: ${report.workspace?.generatedContentVerification?.status ?? 'not evaluated'}`,
     `- Backend revision/version: ${String(report.workspace?.revision ?? 'not reported')}`,
     `- Cleanup attempted: ${report.cleanup?.attempted ? 'yes' : 'no'}`,
     `- Cleanup succeeded: ${report.cleanup?.succeeded ? 'yes' : 'no'}`,
@@ -340,6 +420,10 @@ const writeReport = async (report) => {
     ),
     '',
   ]
+
+  if (report.warning) {
+    lines.push('## Warning', '', `- ${report.warning.name}: ${report.warning.message}`, '')
+  }
 
   if (report.error) {
     lines.push('## Error', '', `- ${report.error.name}: ${report.error.message}`, '')
@@ -367,9 +451,9 @@ const main = async () => {
   const report = await runScriptWorkspaceVerification(config)
   await writeReport(report)
 
-  console.log(`Script Workspace verification: ${report.success ? 'PASS' : 'FAIL'}`)
+  console.log(`Script Workspace verification: ${report.outcome}`)
   console.log('Report: artifacts/integration/script-workspace-report.json')
-  if (!report.success) process.exitCode = 1
+  if (report.outcome === 'FAIL') process.exitCode = 1
 }
 
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href

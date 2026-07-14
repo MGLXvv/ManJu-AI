@@ -74,11 +74,7 @@ export type { ${pascalName}, ${pascalName}ApiContract } from './${moduleName}.ty
   }
 }
 
-export const scaffoldHttpModule = async ({
-  moduleName,
-  rootDir = path.resolve('src/api/modules'),
-  dryRun = false,
-}) => {
+export const scaffoldHttpModule = async ({ moduleName, rootDir = path.resolve('src/api/modules'), dryRun = false }) => {
   if (!MODULE_NAME_PATTERN.test(moduleName)) {
     throw new Error('HTTP_MODULE_NAME_INVALID')
   }

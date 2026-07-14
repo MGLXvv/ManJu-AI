@@ -38,18 +38,17 @@ export const resourceHttpApi: ResourceApiContract = {
   async createAsset(input) {
     const { data } = await http.post(RESOURCE_ASSETS_PATH, mapCreateResourceInputToBackendPayload(input))
     const asset = extractBackendEntity<BackendResourceLibraryItemDTO>(data, ['asset'])
-    return mapBackendResourceAsset(asset ?? {
-      id: '',
-      name: input.name,
-      assetType: mapCreateResourceInputToBackendPayload(input).assetType,
-    })
+    return mapBackendResourceAsset(
+      asset ?? {
+        id: '',
+        name: input.name,
+        assetType: mapCreateResourceInputToBackendPayload(input).assetType,
+      },
+    )
   },
 
   async updateAsset(assetId, input) {
-    const { data } = await http.put(
-      `${RESOURCE_ASSETS_PATH}/${assetId}`,
-      mapUpdateResourceInputToBackendPayload(input),
-    )
+    const { data } = await http.put(`${RESOURCE_ASSETS_PATH}/${assetId}`, mapUpdateResourceInputToBackendPayload(input))
     const asset = extractBackendEntity<BackendResourceLibraryItemDTO>(data, ['asset'])
     return asset ? mapBackendResourceAsset(asset) : null
   },

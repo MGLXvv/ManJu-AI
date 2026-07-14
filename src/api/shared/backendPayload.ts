@@ -8,24 +8,26 @@ const asRecord = (value: unknown): BackendPayloadRecord | null =>
  *
  * The Integration Pack defines `data.list`; legacy frontend adapters historically assumed module-specific
  * wrappers such as `tasks`, `voices` or `templates`. Aliases are accepted only as migration compatibility.
+ * Unknown payloads fail explicitly so a contract drift cannot be mistaken for a valid empty result.
  */
 export const extractBackendList = <T>(value: unknown, aliases: readonly string[] = []): T[] => {
   if (Array.isArray(value)) return value as T[]
 
   const record = asRecord(value)
-  if (!record) return []
+  if (!record) throw new Error('BACKEND_LIST_RESPONSE_INVALID')
 
   for (const key of ['list', ...aliases]) {
     const candidate = record[key]
     if (Array.isArray(candidate)) return candidate as T[]
   }
 
-  return []
+  throw new Error('BACKEND_LIST_RESPONSE_INVALID')
 }
 
 /**
  * Reads a single entity from either the direct CommonResult `data` value or a legacy named wrapper.
  * Prefer direct entities for new backend contracts; aliases exist to keep older fixtures compatible.
+ * Callers whose contract requires an entity must validate its required identity fields before returning it.
  */
 export const extractBackendEntity = <T>(value: unknown, aliases: readonly string[] = []): T | null => {
   if (value === null || value === undefined || Array.isArray(value)) return null

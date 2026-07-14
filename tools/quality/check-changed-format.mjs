@@ -7,6 +7,7 @@ import { format, getFileInfo, resolveConfig } from 'prettier'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const REPORT_PATH = path.join(ROOT, 'artifacts', 'quality', 'prettier.json')
+const FORMATTED_DIR = path.join(ROOT, 'artifacts', 'quality', 'prettier-formatted')
 const supported = /\.(?:c?js|mjs|ts|tsx|vue|css|scss|json|md|ya?ml)$/i
 const ignored = [
   /^artifacts\//,
@@ -70,10 +71,15 @@ for (const file of files) {
 
   const source = await readFile(absolutePath, 'utf8')
   const config = (await resolveConfig(absolutePath)) ?? {}
-  // Compare against Prettier's rendered output so ignored Git paths are checked consistently.
   const output = await format(source, { ...config, filepath: absolutePath })
   const formatted = source === output
   results.push({ file, formatted, skipped: false, parser: fileInfo.inferredParser })
+
+  if (!formatted) {
+    const remediationPath = path.join(FORMATTED_DIR, file)
+    await mkdir(path.dirname(remediationPath), { recursive: true })
+    await writeFile(remediationPath, output, 'utf8')
+  }
 }
 
 await mkdir(path.dirname(REPORT_PATH), { recursive: true })
@@ -83,6 +89,7 @@ const unformatted = results.filter((result) => !result.formatted).map((result) =
 if (unformatted.length > 0) {
   console.error('Prettier check failed for changed files:')
   for (const file of unformatted) console.error(`- ${file}`)
+  console.error('Formatted remediation files were written to artifacts/quality/prettier-formatted/.')
   process.exit(1)
 }
 

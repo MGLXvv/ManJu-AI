@@ -14,60 +14,60 @@
 
 ### System
 
-| Method | Path | 类型 | 说明 |
-| --- | --- | --- | --- |
-| GET | `/admin-api/system` | REAL | 返回系统状态、功能开关、Provider 模式等轻量信息。 |
-| POST | `/admin-api/system/styles` | CONTROLLED_REJECT | Phase1 不开放写入，返回稳定错误。 |
-| PATCH | `/admin-api/system/styles/{styleId}` | CONTROLLED_REJECT | Phase1 不开放写入，返回稳定错误。 |
-| DELETE | `/admin-api/system/styles/{styleId}` | CONTROLLED_REJECT | Phase1 不开放删除，返回稳定错误。 |
-| POST | `/admin-api/system/permissions` | CONTROLLED_REJECT | Phase1 不开放真实权限写入，返回稳定错误。 |
-| PATCH | `/admin-api/system/permissions/{permissionId}` | CONTROLLED_REJECT | Phase1 不开放真实权限更新，返回稳定错误。 |
-| DELETE | `/admin-api/system/permissions/{permissionId}` | CONTROLLED_REJECT | Phase1 不开放真实权限删除，返回稳定错误。 |
-| POST | `/admin-api/system/messages/{messageId}/read` | NO_OP_SUCCESS | 消息已读兼容接口，当前 no-op 成功。 |
-| POST | `/admin-api/system/messages/read-all` | NO_OP_SUCCESS | 全部已读兼容接口，当前 no-op 成功。 |
-| DELETE | `/admin-api/system/messages` | NO_OP_SUCCESS | 清空消息兼容接口，当前 no-op 成功。 |
+| Method | Path                                           | 类型              | 说明                                              |
+| ------ | ---------------------------------------------- | ----------------- | ------------------------------------------------- |
+| GET    | `/admin-api/system`                            | REAL              | 返回系统状态、功能开关、Provider 模式等轻量信息。 |
+| POST   | `/admin-api/system/styles`                     | CONTROLLED_REJECT | Phase1 不开放写入，返回稳定错误。                 |
+| PATCH  | `/admin-api/system/styles/{styleId}`           | CONTROLLED_REJECT | Phase1 不开放写入，返回稳定错误。                 |
+| DELETE | `/admin-api/system/styles/{styleId}`           | CONTROLLED_REJECT | Phase1 不开放删除，返回稳定错误。                 |
+| POST   | `/admin-api/system/permissions`                | CONTROLLED_REJECT | Phase1 不开放真实权限写入，返回稳定错误。         |
+| PATCH  | `/admin-api/system/permissions/{permissionId}` | CONTROLLED_REJECT | Phase1 不开放真实权限更新，返回稳定错误。         |
+| DELETE | `/admin-api/system/permissions/{permissionId}` | CONTROLLED_REJECT | Phase1 不开放真实权限删除，返回稳定错误。         |
+| POST   | `/admin-api/system/messages/{messageId}/read`  | NO_OP_SUCCESS     | 消息已读兼容接口，当前 no-op 成功。               |
+| POST   | `/admin-api/system/messages/read-all`          | NO_OP_SUCCESS     | 全部已读兼容接口，当前 no-op 成功。               |
+| DELETE | `/admin-api/system/messages`                   | NO_OP_SUCCESS     | 清空消息兼容接口，当前 no-op 成功。               |
 
 ### Voices
 
 以下接口已经可联调，属于轻量 Voice Catalog，不影响既有项目内 TTS 生成链路。
 
-| Method | Path | 说明 |
-| --- | --- | --- |
-| GET | `/admin-api/voices` | 音色列表，支持分页和关键词过滤。 |
-| POST | `/admin-api/voices` | 创建音色目录项。 |
-| PATCH | `/admin-api/voices/{voiceId}` | 更新音色目录项。 |
-| DELETE | `/admin-api/voices/{voiceId}` | 逻辑删除音色目录项。 |
+| Method | Path                          | 说明                             |
+| ------ | ----------------------------- | -------------------------------- |
+| GET    | `/admin-api/voices`           | 音色列表，支持分页和关键词过滤。 |
+| POST   | `/admin-api/voices`           | 创建音色目录项。                 |
+| PATCH  | `/admin-api/voices/{voiceId}` | 更新音色目录项。                 |
+| DELETE | `/admin-api/voices/{voiceId}` | 逻辑删除音色目录项。             |
 
 ### Script Templates
 
 以下接口已经可联调，属于轻量剧本模板目录，不影响既有 Script 工作区和剧本生成主链路。
 
-| Method | Path | 说明 |
-| --- | --- | --- |
-| GET | `/admin-api/script-templates` | 剧本模板列表，支持分页和关键词过滤。 |
-| POST | `/admin-api/script-templates` | 创建剧本模板。 |
-| PATCH | `/admin-api/script-templates/{templateId}` | 更新剧本模板。 |
-| DELETE | `/admin-api/script-templates/{templateId}` | 逻辑删除剧本模板。 |
+| Method | Path                                       | 说明                                 |
+| ------ | ------------------------------------------ | ------------------------------------ |
+| GET    | `/admin-api/script-templates`              | 剧本模板列表，支持分页和关键词过滤。 |
+| POST   | `/admin-api/script-templates`              | 创建剧本模板。                       |
+| PATCH  | `/admin-api/script-templates/{templateId}` | 更新剧本模板。                       |
+| DELETE | `/admin-api/script-templates/{templateId}` | 逻辑删除剧本模板。                   |
 
 ### Generation Tasks
 
 这些接口复用既有 `aidrama_ai_task` 任务体系，不新增独立 generation task 模型，不绕过 Provider Callback 状态机。
 
-| Method | Path | 类型 | 说明 |
-| --- | --- | --- | --- |
-| GET | `/admin-api/generation/tasks` | REAL | 查询 AI 任务列表，支持分页和状态过滤。 |
-| GET | `/admin-api/generation/tasks/{id}` | REAL | 查询 AI 任务详情。 |
-| POST | `/admin-api/generation/tasks/{id}/cancel` | REAL | 取消允许取消的任务。 |
-| POST | `/admin-api/generation/tasks/{id}/retry` | REAL | 重试允许重试的失败任务。 |
-| POST | `/admin-api/generation/tasks` | CONTROLLED_REJECT | 不允许前端直接创建通用任务，请使用具体业务生成接口。 |
-| PATCH | `/admin-api/generation/tasks/{id}` | CONTROLLED_REJECT | 任务状态由 Provider Callback 管理，不支持前端直接 PATCH。 |
+| Method | Path                                      | 类型              | 说明                                                      |
+| ------ | ----------------------------------------- | ----------------- | --------------------------------------------------------- |
+| GET    | `/admin-api/generation/tasks`             | REAL              | 查询 AI 任务列表，支持分页和状态过滤。                    |
+| GET    | `/admin-api/generation/tasks/{id}`        | REAL              | 查询 AI 任务详情。                                        |
+| POST   | `/admin-api/generation/tasks/{id}/cancel` | REAL              | 取消允许取消的任务。                                      |
+| POST   | `/admin-api/generation/tasks/{id}/retry`  | REAL              | 重试允许重试的失败任务。                                  |
+| POST   | `/admin-api/generation/tasks`             | CONTROLLED_REJECT | 不允许前端直接创建通用任务，请使用具体业务生成接口。      |
+| PATCH  | `/admin-api/generation/tasks/{id}`        | CONTROLLED_REJECT | 任务状态由 Provider Callback 管理，不支持前端直接 PATCH。 |
 
 ### Projects
 
-| Method | Path | 类型 | 说明 |
-| --- | --- | --- | --- |
-| GET | `/admin-api/projects/{projectId}/export` | REAL | 兼容前端项目导出查询路径，映射到既有导出结果。 |
-| POST | `/admin-api/projects/import` | CONTROLLED_REJECT | 项目导入 Phase1 尚未开放，返回稳定错误。 |
+| Method | Path                                     | 类型              | 说明                                           |
+| ------ | ---------------------------------------- | ----------------- | ---------------------------------------------- |
+| GET    | `/admin-api/projects/{projectId}/export` | REAL              | 兼容前端项目导出查询路径，映射到既有导出结果。 |
+| POST   | `/admin-api/projects/import`             | CONTROLLED_REJECT | 项目导入 Phase1 尚未开放，返回稳定错误。       |
 
 ## 3. 鉴权更新
 

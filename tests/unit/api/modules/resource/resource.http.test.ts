@@ -110,6 +110,23 @@ describe('resourceHttpApi', () => {
     expect(created).toMatchObject({ id: '7', type: 'prop', source: 'created' })
   })
 
+  it('rejects create responses that do not contain a persisted entity', async () => {
+    post.mockResolvedValue({ data: null })
+
+    const { resourceHttpApi } = await import('@/api/modules/resource/resource.http')
+
+    await expect(
+      resourceHttpApi.createAsset({
+        tab: 'creative',
+        type: 'scene',
+        source: 'created',
+        name: 'City',
+        prompt: 'city',
+        imageUrl: '',
+      }),
+    ).rejects.toThrow('RESOURCE_CREATE_RESPONSE_INVALID')
+  })
+
   it('updates and deletes resources through the documented paths', async () => {
     put.mockResolvedValue({
       data: {
@@ -139,5 +156,14 @@ describe('resourceHttpApi', () => {
     })
     expect(updated).toMatchObject({ id: '7', name: 'Updated Sword', source: 'favorite' })
     expect(del).toHaveBeenCalledWith('/aidrama/resource-library/assets/7')
+  })
+
+  it('rejects partial extraJson updates that could erase unedited metadata', async () => {
+    const { resourceHttpApi } = await import('@/api/modules/resource/resource.http')
+
+    await expect(resourceHttpApi.updateAsset('7', { prompt: 'partial' })).rejects.toThrow(
+      'RESOURCE_EXTRA_META_UPDATE_INCOMPLETE',
+    )
+    expect(put).not.toHaveBeenCalled()
   })
 })

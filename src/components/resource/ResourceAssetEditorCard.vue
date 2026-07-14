@@ -42,7 +42,9 @@
 
       <div class="resource-editor-card__footer">
         <button type="button" class="resource-editor-card__save" @click="handleSave">保存</button>
-        <button v-if="mode === 'edit'" type="button" class="resource-editor-card__delete" @click="$emit('delete')">删除</button>
+        <button v-if="mode === 'edit'" type="button" class="resource-editor-card__delete" @click="$emit('delete')">
+          删除
+        </button>
         <button type="button" class="resource-editor-card__cancel" @click="$emit('cancel')">取消</button>
       </div>
     </div>
@@ -65,13 +67,16 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'save', payload: {
-    type: ResourceAssetType
-    name: string
-    prompt: string
-    imageUrl: string
-    selectedVoiceId?: string
-  }): void
+  (
+    e: 'save',
+    payload: {
+      type: ResourceAssetType
+      name: string
+      prompt: string
+      imageUrl: string
+      selectedVoiceId?: string
+    },
+  ): void
   (e: 'delete'): void
   (e: 'cancel'): void
 }>()
@@ -89,11 +94,12 @@ const imageUrl = ref(props.asset?.imageUrl ?? '')
 const selectedVoiceId = ref(props.asset?.selectedVoiceId ?? voiceOptions[0]?.id ?? '')
 const uploadRef = ref<HTMLInputElement | null>(null)
 
-const assetTypeLabel = (type: ResourceAssetType): string => ({
-  character: '角色',
-  scene: '场景',
-  prop: '道具',
-})[type]
+const assetTypeLabel = (type: ResourceAssetType): string =>
+  ({
+    character: '角色',
+    scene: '场景',
+    prop: '道具',
+  })[type]
 
 const createPlaceholderImage = (label: string, colorA: string, colorB: string): string => {
   const encoded = encodeURIComponent(

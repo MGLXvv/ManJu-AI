@@ -10,10 +10,10 @@ describe('backend payload extraction', () => {
     expect(extractBackendList<{ id: number }>({ voices: [{ id: 2 }] }, ['voices'])).toEqual([{ id: 2 }])
   })
 
-  it('accepts direct arrays and returns an empty list for unknown shapes', () => {
+  it('accepts direct arrays and rejects unknown list shapes', () => {
     expect(extractBackendList<number>([1, 2])).toEqual([1, 2])
-    expect(extractBackendList({ records: [{ id: 3 }] })).toEqual([])
-    expect(extractBackendList(null)).toEqual([])
+    expect(() => extractBackendList({ records: [{ id: 3 }] })).toThrow('BACKEND_LIST_RESPONSE_INVALID')
+    expect(() => extractBackendList(null)).toThrow('BACKEND_LIST_RESPONSE_INVALID')
   })
 
   it('reads direct entities and legacy named wrappers', () => {

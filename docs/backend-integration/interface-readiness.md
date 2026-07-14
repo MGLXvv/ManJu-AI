@@ -18,16 +18,16 @@
 
 ## 2. 状态定义
 
-| 状态 | 含义 | 前端处理原则 |
-| --- | --- | --- |
-| `LIVE_VERIFIED` | 已在真实测试环境完成主要业务闭环 | 可以接入并开放，但仍要保留 Capability 和错误处理 |
-| `LIVE_PARTIAL` | 真实环境只验证了部分接口或部分字段 | 只保留已验证部分，其余能力默认关闭 |
-| `CONTRACT_READY` | 后端文档给出路径和 DTO，但前端尚未完成真实验证 | 可以准备 DTO、Mapper、Fixture 和 Adapter，不得宣称功能完成 |
-| `MOCK_ONLY` | 后端只是 Mock、Sandbox 或兼容占位行为 | 仅用于页面联调和状态机测试，不作为真实业务能力 |
-| `CONTROLLED_REJECT` | 后端明确稳定拒绝该操作 | UI 默认隐藏或禁用，不应把稳定错误当成接入完成 |
-| `NO_OP` | 接口返回成功，但没有真实业务副作用 | 只能用于兼容，不得在产品层宣称功能生效 |
-| `BLOCKED` | 缺少真实算法、媒体、存储或生产流程 | 不编写猜测型业务 Adapter，只保留抽象和能力占位 |
-| `UNKNOWN` | 文档、代码和真实环境证据不足或互相矛盾 | 必须等待后端补充契约或提供可验证环境 |
+| 状态                | 含义                                           | 前端处理原则                                               |
+| ------------------- | ---------------------------------------------- | ---------------------------------------------------------- |
+| `LIVE_VERIFIED`     | 已在真实测试环境完成主要业务闭环               | 可以接入并开放，但仍要保留 Capability 和错误处理           |
+| `LIVE_PARTIAL`      | 真实环境只验证了部分接口或部分字段             | 只保留已验证部分，其余能力默认关闭                         |
+| `CONTRACT_READY`    | 后端文档给出路径和 DTO，但前端尚未完成真实验证 | 可以准备 DTO、Mapper、Fixture 和 Adapter，不得宣称功能完成 |
+| `MOCK_ONLY`         | 后端只是 Mock、Sandbox 或兼容占位行为          | 仅用于页面联调和状态机测试，不作为真实业务能力             |
+| `CONTROLLED_REJECT` | 后端明确稳定拒绝该操作                         | UI 默认隐藏或禁用，不应把稳定错误当成接入完成              |
+| `NO_OP`             | 接口返回成功，但没有真实业务副作用             | 只能用于兼容，不得在产品层宣称功能生效                     |
+| `BLOCKED`           | 缺少真实算法、媒体、存储或生产流程             | 不编写猜测型业务 Adapter，只保留抽象和能力占位             |
+| `UNKNOWN`           | 文档、代码和真实环境证据不足或互相矛盾         | 必须等待后端补充契约或提供可验证环境                       |
 
 ## 3. 核心结论
 
@@ -61,11 +61,11 @@
 
 已真实验证：
 
-| Method | Path | 结论 |
-| --- | --- | --- |
-| POST | `/system/auth/login` | 账号密码登录可用 |
-| GET | `/system/auth/profile` | Bearer Token 可读取用户资料、角色和权限 |
-| GET | `/system/auth/profile` + 无效 Token | 后端会拒绝失效 Token，前端 401 清理和跳转已验证 |
+| Method | Path                                | 结论                                            |
+| ------ | ----------------------------------- | ----------------------------------------------- |
+| POST   | `/system/auth/login`                | 账号密码登录可用                                |
+| GET    | `/system/auth/profile`              | Bearer Token 可读取用户资料、角色和权限         |
+| GET    | `/system/auth/profile` + 无效 Token | 后端会拒绝失效 Token，前端 401 清理和跳转已验证 |
 
 当前限制：
 
@@ -78,13 +78,13 @@
 
 已真实验证：
 
-| Method | Path | 结论 |
-| --- | --- | --- |
-| GET | `/aidrama/projects` | `data.list / data.total` 分页契约可用 |
-| POST | `/aidrama/projects` | 可创建临时项目 |
-| GET | `/aidrama/projects/{projectId}` | 可读取项目详情 |
-| PUT | `/aidrama/projects/{projectId}` | 可更新项目名称 |
-| DELETE | `/aidrama/projects/{projectId}` | 可逻辑删除项目 |
+| Method | Path                            | 结论                                  |
+| ------ | ------------------------------- | ------------------------------------- |
+| GET    | `/aidrama/projects`             | `data.list / data.total` 分页契约可用 |
+| POST   | `/aidrama/projects`             | 可创建临时项目                        |
+| GET    | `/aidrama/projects/{projectId}` | 可读取项目详情                        |
+| PUT    | `/aidrama/projects/{projectId}` | 可更新项目名称                        |
+| DELETE | `/aidrama/projects/{projectId}` | 可逻辑删除项目                        |
 
 真实验证链路：
 

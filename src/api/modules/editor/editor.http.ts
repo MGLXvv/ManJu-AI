@@ -38,20 +38,13 @@ const assertSupportedPartitions = (
 const resolveLoadPartitions = (options?: EditorLoadDraftOptions): EditorPersistencePartition[] =>
   options?.partitions?.length ? [...new Set(options.partitions)] : [EDITOR_PERSISTENCE_PARTITIONS.script]
 
-const resolveSaveRevision = (
-  response: BackendScriptSaveResponse | null | undefined,
-  fallback: number,
-): number => {
+const resolveSaveRevision = (response: BackendScriptSaveResponse | null | undefined, fallback: number): number => {
   const candidate = response?.revision ?? response?.version
-  return typeof candidate === 'number' && Number.isFinite(candidate)
-    ? Math.max(0, Math.floor(candidate))
-    : fallback
+  return typeof candidate === 'number' && Number.isFinite(candidate) ? Math.max(0, Math.floor(candidate)) : fallback
 }
 
-const resolveSavedAt = (
-  response: BackendScriptSaveResponse | null | undefined,
-  fallback: string,
-): string => response?.updateTime || response?.updatedAt || fallback
+const resolveSavedAt = (response: BackendScriptSaveResponse | null | undefined, fallback: string): string =>
+  response?.updateTime || response?.updatedAt || fallback
 
 export const editorHttpApi: EditorApiContract = {
   async getDraft(projectId, options) {
@@ -84,9 +77,7 @@ export const editorHttpApi: EditorApiContract = {
     const partitions = options.partitions?.length
       ? [...new Set(options.partitions)]
       : [EDITOR_PERSISTENCE_PARTITIONS.script]
-    const supportedSavePartitions = new Set<EditorPersistencePartition>([
-      EDITOR_PERSISTENCE_PARTITIONS.script,
-    ])
+    const supportedSavePartitions = new Set<EditorPersistencePartition>([EDITOR_PERSISTENCE_PARTITIONS.script])
     assertSupportedPartitions(partitions, supportedSavePartitions, 'save')
 
     const fallbackRevision = options.expectedRevision ?? draft.revision ?? 0

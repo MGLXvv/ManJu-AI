@@ -7,9 +7,8 @@ type VersionedScriptWorkspace = BackendScriptWorkspaceDTO & {
   version?: unknown
 }
 
-export const getBackendScriptGeneratedContent = (
-  workspace?: BackendScriptWorkspaceDTO,
-): string => workspace?.content || workspace?.scriptContent || workspace?.generatedContent || ''
+export const getBackendScriptGeneratedContent = (workspace?: BackendScriptWorkspaceDTO): string =>
+  workspace?.content || workspace?.scriptContent || workspace?.generatedContent || ''
 
 export const getBackendScriptRevision = (workspace?: BackendScriptWorkspaceDTO): number => {
   const versioned = workspace as VersionedScriptWorkspace | undefined

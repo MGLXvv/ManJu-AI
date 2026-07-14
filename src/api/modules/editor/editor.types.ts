@@ -1,9 +1,4 @@
-import type {
-  EditorDraft,
-  EditorPersistencePartition,
-  SaveDraftOptions,
-  SaveDraftResult,
-} from '@/types/editor'
+import type { EditorDraft, EditorPersistencePartition, SaveDraftOptions, SaveDraftResult } from '@/types/editor'
 
 export type { EditorDraft, SaveDraftOptions, SaveDraftResult } from '@/types/editor'
 

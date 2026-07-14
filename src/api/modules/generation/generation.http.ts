@@ -4,7 +4,12 @@ import { extractBackendEntity, extractBackendList } from '@/api/shared/backendPa
 import { requireCapability } from '@/features/capabilities/capabilityRegistry'
 import { API_ERROR_CODES } from '@/types/api-enums'
 import { mapBackendGenerationTask, type BackendGenerationTaskDTO } from './generation.mapper'
-import type { CreateGenerationTaskInput, GenerationApiContract, GenerationTask, GenerationTaskStatus } from './generation.types'
+import type {
+  CreateGenerationTaskInput,
+  GenerationApiContract,
+  GenerationTask,
+  GenerationTaskStatus,
+} from './generation.types'
 
 const GENERATION_TASKS_PATH = '/generation/tasks'
 

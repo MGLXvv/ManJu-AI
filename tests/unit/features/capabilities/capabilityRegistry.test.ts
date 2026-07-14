@@ -18,23 +18,43 @@ describe.sequential('capabilityRegistry', () => {
     expect(resolveCapability('auth.register').available).toBe(false)
   })
 
-  it('blocks unverified http capabilities by default', async () => {
+  it('enables Phase1 real catalogs and task controls in http mode', async () => {
     vi.stubEnv('VITE_API_MODE', 'http')
     const { resolveCapability } = await import('@/features/capabilities/capabilityRegistry')
 
+    expect(resolveCapability('resource.write')).toMatchObject({
+      status: 'available',
+      available: true,
+    })
+    expect(resolveCapability('voice.write')).toMatchObject({
+      status: 'available',
+      available: true,
+    })
+    expect(resolveCapability('generation.cancel').available).toBe(true)
+    expect(resolveCapability('generation.retry').available).toBe(true)
+  })
+
+  it('keeps controlled rejects and semantic mismatches disabled', async () => {
+    vi.stubEnv('VITE_API_MODE', 'http')
+    const { resolveCapability } = await import('@/features/capabilities/capabilityRegistry')
+
+    expect(resolveCapability('project.import')).toMatchObject({
+      status: 'unsupported',
+      available: false,
+    })
     expect(resolveCapability('project.export')).toMatchObject({
       status: 'unsupported',
       available: false,
     })
-    expect(resolveCapability('resource.write')).toMatchObject({
+    expect(resolveCapability('system.write')).toMatchObject({
       status: 'readonly',
       available: false,
     })
   })
 
-  it('enables verified capabilities through runtime configuration', async () => {
+  it('enables explicitly approved capabilities through runtime configuration', async () => {
     vi.stubEnv('VITE_API_MODE', 'http')
-    vi.stubEnv('VITE_ENABLED_CAPABILITIES', 'project.import,generation.cancel')
+    vi.stubEnv('VITE_ENABLED_CAPABILITIES', 'project.import')
     const { resolveCapability } = await import('@/features/capabilities/capabilityRegistry')
 
     expect(resolveCapability('project.import')).toMatchObject({
@@ -42,7 +62,6 @@ describe.sequential('capabilityRegistry', () => {
       available: true,
       source: 'enabled-override',
     })
-    expect(resolveCapability('generation.cancel').available).toBe(true)
   })
 
   it('lets disabled configuration override enabled configuration', async () => {

@@ -99,6 +99,20 @@ describe('voiceHttpApi', () => {
     expect(voice.id).toBe('12')
   })
 
+  it('rejects create responses without a persisted voice entity', async () => {
+    post.mockResolvedValue({ data: null })
+
+    const { voiceHttpApi } = await import('@/api/modules/voice/voice.http')
+
+    await expect(
+      voiceHttpApi.create({
+        name: 'Voice A',
+        audioUrl: 'https://example.com/a.wav',
+        duration: 12,
+      }),
+    ).rejects.toThrow('VOICE_CREATE_RESPONSE_INVALID')
+  })
+
   it('updates voices through the legacy named wrapper', async () => {
     patch.mockResolvedValue({
       data: {

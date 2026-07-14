@@ -11,49 +11,49 @@
 
 ## 2. 历史已合并工作
 
-| PR | 完成内容 | 当前价值 |
-| --- | --- | --- |
-| #3 | 初版后端接入指南、状态矩阵、HTTP/Mock 边界 | 建立“后端差异只进入 Adapter/Mapper”的原则 |
-| #5 | Runtime Config、Auth Session Repository、CapabilityRegistry | 统一 Mock/HTTP 切换和未开放能力保护 |
-| #6 | GenerationTaskGateway | 提供轮询、恢复、取消、重试、幂等和有限并发边界 |
-| #7 | EditorPersistenceService | 提供分区脏状态、自动保存、重试和冲突处理边界 |
-| #9 | MediaUploadService 与轻量任务结果 | 隔离 Data URL、Blob URL、媒体 ID 和后端稳定 URL |
-| #10 | HTTP/Mock 依赖检查、契约 Fixture、Mock E2E 和 CI | 防止 HTTP Adapter 间接依赖 Mock |
-| #29 | 将 Integration Pack 和 Phase1 整理为仓库规格 | 形成环境、协议、端点和待确认项基线 |
-| #30 | Auth Profile 和 Project 读取真实接入 | 保存脱敏 Profile、Project list/detail Fixture |
-| #31 | Project CRUD 真实验证 | 完成 create → detail → rename → delete → absence |
-| #32 | 失效 Token 401 和 Session 过期恢复 | 完成有效 Token / 无效 Token 真实验证 |
-| #35 | Editor 分区加载和未确认契约显式阻断 | 防止 Storyboard 错误被吞、revision 被伪造 |
+| PR  | 完成内容                                                    | 当前价值                                         |
+| --- | ----------------------------------------------------------- | ------------------------------------------------ |
+| #3  | 初版后端接入指南、状态矩阵、HTTP/Mock 边界                  | 建立“后端差异只进入 Adapter/Mapper”的原则        |
+| #5  | Runtime Config、Auth Session Repository、CapabilityRegistry | 统一 Mock/HTTP 切换和未开放能力保护              |
+| #6  | GenerationTaskGateway                                       | 提供轮询、恢复、取消、重试、幂等和有限并发边界   |
+| #7  | EditorPersistenceService                                    | 提供分区脏状态、自动保存、重试和冲突处理边界     |
+| #9  | MediaUploadService 与轻量任务结果                           | 隔离 Data URL、Blob URL、媒体 ID 和后端稳定 URL  |
+| #10 | HTTP/Mock 依赖检查、契约 Fixture、Mock E2E 和 CI            | 防止 HTTP Adapter 间接依赖 Mock                  |
+| #29 | 将 Integration Pack 和 Phase1 整理为仓库规格                | 形成环境、协议、端点和待确认项基线               |
+| #30 | Auth Profile 和 Project 读取真实接入                        | 保存脱敏 Profile、Project list/detail Fixture    |
+| #31 | Project CRUD 真实验证                                       | 完成 create → detail → rename → delete → absence |
+| #32 | 失效 Token 401 和 Session 过期恢复                          | 完成有效 Token / 无效 Token 真实验证             |
+| #35 | Editor 分区加载和未确认契约显式阻断                         | 防止 Storyboard 错误被吞、revision 被伪造        |
 
 ## 3. 已完成真实环境验证
 
 ### Auth
 
-| 接口或场景 | 前端状态 | 证据 |
-| --- | --- | --- |
-| `POST /system/auth/login` | `live-verified` | 真实账号登录成功和错误密码业务 401 |
-| `GET /system/auth/profile` | `live-verified` | Profile、roles、permissions 和刷新恢复 |
-| 无效 Token | `live-verified` | 后端拒绝，前端清理 Session 并进入登录页 |
-| 低权限 403 | `adapter-ready` | 前端行为已实现，缺低权限账号 |
+| 接口或场景                 | 前端状态        | 证据                                    |
+| -------------------------- | --------------- | --------------------------------------- |
+| `POST /system/auth/login`  | `live-verified` | 真实账号登录成功和错误密码业务 401      |
+| `GET /system/auth/profile` | `live-verified` | Profile、roles、permissions 和刷新恢复  |
+| 无效 Token                 | `live-verified` | 后端拒绝，前端清理 Session 并进入登录页 |
+| 低权限 403                 | `adapter-ready` | 前端行为已实现，缺低权限账号            |
 
 ### Project
 
-| 接口 | 前端状态 | 证据 |
-| --- | --- | --- |
-| `GET /aidrama/projects` | `live-verified` | 确认 `data.list/data.total` 和 `DRAFT` |
-| `GET /aidrama/projects/{id}` | `live-verified` | 脱敏真实详情 Fixture |
-| `POST /aidrama/projects` | `live-verified` | 临时项目创建成功 |
-| `PUT /aidrama/projects/{id}` | `live-verified` | 临时项目重命名成功 |
-| `DELETE /aidrama/projects/{id}` | `live-verified` | 删除并确认列表中不存在 |
+| 接口                            | 前端状态        | 证据                                   |
+| ------------------------------- | --------------- | -------------------------------------- |
+| `GET /aidrama/projects`         | `live-verified` | 确认 `data.list/data.total` 和 `DRAFT` |
+| `GET /aidrama/projects/{id}`    | `live-verified` | 脱敏真实详情 Fixture                   |
+| `POST /aidrama/projects`        | `live-verified` | 临时项目创建成功                       |
+| `PUT /aidrama/projects/{id}`    | `live-verified` | 临时项目重命名成功                     |
+| `DELETE /aidrama/projects/{id}` | `live-verified` | 删除并确认列表中不存在                 |
 
 ### Script
 
-| 接口 | 前端状态 | 证据 |
-| --- | --- | --- |
-| `GET /aidrama/projects/{id}/script/workspace` | `live-verified` | 读取 rawText、prompt、scriptContent 和状态字段 |
-| `PUT /aidrama/projects/{id}/script/draft` | `live-verified` | rawText/prompt 写入并回读一致 |
-| `PUT /aidrama/projects/{id}/script/content` | `mismatch` | 路径存在，但文档未给 Request DTO；猜测字段未形成可回读结果 |
-| `POST /aidrama/projects/{id}/script/confirm` | `adapter-ready` | 等 Content 请求 DTO 和前置状态闭环 |
+| 接口                                          | 前端状态        | 证据                                                       |
+| --------------------------------------------- | --------------- | ---------------------------------------------------------- |
+| `GET /aidrama/projects/{id}/script/workspace` | `live-verified` | 读取 rawText、prompt、scriptContent 和状态字段             |
+| `PUT /aidrama/projects/{id}/script/draft`     | `live-verified` | rawText/prompt 写入并回读一致                              |
+| `PUT /aidrama/projects/{id}/script/content`   | `mismatch`      | 路径存在，但文档未给 Request DTO；猜测字段未形成可回读结果 |
+| `POST /aidrama/projects/{id}/script/confirm`  | `adapter-ready` | 等 Content 请求 DTO 和前置状态闭环                         |
 
 ## 4. 本轮完成的 Adapter 优化
 

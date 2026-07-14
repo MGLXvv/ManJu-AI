@@ -13,10 +13,7 @@ import type {
 
 const hasOwn = (value: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(value, key)
 
-const mergeResourceUpdate = (
-  current: ResourceAsset,
-  patch: UpdateResourceAssetInput,
-): CreateResourceAssetInput => ({
+const mergeResourceUpdate = (current: ResourceAsset, patch: UpdateResourceAssetInput): CreateResourceAssetInput => ({
   tab: patch.tab ?? current.tab,
   type: patch.type ?? current.type,
   source: patch.source ?? current.source,
@@ -43,13 +40,14 @@ export const useResourcesStore = defineStore('resources', () => {
     () => visibleFolders.value.find((folder) => folder.id === activeFolderId.value) ?? visibleFolders.value[0],
   )
 
-  const folderCounts = computed(() =>
-    Object.fromEntries(
-      folders.value.map((folder) => [
-        folder.id,
-        assets.value.filter((asset) => asset.tab === folder.tab && asset.source === folder.source).length,
-      ]),
-    ) as Record<string, number>,
+  const folderCounts = computed(
+    () =>
+      Object.fromEntries(
+        folders.value.map((folder) => [
+          folder.id,
+          assets.value.filter((asset) => asset.tab === folder.tab && asset.source === folder.source).length,
+        ]),
+      ) as Record<string, number>,
   )
 
   const filteredAssets = computed(() => {
@@ -61,9 +59,7 @@ export const useResourcesStore = defineStore('resources', () => {
       const sourceMatch = sourceFilter.value === 'all' || asset.source === sourceFilter.value
       const typeMatch = typeFilter.value === 'all' || asset.type === typeFilter.value
       const keywordMatch =
-        !text ||
-        asset.name.toLocaleLowerCase().includes(text) ||
-        asset.prompt.toLocaleLowerCase().includes(text)
+        !text || asset.name.toLocaleLowerCase().includes(text) || asset.prompt.toLocaleLowerCase().includes(text)
       return tabMatch && folderMatch && sourceMatch && typeMatch && keywordMatch
     })
   })

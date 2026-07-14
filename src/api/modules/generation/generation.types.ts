@@ -1,9 +1,4 @@
-import type {
-  CreateGenerationTaskInput,
-  GenerationTask,
-  GenerationTaskStatus,
-  GenerationTaskType,
-} from '@/types/generation'
+import type { CreateGenerationTaskInput, GenerationTask, GenerationTaskStatus } from '@/types/generation'
 
 export type {
   CreateGenerationTaskInput,

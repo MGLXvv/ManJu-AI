@@ -1,5 +1,8 @@
 <template>
-  <article class="resource-card" :class="[`resource-card--${asset.type}`, { 'is-batch-mode': batchMode, 'is-batch-selected': selected }]">
+  <article
+    class="resource-card"
+    :class="[`resource-card--${asset.type}`, { 'is-batch-mode': batchMode, 'is-batch-selected': selected }]"
+  >
     <button
       v-if="batchMode"
       type="button"
@@ -39,11 +42,14 @@ const emit = defineEmits<{
   (e: 'toggle-select', id: string): void
 }>()
 
-const assetTypeLabel = computed(() => ({
-  character: '角色',
-  scene: '场景',
-  prop: '道具',
-})[props.asset.type])
+const assetTypeLabel = computed(
+  () =>
+    ({
+      character: '角色',
+      scene: '场景',
+      prop: '道具',
+    })[props.asset.type],
+)
 
 const handleClick = (): void => {
   if (props.batchMode) {

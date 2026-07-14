@@ -41,22 +41,22 @@ Profile 已有真实响应 Fixture，但刷新恢复、401 和网络失败仍需
 
 ## Script 与 Editor
 
-| 接口                                          | 后端           | 前端        | 结论                                                                 |
-| --------------------------------------------- | -------------- | ----------- | -------------------------------------------------------------------- |
-| `GET /aidrama/projects/{id}/script/workspace` | READY          | implemented | HTTP 默认只加载 Script 分区；待真实刷新恢复验收                      |
-| `PUT /aidrama/projects/{id}/script/draft`     | READY          | implemented | 已保存 rawText/prompt；未接入分区不会再伪装保存成功                  |
-| `POST /aidrama/projects/{id}/script/generate` | Mock READY     | partial     | 业务服务已有生成入口，需真实页面验收                                 |
-| `PUT /aidrama/projects/{id}/script/content`   | READY          | implemented | generated 非空时保存；剧本分镜文本的独立持久化字段仍未确认           |
-| `POST /aidrama/projects/{id}/script/confirm`  | READY          | partial     | 已有页面入口和真实验证脚本，待测试环境执行                           |
-| `GET/PUT /aidrama/projects/{id}/script`       | legacy         | reserved    | 不应优先于 workspace 接口                                            |
-| Editor revision                               | undocumented   | partial     | 仅采用后端实际返回的 revision/version；无字段时不再伪造自增并发版本 |
+| 接口                                          | 后端         | 前端        | 结论                                                                |
+| --------------------------------------------- | ------------ | ----------- | ------------------------------------------------------------------- |
+| `GET /aidrama/projects/{id}/script/workspace` | READY        | implemented | HTTP 默认只加载 Script 分区；待真实刷新恢复验收                     |
+| `PUT /aidrama/projects/{id}/script/draft`     | READY        | implemented | 已保存 rawText/prompt；未接入分区不会再伪装保存成功                 |
+| `POST /aidrama/projects/{id}/script/generate` | Mock READY   | partial     | 业务服务已有生成入口，需真实页面验收                                |
+| `PUT /aidrama/projects/{id}/script/content`   | READY        | implemented | generated 非空时保存；剧本分镜文本的独立持久化字段仍未确认          |
+| `POST /aidrama/projects/{id}/script/confirm`  | READY        | partial     | 已有页面入口和真实验证脚本，待测试环境执行                          |
+| `GET/PUT /aidrama/projects/{id}/script`       | legacy       | reserved    | 不应优先于 workspace 接口                                           |
+| Editor revision                               | undocumented | partial     | 仅采用后端实际返回的 revision/version；无字段时不再伪造自增并发版本 |
 
 ## Storyboard
 
-| 接口组                         | 后端  | 前端     | 结论                                                                  |
-| ------------------------------ | ----- | -------- | --------------------------------------------------------------------- |
+| 接口组                         | 后端  | 前端     | 结论                                                                 |
+| ------------------------------ | ----- | -------- | -------------------------------------------------------------------- |
 | workspace / generate / confirm | READY | partial  | 只有显式请求 Storyboard 分区时才加载；生成和确认需逐项契约验收       |
-| storyboards CRUD / sort        | READY | partial  | 已有多个 Storyboard Adapter/Service，但尚未证明完整覆盖确认路径       |
+| storyboards CRUD / sort        | READY | partial  | 已有多个 Storyboard Adapter/Service，但尚未证明完整覆盖确认路径      |
 | 加载失败处理                   | —     | improved | 不再捕获所有错误并返回空 shots；401、403、500 和契约错误会继续向上抛 |
 
 ## Project Asset 与 Resource Library

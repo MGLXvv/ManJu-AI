@@ -1,163 +1,141 @@
-# 当前前端实现审计
+# 当前前端接入准备度审计
 
-审计范围：运行配置、Axios 拦截器、Auth、Project、Editor、Resource、System、Voice、Script Template、Generation 与 CapabilityRegistry。
+## 总体结论
 
-## 已正确实现的基础设施
+当前前端已经具备“后端到位后只修改适配层”的基础框架，不需要重新设计页面或 Store。
 
-1. `runtimeConfig.ts` 统一读取 API 模式、Base URL 与能力开关；
-2. HTTP Base URL 默认 `/admin-api`，业务 Adapter 追加模块路径；
-3. Vite 已支持通过 `VITE_DEV_PROXY_TARGET` 代理 `/admin-api`；
-4. 请求拦截器在存在 Token 时发送 Bearer Header；
-5. 响应拦截器支持 `{ code, msg, data }`，不会只依据 HTTP 状态判断成功；
-6. 业务错误 `code !== 0` 会转成统一 ApiError；
-7. 401 会清理会话，403 会进入无权限状态；
-8. 页面和 Store 基本通过 API Contract/Service 访问后端；
-9. Mock 与 HTTP 模式仍然隔离，能力开关可阻止未验证写操作。
-
-## 本轮已修复
-
-### Auth Profile 与 Session 恢复
-
-- 新增 `GET /system/auth/profile` HTTP 映射；
-- 登录后使用 Profile 补全 nickname、roles 和 permissions；
-- 应用启动时，HTTP 模式使用已有不透明 Token 请求 Profile；
-- Profile 返回 401 并由拦截器清理 Session 后，恢复结果为未登录；
-- Mock 模式不调用 Profile，不改变现有 Mock 登录和 E2E 行为；
-- 密码、Token 和 Authorization Header 不进入 Fixture 或文档。
-
-### Project 分页与真实 DTO
-
-- 项目列表由错误的 `records` 改为确认的 `list/total`；
-- 新增真实项目列表和详情 Fixture；
-- `DRAFT` 映射为前端 `in_progress`，缺少工作流步骤时从 `script` 开始；
-- 进行中筛选暂时请求 `status=ALL`，再由前端领域状态过滤，避免把 `DRAFT` 项目排除；
-- DTO 已补充 description、statusTag、language、latestTaskStatus 和 latestErrorMessage 等真实字段。
-
-以上改动达到 `implemented`，但在 WireGuard 测试环境完成页面刷新、401、创建、更新和删除验收前，不能标记为 `verified`。
-
-## P0：本阶段仍需完成
-
-### Project 创建、更新和删除真实验收
-
-`POST /aidrama/projects` 的请求结构已按后端文档实现，但尚未实际调用。需要创建临时项目并在同一验证流程中完成：
+后续工作应集中在：
 
 ```text
-create -> detail -> update name -> delete -> confirm list no longer contains item
+HTTP Adapter
+Backend DTO
+Mapper
+Fixture
+Capability 状态
+契约测试
+真实环境验收
 ```
 
-真实验收后应保存脱敏响应 Fixture，并确认：
+当前不应继续：
 
-- 创建响应是完整项目 DTO 还是仅 ID；
-- 更新允许修改的字段和状态枚举；
-- 删除后的 HTTP 状态、业务 code 和逻辑删除可见性；
-- 是否返回 requestId 或 traceId。
+- 根据响应字段猜测请求字段；
+- 把后端文档中的 READY 直接标记为 verified；
+- 把 Mock resultUrl 当作真实媒体；
+- 把 HTTP 200 或 `code=0` 当作业务副作用已经发生；
+- 在页面和 Store 中加入后端兼容判断；
+- 在后端失败时静默切回 Mock。
 
-### Project Export / Import compat 路径不匹配
+## 已完成的框架
 
-后端 Phase1：
+### 运行配置与 HTTP Client
+
+- `runtimeConfig.ts` 统一读取 API 模式、Base URL 和 Capability 覆盖；
+- HTTP 默认基础路径为 `/admin-api`；
+- Vite 支持本地代理；
+- 请求统一添加 Bearer Token；
+- 响应统一兼容 `{ code, msg, data }`；
+- 业务错误转换为 ApiError；
+- 401 清理或过期 Session，403 保留 Session。
+
+### 模块化 Adapter
+
+标准目录已经形成：
 
 ```text
-GET  /projects/{projectId}/export
-POST /projects/import  // controlled reject
+<module>.api.ts
+<module>.http.ts
+<module>.mock.ts
+<module>.types.ts
+<module>.mapper.ts
 ```
 
-当前前端仍保留：
+页面、组件和 Store 基本通过 Contract 或 Domain Service 调用。
+
+### CapabilityRegistry
+
+未验证能力可以标记为：
 
 ```text
-GET  /aidrama/projects/{projectId}/export
-POST /aidrama/projects/import
+available
+mock-only
+readonly
+unsupported
 ```
 
-Export compat 尚未进入本轮认证与项目主链；Import 能力必须继续关闭。
+Project Import、Export Task、Resource Write、Voice Write、System Write、Generation cancel/retry 等已有统一保护。
 
-### Project Asset Adapter 路径和模型不匹配
+### 编辑器持久化边界
 
-当前 `asset.http.ts` 使用：
+- `EditorPersistenceService` 已存在；
+- 草稿分为 Script、Setting、Storyboard、Video、Dubbing、ProjectMeta；
+- HTTP Adapter 按显式分区加载；
+- 未实现分区不再返回默认数据或假装保存成功；
+- Storyboard Workspace 错误不再被吞掉；
+- revision/version 只采用后端真实返回值；
+- Script Content 请求 DTO 未确认时显式阻断。
 
-```text
-GET /projects/{projectId}/assets
-PUT /projects/{projectId}/assets
-```
+### 生成任务、媒体和测试
 
-确认契约使用 `/aidrama/projects/{projectId}/assets`，并以单资产 CRUD、workspace/raw、batch-delete 等形式提供，没有“PUT 整个 assets 数组”契约。
+- GenerationTaskGateway 和任务状态抽象已存在；
+- 通用 create/update 已按 Phase1 稳定拒绝处理；
+- 文件上传和生成结果已有前端抽象；
+- HTTP Adapter 单元测试、脱敏 Fixture、Mock E2E、长会话、视觉回归、Windows 质量脚本和 Build Budget 已建立。
 
-## P1：后端已 READY，但前端仍关闭或只读
+## 已完成的真实证据
 
-- Resource Library CRUD；
-- 保存项目资产到资源库；
-- 从资源库导入到项目；
-- Voice CRUD；
-- Script Template CRUD 的真实响应映射验证；
-- Generation Task cancel/retry；
-- 项目 copy、batch-delete、statistics、overview、tasks、pipeline；
-- Auth send-code、code-login、register、reset-password。
+### Auth
 
-这些能力不能只通过 `VITE_ENABLED_CAPABILITIES` 强制打开。应先修正 DTO、Mapper 和契约测试，再更新 CapabilityRegistry 默认状态。
+已完成登录、Profile、角色权限映射、持久化 Token 恢复和失效 Token 401。
 
-## P1：明确 Mapper 风险
+仍缺低权限 403、后端 Logout、生产 Session 和 Refresh。
 
-### Resource 类型
+### Project
 
-当前非 `CHARACTER` 都映射为 `scene`，会把 `PROP` 错误归类。
+已完成 `list/total`、详情、创建、重命名、删除和删除后列表校验；验证脚本支持失败自动清理。
 
-### Resource scope
+仍缺页面级完整验收、扩展端点、完整 update DTO、删除后详情行为和低权限 403。
 
-当前判断 `OFFICIAL`，后端确认枚举为：
+### Script Draft
 
-```text
-PRIVATE / SYSTEM / SHARED
-```
+已确认 Workspace GET 和 Draft PUT 的 `rawText/prompt` 保存与回读。
 
-### 其他列表包裹字段
+明确未确认：
 
-Project 已通过真实 Fixture 确认为 `list/total`。以下 Adapter 仍假设模块自定义字段：
+- Script Content PUT 请求 DTO；
+- Confirm 前置条件；
+- revision/version 和 409；
+- 剧本分镜文本的独立持久化字段。
 
-- Generation：`tasks`；
-- Voice：`voices`；
-- Script Template：`templates`。
+真实探测证明 `{ content }` 返回 `code=0`，但 Workspace 的 `scriptContent` 仍为空。不能继续根据响应字段反推 `{ scriptContent }`。
 
-需要用真实响应 Fixture 决定是否统一为 `list/total`，不能凭前端类型继续推断。
+## 当前主要风险
 
-## P1：错误处理风险
+### P0：状态语义混乱
 
-`editorHttpApi.getDraft()` 捕获 Storyboard Workspace 的所有错误并返回空 `shots`。这会把 401、403、500、契约错误和真实空数据混为一类。HTTP 模式应只对后端明确允许的“尚无分镜”状态做空值映射，其余错误继续抛出。
+历史文档同时使用 READY、implemented、partial、verified。现统一使用 endpoint-matrix 的证据状态；`verified` 只保留给完整真实验收。
 
-System NO_OP 接口可能返回 `data=null`。当前 `markMessageRead`、`markAllRead` 直接读取 `data.message` / `data.messages`，需要加空值保护。
+### P0：猜测性 DTO
 
-## P2：阶段内合理保留的限制
+高风险位置包括 Script Content、Voice/Template/Generation 分页、Project Asset 路径和保存模型、Resource scope/type、revision/version 和 409。
 
-以下状态与后端文档一致，无需在本轮强行实现：
+未确认接口必须显式阻断，后端提供 OpenAPI、DTO 或 Fixture 后只修改 Adapter 和 Mapper。
 
-- Generation Task 通用 create/update 保持受控拒绝；
-- System styles/permissions 写操作保持不可用；
-- 项目 Import 保持不可用；
-- Provider Callback 不由普通前端调用；
-- 真实 Image2、Video、TTS 与 Export 保持 blocked；
-- 不实现猜测性的 Refresh Token 自动换新。
+### P0：Mock 被误认为真实能力
 
-## 推荐实施顺序
+Script Generate、Storyboard Generate、Provider Sandbox 和 Export 均包含 Mock 或占位行为。它们应标记为 `mock-only`，占位 resultUrl 不进入永久媒体模型。
 
-1. 完成 Auth Profile + Project list/detail/create/update/delete 的真实验收；
-2. Project overview/statistics/copy/batch-delete；
-3. Script Workspace；
-4. Storyboard Workspace 与 CRUD；
-5. Project Asset 与 Resource Library；
-6. Generation Task list/detail/cancel/retry；
-7. Voice 与 Script Template；
-8. Provider Sandbox 测试工具；
-9. Export Mock 契约；
-10. 等待真实算法和媒体接口后再进入生产链路。
+### P1：Asset、Resource 与媒体
 
-## 验证要求
+Project Asset 路径和保存模型仍不一致，PROP 和 scope 映射存在风险。媒体上传方式、资源 ID、URL 生命周期、删除、CDN 和 CORS 均未确认。
 
-每个模块由 `partial` 升级为 `verified` 前必须覆盖：
+## 本轮代码收口
 
-- 成功响应；
-- 业务 `code=400`；
-- 401；
-- 403；
-- 404/空数据；
-- 页面刷新恢复；
-- DTO 空值和枚举；
-- Mock 模式回归；
-- 不打印 Token、密码和敏感请求头。
+- Editor HTTP 按分区加载；
+- 未实现分区显式拒绝；
+- Storyboard 读取错误向上抛；
+- revision/version 只使用后端真实值；
+- Script Draft 仅保存已确认的 `rawText/prompt`；
+- Script Content 请求 DTO 未确认时抛出 `EDITOR_SCRIPT_CONTENT_CONTRACT_UNCONFIRMED`；
+- 不保留猜测性 Script Workspace 写入验证器。
+
+详细步骤参见 `frontend-readiness-handbook.md` 和 `../frontend-backend-integration-guide.md`。

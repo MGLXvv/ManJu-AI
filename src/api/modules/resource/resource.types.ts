@@ -1,8 +1,6 @@
 import type {
   CreateResourceAssetInput,
   ResourceAsset,
-  ResourceAssetSource,
-  ResourceAssetType,
   ResourceLibraryState,
   UpdateResourceAssetInput,
 } from '@/types/resource'

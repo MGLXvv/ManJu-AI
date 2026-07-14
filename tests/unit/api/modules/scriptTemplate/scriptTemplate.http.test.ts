@@ -93,6 +93,20 @@ describe('scriptTemplateHttpApi', () => {
     expect(template.id).toBe('11')
   })
 
+  it('rejects create and update responses without persisted template entities', async () => {
+    post.mockResolvedValue({ data: null })
+    patch.mockResolvedValue({ data: null })
+
+    const { scriptTemplateHttpApi } = await import('@/api/modules/scriptTemplate/scriptTemplate.http')
+
+    await expect(
+      scriptTemplateHttpApi.createTemplate({ name: 'Template A', content: 'Body A' }),
+    ).rejects.toThrow('SCRIPT_TEMPLATE_CREATE_RESPONSE_INVALID')
+    await expect(
+      scriptTemplateHttpApi.updateTemplate('template-1', { name: 'Template B', content: 'Body B' }),
+    ).rejects.toThrow('SCRIPT_TEMPLATE_UPDATE_RESPONSE_INVALID')
+  })
+
   it('updates templates through the legacy named wrapper', async () => {
     patch.mockResolvedValue({
       data: {

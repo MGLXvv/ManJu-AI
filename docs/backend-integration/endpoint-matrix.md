@@ -30,7 +30,7 @@
 | `live-verified` | 已通过真实环境成功链或失败链验证                                       |
 | `integrated`    | HTTP Adapter、DTO/Mapper 和测试已完成，仍缺部分真实 Fixture 或页面验收 |
 | `adapter-ready` | 已有前端领域边界，但未按真实接口完成 Adapter                           |
-| `parked`        | 已有路径或最小请求依据，但证据不足以安全启用，暂停实现并保留 Backlog    |
+| `parked`        | 已有路径或最小请求依据，但证据不足以安全启用，暂停实现并保留 Backlog   |
 | `disabled`      | 根据后端状态或产品范围主动关闭                                         |
 | `mismatch`      | 历史实现的路径、请求模型或返回语义不正确                               |
 | `blocked`       | 依赖未完成的后端算法、媒体或生产协议                                   |
@@ -69,51 +69,51 @@
 
 ## 5. Script 与 Editor
 
-| 接口组               | 后端状态     | 前端状态        | 证据或动作                                                 |
-| -------------------- | ------------ | --------------- | ---------------------------------------------------------- |
-| Script Workspace GET | `READY`      | `live-verified` | 真实读取 rawText、prompt 和状态字段                        |
-| Script Draft PUT     | `READY`      | `live-verified` | rawText/prompt 写入并回读成功                              |
-| Script Content PUT   | `READY`      | `mismatch`      | 原始文档仍缺请求 DTO；历史猜测字段未产生可回读结果         |
-| Script Confirm       | `READY`      | `parked`        | 等 Content 请求 DTO、失败 Fixture 和前置状态闭环           |
-| Script Generate      | `MOCK`       | `disabled`      | 不是实际 AI 生成                                           |
-| revision/version/409 | 未定义       | `parked`        | 只采用后端真实返回值，不伪造并发版本                       |
-| Editor 六分区持久化  | 前端领域设计 | `parked`        | 保留现有稳定 Mock/领域结构，不继续猜测分区写契约           |
+| 接口组               | 后端状态     | 前端状态        | 证据或动作                                         |
+| -------------------- | ------------ | --------------- | -------------------------------------------------- |
+| Script Workspace GET | `READY`      | `live-verified` | 真实读取 rawText、prompt 和状态字段                |
+| Script Draft PUT     | `READY`      | `live-verified` | rawText/prompt 写入并回读成功                      |
+| Script Content PUT   | `READY`      | `mismatch`      | 原始文档仍缺请求 DTO；历史猜测字段未产生可回读结果 |
+| Script Confirm       | `READY`      | `parked`        | 等 Content 请求 DTO、失败 Fixture 和前置状态闭环   |
+| Script Generate      | `MOCK`       | `disabled`      | 不是实际 AI 生成                                   |
+| revision/version/409 | 未定义       | `parked`        | 只采用后端真实返回值，不伪造并发版本               |
+| Editor 六分区持久化  | 前端领域设计 | `parked`        | 保留现有稳定 Mock/领域结构，不继续猜测分区写契约   |
 
 ## 6. Storyboard、Project Asset 与 Resource Library
 
-| 模块                                         | 后端状态     | 前端状态     | 证据或动作                                                                 |
-| -------------------------------------------- | ------------ | ------------ | -------------------------------------------------------------------------- |
-| Storyboard Workspace 读取                    | `READY`      | `integrated` | 已按项目级 Workspace 路径读取并映射基础分镜字段                            |
-| Storyboard CRUD / sort / confirm             | `READY`      | `parked`     | 原始文档仅确认路径和最小字段，缺完整响应、错误 Fixture 与页面字段持久化语义 |
-| Storyboard Generate                          | `MOCK`       | `disabled`   | 不作为真实 AI 结果                                                         |
-| Project Asset list                           | `READY`      | `integrated` | 已修正为 `/aidrama/projects/{id}/assets` 并映射 CHARACTER/SCENE/PROP       |
-| Project Asset single-entity CRUD             | `READY`      | `parked`     | 已确认 Method/Path 和创建字段，但缺真实写后读、更新及删除响应证据           |
-| Project Asset aggregate save                 | 后端无此接口 | `disabled`   | 旧整体 PUT 已显式拒绝                                                       |
-| Resource Library list / CRUD                 | `READY`      | `integrated` | 已接入真实 CRUD 路径、`assetType`、`scope` 和 `extraJson`                  |
-| save-to-library / import-from-library        | `READY`      | `parked`     | 原始文档确认 COPY Snapshot 语义，但页面闭环和权限证据不足                   |
-| Media Upload                                 | 未提供       | `blocked`    | 等 multipart/预签名上传与 OSS/CDN 规则                                     |
+| 模块                                  | 后端状态     | 前端状态     | 证据或动作                                                                  |
+| ------------------------------------- | ------------ | ------------ | --------------------------------------------------------------------------- |
+| Storyboard Workspace 读取             | `READY`      | `integrated` | 已按项目级 Workspace 路径读取并映射基础分镜字段                             |
+| Storyboard CRUD / sort / confirm      | `READY`      | `parked`     | 原始文档仅确认路径和最小字段，缺完整响应、错误 Fixture 与页面字段持久化语义 |
+| Storyboard Generate                   | `MOCK`       | `disabled`   | 不作为真实 AI 结果                                                          |
+| Project Asset list                    | `READY`      | `integrated` | 已修正为 `/aidrama/projects/{id}/assets` 并映射 CHARACTER/SCENE/PROP        |
+| Project Asset single-entity CRUD      | `READY`      | `parked`     | 已确认 Method/Path 和创建字段，但缺真实写后读、更新及删除响应证据           |
+| Project Asset aggregate save          | 后端无此接口 | `disabled`   | 旧整体 PUT 已显式拒绝                                                       |
+| Resource Library list / CRUD          | `READY`      | `integrated` | 已接入真实 CRUD 路径、`assetType`、`scope` 和 `extraJson`                   |
+| save-to-library / import-from-library | `READY`      | `parked`     | 原始文档确认 COPY Snapshot 语义，但页面闭环和权限证据不足                   |
+| Media Upload                          | 未提供       | `blocked`    | 等 multipart/预签名上传与 OSS/CDN 规则                                      |
 
 ## 7. Phase1 Compat
 
-| 模块                                | 后端状态            | 前端状态     | 证据或动作                                   |
-| ----------------------------------- | ------------------- | ------------ | -------------------------------------------- |
-| `GET /system`                       | `REAL`              | `integrated` | 支持轻量和完整状态数据                       |
-| System styles/permissions write     | `CONTROLLED_REJECT` | `disabled`   | Capability 在请求前阻断                      |
-| System messages                     | `NO_OP`             | `integrated` | 兼容 `data=null`，Store 本地更新状态         |
-| Voices CRUD                         | `REAL`              | `integrated` | DTO Mapper、标准分页和旧包装兼容已完成       |
-| Script Templates CRUD               | `REAL`              | `integrated` | DTO Mapper、标准分页和旧包装兼容已完成       |
-| Generation list/detail/cancel/retry | `REAL`              | `integrated` | 已接入任务 DTO Mapper，未知枚举显式失败      |
-| Generation create/update            | `CONTROLLED_REJECT` | `disabled`   | 业务生成必须调用具体 Submit 接口             |
+| 模块                                | 后端状态            | 前端状态     | 证据或动作                              |
+| ----------------------------------- | ------------------- | ------------ | --------------------------------------- |
+| `GET /system`                       | `REAL`              | `integrated` | 支持轻量和完整状态数据                  |
+| System styles/permissions write     | `CONTROLLED_REJECT` | `disabled`   | Capability 在请求前阻断                 |
+| System messages                     | `NO_OP`             | `integrated` | 兼容 `data=null`，Store 本地更新状态    |
+| Voices CRUD                         | `REAL`              | `integrated` | DTO Mapper、标准分页和旧包装兼容已完成  |
+| Script Templates CRUD               | `REAL`              | `integrated` | DTO Mapper、标准分页和旧包装兼容已完成  |
+| Generation list/detail/cancel/retry | `REAL`              | `integrated` | 已接入任务 DTO Mapper，未知枚举显式失败 |
+| Generation create/update            | `CONTROLLED_REJECT` | `disabled`   | 业务生成必须调用具体 Submit 接口        |
 
 ## 8. AI、Provider 与 Export
 
-| 能力                                     | 后端状态           | 前端状态        | 当前结论                                    |
-| ---------------------------------------- | ------------------ | --------------- | ------------------------------------------- |
-| Provider Sandbox                         | `PARTIAL` / `MOCK` | `disabled`      | 仅开发联调工具，resultUrl 为占位地址        |
-| Provider Callback                        | 算法服务入口       | `disabled`      | 普通前端禁止调用                            |
-| Export Workspace / History / Mock Export | `PARTIAL` / `MOCK` | `parked`        | 可验证状态流，但当前无继续接入价值          |
-| Image2 / Seedance / TTS                  | `BLOCKED`          | `blocked`       | 等真实 Submit、Callback、Task Result 和媒体 |
-| 视频合成、下载、OSS/CDN                  | `BLOCKED`          | `blocked`       | 等生产媒体链路                              |
+| 能力                                     | 后端状态           | 前端状态   | 当前结论                                    |
+| ---------------------------------------- | ------------------ | ---------- | ------------------------------------------- |
+| Provider Sandbox                         | `PARTIAL` / `MOCK` | `disabled` | 仅开发联调工具，resultUrl 为占位地址        |
+| Provider Callback                        | 算法服务入口       | `disabled` | 普通前端禁止调用                            |
+| Export Workspace / History / Mock Export | `PARTIAL` / `MOCK` | `parked`   | 可验证状态流，但当前无继续接入价值          |
+| Image2 / Seedance / TTS                  | `BLOCKED`          | `blocked`  | 等真实 Submit、Callback、Task Result 和媒体 |
+| 视频合成、下载、OSS/CDN                  | `BLOCKED`          | `blocked`  | 等生产媒体链路                              |
 
 ## 9. 真实验证工具
 

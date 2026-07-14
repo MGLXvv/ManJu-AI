@@ -1,80 +1,96 @@
-# 联调待确认项
+# 后端正式交付前待确认项
 
-以下事项在开始大规模 HTTP Adapter 修改前必须通过真实响应、Swagger 或后端确认完成闭环。
+缺少请求 DTO 时，前端只保留 Contract 和 Capability，不继续猜测字段。
 
 ## 已确认
 
-- 测试环境：`http://10.10.3.26:48080`；
-- 网关前缀：`/admin-api`；
-- 本地浏览器通过 Vite Proxy 访问；
-- 通用响应：`{ code, msg, data }`；
-- 业务成功码：`0`；
-- 鉴权：`Authorization: Bearer <accessToken>`；
-- Token：不透明内存 Session，不是 JWT；
-- 当前无 Refresh Token 换新接口；
-- 后端重启后 Token 失效；
-- 通用分页文档为 `data.list/data.total`；
-- Project Asset `type` 与 Resource `assetType` 不可混用；
-- `extraJson` 是 JSON 字符串；
-- Provider Sandbox 需要 Bearer Token；
-- Provider Callback 不是普通前端接口。
+- 测试环境、网关前缀和 Vite Proxy；
+- CommonResult 与业务成功码；
+- Bearer 不透明 Session Token；
+- 当前没有 Refresh API；
+- Project 分页与基础 CRUD；
+- Script Workspace GET 和 Draft `rawText/prompt`；
+- Provider Callback 不是普通前端接口；
+- Provider Sandbox 与 Export resultUrl 是占位结果。
 
-## 需要真实 Fixture 确认
+## 阻塞具体 Adapter 的问题
 
-1. Project 列表实际是否严格返回 `list/total`，是否存在兼容 `records`；
-2. Voices、Script Templates、Generation Tasks 的分页响应字段；
-3. Project update 支持的完整字段和返回体；
-4. Profile 返回字段、角色与权限结构；
-5. System `GET /system` 的完整状态字段；
-6. NO_OP 消息接口的 `data` 是 `null`、对象还是消息实体；
-7. Resource `SYSTEM`、`SHARED` 在页面中的来源/权限语义；
-8. Script/Storyboard workspace 的 revision、更新时间和空工作区语义；
-9. 逻辑删除后详情接口返回 404、业务 400 还是空 data；
-10. 所有时间字段的格式和时区；
-11. requestId/traceId 的响应头或响应体位置；
-12. 账号权限不足时 `code=403` 是否稳定；
-13. 后端进程重启后的 Profile、项目列表错误表现；
-14. Mock resultUrl 是否保证格式稳定，还是仅为任意占位字符串。
+1. Script Content 的正式请求 DTO、成功响应和重新读取规则；
+2. Script Confirm 的前置条件和失败响应；
+3. Script/Storyboard revision、expectedRevision 和 409；
+4. Project Asset 的完整路径、请求 DTO 和单实体/聚合保存模型；
+5. Voices、Script Templates、Generation Tasks 的分页结构；
+6. Resource PRIVATE/SYSTEM/SHARED 的权限和页面语义；
+7. Project update 的完整字段和状态枚举；
+8. 逻辑删除后详情的响应；
+9. Storyboard CRUD、sort、confirm 的真实 DTO 和错误样例。
 
-## 需要运维或仓库设置确认
+## 真实 AI 与媒体
 
-- `master` 是否已禁止直接推送；
-- Required checks 是否包含：
-  - `Static checks, types, tests, build`；
-  - `Playwright Mock main flow`；
-- PR 是否要求更新到最新 `master`；
-- 仓库是否优先或只允许 Squash Merge；
-- 正式 Nginx 域名、HTTPS、超时和上传大小限制；
-- 测试账号、角色和最小权限集合；
-- 测试环境日志和 requestId 查询方式。
+- Image2、Seedance、TTS 的 Submit、Task、Callback 和 Result DTO；
+- 业务生成端点与 Generation Tasks 的关系；
+- 轮询、SSE 或 WebSocket；
+- 幂等、取消、重试和超时；
+- multipart、预签名上传或对象存储直传；
+- 文件限制和媒体资源 ID；
+- 永久 URL 与临时签名 URL；
+- URL 刷新、删除和引用计数；
+- OSS/CDN、CORS 和鉴权；
+- 真实视频合成与下载。
 
-## 当前阻塞
+## 认证、权限与通用协议
 
-- 真实 Image2 Submit/Callback；
-- 真实 Seedance Submit/Callback；
-- 真实 TTS Submit/Callback；
-- 真实视频合成与下载；
-- OSS/CDN 媒体生命周期；
-- 项目导入；
-- System styles/permissions 写入；
-- 生产级持久 Session、过期和 Refresh 方案。
+- 低权限测试账号和稳定 403 Fixture；
+- 后端 Logout、生产 Session、过期和 Refresh；
+- 时间字段时区；
+- requestId/traceId Header；
+- 跨模块错误码；
+- ID、null、空字符串和缺省字段规则；
+- 分页上限、排序、429 和重试；
+- Nginx 正式域名、HTTPS、上传限制和超时。
 
-## 联调记录模板
+## Phase1 特殊状态
+
+### Controlled Reject
+
+- Project Import；
+- System styles/permissions write；
+- Generation create/update。
+
+### No-op
+
+- System message read；
+- read-all；
+- clear。
+
+### Mock/Placeholder
+
+- Script Generate；
+- Storyboard Generate；
+- Project start-generation；
+- Provider Sandbox；
+- Export；
+- Image、Video、TTS resultUrl。
+
+## 后端交付模板
 
 ```text
 日期：
 环境：
 后端 commit：
-前端 commit：
+OpenAPI 导出：
 模块：
 Method + Path：
-请求 Fixture：
-成功响应 Fixture：
-失败响应 Fixture：
-401/403：
-页面流程：
-刷新恢复：
-发现差异：
-结论：partial / verified / blocked
+Request DTO：
+Success Fixture：
+Empty Fixture：
+Validation Error：
+401 / 403 / 404：
+枚举：
+时间与时区：
+分页：
+幂等与重试：
+媒体规则：
+Mock / No-op / Controlled Reject：
 负责人：
 ```

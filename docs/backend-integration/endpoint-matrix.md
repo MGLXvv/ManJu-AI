@@ -1,104 +1,104 @@
 # 后端端点与前端接入矩阵
 
-> 后端状态来自 Frontend Integration Pack 与 Frontend API Compat Phase1；前端状态基于当前实现和脱敏真实 Fixture。`confirmed` 不等于 `verified`。
+> 本矩阵区分“后端文档声明”“前端已有代码”和“真实环境证据”。后端文档中的 `READY` 不自动等于前端 `verified`。
+
+## 状态
+
+| 状态                | 含义                                             |
+| ------------------- | ------------------------------------------------ |
+| `verified`          | 真实成功、失败、权限、刷新恢复和页面流程均已验收 |
+| `contract-verified` | Method、Path、DTO 和基础成功链已有真实证据       |
+| `documented`        | 后端文档声明存在，但缺少完整 DTO 或 Fixture      |
+| `mock-only`         | Mock、占位任务或占位媒体                         |
+| `controlled-reject` | 后端稳定拒绝，不能在 UI 宣称可用                 |
+| `no-op`             | 返回成功但没有真实业务副作用                     |
+| `blocked`           | 缺少算法、媒体、上传、生产会话或正式实现         |
+| `mismatch`          | 前端假设与真实响应存在明确差异                   |
+| `unconfirmed`       | 请求体、响应体、状态或语义尚未确认               |
+
+## 环境与协议
+
+| 项目                                 | 状态                | 结论                          |
+| ------------------------------------ | ------------------- | ----------------------------- |
+| Base URL、`/admin-api`、Bearer Token | `contract-verified` | WireGuard 环境已完成真实请求  |
+| `{ code, msg, data }`                | `contract-verified` | 业务成功必须判断 `code === 0` |
+| Project `list/total`                 | `contract-verified` | 其他模块分页仍需 Fixture      |
+| Refresh Token                        | `blocked`           | 后端没有换新接口              |
+| CORS、Nginx、HTTPS                   | `blocked`           | 测试阶段使用 Vite Proxy       |
+| 时间时区、requestId/traceId          | `unconfirmed`       | 当前样例不足                  |
 
 ## Auth
 
-| 接口                               | 后端         | 前端            | 结论                                         |
-| ---------------------------------- | ------------ | --------------- | -------------------------------------------- |
-| `POST /system/auth/login`          | READY        | implemented     | 已使用 `username/password`，映射不透明 Token |
-| `GET /system/auth/profile`         | READY        | implemented     | 登录后补全用户信息，启动时校验持久化 Session |
-| `POST /system/auth/send-code`      | READY        | unsupported     | Adapter 明确抛出 unsupported                 |
-| `POST /system/auth/code-login`     | READY        | unsupported     | Adapter 明确抛出 unsupported                 |
-| `POST /system/auth/register`       | READY        | unsupported     | Adapter 明确抛出 unsupported                 |
-| `POST /system/auth/reset-password` | READY        | unsupported     | Adapter 明确抛出 unsupported                 |
-| `POST /system/auth/social/login`   | partial      | unsupported     | 后端真实平台未正式联调，保持隐藏合理         |
-| Refresh Token                      | unavailable  | not implemented | 后端没有换新接口，禁止前端自动刷新           |
-| Logout                             | undocumented | local only      | 当前只清理前端会话                           |
-
-Profile 已有真实响应 Fixture，但刷新恢复、401 和网络失败仍需在 WireGuard 测试环境完成页面验收后才能标记为 `verified`。
+| 接口                      | 状态                | 前端动作                           |
+| ------------------------- | ------------------- | ---------------------------------- |
+| password login            | `contract-verified` | 保留当前 Adapter                   |
+| profile                   | `contract-verified` | 用于登录补全和刷新恢复             |
+| invalid token 401         | `contract-verified` | 清理 Session 并跳转登录            |
+| low-permission 403        | `unconfirmed`       | 保留登录态，等待低权限账号 Fixture |
+| code login/register/reset | `documented`        | 当前版本保持隐藏                   |
+| social login              | `blocked`           | 真实平台未联调                     |
+| logout API                | `unconfirmed`       | 当前只做本地清理                   |
 
 ## Project
 
-| 接口                                           | 后端              | 前端        | 结论                                                           |
-| ---------------------------------------------- | ----------------- | ----------- | -------------------------------------------------------------- |
-| `GET /aidrama/projects`                        | READY             | implemented | 已按真实 `list/total` Fixture 映射；`DRAFT` 归入前端进行中状态 |
-| `GET /aidrama/projects/{id}`                   | READY             | implemented | 已按真实详情 Fixture 验证主要字段和空值                        |
-| `POST /aidrama/projects`                       | READY             | partial     | 请求字段已按规格实现，但尚未执行真实创建                       |
-| `PUT /aidrama/projects/{id}`                   | READY             | partial     | 仅映射 name/status，真实可更新字段和状态写入尚未验证           |
-| `DELETE /aidrama/projects/{id}`                | READY             | implemented | 路径已实现，逻辑删除仍需真实页面验收                           |
-| `POST /aidrama/projects/batch-delete`          | READY             | missing     | 未接入                                                         |
-| `POST /aidrama/projects/{id}/copy`             | READY             | missing     | 未接入                                                         |
-| `GET /aidrama/projects/statistics`             | READY             | missing     | 未接入                                                         |
-| `GET /aidrama/projects/{id}/overview`          | READY             | missing     | 未接入                                                         |
-| `GET /aidrama/projects/{id}/tasks`             | READY             | missing     | 未接入                                                         |
-| `GET /aidrama/projects/{id}/pipeline`          | READY             | missing     | 未接入                                                         |
-| `POST /aidrama/projects/{id}/start-generation` | Mock READY        | missing     | 未接入                                                         |
-| `GET /projects/{id}/export`                    | REAL compat       | mismatch    | 后端 compat 路径无 `/aidrama`，前端仍使用旧路径                |
-| `POST /projects/import`                        | controlled-reject | mismatch    | 前端预留路径和语义均不符；能力保持关闭                         |
-
-进行中筛选当前请求 `status=ALL` 后在前端按领域状态过滤，避免把真实 `DRAFT` 项目误排除。后端状态筛选枚举确认后再改为精确服务端过滤。
+| 接口组                                               | 状态                | 前端动作                                  |
+| ---------------------------------------------------- | ------------------- | ----------------------------------------- |
+| list/detail/create/update/delete                     | `contract-verified` | 已完成可清理真实 CRUD；页面级验收后再升级 |
+| batch-delete/copy/statistics/overview/tasks/pipeline | `documented`        | 后端提供 DTO 后逐项接入                   |
+| start-generation                                     | `mock-only`         | 不作为真实生成能力                        |
+| export compat query                                  | `documented`        | 等真实导出语义和 Fixture                  |
+| import                                               | `controlled-reject` | Capability 保持关闭                       |
 
 ## Script 与 Editor
 
-| 接口                                          | 后端           | 前端        | 结论                                         |
-| --------------------------------------------- | -------------- | ----------- | -------------------------------------------- |
-| `GET /aidrama/projects/{id}/script/workspace` | READY          | implemented | 已用于草稿加载                               |
-| `PUT /aidrama/projects/{id}/script/draft`     | READY          | implemented | 已保存 rawText/prompt                        |
-| `POST /aidrama/projects/{id}/script/generate` | Mock READY     | partial     | 业务服务已有生成入口，需真实页面验收         |
-| `PUT /aidrama/projects/{id}/script/content`   | READY          | implemented | generated 非空时保存                         |
-| `POST /aidrama/projects/{id}/script/confirm`  | READY          | partial     | 需核对业务服务与页面入口                     |
-| `GET/PUT /aidrama/projects/{id}/script`       | legacy         | reserved    | 不应优先于 workspace 接口                    |
-| Editor revision                               | frontend-local | mismatch    | 当前 revision 为前端自增，不代表后端并发版本 |
+| 接口或能力                             | 状态                | 前端动作                                         |
+| -------------------------------------- | ------------------- | ------------------------------------------------ |
+| Script Workspace GET                   | `contract-verified` | HTTP 默认只加载 Script 分区                      |
+| Script Draft PUT                       | `contract-verified` | 仅保存已确认的 `rawText/prompt`                  |
+| Script Content PUT                     | `mismatch`          | 文档无请求 DTO；真实探测未保存，Adapter 显式阻断 |
+| Script Generate                        | `mock-only`         | 不作为真实算法                                   |
+| Script Confirm                         | `documented`        | Content 契约闭环后再验收                         |
+| revision/version/409                   | `unconfirmed`       | 不伪造版本和冲突请求                             |
+| Setting/Video/Dubbing/ProjectMeta 保存 | `blocked`           | 未实现分区显式拒绝                               |
+| Storyboard Workspace 读取              | `documented`        | 仅显式请求时加载；错误不再吞掉                   |
 
-## Storyboard
+## Storyboard、Asset 与 Resource
 
-| 接口组                         | 后端  | 前端     | 结论                                                                               |
-| ------------------------------ | ----- | -------- | ---------------------------------------------------------------------------------- |
-| workspace / generate / confirm | READY | partial  | Workspace 已读取；生成和确认需逐项契约验收                                         |
-| storyboards CRUD / sort        | READY | partial  | 已有多个 Storyboard Adapter/Service，但尚未证明完整覆盖确认路径                    |
-| 加载失败处理                   | —     | mismatch | Editor 当前吞掉 Storyboard Workspace 错误并返回空 shots，HTTP 模式不应静默掩盖故障 |
-
-## Project Asset 与 Resource Library
-
-| 接口组                              | 后端      | 前端            | 结论                                                                                |
-| ----------------------------------- | --------- | --------------- | ----------------------------------------------------------------------------------- |
-| `/aidrama/projects/{id}/assets...`  | READY     | mismatch        | 独立 `asset.http.ts` 使用 `/projects/{id}/assets`，缺少 `/aidrama` 且保存模型不匹配 |
-| Resource workspace/list             | READY     | partial         | 列表按 `list` 读取，基础方向正确                                                    |
-| Resource CRUD                       | READY     | disabled        | 后端已可用，前端仍抛 `resourceHttpWriteUnsupported`                                 |
-| save-to-library/import-from-library | READY     | missing/partial | 需接入 COPY Snapshot 语义                                                           |
-| Asset type                          | confirmed | mismatch        | Resource Mapper 将非 CHARACTER 全映射为 scene，PROP 丢失                            |
-| Resource scope                      | confirmed | mismatch        | 后端为 PRIVATE/SYSTEM/SHARED，前端仍判断 OFFICIAL                                   |
-| `extraJson`                         | string    | partial         | 已有解析逻辑，请求端仍需保证 JSON 字符串                                            |
+| 模块                                   | 状态         | 主要缺口                                               |
+| -------------------------------------- | ------------ | ------------------------------------------------------ |
+| Storyboard Workspace/CRUD/sort/confirm | `documented` | 缺真实 DTO、失败和前置状态 Fixture                     |
+| Storyboard generate                    | `mock-only`  | 没有真实算法                                           |
+| Project Asset                          | `mismatch`   | 历史路径和保存模型与文档不一致                         |
+| Resource list/workspace                | `documented` | 缺真实分页和权限 Fixture                               |
+| Resource CRUD/import/save              | `documented` | Capability 保持只读，等待 Mapper 验证                  |
+| Asset type/scope                       | `mismatch`   | 必须统一 CHARACTER/SCENE/PROP 与 PRIVATE/SYSTEM/SHARED |
+| Media Upload                           | `blocked`    | 缺上传和 OSS/CDN 生命周期                              |
 
 ## Phase1 Compat
 
-| 模块                             | 后端              | 前端                | 结论                                                                      |
-| -------------------------------- | ----------------- | ------------------- | ------------------------------------------------------------------------- |
-| `GET /system`                    | REAL              | implemented         | 有归一化读取逻辑                                                          |
-| System styles/permissions 写接口 | controlled-reject | capability readonly | 默认关闭合理；Adapter 仍存在调用实现                                      |
-| System messages                  | no-op success     | partial             | 路径已接入，需要兼容 `data=null`                                          |
-| Voices CRUD                      | REAL              | disabled/partial    | 路径已接入，但 Capability 仍 readonly；列表字段假设 `voices` 未由文档确认 |
-| Script Templates CRUD            | REAL              | partial             | 路径已接入；列表字段假设 `templates` 未由文档确认                         |
-| Generation task list/detail      | REAL              | partial             | 路径正确；返回字段假设 `tasks/task`，需真实 Fixture                       |
-| Generation cancel/retry          | REAL              | disabled            | Adapter 已实现，但能力默认 unsupported                                    |
-| Generation create/update         | controlled-reject | controlled error    | 前端行为与后端阶段一致                                                    |
+| 模块                                | 状态                | 前端动作                 |
+| ----------------------------------- | ------------------- | ------------------------ |
+| `GET /system`                       | `documented`        | 可优先只读接入           |
+| System styles/permissions write     | `controlled-reject` | 保持关闭                 |
+| System messages                     | `no-op`             | 不宣称真实消息中心       |
+| Voices CRUD                         | `documented`        | 先确认分页和 DTO         |
+| Script Templates CRUD               | `documented`        | 先确认分页、作用域和 DTO |
+| Generation list/detail/cancel/retry | `documented`        | 保存真实 Fixture 后接入  |
+| Generation create/update            | `controlled-reject` | 禁止直接调用             |
 
-## Provider Sandbox 与 Export
+## AI、Provider 与 Export
 
-| 接口组                                     | 后端           | 前端       | 结论                                                        |
-| ------------------------------------------ | -------------- | ---------- | ----------------------------------------------------------- |
-| `/aidrama/provider-sandbox/tasks/{id}/...` | PARTIAL        | missing    | 普通前端仅用于测试工具，必须先有合法 taskId 和 Bearer Token |
-| `/aidrama/provider/callback`               | algorithm-only | not for UI | 普通前端禁止调用                                            |
-| Export workspace/history/detail/download   | PARTIAL Mock   | partial    | 页面/服务已有导出基础，但未按本文档完成真实契约验收         |
-| 真实成片                                   | blocked        | blocked    | 不得把占位 resultUrl 作为真实媒体                           |
+| 能力                                 | 状态         | 说明                            |
+| ------------------------------------ | ------------ | ------------------------------- |
+| Provider Sandbox                     | `mock-only`  | resultUrl 为占位地址            |
+| Provider Callback                    | `not-for-ui` | 普通前端禁止调用                |
+| Export workspace/history/mock export | `mock-only`  | 不生成真实成片                  |
+| Image2、Seedance 2.0、TTS            | `blocked`    | 等待真实 Submit/Callback 和媒体 |
+| 视频合成、下载、OSS/CDN              | `blocked`    | Mock URL 不可视为永久资源       |
 
-## 后端明确阻塞能力
+## 保留的真实验证工具
 
-- 真实 Image2；
-- 真实 Seedance 2.0；
-- 真实 TTS Provider；
-- 真实导出合成；
-- 项目导入；
-- System styles/permissions 真实写入；
-- Nginx 正式域名、HTTPS 与生产入口。
+- `integration:auth-session`：验证登录、Profile 和失效 Token 401；
+- `integration:project-crud`：验证可自动清理的 Project CRUD。
+
+Script Content 请求 DTO 未冻结，因此不再保留猜测性 Script Workspace 写入探测脚本。后续新增联调工具前必须先有后端 DTO、脱敏 Fixture、显式写入授权和失败自动清理。

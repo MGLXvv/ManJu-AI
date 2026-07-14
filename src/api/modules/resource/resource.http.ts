@@ -36,15 +36,15 @@ export const resourceHttpApi: ResourceApiContract = {
   },
 
   async createAsset(input) {
-    const { data } = await http.post(RESOURCE_ASSETS_PATH, mapCreateResourceInputToBackendPayload(input))
+    const payload = mapCreateResourceInputToBackendPayload(input)
+    const { data } = await http.post(RESOURCE_ASSETS_PATH, payload)
     const asset = extractBackendEntity<BackendResourceLibraryItemDTO>(data, ['asset'])
-    return mapBackendResourceAsset(
-      asset ?? {
-        id: '',
-        name: input.name,
-        assetType: mapCreateResourceInputToBackendPayload(input).assetType,
-      },
-    )
+
+    if (!asset) {
+      throw new Error('RESOURCE_CREATE_RESPONSE_INVALID')
+    }
+
+    return mapBackendResourceAsset(asset)
   },
 
   async updateAsset(assetId, input) {

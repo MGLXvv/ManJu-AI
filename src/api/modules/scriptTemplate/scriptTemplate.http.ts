@@ -20,13 +20,23 @@ export const scriptTemplateHttpApi: ScriptTemplateApiContract = {
   async createTemplate(input: ScriptTemplateInput) {
     const { data } = await http.post(SCRIPT_TEMPLATES_PATH, input)
     const template = extractBackendEntity<BackendScriptTemplateDTO>(data, ['template'])
-    return mapBackendScriptTemplate(template ?? {})
+
+    if (!template) {
+      throw new Error('SCRIPT_TEMPLATE_CREATE_RESPONSE_INVALID')
+    }
+
+    return mapBackendScriptTemplate(template)
   },
 
   async updateTemplate(templateId: string, input: ScriptTemplateInput) {
     const { data } = await http.patch(`${SCRIPT_TEMPLATES_PATH}/${templateId}`, input)
     const template = extractBackendEntity<BackendScriptTemplateDTO>(data, ['template'])
-    return mapBackendScriptTemplate(template ?? {})
+
+    if (!template) {
+      throw new Error('SCRIPT_TEMPLATE_UPDATE_RESPONSE_INVALID')
+    }
+
+    return mapBackendScriptTemplate(template)
   },
 
   async deleteTemplate(templateId: string) {

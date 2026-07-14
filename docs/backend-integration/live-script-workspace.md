@@ -12,7 +12,7 @@ login
 -> save rawText and prompt
 -> reload and compare
 -> save generated content
--> reload and compare
+-> reload and inspect
 -> confirm Script
 -> reload confirmed workspace
 -> delete temporary project
@@ -20,6 +20,16 @@ login
 ```
 
 该脚本不会调用 Script 生成模型，也不会修改已有项目。
+
+## 结果分类
+
+脚本区分三种结果：
+
+- `PASS`：草稿字段、生成稿字段和确认流程均可通过 Workspace 回读验证；
+- `PARTIAL`：写接口成功，但 Workspace 未提供 `content`、`scriptContent` 或 `generatedContent`，生成稿持久化无法通过当前读接口证明；
+- `FAIL`：请求失败、草稿回读不一致、生成稿存在可观测字段但值不一致，或清理失败。
+
+`PARTIAL` 不代表生成稿写入失败，只代表当前读契约无法观察该结果。报告会保存临时项目各阶段的脱敏 Workspace 快照和写接口响应数据，用于与后端确认真实字段或补充读取端点。
 
 ## 安全约束
 
@@ -54,18 +64,40 @@ Remove-Item Env:MANJU_API_BASE_URL -ErrorAction SilentlyContinue
 $credential = $null
 ```
 
-成功输出：
+完整验证输出：
 
 ```text
 Script Workspace verification: PASS
 Report: artifacts/integration/script-workspace-report.json
 ```
 
+读契约尚不能观察生成稿时：
+
+```text
+Script Workspace verification: PARTIAL
+Report: artifacts/integration/script-workspace-report.json
+```
+
+`PARTIAL` 会以成功进程状态结束，避免被 pnpm 误报为脚本崩溃；是否可以合并仍由报告中的 `generatedContentVerification` 和后端契约确认决定。
+
 ## 报告
 
 ```text
 artifacts/integration/script-workspace-report.json
 artifacts/integration/script-workspace-report.md
+```
+
+报告中的关键字段：
+
+```text
+outcome
+workspace.snapshots.initial
+workspace.snapshots.afterDraft
+workspace.snapshots.afterContent
+workspace.snapshots.afterConfirm
+workspace.writeResponses
+workspace.generatedContentVerification
+cleanup
 ```
 
 Windows PowerShell 5.1 读取 JSON 时必须指定 UTF-8：
@@ -80,9 +112,24 @@ $report.steps |
   Select-Object name, method, endpoint, ok, httpStatus, code, msg, error |
   Format-Table -AutoSize
 
-$report.workspace | Format-List
+$report.workspace.generatedContentVerification | Format-List *
+$report.workspace.snapshots | ConvertTo-Json -Depth 12
+$report.workspace.writeResponses | ConvertTo-Json -Depth 8
 $report.cleanup | Format-List
 ```
+
+## 2026-07-14 首次真实运行结论
+
+首次运行已确认：
+
+- 登录、Profile 和临时项目创建成功；
+- `GET /script/workspace` 初始状态为 `DRAFT`；
+- `PUT /script/draft` 成功，`rawText` 和 `prompt` 可重新读取；
+- `PUT /script/content` 返回 `code=0`；
+- 随后的 Workspace 未通过前端当前已知字段回显生成稿；
+- 临时项目已由自动清理成功删除。
+
+因此当前不能把生成稿持久化标记为已验证。需要通过增强后的脱敏快照确认 Workspace 实际字段，或由后端提供生成稿读取端点/字段说明。
 
 ## 当前 revision 结论
 

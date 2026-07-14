@@ -7,7 +7,6 @@ import { format, getFileInfo, resolveConfig } from 'prettier'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const REPORT_PATH = path.join(ROOT, 'artifacts', 'quality', 'prettier.json')
-const FORMATTED_DIR = path.join(ROOT, 'artifacts', 'quality', 'prettier-formatted')
 const supported = /\.(?:c?js|mjs|ts|tsx|vue|css|scss|json|md|ya?ml)$/i
 const ignored = [
   /^artifacts\//,
@@ -75,12 +74,6 @@ for (const file of files) {
   const output = await format(source, { ...config, filepath: absolutePath })
   const formatted = source === output
   results.push({ file, formatted, skipped: false, parser: fileInfo.inferredParser })
-
-  if (!formatted) {
-    const renderedPath = path.join(FORMATTED_DIR, file)
-    await mkdir(path.dirname(renderedPath), { recursive: true })
-    await writeFile(renderedPath, output, 'utf8')
-  }
 }
 
 await mkdir(path.dirname(REPORT_PATH), { recursive: true })

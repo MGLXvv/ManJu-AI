@@ -9,9 +9,15 @@ export interface BackendScriptTemplateDTO {
   createTime?: string | null
 }
 
-export const mapBackendScriptTemplate = (record: BackendScriptTemplateDTO): ScriptTemplate => ({
-  id: String(record.id ?? ''),
-  name: record.name ?? '',
-  content: record.content ?? '',
-  updatedAt: record.updatedAt ?? record.updateTime ?? record.createTime ?? '',
-})
+export const mapBackendScriptTemplate = (record: BackendScriptTemplateDTO): ScriptTemplate => {
+  if (record.id === null || record.id === undefined || record.id === '') {
+    throw new Error('SCRIPT_TEMPLATE_ENTITY_ID_MISSING')
+  }
+
+  return {
+    id: String(record.id),
+    name: record.name ?? '',
+    content: record.content ?? '',
+    updatedAt: record.updatedAt ?? record.updateTime ?? record.createTime ?? '',
+  }
+}

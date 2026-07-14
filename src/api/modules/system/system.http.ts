@@ -11,28 +11,22 @@ import type {
 } from './system.types'
 
 const normalizeSystemState = (value: unknown) => {
-  const state = value && typeof value === 'object' && 'state' in value
-    ? (value as { state?: unknown }).state
-    : value
+  const state = value && typeof value === 'object' && 'state' in value ? (value as { state?: unknown }).state : value
   const record = state && typeof state === 'object' ? (state as Record<string, unknown>) : {}
 
   return {
-    styles: Array.isArray(record.styles) ? record.styles as SystemStyleItem[] : [],
-    permissions: Array.isArray(record.permissions) ? record.permissions as SystemPermissionItem[] : [],
-    messages: Array.isArray(record.messages) ? record.messages as SystemMessageItem[] : [],
+    styles: Array.isArray(record.styles) ? (record.styles as SystemStyleItem[]) : [],
+    permissions: Array.isArray(record.permissions) ? (record.permissions as SystemPermissionItem[]) : [],
+    messages: Array.isArray(record.messages) ? (record.messages as SystemMessageItem[]) : [],
   }
 }
 
 const asResponseRecord = (value: unknown): Record<string, unknown> =>
-  value !== null && typeof value === 'object' && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {}
+  value !== null && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {}
 
 const readEntity = <T>(value: unknown, key: string): T | null => {
   const candidate = asResponseRecord(value)[key]
-  return candidate !== null && typeof candidate === 'object' && !Array.isArray(candidate)
-    ? candidate as T
-    : null
+  return candidate !== null && typeof candidate === 'object' && !Array.isArray(candidate) ? (candidate as T) : null
 }
 
 export const systemHttpApi: SystemApiContract = {
@@ -81,7 +75,7 @@ export const systemHttpApi: SystemApiContract = {
   async markAllRead() {
     const { data } = await http.post('/system/messages/read-all')
     const messages = asResponseRecord(data).messages
-    return Array.isArray(messages) ? messages as SystemMessageItem[] : []
+    return Array.isArray(messages) ? (messages as SystemMessageItem[]) : []
   },
 
   async clearMessages() {

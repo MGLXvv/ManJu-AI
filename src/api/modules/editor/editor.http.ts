@@ -102,7 +102,7 @@ export const editorHttpApi: EditorApiContract = {
       const { data: contentSaveResponse } = await http.put<BackendScriptSaveResponse | null>(
         `/aidrama/projects/${projectId}/script/content`,
         {
-          content: draft.script.generated,
+          scriptContent: draft.script.generated,
         },
       )
       latestResponse = contentSaveResponse ?? draftSaveResponse

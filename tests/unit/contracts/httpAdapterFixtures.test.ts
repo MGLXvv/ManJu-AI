@@ -4,6 +4,7 @@ import { authHttpApi } from '@/api/modules/auth/auth.http'
 import { editorHttpApi } from '@/api/modules/editor/editor.http'
 import { generationHttpApi } from '@/api/modules/generation/generation.http'
 import { projectHttpApi } from '@/api/modules/project/project.http'
+import { EDITOR_PERSISTENCE_PARTITIONS } from '@/types/editor'
 import authLoginFixture from '../../fixtures/http/auth-login.success.json'
 import authProfileFixture from '../../fixtures/http/auth-profile.success.json'
 import editorWorkspaceFixture from '../../fixtures/http/editor-workspace.success.json'
@@ -117,12 +118,14 @@ describe('HTTP adapter contract fixtures', () => {
     })
   })
 
-  it('combines script and storyboard workspace fixtures into an EditorDraft', async () => {
+  it('combines explicitly requested script and storyboard workspace fixtures into an EditorDraft', async () => {
     vi.mocked(http.get)
       .mockResolvedValueOnce({ data: editorWorkspaceFixture.scriptWorkspace })
       .mockResolvedValueOnce({ data: editorWorkspaceFixture.storyboardWorkspace })
 
-    const draft = await editorHttpApi.getDraft('project-7')
+    const draft = await editorHttpApi.getDraft('project-7', {
+      partitions: [EDITOR_PERSISTENCE_PARTITIONS.script, EDITOR_PERSISTENCE_PARTITIONS.storyboard],
+    })
 
     expect(http.get).toHaveBeenNthCalledWith(1, '/aidrama/projects/project-7/script/workspace')
     expect(http.get).toHaveBeenNthCalledWith(2, '/aidrama/projects/project-7/storyboard/workspace')

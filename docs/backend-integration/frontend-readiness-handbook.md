@@ -39,18 +39,18 @@ docs/frontend-backend-integration-guide.md
 
 ## 4. 状态定义
 
-| 状态 | 含义 |
-| --- | --- |
-| `verified` | 已完成真实成功、失败、权限、刷新恢复和页面流程验收 |
-| `contract-verified` | Method、Path、DTO 和基础成功链已有真实证据 |
-| `documented` | 后端文档声明存在，但缺少完整 DTO 或 Fixture |
-| `framework-ready` | 前端边界、Capability 和测试基础已准备 |
-| `mock-only` | 仅 Mock、占位任务或占位媒体 |
-| `controlled-reject` | 后端稳定拒绝，前端必须保持关闭 |
-| `no-op` | 返回成功但没有真实业务副作用 |
-| `blocked` | 缺少正式后端、算法、媒体或生产协议 |
-| `mismatch` | 前端假设与真实响应存在明确差异 |
-| `unconfirmed` | 请求体、响应体、状态或语义尚未确认 |
+| 状态                | 含义                                               |
+| ------------------- | -------------------------------------------------- |
+| `verified`          | 已完成真实成功、失败、权限、刷新恢复和页面流程验收 |
+| `contract-verified` | Method、Path、DTO 和基础成功链已有真实证据         |
+| `documented`        | 后端文档声明存在，但缺少完整 DTO 或 Fixture        |
+| `framework-ready`   | 前端边界、Capability 和测试基础已准备              |
+| `mock-only`         | 仅 Mock、占位任务或占位媒体                        |
+| `controlled-reject` | 后端稳定拒绝，前端必须保持关闭                     |
+| `no-op`             | 返回成功但没有真实业务副作用                       |
+| `blocked`           | 缺少正式后端、算法、媒体或生产协议                 |
+| `mismatch`          | 前端假设与真实响应存在明确差异                     |
+| `unconfirmed`       | 请求体、响应体、状态或语义尚未确认                 |
 
 禁止仅因为存在 HTTP 文件或收到成功包就标记为 `verified`。
 

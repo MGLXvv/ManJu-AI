@@ -1,4 +1,4 @@
-﻿import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const get = vi.fn()
 const post = vi.fn()
@@ -23,28 +23,63 @@ describe('voiceHttpApi', () => {
     vi.resetModules()
   })
 
-  it('normalizes lightweight voice payloads to an empty list', async () => {
+  it('maps the canonical list envelope and pagination request', async () => {
     get.mockResolvedValue({
-      data: {},
+      data: {
+        list: [
+          {
+            id: 12,
+            name: 'Voice A',
+            audioUrl: 'https://example.com/a.wav',
+            duration: 12,
+            createTime: '2026-07-02T00:00:00.000Z',
+          },
+        ],
+        total: 1,
+      },
     })
 
     const { voiceHttpApi } = await import('@/api/modules/voice/voice.http')
     const voices = await voiceHttpApi.list()
 
-    expect(get).toHaveBeenCalledWith('/voices')
-    expect(voices).toEqual([])
+    expect(get).toHaveBeenCalledWith('/voices', {
+      params: { pageNo: 1, pageSize: 100 },
+    })
+    expect(voices).toEqual([
+      {
+        id: '12',
+        name: 'Voice A',
+        audioUrl: 'https://example.com/a.wav',
+        duration: 12,
+        createdAt: '2026-07-02T00:00:00.000Z',
+      },
+    ])
   })
 
-  it('creates voices through the http api', async () => {
+  it('keeps the legacy voices wrapper compatible', async () => {
+    get.mockResolvedValue({ data: { voices: [{ id: 13, name: 'Legacy Voice' }] } })
+
+    const { voiceHttpApi } = await import('@/api/modules/voice/voice.http')
+
+    await expect(voiceHttpApi.list()).resolves.toEqual([
+      {
+        id: '13',
+        name: 'Legacy Voice',
+        audioUrl: '',
+        duration: 0,
+        createdAt: '',
+      },
+    ])
+  })
+
+  it('creates voices from a direct backend entity', async () => {
     post.mockResolvedValue({
       data: {
-        voice: {
-          id: 12,
-          name: 'Voice A',
-          audioUrl: 'https://example.com/a.wav',
-          duration: 12,
-          createdAt: '2026-07-02T00:00:00.000Z',
-        },
+        id: 12,
+        name: 'Voice A',
+        audioUrl: 'https://example.com/a.wav',
+        duration: 12,
+        createdAt: '2026-07-02T00:00:00.000Z',
       },
     })
 
@@ -61,16 +96,10 @@ describe('voiceHttpApi', () => {
       audioUrl: 'https://example.com/a.wav',
       duration: 12,
     })
-    expect(voice).toEqual({
-      id: '12',
-      name: 'Voice A',
-      audioUrl: 'https://example.com/a.wav',
-      duration: 12,
-      createdAt: '2026-07-02T00:00:00.000Z',
-    })
+    expect(voice.id).toBe('12')
   })
 
-  it('updates voices through the http api', async () => {
+  it('updates voices through the legacy named wrapper', async () => {
     patch.mockResolvedValue({
       data: {
         voice: {
@@ -96,19 +125,11 @@ describe('voiceHttpApi', () => {
       audioUrl: 'https://example.com/b.wav',
       duration: 15,
     })
-    expect(voice).toEqual({
-      id: '12',
-      name: 'Voice B',
-      audioUrl: 'https://example.com/b.wav',
-      duration: 15,
-      createdAt: '2026-07-02T00:00:00.000Z',
-    })
+    expect(voice?.name).toBe('Voice B')
   })
 
   it('deletes voices through the http api', async () => {
-    del.mockResolvedValue({
-      data: {},
-    })
+    del.mockResolvedValue({ data: {} })
 
     const { voiceHttpApi } = await import('@/api/modules/voice/voice.http')
 

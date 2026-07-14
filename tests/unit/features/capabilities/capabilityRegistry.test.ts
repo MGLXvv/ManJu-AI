@@ -52,25 +52,37 @@ describe.sequential('capabilityRegistry', () => {
     })
   })
 
-  it('enables explicitly approved capabilities through runtime configuration', async () => {
+  it('allows environment overrides only for explicitly overridable capabilities', async () => {
     vi.stubEnv('VITE_API_MODE', 'http')
-    vi.stubEnv('VITE_ENABLED_CAPABILITIES', 'project.import')
+    vi.stubEnv('VITE_ENABLED_CAPABILITIES', 'resource.write')
     const { resolveCapability } = await import('@/features/capabilities/capabilityRegistry')
 
-    expect(resolveCapability('project.import')).toMatchObject({
+    expect(resolveCapability('resource.write')).toMatchObject({
       status: 'available',
       available: true,
       source: 'enabled-override',
     })
   })
 
-  it('lets disabled configuration override enabled configuration', async () => {
+  it('rejects an environment override for controlled-reject capabilities', async () => {
     vi.stubEnv('VITE_API_MODE', 'http')
-    vi.stubEnv('VITE_ENABLED_CAPABILITIES', 'project.export')
-    vi.stubEnv('VITE_DISABLED_CAPABILITIES', 'project.export')
+    vi.stubEnv('VITE_ENABLED_CAPABILITIES', 'project.import')
     const { resolveCapability } = await import('@/features/capabilities/capabilityRegistry')
 
-    expect(resolveCapability('project.export')).toMatchObject({
+    expect(resolveCapability('project.import')).toMatchObject({
+      status: 'unsupported',
+      available: false,
+      source: 'override-rejected',
+    })
+  })
+
+  it('lets disabled configuration override enabled configuration', async () => {
+    vi.stubEnv('VITE_API_MODE', 'http')
+    vi.stubEnv('VITE_ENABLED_CAPABILITIES', 'resource.write')
+    vi.stubEnv('VITE_DISABLED_CAPABILITIES', 'resource.write')
+    const { resolveCapability } = await import('@/features/capabilities/capabilityRegistry')
+
+    expect(resolveCapability('resource.write')).toMatchObject({
       available: false,
       source: 'disabled-override',
     })

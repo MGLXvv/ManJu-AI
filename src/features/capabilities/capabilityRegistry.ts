@@ -23,6 +23,7 @@ interface CapabilityDefinition {
   mock: CapabilityStatus
   http: CapabilityStatus
   message: string
+  allowEnableOverride: boolean
 }
 
 export interface CapabilityState {
@@ -30,7 +31,7 @@ export interface CapabilityState {
   status: CapabilityStatus
   available: boolean
   message: string
-  source: 'default' | 'enabled-override' | 'disabled-override'
+  source: 'default' | 'enabled-override' | 'disabled-override' | 'override-rejected'
 }
 
 const DEFINITIONS: Record<CapabilityKey, CapabilityDefinition> = {
@@ -38,76 +39,91 @@ const DEFINITIONS: Record<CapabilityKey, CapabilityDefinition> = {
     mock: 'available',
     http: 'available',
     message: '当前环境暂不支持账号密码登录',
+    allowEnableOverride: true,
   },
   'auth.codeLogin': {
     mock: 'unsupported',
     http: 'unsupported',
     message: '验证码登录后端接口已存在，但前端页面与真实验证码链路尚未接入',
+    allowEnableOverride: false,
   },
   'auth.register': {
     mock: 'unsupported',
     http: 'unsupported',
     message: '注册接口已存在，但不在当前前端交付范围',
+    allowEnableOverride: false,
   },
   'auth.resetPassword': {
     mock: 'unsupported',
     http: 'unsupported',
     message: '重置密码接口已存在，但不在当前前端交付范围',
+    allowEnableOverride: false,
   },
   'auth.thirdPartyLogin': {
     mock: 'unsupported',
     http: 'unsupported',
     message: '第三方平台尚未完成真实联调',
+    allowEnableOverride: false,
   },
   'resource.read': {
     mock: 'available',
     http: 'available',
     message: '当前环境暂不支持读取资源库',
+    allowEnableOverride: true,
   },
   'resource.write': {
     mock: 'mock-only',
     http: 'available',
     message: '当前环境暂不支持资源库新增、编辑或删除',
+    allowEnableOverride: true,
   },
   'voice.write': {
     mock: 'mock-only',
     http: 'available',
     message: '当前环境暂不支持音色目录新增、编辑或删除',
+    allowEnableOverride: true,
   },
   'system.write': {
     mock: 'mock-only',
     http: 'readonly',
     message: 'Phase1 系统样式和权限写接口为受控拒绝',
+    allowEnableOverride: false,
   },
   'project.import': {
     mock: 'mock-only',
     http: 'unsupported',
     message: 'Phase1 项目导入接口为受控拒绝',
+    allowEnableOverride: false,
   },
   'project.export': {
     mock: 'mock-only',
     http: 'unsupported',
     message: '当前项目 JSON 导出契约与后端导出任务语义不一致',
+    allowEnableOverride: false,
   },
   'generation.cancel': {
     mock: 'mock-only',
     http: 'available',
     message: '当前环境暂不支持取消生成任务',
+    allowEnableOverride: true,
   },
   'generation.retry': {
     mock: 'mock-only',
     http: 'available',
     message: '当前环境暂不支持重试生成任务',
+    allowEnableOverride: true,
   },
   'export.task': {
     mock: 'unsupported',
     http: 'unsupported',
     message: '当前导出接口只提供 Mock 任务和占位下载地址',
+    allowEnableOverride: false,
   },
   'export.jianying': {
     mock: 'unsupported',
     http: 'unsupported',
     message: '剪映工程导出规则和接口尚未确认',
+    allowEnableOverride: false,
   },
 }
 
@@ -130,6 +146,16 @@ export const resolveCapability = (key: CapabilityKey): CapabilityState => {
   }
 
   if (enabledOverrides.has(key)) {
+    if (!definition.allowEnableOverride) {
+      return {
+        key,
+        status: definition[runtimeConfig.apiMode],
+        available: false,
+        message: `${definition.message}（该能力不能仅通过环境变量启用）`,
+        source: 'override-rejected',
+      }
+    }
+
     return {
       key,
       status: 'available',

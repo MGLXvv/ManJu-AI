@@ -1,5 +1,6 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { runScriptWorkspaceVerification } from './script-workspace.mjs'
 
 const DEFAULT_BASE_URL = 'http://10.10.3.26:48080/admin-api'
@@ -94,4 +95,7 @@ const main = async () => {
   if (report.outcome === 'FAIL') process.exitCode = 1
 }
 
-await main()
+const isMain = process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href
+if (isMain) {
+  await main()
+}

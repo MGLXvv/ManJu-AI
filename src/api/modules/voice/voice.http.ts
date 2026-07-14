@@ -21,7 +21,12 @@ export const voiceHttpApi: VoiceApiContract = {
   async create(input: CreateVoiceAssetInput) {
     const { data } = await http.post(VOICES_PATH, input)
     const voice = extractBackendEntity<BackendVoiceDTO>(data, ['voice'])
-    return mapBackendVoiceToVoiceAsset(voice ?? {})
+
+    if (!voice) {
+      throw new Error('VOICE_CREATE_RESPONSE_INVALID')
+    }
+
+    return mapBackendVoiceToVoiceAsset(voice)
   },
 
   async update(voiceId: string, input: UpdateVoiceAssetInput) {

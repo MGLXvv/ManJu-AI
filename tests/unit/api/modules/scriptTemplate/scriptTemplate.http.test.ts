@@ -99,9 +99,9 @@ describe('scriptTemplateHttpApi', () => {
 
     const { scriptTemplateHttpApi } = await import('@/api/modules/scriptTemplate/scriptTemplate.http')
 
-    await expect(
-      scriptTemplateHttpApi.createTemplate({ name: 'Template A', content: 'Body A' }),
-    ).rejects.toThrow('SCRIPT_TEMPLATE_CREATE_RESPONSE_INVALID')
+    await expect(scriptTemplateHttpApi.createTemplate({ name: 'Template A', content: 'Body A' })).rejects.toThrow(
+      'SCRIPT_TEMPLATE_CREATE_RESPONSE_INVALID',
+    )
     await expect(
       scriptTemplateHttpApi.updateTemplate('template-1', { name: 'Template B', content: 'Body B' }),
     ).rejects.toThrow('SCRIPT_TEMPLATE_UPDATE_RESPONSE_INVALID')

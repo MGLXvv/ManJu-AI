@@ -1,4 +1,8 @@
-import { resolveCapability, type CapabilityKey } from '@/features/capabilities/capabilityRegistry'
+import {
+  resolveCapability,
+  type CapabilityKey,
+  type CapabilityStatus,
+} from '@/features/capabilities/capabilityRegistry'
 import type { EditorRouteName } from '@/features/editor/editorRouteGuardState'
 
 const ROUTE_CAPABILITIES: Partial<Record<EditorRouteName, CapabilityKey>> = {
@@ -10,6 +14,14 @@ const ROUTE_CAPABILITIES: Partial<Record<EditorRouteName, CapabilityKey>> = {
   'editor-complete': 'editor.dubbing.write',
 }
 
+export interface EditorRouteCapabilityViewState {
+  routeName: EditorRouteName
+  capabilityKey: CapabilityKey | null
+  status: CapabilityStatus
+  available: boolean
+  message: string
+}
+
 export type EditorRouteCapabilityResult =
   | { ok: true }
   | {
@@ -19,20 +31,40 @@ export type EditorRouteCapabilityResult =
       message: string
     }
 
-export function resolveEditorRouteCapability(routeName: EditorRouteName): EditorRouteCapabilityResult {
+export const resolveEditorRouteCapabilityView = (routeName: EditorRouteName): EditorRouteCapabilityViewState => {
   const capabilityKey = ROUTE_CAPABILITIES[routeName]
   if (!capabilityKey) {
-    return { ok: true }
+    return {
+      routeName,
+      capabilityKey: null,
+      status: 'available',
+      available: true,
+      message: '',
+    }
   }
 
   const capability = resolveCapability(capabilityKey)
-  if (capability.available) {
+  return {
+    routeName,
+    capabilityKey,
+    status: capability.status,
+    available: capability.available,
+    message: capability.message,
+  }
+}
+
+export const buildEditorCapabilityAriaLabel = (label: string, capability: EditorRouteCapabilityViewState): string =>
+  capability.available ? label : `${label}，不可用：${capability.message}`
+
+export function resolveEditorRouteCapability(routeName: EditorRouteName): EditorRouteCapabilityResult {
+  const capability = resolveEditorRouteCapabilityView(routeName)
+  if (capability.available || !capability.capabilityKey) {
     return { ok: true }
   }
 
   return {
     ok: false,
-    capabilityKey,
+    capabilityKey: capability.capabilityKey,
     redirectRouteName: 'editor-script-input',
     message: capability.message,
   }

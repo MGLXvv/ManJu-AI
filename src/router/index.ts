@@ -75,7 +75,7 @@ router.beforeEach(async (to, from, next) => {
   if (isEditorStepRouteName(to.name)) {
     const capabilityResult = resolveEditorRouteCapability(to.name)
     if (!capabilityResult.ok) {
-      uiFeedback.showToast(capabilityResult.message, { tone: 'error' })
+      uiFeedback.showToast(capabilityResult.message, { tone: 'info' })
       next({
         name: capabilityResult.redirectRouteName,
         params: to.params,

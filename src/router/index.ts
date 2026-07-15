@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { resolveAuthRouteAccess } from '@/features/auth/authRouteAccessState'
 import { resolveEditorRouteCapability } from '@/features/editor/editorCapabilityState'
 import { isEditorStepRouteName, resolveEditorRouteGuard } from '@/features/editor/editorRouteGuardState'
+import { createRouteLoadingTracker, resolveRouteLoadingDelay } from '@/features/navigation/routeLoadingState'
 import { startEditorWorkspacePersistenceSync } from '@/services/editor/editorWorkspacePersistenceSync'
 import { attemptChunkLoadRecovery, clearChunkLoadRecoveryMarker } from '@/services/runtime/chunkLoadRecovery'
 import { reportRuntimeError } from '@/services/runtime/runtimeDiagnostics'
@@ -21,6 +22,7 @@ export const router = createRouter({
 startEditorWorkspacePersistenceSync(pinia)
 
 const MIN_LOADING_MS = 420
+const routeLoadingTracker = createRouteLoadingTracker<object>()
 
 router.beforeEach(async (to, from, next) => {
   const auth = useAuthStore(pinia)
@@ -28,7 +30,8 @@ router.beforeEach(async (to, from, next) => {
   const uiFeedback = useUiFeedbackStore(pinia)
 
   if (to.fullPath !== from.fullPath) {
-    loading.begin()
+    const token = loading.begin()
+    routeLoadingTracker.register(to, { token, startedAt: loading.startedAt })
   }
 
   const authAccess = resolveAuthRouteAccess(
@@ -134,19 +137,30 @@ router.afterEach(async (to) => {
   }
 
   const loading = usePageLoadingStore(pinia)
-  const elapsed = Date.now() - loading.startedAt
-  const delay = Math.max(0, MIN_LOADING_MS - elapsed)
+  const record = routeLoadingTracker.take(to)
+  if (!record) {
+    return
+  }
+
+  const delay = resolveRouteLoadingDelay({
+    startedAt: record.startedAt,
+    now: Date.now(),
+    minimumMs: MIN_LOADING_MS,
+  })
 
   if (delay > 0) {
     await new Promise((resolve) => window.setTimeout(resolve, delay))
   }
 
-  loading.end()
+  loading.end(record.token)
 })
 
 router.onError((error, to) => {
   const loading = usePageLoadingStore(pinia)
-  loading.end()
+  const record = to ? routeLoadingTracker.take(to) : undefined
+  if (record) {
+    loading.end(record.token)
+  }
 
   if (attemptChunkLoadRecovery(error, { routeKey: to?.fullPath })) {
     return

@@ -1,4 +1,4 @@
-﻿import { defineStore } from 'pinia'
+import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import {
   buildScriptDraftPatch,
@@ -9,12 +9,7 @@ import { buildDubbingDraftUpdate } from '@/features/editor/dubbingDraftState'
 import { EditorPersistenceService } from '@/services/editor/editorPersistence.service'
 import { EDITOR_SAVE_STATES, type EditorSaveState } from '@/types/api-enums'
 import type { DubbingRoleCardModel } from '@/types/dubbing'
-import type {
-  EditorDraft,
-  EditorPersistencePartition,
-  EditorSaveReason,
-  SaveDraftResult,
-} from '@/types/editor'
+import type { EditorDraft, EditorPersistencePartition, EditorSaveReason, SaveDraftResult } from '@/types/editor'
 import type { WorkflowStep } from '@/types/project'
 import type { SettingAsset } from '@/types/settingAsset'
 import type { StoryboardShot } from '@/types/storyboard'
@@ -38,6 +33,10 @@ export const useEditorStore = defineStore('editor', () => {
   const lastSavedAt = ref<string | null>(null)
   const dirtyPartitions = ref<EditorPersistencePartition[]>([])
   const saveErrorCode = ref<string | null>(null)
+  const localSaveStatus = ref<'idle' | 'saved' | 'error'>('idle')
+  const localSavedAt = ref<string | null>(null)
+  const localSaveErrorCode = ref<string | null>(null)
+  const recoveredFromLocal = ref(false)
 
   const activeStepIndex = computed(() => editorSteps.findIndex((step) => step.key === currentStep.value))
   const revision = computed(() => draft.value?.revision ?? 0)
@@ -53,6 +52,10 @@ export const useEditorStore = defineStore('editor', () => {
     lastSavedAt.value = state.lastSavedAt
     dirtyPartitions.value = [...state.dirtyPartitions]
     saveErrorCode.value = state.errorCode
+    localSaveStatus.value = state.localSaveStatus
+    localSavedAt.value = state.localSavedAt
+    localSaveErrorCode.value = state.localErrorCode
+    recoveredFromLocal.value = state.recoveredFromLocal
 
     if (
       draft.value &&
@@ -92,6 +95,10 @@ export const useEditorStore = defineStore('editor', () => {
       lastSavedAt.value = state?.lastSavedAt ?? null
       dirtyPartitions.value = state?.dirtyPartitions ?? []
       saveErrorCode.value = state?.errorCode ?? null
+      localSaveStatus.value = state?.localSaveStatus ?? 'idle'
+      localSavedAt.value = state?.localSavedAt ?? null
+      localSaveErrorCode.value = state?.localErrorCode ?? null
+      recoveredFromLocal.value = state?.recoveredFromLocal ?? false
     } finally {
       loading.value = false
     }
@@ -288,6 +295,10 @@ export const useEditorStore = defineStore('editor', () => {
     lastSavedAt,
     dirtyPartitions,
     saveErrorCode,
+    localSaveStatus,
+    localSavedAt,
+    localSaveErrorCode,
+    recoveredFromLocal,
     hasUnsavedChanges,
     hasSaveConflict,
     setCurrentStep,

@@ -1,7 +1,13 @@
 import { isApiError } from '@/api/errors'
 import { editorApi } from '@/api/editor.api'
 import type { EditorApiContract } from '@/api/modules/editor/editor.types'
+import { createDefaultEditorDraft } from '@/features/editor/editorDraftDefaults'
 import { normalizeEditorDraft } from '@/features/editor/editorDraftMapper'
+import {
+  editorScriptRecoveryRepository,
+  type EditorScriptRecoveryRecord,
+  type EditorScriptRecoveryStore,
+} from '@/services/editor/editorScriptRecoveryRepository'
 import { API_ERROR_CODES, EDITOR_SAVE_STATES, type EditorSaveState } from '@/types/api-enums'
 import {
   EDITOR_PERSISTENCE_PARTITIONS,
@@ -20,6 +26,10 @@ export interface EditorPersistenceState {
   lastSavedAt: string | null
   dirtyPartitions: EditorPersistencePartition[]
   errorCode: string | null
+  localSaveStatus: 'idle' | 'saved' | 'error'
+  localSavedAt: string | null
+  localErrorCode: string | null
+  recoveredFromLocal: boolean
 }
 
 export type EditorPersistenceListener = (state: EditorPersistenceState) => void
@@ -38,6 +48,14 @@ const ALL_PARTITIONS = Object.values(EDITOR_PERSISTENCE_PARTITIONS)
 const cloneDraft = (draft: EditorDraft): EditorDraft => normalizeEditorDraft(draft.projectId, draft)
 
 const stableSerialize = (value: unknown): string => JSON.stringify(value)
+
+const buildRecoverableScriptSnapshot = (draft: EditorDraft) => ({
+  content: draft.script.content,
+  prompt: draft.script.prompt,
+  outline: draft.script.outline,
+  generated: draft.script.generated,
+  storyboard: draft.script.storyboard,
+})
 
 const buildStoryboardPartition = (draft: EditorDraft) =>
   draft.shots.map((shot) => ({
@@ -71,10 +89,7 @@ const buildVideoPartition = (draft: EditorDraft) =>
     videoReviewed: shot.videoReviewed,
   }))
 
-export const buildEditorPartitionSnapshot = (
-  draft: EditorDraft,
-  partition: EditorPersistencePartition,
-): unknown => {
+export const buildEditorPartitionSnapshot = (draft: EditorDraft, partition: EditorPersistencePartition): unknown => {
   switch (partition) {
     case EDITOR_PERSISTENCE_PARTITIONS.script:
       return draft.script
@@ -128,6 +143,7 @@ export class EditorPersistenceService {
   constructor(
     private readonly api: EditorApiContract = editorApi,
     private readonly autosaveDelayMs = DEFAULT_EDITOR_AUTOSAVE_DELAY_MS,
+    private readonly recoveryStore: EditorScriptRecoveryStore = editorScriptRecoveryRepository,
   ) {}
 
   subscribe(listener: EditorPersistenceListener): () => void {
@@ -176,6 +192,10 @@ export class EditorPersistenceService {
         lastSavedAt,
         dirtyPartitions: [],
         errorCode: null,
+        localSaveStatus: 'idle',
+        localSavedAt: null,
+        localErrorCode: null,
+        recoveredFromLocal: false,
       },
     }
 
@@ -184,9 +204,107 @@ export class EditorPersistenceService {
     return cloneDraft(baseline)
   }
 
+  private applyRecovery(
+    projectId: string,
+    baseline: EditorDraft,
+    recovery: EditorScriptRecoveryRecord,
+    loadErrorCode: string | null = null,
+  ): EditorDraft {
+    const record = this.records.get(projectId)
+    if (!record) {
+      return cloneDraft(baseline)
+    }
+
+    const baselineMatches =
+      (baseline.revision ?? 0) === recovery.baseRevision &&
+      stableSerialize(buildRecoverableScriptSnapshot(baseline)) ===
+        stableSerialize({
+          content: recovery.baseline.content,
+          prompt: recovery.baseline.prompt,
+          outline: recovery.baseline.outline,
+          generated: recovery.baseline.generated,
+          storyboard: recovery.baseline.storyboard,
+        })
+
+    if (!baselineMatches) {
+      this.recoveryStore.remove(projectId)
+      return cloneDraft(baseline)
+    }
+
+    const recoveredDraft = normalizeEditorDraft(projectId, {
+      ...baseline,
+      revision: recovery.baseRevision,
+      script: recovery.draft,
+    })
+    const dirtyPartitions = resolveEditorDirtyPartitions(record.baseline, recoveredDraft)
+    if (!dirtyPartitions.includes(EDITOR_PERSISTENCE_PARTITIONS.script)) {
+      this.recoveryStore.remove(projectId)
+      return cloneDraft(baseline)
+    }
+
+    record.pendingDraft = cloneDraft(recoveredDraft)
+    record.pendingVersion += 1
+    record.state = {
+      ...record.state,
+      status: loadErrorCode ? EDITOR_SAVE_STATES.error : EDITOR_SAVE_STATES.dirty,
+      dirtyPartitions,
+      errorCode: loadErrorCode,
+      localSaveStatus: 'saved',
+      localSavedAt: recovery.savedLocallyAt,
+      localErrorCode: null,
+      recoveredFromLocal: true,
+    }
+    this.emit(record)
+    return cloneDraft(recoveredDraft)
+  }
+
+  private persistScriptRecovery(
+    record: EditorPersistenceRecord,
+    draft: EditorDraft,
+    dirtyPartitions: EditorPersistencePartition[],
+  ): void {
+    if (!dirtyPartitions.includes(EDITOR_PERSISTENCE_PARTITIONS.script)) {
+      this.recoveryStore.remove(record.state.projectId)
+      record.state.localSaveStatus = 'idle'
+      record.state.localSavedAt = null
+      record.state.localErrorCode = null
+      record.state.recoveredFromLocal = false
+      return
+    }
+
+    try {
+      const recovery = this.recoveryStore.write({
+        projectId: record.state.projectId,
+        baseRevision: record.baseline.revision ?? 0,
+        baseline: record.baseline.script,
+        draft: draft.script,
+      })
+      record.state.localSaveStatus = 'saved'
+      record.state.localSavedAt = recovery.savedLocallyAt
+      record.state.localErrorCode = null
+    } catch (error) {
+      record.state.localSaveStatus = 'error'
+      record.state.localErrorCode = resolveErrorCode(error)
+    }
+  }
+
   async load(projectId: string): Promise<EditorDraft> {
-    const draft = await this.api.getDraft(projectId)
-    return this.register(projectId, draft)
+    const recovery = this.recoveryStore.read(projectId)
+    try {
+      const draft = await this.api.getDraft(projectId)
+      const baseline = this.register(projectId, draft, draft.script.updatedAt || null)
+      return recovery ? this.applyRecovery(projectId, baseline, recovery) : baseline
+    } catch (error) {
+      if (!recovery) {
+        throw error
+      }
+
+      const baseline = createDefaultEditorDraft(projectId)
+      baseline.revision = recovery.baseRevision
+      baseline.script = recovery.baseline
+      this.register(projectId, baseline, baseline.script.updatedAt || null)
+      return this.applyRecovery(projectId, baseline, recovery, resolveErrorCode(error))
+    }
   }
 
   getState(projectId: string): EditorPersistenceState | null {
@@ -220,6 +338,7 @@ export class EditorPersistenceService {
       dirtyPartitions,
       errorCode: null,
     }
+    this.persistScriptRecovery(record, record.pendingDraft, dirtyPartitions)
     this.emit(record)
     this.clearTimer(record)
 
@@ -272,11 +391,13 @@ export class EditorPersistenceService {
         dirtyPartitions: [],
         errorCode: null,
       }
+      this.persistScriptRecovery(record, candidate, [])
       this.emit(record)
       return null
     }
 
     const pendingVersion = record.pendingVersion
+    this.persistScriptRecovery(record, candidate, dirtyPartitions)
     record.state = {
       ...record.state,
       status: EDITOR_SAVE_STATES.saving,
@@ -308,11 +429,11 @@ export class EditorPersistenceService {
 
       record.state = {
         ...record.state,
-        status:
-          remainingDirtyPartitions.length > 0 ? EDITOR_SAVE_STATES.dirty : EDITOR_SAVE_STATES.saved,
+        status: remainingDirtyPartitions.length > 0 ? EDITOR_SAVE_STATES.dirty : EDITOR_SAVE_STATES.saved,
         dirtyPartitions: remainingDirtyPartitions,
         errorCode: null,
       }
+      this.persistScriptRecovery(record, record.pendingDraft ?? record.baseline, remainingDirtyPartitions)
       this.emit(record)
 
       if (remainingDirtyPartitions.length > 0) {
@@ -328,9 +449,7 @@ export class EditorPersistenceService {
       record.state = {
         ...record.state,
         status:
-          errorCode === API_ERROR_CODES.editorSaveConflict
-            ? EDITOR_SAVE_STATES.conflict
-            : EDITOR_SAVE_STATES.error,
+          errorCode === API_ERROR_CODES.editorSaveConflict ? EDITOR_SAVE_STATES.conflict : EDITOR_SAVE_STATES.error,
         dirtyPartitions,
         errorCode,
       }
@@ -347,7 +466,8 @@ export class EditorPersistenceService {
 
   async reload(projectId: string): Promise<EditorDraft> {
     const draft = await this.api.getDraft(projectId)
-    return this.register(projectId, draft)
+    this.recoveryStore.remove(projectId)
+    return this.register(projectId, draft, draft.script.updatedAt || null)
   }
 
   async overwriteConflict(projectId: string): Promise<SaveDraftResult | null> {
@@ -363,9 +483,7 @@ export class EditorPersistenceService {
       ...record.state,
       revision: remoteDraft.revision ?? 0,
       status: pendingDraft ? EDITOR_SAVE_STATES.dirty : EDITOR_SAVE_STATES.saved,
-      dirtyPartitions: pendingDraft
-        ? resolveEditorDirtyPartitions(remoteDraft, pendingDraft)
-        : [],
+      dirtyPartitions: pendingDraft ? resolveEditorDirtyPartitions(remoteDraft, pendingDraft) : [],
       errorCode: null,
     }
     record.pendingDraft = pendingDraft

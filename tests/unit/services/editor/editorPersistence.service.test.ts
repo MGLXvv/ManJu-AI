@@ -1,11 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createApiError } from '@/api/errors'
+import { resetLocalState } from '@/api/local'
 import type { EditorApiContract } from '@/api/modules/editor/editor.types'
 import { createDefaultEditorDraft } from '@/mocks/editor.mock'
-import {
-  EditorPersistenceService,
-  resolveEditorDirtyPartitions,
-} from '@/services/editor/editorPersistence.service'
+import { EditorPersistenceService, resolveEditorDirtyPartitions } from '@/services/editor/editorPersistence.service'
 import { API_ERROR_CODES, EDITOR_SAVE_STATES } from '@/types/api-enums'
 import { EDITOR_PERSISTENCE_PARTITIONS, type EditorDraft } from '@/types/editor'
 
@@ -50,6 +48,7 @@ const buildSavedResult = (draft: EditorDraft, revision: number) => ({
 describe('EditorPersistenceService', () => {
   beforeEach(() => {
     vi.useFakeTimers()
+    resetLocalState()
   })
 
   afterEach(() => {
@@ -99,9 +98,7 @@ describe('EditorPersistenceService', () => {
     const { api, getDraft, saveDraft } = createApiMock()
     const baseline = createDefaultEditorDraft('project-autosave')
     getDraft.mockResolvedValue(baseline)
-    saveDraft.mockImplementation(async (_projectId: string, draft: EditorDraft) =>
-      buildSavedResult(draft, 1),
-    )
+    saveDraft.mockImplementation(async (_projectId: string, draft: EditorDraft) => buildSavedResult(draft, 1))
 
     const service = new EditorPersistenceService(api, 50)
     const loaded = await service.load('project-autosave')
@@ -153,10 +150,7 @@ describe('EditorPersistenceService', () => {
     loaded.script.content = '本地修改'
     service.track('project-conflict', loaded)
 
-    await expect(service.flush('project-conflict')).rejects.toHaveProperty(
-      'code',
-      API_ERROR_CODES.editorSaveConflict,
-    )
+    await expect(service.flush('project-conflict')).rejects.toHaveProperty('code', API_ERROR_CODES.editorSaveConflict)
     expect(service.getState('project-conflict')).toMatchObject({
       status: EDITOR_SAVE_STATES.conflict,
       errorCode: API_ERROR_CODES.editorSaveConflict,
@@ -166,9 +160,7 @@ describe('EditorPersistenceService', () => {
     remote.revision = 2
     remote.script.content = '远端修改'
     getDraft.mockResolvedValueOnce(remote)
-    saveDraft.mockImplementationOnce(async (_projectId: string, draft: EditorDraft) =>
-      buildSavedResult(draft, 3),
-    )
+    saveDraft.mockImplementationOnce(async (_projectId: string, draft: EditorDraft) => buildSavedResult(draft, 3))
 
     await service.overwriteConflict('project-conflict')
 
@@ -200,19 +192,14 @@ describe('EditorPersistenceService', () => {
           status: 422,
         }),
       )
-      .mockImplementationOnce(async (_projectId: string, draft: EditorDraft) =>
-        buildSavedResult(draft, 1),
-      )
+      .mockImplementationOnce(async (_projectId: string, draft: EditorDraft) => buildSavedResult(draft, 1))
 
     const service = new EditorPersistenceService(api, 50)
     const loaded = await service.load('project-retry')
     loaded.script.prompt = '新的提示词'
     service.track('project-retry', loaded)
 
-    await expect(service.flush('project-retry')).rejects.toHaveProperty(
-      'code',
-      API_ERROR_CODES.editorSaveFailed,
-    )
+    await expect(service.flush('project-retry')).rejects.toHaveProperty('code', API_ERROR_CODES.editorSaveFailed)
     expect(service.hasUnsavedChanges('project-retry')).toBe(true)
     expect(service.getState('project-retry')?.status).toBe(EDITOR_SAVE_STATES.error)
 
@@ -221,5 +208,64 @@ describe('EditorPersistenceService', () => {
     expect(saveDraft).toHaveBeenCalledTimes(2)
     expect(service.hasUnsavedChanges('project-retry')).toBe(false)
     expect(service.getState('project-retry')?.status).toBe(EDITOR_SAVE_STATES.saved)
+  })
+
+  it('restores a locally saved script when the API is unavailable', async () => {
+    const projectId = 'project-offline-recovery'
+    const { api, getDraft, saveDraft } = createApiMock()
+    const baseline = createDefaultEditorDraft(projectId)
+    getDraft.mockResolvedValueOnce(baseline)
+    saveDraft.mockRejectedValueOnce(new Error('offline save'))
+
+    const service = new EditorPersistenceService(api, 50)
+    const loaded = await service.load(projectId)
+    loaded.script.content = 'local recovery content'
+    service.track(projectId, loaded)
+
+    expect(service.getState(projectId)).toMatchObject({
+      localSaveStatus: 'saved',
+      recoveredFromLocal: false,
+    })
+    await expect(service.flush(projectId)).rejects.toThrow('offline save')
+
+    const offline = createApiMock()
+    offline.getDraft.mockRejectedValueOnce(new Error('offline load'))
+    const restoredService = new EditorPersistenceService(offline.api, 50)
+    const restored = await restoredService.load(projectId)
+
+    expect(restored.script.content).toBe('local recovery content')
+    expect(restoredService.getState(projectId)).toMatchObject({
+      status: EDITOR_SAVE_STATES.error,
+      localSaveStatus: 'saved',
+      recoveredFromLocal: true,
+      dirtyPartitions: [EDITOR_PERSISTENCE_PARTITIONS.script],
+    })
+  })
+
+  it('prefers a newer remote revision over stale local recovery', async () => {
+    const projectId = 'project-stale-recovery'
+    const initial = createApiMock()
+    const baseline = createDefaultEditorDraft(projectId)
+    initial.getDraft.mockResolvedValueOnce(baseline)
+
+    const service = new EditorPersistenceService(initial.api, 50)
+    const loaded = await service.load(projectId)
+    loaded.script.content = 'stale local content'
+    service.track(projectId, loaded)
+
+    const remote = createDefaultEditorDraft(projectId)
+    remote.revision = 1
+    remote.script.content = 'newer remote content'
+    const refreshed = createApiMock()
+    refreshed.getDraft.mockResolvedValueOnce(remote)
+    const refreshedService = new EditorPersistenceService(refreshed.api, 50)
+    const result = await refreshedService.load(projectId)
+
+    expect(result.script.content).toBe('newer remote content')
+    expect(refreshedService.getState(projectId)).toMatchObject({
+      localSaveStatus: 'idle',
+      recoveredFromLocal: false,
+      dirtyPartitions: [],
+    })
   })
 })

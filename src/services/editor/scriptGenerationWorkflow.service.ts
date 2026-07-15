@@ -1,5 +1,7 @@
+import { createApiError } from '@/api/errors'
 import { http } from '@/api/http'
 import { isMockMode } from '@/api/shared/apiMode'
+import { API_ERROR_CODES } from '@/types/api-enums'
 
 export interface ScriptGenerationInput {
   projectId: string
@@ -95,12 +97,8 @@ const buildMockStoryboardFromScript = (script: string, prompt: string): string =
   return Array.from({ length: 8 }, (_, index) => {
     const narration = baseLines[index % Math.max(baseLines.length, 1)] ?? '在这个不眠的城市里，故事继续推进。'
     const shotSize = ['全景', '中景', '近景'][index % 3]
-    const visual =
-      index % 2 === 0
-        ? '城市夜景，霓虹闪烁，车流穿梭'
-        : '角色穿过街道，灯牌闪动，氛围逐渐压紧'
-    const camera =
-      index % 2 === 0 ? '固定机位，轻微延迟效果' : '跟随机位，缓慢横移推进'
+    const visual = index % 2 === 0 ? '城市夜景，霓虹闪烁，车流穿梭' : '角色穿过街道，灯牌闪动，氛围逐渐压紧'
+    const camera = index % 2 === 0 ? '固定机位，轻微延迟效果' : '跟随机位，缓慢横移推进'
 
     return [
       `分镜${index + 1}/8`,
@@ -119,17 +117,49 @@ const buildMockStoryboardFromScript = (script: string, prompt: string): string =
   }).join('\n\n')
 }
 
-const resolveBackendScript = (data: BackendScriptGenerationDTO): ScriptGenerationResult => ({
-  script: data.script || data.generated || data.content || '',
+const requireGeneratedValue = (value: string, code: string, field: string): string => {
+  if (value.trim()) {
+    return value
+  }
+
+  throw createApiError({
+    message: `Generation response did not include ${field}`,
+    code,
+    status: 502,
+    details: { field },
+  })
+}
+
+export const mapBackendScriptGeneration = (data: BackendScriptGenerationDTO): ScriptGenerationResult => ({
+  script: requireGeneratedValue(
+    data.script || data.generated || data.content || '',
+    API_ERROR_CODES.scriptGenerateFailed,
+    'script',
+  ),
   outline: data.outline || '',
 })
 
-const resolveBackendStoryboard = (data: BackendStoryboardScriptGenerationDTO): StoryboardScriptGenerationResult => ({
-  storyboard: data.storyboard || data.generated || data.content || '',
+export const mapBackendStoryboardGeneration = (
+  data: BackendStoryboardScriptGenerationDTO,
+): StoryboardScriptGenerationResult => ({
+  storyboard: requireGeneratedValue(
+    data.storyboard || data.generated || data.content || '',
+    API_ERROR_CODES.storyboardGenerateFailed,
+    'storyboard',
+  ),
 })
 
 export const scriptGenerationWorkflowService = {
   async generateScript(input: ScriptGenerationInput): Promise<ScriptGenerationResult> {
+    if (!input.source.trim()) {
+      throw createApiError({
+        message: 'Script source is required',
+        code: API_ERROR_CODES.scriptGenerateFailed,
+        status: 422,
+        details: { field: 'source' },
+      })
+    }
+
     if (isMockMode) {
       return {
         script: buildMockScriptFromSource(input.source, input.prompt),
@@ -146,10 +176,19 @@ export const scriptGenerationWorkflowService = {
       },
     )
 
-    return resolveBackendScript(data)
+    return mapBackendScriptGeneration(data)
   },
 
   async generateStoryboardScript(input: StoryboardScriptGenerationInput): Promise<StoryboardScriptGenerationResult> {
+    if (!input.script.trim()) {
+      throw createApiError({
+        message: 'Generated script is required',
+        code: API_ERROR_CODES.storyboardGenerateFailed,
+        status: 422,
+        details: { field: 'script' },
+      })
+    }
+
     if (isMockMode) {
       return {
         storyboard: buildMockStoryboardFromScript(input.script, input.prompt),
@@ -165,6 +204,6 @@ export const scriptGenerationWorkflowService = {
       },
     )
 
-    return resolveBackendStoryboard(data)
+    return mapBackendStoryboardGeneration(data)
   },
 }

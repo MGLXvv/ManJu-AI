@@ -184,7 +184,9 @@ import {
   clearScriptPromptFields,
   hasUnsavedScriptChanges,
 } from '@/features/editor/scriptDraftState'
+import { resolveEditorActionErrorMessage } from '@/features/editor/generationErrorMessageState'
 import { buildScriptLeaveDialogCopy, shouldInterceptScriptLeave } from '@/features/editor/scriptLeaveConfirmState'
+import { createLatestRequestGuard } from '@/features/shared/latestRequestState'
 import {
   buildScriptTemplateInput,
   createEmptyScriptTemplateInput,
@@ -198,7 +200,7 @@ import { useEditorStore } from '@/stores/editor'
 import { useProjectStore } from '@/stores/project'
 import { useScriptTemplateStore } from '@/stores/scriptTemplates'
 import { useUiFeedbackStore } from '@/stores/uiFeedback'
-import { API_ERROR_CODES } from '@/types/api-enums'
+import { EDITOR_SAVE_STATES } from '@/types/api-enums'
 import type { ScriptTemplateInput } from '@/types/scriptTemplate'
 
 type ScriptStageRouteName = 'editor-script-input' | 'editor-script-storyboard'
@@ -253,6 +255,7 @@ const lastSavedSnapshot = ref(
 )
 const pendingLeaveTarget = ref<RouteLocationRaw | null>(null)
 const bypassLeaveGuard = ref(false)
+const generationRequestGuard = createLatestRequestGuard()
 
 const STAGE_ROUTES: Record<ScriptStageKey, ScriptStageRouteName> = {
   input: 'editor-script-input',
@@ -311,6 +314,17 @@ const statusText = computed(() => {
   if (actionState.value === 'saving') return '正在保存当前内容'
   if (actionState.value === 'generating') {
     return currentStage.value === 'input' ? '正在根据文案生成剧本' : '正在根据剧本生成分镜文案'
+  }
+  if (editorStore.localSaveStatus === 'error') {
+    return '浏览器本地保存失败，请复制当前内容后重试'
+  }
+  if (editorStore.hasUnsavedChanges && editorStore.localSaveStatus === 'saved') {
+    return editorStore.saveState === EDITOR_SAVE_STATES.error || editorStore.saveState === EDITOR_SAVE_STATES.conflict
+      ? '已保存到当前浏览器，服务器同步失败，可稍后重试'
+      : '已保存到当前浏览器，正在等待服务器同步'
+  }
+  if (!generatedScriptWriteCapability.available) {
+    return `${generatedScriptWriteCapability.message}；编辑内容仍会自动保存在当前浏览器`
   }
   if (isDirty.value) return '当前内容有修改，建议先保存'
   return currentStage.value === 'input' ? '输入文案后直接生成剧本' : '生成分镜后可保存并导出 JSON'
@@ -392,6 +406,8 @@ watch(
   projectId,
   async (nextProjectId) => {
     if (!nextProjectId) return
+    generationRequestGuard.invalidate()
+    generating.value = false
     await editorStore.loadDraft(nextProjectId)
     sourceText.value = editorStore.draft?.script.content ?? ''
     outlineText.value = editorStore.draft?.script.outline ?? ''
@@ -414,15 +430,17 @@ watch(outlineText, (outline) => editorStore.updateScriptOutline(outline))
 watch(promptText, (prompt) => editorStore.updateScriptPrompt(prompt))
 watch(generatedScript, (generated) => editorStore.updateGeneratedScript(generated))
 watch(storyboardText, (storyboard) => editorStore.updateStoryboardText(storyboard))
+watch(currentStage, () => {
+  generationRequestGuard.invalidate()
+  generating.value = false
+})
 
 const showToast = (message: string, tone: 'info' | 'success' | 'error' = 'info'): void => {
   uiFeedback.showToast(message, { tone })
 }
 
-const resolveEditorError = (error: unknown, fallback: string): string => {
-  const message = error instanceof Error ? error.message : ''
-  return message === API_ERROR_CODES.editorSaveFailed ? '保存失败，请检查内容后重试' : fallback
-}
+const resolveEditorError = (error: unknown, fallback: string): string =>
+  resolveEditorActionErrorMessage(error, fallback)
 
 const markSaved = (): void => {
   lastSavedSnapshot.value = currentSnapshot.value
@@ -444,7 +462,11 @@ const persistDraft = async (): Promise<boolean> => {
     markSaved()
     return true
   } catch (error) {
-    showToast(resolveEditorError(error, '保存失败，请稍后再试'), 'error')
+    if (editorStore.localSaveStatus === 'saved') {
+      showToast('内容已保存到当前浏览器，服务器同步失败，可稍后重试', 'info')
+    } else {
+      showToast(resolveEditorError(error, '保存失败，请稍后再试'), 'error')
+    }
     return false
   } finally {
     submitting.value = false
@@ -510,6 +532,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  generationRequestGuard.invalidate()
   window.removeEventListener('beforeunload', handleBeforeUnload)
   document.removeEventListener('pointerdown', handleGlobalPointerDown)
 })
@@ -577,6 +600,7 @@ const handleGenerate = async (): Promise<void> => {
   }
   if (!canGenerate.value || generating.value) return
 
+  const requestId = generationRequestGuard.start()
   generating.value = true
   try {
     if (currentStage.value === 'input') {
@@ -586,6 +610,7 @@ const handleGenerate = async (): Promise<void> => {
         prompt: promptText.value,
         modelId: selectedModelId.value,
       })
+      if (!generationRequestGuard.isCurrent(requestId)) return
       generatedScript.value = result.script
       outlineText.value = result.outline ?? ''
       const saved = await persistDraft()
@@ -601,6 +626,7 @@ const handleGenerate = async (): Promise<void> => {
       prompt: promptText.value,
       modelId: selectedModelId.value,
     })
+    if (!generationRequestGuard.isCurrent(requestId)) return
     storyboardText.value = result.storyboard
     const saved = await persistDraft()
     if (saved) {
@@ -609,7 +635,9 @@ const handleGenerate = async (): Promise<void> => {
   } catch (error) {
     showToast(resolveEditorError(error, '生成失败，请稍后再试'), 'error')
   } finally {
-    generating.value = false
+    if (generationRequestGuard.isCurrent(requestId)) {
+      generating.value = false
+    }
   }
 }
 

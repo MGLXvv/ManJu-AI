@@ -68,4 +68,30 @@ describe('editor store persistence', () => {
     expect(store.hasUnsavedChanges).toBe(false)
     expect(store.draft?.script.content).toBe('修复后的内容')
   })
+
+  it('recovers locally saved script changes after recreating the store', async () => {
+    const projectId = 'project-editor-local-recovery'
+    const store = useEditorStore()
+    const loadPromise = store.loadDraft(projectId)
+    await vi.advanceTimersByTimeAsync(120)
+    await loadPromise
+
+    store.updateScriptContent('#mock-save-fail recovery')
+    await vi.advanceTimersByTimeAsync(880)
+
+    expect(store.saveState).toBe(EDITOR_SAVE_STATES.error)
+    expect(store.localSaveStatus).toBe('saved')
+    expect(store.recoveredFromLocal).toBe(false)
+
+    setActivePinia(createPinia())
+    const restoredStore = useEditorStore()
+    const restorePromise = restoredStore.loadDraft(projectId)
+    await vi.advanceTimersByTimeAsync(120)
+    await restorePromise
+
+    expect(restoredStore.draft?.script.content).toBe('#mock-save-fail recovery')
+    expect(restoredStore.hasUnsavedChanges).toBe(true)
+    expect(restoredStore.localSaveStatus).toBe('saved')
+    expect(restoredStore.recoveredFromLocal).toBe(true)
+  })
 })

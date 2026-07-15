@@ -1,4 +1,5 @@
 import { createI18n } from 'vue-i18n'
+import { readLocalString, writeLocalString } from '@/api/local'
 import { messages, type AppLocale } from './messages'
 
 const LOCALE_STORAGE_KEY = 'amd.locale'
@@ -9,7 +10,7 @@ const readInitialLocale = (): AppLocale => {
     return DEFAULT_LOCALE
   }
 
-  const stored = window.localStorage.getItem(LOCALE_STORAGE_KEY) as AppLocale | null
+  const stored = readLocalString(LOCALE_STORAGE_KEY) as AppLocale
   if (stored && stored in messages) {
     return stored
   }
@@ -34,9 +35,7 @@ export const setAppLocale = (locale: AppLocale): void => {
   if (typeof document !== 'undefined') {
     document.documentElement.lang = locale
   }
-  if (typeof window !== 'undefined') {
-    window.localStorage.setItem(LOCALE_STORAGE_KEY, locale)
-  }
+  writeLocalString(LOCALE_STORAGE_KEY, locale)
 }
 
 setAppLocale(i18n.global.locale.value as AppLocale)

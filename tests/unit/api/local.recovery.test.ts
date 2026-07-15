@@ -5,10 +5,13 @@ import {
   listCorruptedLocalEntries,
   LOCAL_STORAGE_SCHEMA_VERSION,
   readLocal,
+  readLocalString,
   readStorageValue,
+  removeLocalString,
   resetLocalState,
   type LocalStorageLike,
   writeLocal,
+  writeLocalString,
   writeStorageValue,
 } from '@/api/local'
 import { API_ERROR_CODES } from '@/types/api-enums'
@@ -109,6 +112,32 @@ describe('local storage recovery', () => {
     writeLocal('temporary-key', { ok: true })
     expect(readLocal('temporary-key', null)).toEqual({ ok: true })
     expect(getCurrentRuntimeError()).toMatchObject({ code: 'LOCAL_STORAGE_UNAVAILABLE' })
+  })
+
+  it('preserves raw string preferences and removes them safely', () => {
+    const storage = new MemoryStorage()
+    vi.stubGlobal('window', { localStorage: storage })
+
+    writeLocalString('locale', 'zh-CN')
+
+    expect(storage.getItem('locale')).toBe('zh-CN')
+    expect(readLocalString('locale', 'en-US')).toBe('zh-CN')
+
+    removeLocalString('locale')
+    expect(storage.getItem('locale')).toBeNull()
+    expect(readLocalString('locale', 'en-US')).toBe('en-US')
+  })
+
+  it('falls back to memory when raw string preference writes fail', () => {
+    const storage = new MemoryStorage()
+    storage.setItem = () => {
+      throw new Error('storage write blocked')
+    }
+    vi.stubGlobal('window', { localStorage: storage })
+
+    expect(() => writeLocalString('remembered-account', 'creator@example.com')).not.toThrow()
+    expect(readLocalString('remembered-account')).toBe('creator@example.com')
+    expect(getCurrentRuntimeError()).toMatchObject({ code: 'LOCAL_STORAGE_WRITE_FAILED' })
   })
 
   it('lists and clears quarantined browser entries without clearing valid data', () => {

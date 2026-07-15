@@ -99,6 +99,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { writeLocalString } from '@/api/local'
 import BatchSelectionToolbar from '@/components/editor/common/BatchSelectionToolbar.vue'
 import { resolveHttpReadonlyState } from '@/features/backend/httpReadonlyState'
 import FigmaIcon from '@/components/icons/FigmaIcon.vue'
@@ -236,7 +237,7 @@ const downloadResourceAssets = (items: ResourceAsset[], fileName = 'resource-lib
 }
 
 const queueReusableAssets = (items: ResourceAsset[]): void => {
-  window.localStorage.setItem(
+  writeLocalString(
     RESOURCE_REUSE_QUEUE_KEY,
     JSON.stringify({
       version: 'mock-v1',

@@ -1,3 +1,5 @@
+import { readLocalString, writeLocalString } from '@/api/local'
+
 const STORYBOARD_PROMPT_COLLAPSED_STORAGE_KEY = 'manju:storyboard:prompt-panel-collapsed'
 
 export const loadStoryboardPromptCollapsed = (fallback = false): boolean => {
@@ -5,16 +7,12 @@ export const loadStoryboardPromptCollapsed = (fallback = false): boolean => {
     return fallback
   }
 
-  try {
-    const raw = window.localStorage.getItem(STORYBOARD_PROMPT_COLLAPSED_STORAGE_KEY)
-    if (raw === null) {
-      return fallback
-    }
-
-    return raw === '1'
-  } catch {
+  const raw = readLocalString(STORYBOARD_PROMPT_COLLAPSED_STORAGE_KEY)
+  if (!raw) {
     return fallback
   }
+
+  return raw === '1'
 }
 
 export const saveStoryboardPromptCollapsed = (collapsed: boolean): void => {
@@ -22,10 +20,5 @@ export const saveStoryboardPromptCollapsed = (collapsed: boolean): void => {
     return
   }
 
-  try {
-    window.localStorage.setItem(STORYBOARD_PROMPT_COLLAPSED_STORAGE_KEY, collapsed ? '1' : '0')
-  } catch {
-    // Ignore storage failures and keep UI responsive.
-  }
+  writeLocalString(STORYBOARD_PROMPT_COLLAPSED_STORAGE_KEY, collapsed ? '1' : '0')
 }
-

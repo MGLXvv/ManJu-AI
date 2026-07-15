@@ -75,6 +75,7 @@ import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { AUTH_ERROR, AUTH_STORAGE_KEYS } from '@/api/auth.api'
+import { readLocalString, removeLocalString, writeLocalString } from '@/api/local'
 import { loadAuthHeroBackground, type AuthHeroModule } from '@/features/auth/authHeroBackground'
 import AuthFormCard, { type AuthMode } from '@/components/auth/AuthFormCard.vue'
 import AuthThirdPartyCard from '@/components/auth/AuthThirdPartyCard.vue'
@@ -82,20 +83,14 @@ import { resolveCapability, type CapabilityKey } from '@/features/capabilities/c
 import { useAuthStore } from '@/stores/auth'
 import type { ThirdPartyProvider } from '@/types/auth'
 
-const readRememberedAccount = (): string => {
-  try {
-    return window.localStorage.getItem(AUTH_STORAGE_KEYS.rememberedAccount)?.trim() ?? ''
-  } catch {
-    return ''
-  }
-}
+const readRememberedAccount = (): string => readLocalString(AUTH_STORAGE_KEYS.rememberedAccount).trim()
 
 const writeRememberedAccount = (account: string): void => {
-  window.localStorage.setItem(AUTH_STORAGE_KEYS.rememberedAccount, account.trim())
+  writeLocalString(AUTH_STORAGE_KEYS.rememberedAccount, account.trim())
 }
 
 const clearRememberedAccount = (): void => {
-  window.localStorage.removeItem(AUTH_STORAGE_KEYS.rememberedAccount)
+  removeLocalString(AUTH_STORAGE_KEYS.rememberedAccount)
 }
 
 const rememberedAccount = readRememberedAccount()

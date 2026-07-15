@@ -219,6 +219,47 @@ export const writeLocal = <T>(key: string, value: T): void => {
   }
 }
 
+export const readLocalString = (key: string, fallback = ''): string => {
+  const browserStorage = resolveBrowserStorage()
+  if (browserStorage) {
+    try {
+      const value = browserStorage.getItem(key)
+      if (value !== null) {
+        return value
+      }
+    } catch (error) {
+      reportRuntimeError(error, {
+        code: 'LOCAL_STORAGE_READ_FAILED',
+        category: 'storage',
+        message: '读取本地偏好失败，已使用临时存储',
+        context: { key },
+      })
+    }
+  }
+
+  return memoryStorageAdapter.getItem(key) ?? fallback
+}
+
+export const writeLocalString = (key: string, value: string): void => {
+  const browserStorage = resolveBrowserStorage()
+  if (browserStorage) {
+    try {
+      browserStorage.setItem(key, value)
+      memoryStorageAdapter.removeItem(key)
+      return
+    } catch (error) {
+      reportRuntimeError(error, {
+        code: 'LOCAL_STORAGE_WRITE_FAILED',
+        category: 'storage',
+        message: '写入本地偏好失败，已切换为临时存储',
+        context: { key },
+      })
+    }
+  }
+
+  memoryStorageAdapter.setItem(key, value)
+}
+
 export const removeLocal = (key: string): void => {
   const browserStorage = resolveBrowserStorage()
   try {
@@ -232,6 +273,10 @@ export const removeLocal = (key: string): void => {
     })
   }
   memoryStorageAdapter.removeItem(key)
+}
+
+export const removeLocalString = (key: string): void => {
+  removeLocal(key)
 }
 
 const collectCorruptedKeys = (storage: LocalStorageLike): string[] => {

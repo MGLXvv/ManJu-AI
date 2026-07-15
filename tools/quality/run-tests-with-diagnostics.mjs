@@ -12,7 +12,7 @@ const result = spawnSync(pnpmCommand, ['exec', 'vitest', 'run', '--coverage'], {
   cwd: ROOT,
   encoding: 'utf8',
   env: process.env,
-  shell: false,
+  shell: process.platform === 'win32',
   maxBuffer: 32 * 1024 * 1024,
 })
 

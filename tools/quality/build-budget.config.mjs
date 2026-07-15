@@ -44,17 +44,17 @@ export const buildFileRules = [
   {
     name: 'media',
     test: /\.(?:mp4|webm|mov|mp3|wav|ogg|m4a)$/i,
-    maxBytes: 12 * MIB,
+    maxBytes: 2 * MIB,
   },
 ]
 
 export const buildFileExemptions = []
 
 export const buildTotalBudgets = {
-  javascript: 5 * MIB,
-  css: 1.5 * MIB,
-  assets: 20 * MIB,
-  dist: 25 * MIB,
+  javascript: 1.2 * MIB,
+  css: 300 * KIB,
+  assets: 3.5 * MIB,
+  dist: 5 * MIB,
 }
 
 export const buildReportTopFileCount = 20

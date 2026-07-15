@@ -8,7 +8,9 @@ const sharedIgnores = [
   'artifacts/**',
   'coverage/**',
   'dist/**',
+  '.worktrees/**',
   'node_modules/**',
+  '**/node_modules/**',
   'public/**',
   'src/assets/iconfont/**',
   '**/*.d.ts',
@@ -86,6 +88,19 @@ export default tseslint.config(
         ...globals.node,
         ...globals.es2024,
       },
+    },
+  },
+  {
+    files: ['tools/capture-modao.mjs'],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+        ...globals.es2024,
+      },
+    },
+    rules: {
+      'no-empty': 'off',
     },
   },
   {

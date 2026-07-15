@@ -12,6 +12,12 @@ export type CapabilityKey =
   | 'system.write'
   | 'project.import'
   | 'project.export'
+  | 'editor.script.generated.write'
+  | 'editor.setting.write'
+  | 'editor.storyboard.write'
+  | 'editor.video.write'
+  | 'editor.dubbing.write'
+  | 'media.upload'
   | 'generation.cancel'
   | 'generation.retry'
   | 'export.task'
@@ -99,6 +105,42 @@ const DEFINITIONS: Record<CapabilityKey, CapabilityDefinition> = {
     mock: 'mock-only',
     http: 'unsupported',
     message: '当前项目 JSON 导出契约与后端导出任务语义不一致',
+    allowEnableOverride: false,
+  },
+  'editor.script.generated.write': {
+    mock: 'mock-only',
+    http: 'unsupported',
+    message: 'HTTP 模式尚未支持生成剧本和剧本分镜的可靠持久化',
+    allowEnableOverride: false,
+  },
+  'editor.setting.write': {
+    mock: 'mock-only',
+    http: 'unsupported',
+    message: 'HTTP 模式尚未支持设定资产的可靠持久化',
+    allowEnableOverride: false,
+  },
+  'editor.storyboard.write': {
+    mock: 'mock-only',
+    http: 'unsupported',
+    message: 'HTTP 模式尚未支持分镜数据的可靠持久化',
+    allowEnableOverride: false,
+  },
+  'editor.video.write': {
+    mock: 'mock-only',
+    http: 'unsupported',
+    message: 'HTTP 模式尚未支持视频结果的可靠持久化',
+    allowEnableOverride: false,
+  },
+  'editor.dubbing.write': {
+    mock: 'mock-only',
+    http: 'unsupported',
+    message: 'HTTP 模式尚未支持配音结果的可靠持久化',
+    allowEnableOverride: false,
+  },
+  'media.upload': {
+    mock: 'mock-only',
+    http: 'unsupported',
+    message: 'HTTP 模式尚未接入媒体文件上传接口',
     allowEnableOverride: false,
   },
   'generation.cancel': {

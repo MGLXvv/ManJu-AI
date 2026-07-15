@@ -2,7 +2,7 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 
-const DEFAULT_BASE_URL = 'http://10.10.3.26:48080/admin-api'
+const DEFAULT_BASE_URL = ''
 const DEFAULT_TIMEOUT_MS = 15000
 const REPORT_DIR = path.resolve('artifacts/integration')
 const SENSITIVE_KEY = /(token|password|authorization|cookie|secret|credential)/i
@@ -298,8 +298,8 @@ const readConfig = () => ({
 
 const main = async () => {
   const config = readConfig()
-  if (!config.username || !config.password) {
-    console.error('MANJU_USERNAME and MANJU_PASSWORD are required.')
+  if (!config.baseUrl || !config.username || !config.password) {
+    console.error('MANJU_API_BASE_URL, MANJU_USERNAME and MANJU_PASSWORD are required.')
     process.exitCode = 1
     return
   }

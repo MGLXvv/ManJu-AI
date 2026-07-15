@@ -26,12 +26,7 @@
           >
             返回上一步
           </button>
-          <button
-            class="script-next-btn"
-            type="button"
-            :disabled="!canEnterNext || submitting"
-            @click="handleNext"
-          >
+          <button class="script-next-btn" type="button" :disabled="!canEnterNext || submitting" @click="handleNext">
             {{ nextButtonText }}
           </button>
         </div>
@@ -150,7 +145,11 @@
             />
             <p v-if="templateNameError" class="script-template-name-dialog__error">{{ templateNameError }}</p>
             <div class="script-template-name-dialog__actions">
-              <button class="script-template-name-dialog__btn is-neutral" type="button" @click="cancelTemplateNameDialog">
+              <button
+                class="script-template-name-dialog__btn is-neutral"
+                type="button"
+                @click="cancelTemplateNameDialog"
+              >
                 取消
               </button>
               <button
@@ -178,8 +177,13 @@ import ScriptInputPanel from '@/components/editor/script/ScriptInputPanel.vue'
 import ScriptPromptPanel from '@/components/editor/script/ScriptPromptPanel.vue'
 import ScriptResultPanel from '@/components/editor/script/ScriptResultPanel.vue'
 import ScriptTemplatePopover from '@/components/editor/script/ScriptTemplatePopover.vue'
+import { resolveCapability } from '@/features/capabilities/capabilityRegistry'
 import { buildScopedProjectArtifact, buildScopedProjectExportFileName } from '@/features/editor/editorExportScopeState'
-import { buildScriptDraftSnapshot, clearScriptPromptFields, hasUnsavedScriptChanges } from '@/features/editor/scriptDraftState'
+import {
+  buildScriptDraftSnapshot,
+  clearScriptPromptFields,
+  hasUnsavedScriptChanges,
+} from '@/features/editor/scriptDraftState'
 import { buildScriptLeaveDialogCopy, shouldInterceptScriptLeave } from '@/features/editor/scriptLeaveConfirmState'
 import {
   buildScriptTemplateInput,
@@ -206,6 +210,7 @@ const editorStore = useEditorStore()
 const projectStore = useProjectStore()
 const uiFeedback = useUiFeedbackStore()
 const scriptTemplateStore = useScriptTemplateStore()
+const generatedScriptWriteCapability = resolveCapability('editor.script.generated.write')
 
 const DEFAULT_PROMPT = '请将输入内容整理为适合漫画短剧制作的剧本，突出情绪推进、画面感、旁白与字幕节奏。'
 
@@ -265,8 +270,10 @@ const previousStage = computed<ScriptStageKey | null>(() =>
   currentStageIndex.value > 0 ? STAGE_ORDER[currentStageIndex.value - 1] : null,
 )
 
-const canGenerate = computed(() =>
-  currentStage.value === 'input' ? Boolean(sourceText.value.trim()) : Boolean(generatedScript.value.trim()),
+const canGenerate = computed(
+  () =>
+    generatedScriptWriteCapability.available &&
+    (currentStage.value === 'input' ? Boolean(sourceText.value.trim()) : Boolean(generatedScript.value.trim())),
 )
 const canEnterNext = computed(() =>
   currentStage.value === 'input' ? Boolean(generatedScript.value.trim()) : Boolean(storyboardText.value.trim()),
@@ -467,7 +474,11 @@ const exportStoryboardArtifact = async (): Promise<void> => {
   const saved = await persistDraft()
   if (!saved) return
 
-  const artifact = buildScopedProjectArtifact(projectId.value || editorStore.draft.projectId, editorStore.draft, 'storyboard')
+  const artifact = buildScopedProjectArtifact(
+    projectId.value || editorStore.draft.projectId,
+    editorStore.draft,
+    'storyboard',
+  )
   downloadJson(buildScopedProjectExportFileName(projectId.value || editorStore.draft.projectId), artifact)
   showToast('分镜草稿 JSON 已导出', 'success')
 }
@@ -560,6 +571,10 @@ const handleDelete = async (): Promise<void> => {
 const resolveGenerationProjectId = (): string => projectId.value || editorStore.draft?.projectId || 'mock-project'
 
 const handleGenerate = async (): Promise<void> => {
+  if (!generatedScriptWriteCapability.available) {
+    uiFeedback.showToast(generatedScriptWriteCapability.message, { tone: 'error' })
+    return
+  }
   if (!canGenerate.value || generating.value) return
 
   generating.value = true
@@ -613,7 +628,10 @@ const handleBack = async (): Promise<void> => {
 
 const handleNext = async (): Promise<void> => {
   if (!canEnterNext.value) {
-    showToast(currentStage.value === 'input' ? '请先生成剧本，再进入分镜阶段' : '请先生成剧本分镜，再进入设定页', 'error')
+    showToast(
+      currentStage.value === 'input' ? '请先生成剧本，再进入分镜阶段' : '请先生成剧本分镜，再进入设定页',
+      'error',
+    )
     return
   }
 

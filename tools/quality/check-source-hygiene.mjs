@@ -6,7 +6,9 @@ import { collectFileStats } from './file-utils.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const SRC_ROOT = path.join(ROOT, 'src')
-const sourceFiles = (await collectFileStats(ROOT, SRC_ROOT))
+const sourceFiles = (await collectFileStats(ROOT, SRC_ROOT, {
+  ignoredDirectoryNames: new Set(['node_modules', 'dist']),
+}))
   .filter((file) => /\.(?:ts|tsx|js|mjs|vue)$/.test(file.relativePath))
 
 const forbiddenPatterns = [

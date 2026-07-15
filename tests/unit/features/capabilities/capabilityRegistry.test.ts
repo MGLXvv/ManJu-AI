@@ -16,6 +16,15 @@ describe.sequential('capabilityRegistry', () => {
       source: 'default',
     })
     expect(resolveCapability('auth.register').available).toBe(false)
+    expect(resolveCapability('editor.script.generated.write')).toMatchObject({
+      status: 'mock-only',
+      available: true,
+    })
+    expect(resolveCapability('editor.setting.write').available).toBe(true)
+    expect(resolveCapability('editor.storyboard.write').available).toBe(true)
+    expect(resolveCapability('editor.video.write').available).toBe(true)
+    expect(resolveCapability('editor.dubbing.write').available).toBe(true)
+    expect(resolveCapability('media.upload').available).toBe(true)
   })
 
   it('enables Phase1 real catalogs and task controls in http mode', async () => {
@@ -50,6 +59,15 @@ describe.sequential('capabilityRegistry', () => {
       status: 'readonly',
       available: false,
     })
+    expect(resolveCapability('editor.script.generated.write')).toMatchObject({
+      status: 'unsupported',
+      available: false,
+    })
+    expect(resolveCapability('editor.setting.write').available).toBe(false)
+    expect(resolveCapability('editor.storyboard.write').available).toBe(false)
+    expect(resolveCapability('editor.video.write').available).toBe(false)
+    expect(resolveCapability('editor.dubbing.write').available).toBe(false)
+    expect(resolveCapability('media.upload').available).toBe(false)
   })
 
   it('allows environment overrides only for explicitly overridable capabilities', async () => {
@@ -70,6 +88,15 @@ describe.sequential('capabilityRegistry', () => {
     const { resolveCapability } = await import('@/features/capabilities/capabilityRegistry')
 
     expect(resolveCapability('project.import')).toMatchObject({
+      status: 'unsupported',
+      available: false,
+      source: 'override-rejected',
+    })
+
+    vi.stubEnv('VITE_ENABLED_CAPABILITIES', 'editor.script.generated.write')
+    vi.resetModules()
+    const { resolveCapability: resolveEditorCapability } = await import('@/features/capabilities/capabilityRegistry')
+    expect(resolveEditorCapability('editor.script.generated.write')).toMatchObject({
       status: 'unsupported',
       available: false,
       source: 'override-rejected',

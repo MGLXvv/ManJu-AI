@@ -1,4 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { resolveAuthRouteAccess } from '@/features/auth/authRouteAccessState'
+import { resolveEditorRouteCapability } from '@/features/editor/editorCapabilityState'
 import { isEditorStepRouteName, resolveEditorRouteGuard } from '@/features/editor/editorRouteGuardState'
 import { startEditorWorkspacePersistenceSync } from '@/services/editor/editorWorkspacePersistenceSync'
 import { attemptChunkLoadRecovery, clearChunkLoadRecoveryMarker } from '@/services/runtime/chunkLoadRecovery'
@@ -29,7 +31,15 @@ router.beforeEach(async (to, from, next) => {
     loading.begin()
   }
 
-  if (requiresAuth(to) && !auth.isAuthenticated) {
+  const authAccess = resolveAuthRouteAccess(
+    {
+      requiresAuth: requiresAuth(to),
+      guestOnly: isGuestOnly(to),
+    },
+    auth,
+  )
+
+  if (authAccess.action === 'login') {
     const reason = auth.consumeSessionIssue()
     next({
       name: 'login',
@@ -41,7 +51,7 @@ router.beforeEach(async (to, from, next) => {
     return
   }
 
-  if (isGuestOnly(to) && auth.isAuthenticated) {
+  if (authAccess.action === 'projects') {
     next({ name: 'projects' })
     return
   }
@@ -63,6 +73,18 @@ router.beforeEach(async (to, from, next) => {
   }
 
   if (isEditorStepRouteName(to.name)) {
+    const capabilityResult = resolveEditorRouteCapability(to.name)
+    if (!capabilityResult.ok) {
+      uiFeedback.showToast(capabilityResult.message, { tone: 'error' })
+      next({
+        name: capabilityResult.redirectRouteName,
+        params: to.params,
+        query: to.query,
+        replace: true,
+      })
+      return
+    }
+
     const projectId = String(to.params.projectId ?? '')
     if (projectId) {
       const editorStore = useEditorStore(pinia)

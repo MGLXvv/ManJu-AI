@@ -12,7 +12,7 @@ const result = spawnSync(pnpmCommand, ['exec', 'vue-tsc', '-b'], {
   cwd: ROOT,
   encoding: 'utf8',
   env: process.env,
-  shell: false,
+  shell: process.platform === 'win32',
 })
 
 const output = `${result.stdout ?? ''}${result.stderr ?? ''}`

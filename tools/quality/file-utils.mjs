@@ -12,21 +12,26 @@ export const formatBytes = (bytes) => {
 
 export const normalizePath = (value) => value.split(path.sep).join('/')
 
-export const walkFiles = async (directory) => {
+export const walkFiles = async (directory, options = {}) => {
   const entries = await readdir(directory, { withFileTypes: true })
   const files = []
 
   for (const entry of entries) {
     const absolute = path.join(directory, entry.name)
-    if (entry.isDirectory()) files.push(...await walkFiles(absolute))
+    if (entry.isDirectory()) {
+      if (options.ignoredDirectoryNames?.has(entry.name)) {
+        continue
+      }
+      files.push(...await walkFiles(absolute, options))
+    }
     else if (entry.isFile()) files.push(absolute)
   }
 
   return files
 }
 
-export const collectFileStats = async (root, directory) => {
-  const files = await walkFiles(directory)
+export const collectFileStats = async (root, directory, options = {}) => {
+  const files = await walkFiles(directory, options)
   return Promise.all(files.map(async (absolutePath) => {
     const metadata = await stat(absolutePath)
     return {

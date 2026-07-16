@@ -151,6 +151,7 @@ import {
 import { resolveDubbingPlaybackTransition } from '@/features/editor/dubbingPlaybackState'
 import { buildScopedProjectArtifact, buildScopedProjectExportFileName } from '@/features/editor/editorExportScopeState'
 import { createScopedAsyncTaskRunner } from '@/features/shared/scopedAsyncTaskState'
+import { createProjectPhaseRunner, isProjectRouteContextCurrent } from '@/features/shared/projectPhaseRunnerState'
 import { shouldInterceptStoryboardLeave } from '@/features/editor/storyboardLeaveConfirmState'
 import { buildStoryboardSaveState } from '@/features/editor/storyboardPreviewState'
 import { dubbingGenerationService } from '@/services/generation'
@@ -188,6 +189,7 @@ let previewAudio: HTMLAudioElement | null = null
 let resizeObserver: ResizeObserver | null = null
 const generationTasks = createScopedAsyncTaskRunner()
 const batchGenerationTasks = createScopedAsyncTaskRunner()
+const stepTransitionTasks = createProjectPhaseRunner()
 
 const modelOptions: EditorModelOption[] = [
   { id: 'index-tts', name: 'indexTTS', iconName: 'model-openai' },
@@ -343,6 +345,7 @@ watch(
   async (nextProjectId) => {
     generationTasks.invalidate()
     batchGenerationTasks.invalidate()
+    stepTransitionTasks.invalidate()
     batchGenerating.value = false
     if (!nextProjectId) {
       cards.value = []
@@ -569,6 +572,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   generationTasks.invalidate()
   batchGenerationTasks.invalidate()
+  stepTransitionTasks.invalidate()
   window.removeEventListener('beforeunload', handleBeforeUnload)
   window.removeEventListener('resize', recalcDubbingRowSize)
   resizeObserver?.disconnect()
@@ -610,17 +614,45 @@ const goCompleteStep = async (): Promise<void> => {
     return
   }
 
+  const targetProjectId = projectId.value
+  const targetRouteName = route.name
   const saved = await persistDubbingDraft()
-  if (!saved) {
+  if (
+    !saved ||
+    !isProjectRouteContextCurrent({
+      targetProjectId,
+      currentProjectId: projectId.value,
+      targetRouteName,
+      currentRouteName: route.name,
+    })
+  ) {
     return
   }
 
-  if (projectId.value) {
-    await projectStore.updateProjectStep(projectId.value, validation.nextStep)
+  try {
+    if (targetProjectId) {
+      const advanced = await stepTransitionTasks.run(targetProjectId, [
+        (scopedProjectId) => projectStore.updateProjectStep(scopedProjectId, validation.nextStep),
+      ])
+      if (
+        !advanced ||
+        !isProjectRouteContextCurrent({
+          targetProjectId,
+          currentProjectId: projectId.value,
+          targetRouteName,
+          currentRouteName: route.name,
+        })
+      ) {
+        return
+      }
+    }
+  } catch {
+    showToast('进入完成页失败，请稍后再试', 'error')
+    return
   }
 
   showToast(validation.successMessage, 'success')
   bypassLeaveGuard.value = true
-  await router.push({ name: validation.routeName, params: { projectId: projectId.value } })
+  await router.push({ name: validation.routeName, params: { projectId: targetProjectId } })
 }
 </script>

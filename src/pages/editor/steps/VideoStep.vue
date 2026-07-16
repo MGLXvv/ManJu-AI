@@ -238,6 +238,7 @@ import { buildVideoBatchGenerateMessage, buildVideoGenerateErrorMessage } from '
 import { shouldApplyVideoTextOptimizationResult } from '@/features/editor/videoTextOptimizationState'
 import { buildScopedProjectArtifact, buildScopedProjectExportFileName } from '@/features/editor/editorExportScopeState'
 import { createScopedAsyncTaskRunner } from '@/features/shared/scopedAsyncTaskState'
+import { createProjectPhaseRunner, isProjectRouteContextCurrent } from '@/features/shared/projectPhaseRunnerState'
 import { videoPromptService } from '@/services/generation'
 import { useEditorStore } from '@/stores/editor'
 import { useProjectStore } from '@/stores/project'
@@ -280,6 +281,7 @@ const optimizingVideoPrompt = ref(false)
 const optimizingDialogue = ref(false)
 const videoPromptTasks = createScopedAsyncTaskRunner()
 const dialogueTasks = createScopedAsyncTaskRunner()
+const stepTransitionTasks = createProjectPhaseRunner()
 const pendingUploadShotId = ref<string | null>(null)
 const uploadInputRef = ref<HTMLInputElement | null>(null)
 const isTimelineCollapsed = ref(false)
@@ -313,6 +315,8 @@ const editDialogTitle = computed(() => currentShot.value?.title ?? '当前视频
 watch(
   projectId,
   async (nextProjectId) => {
+    stepTransitionTasks.invalidate()
+
     if (!nextProjectId) {
       await store.loadDefaults()
       lastSavedSnapshot.value = buildStoryboardDraftSnapshot(store.shots)
@@ -778,6 +782,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   videoPromptTasks.invalidate()
   dialogueTasks.invalidate()
+  stepTransitionTasks.invalidate()
   window.removeEventListener('beforeunload', handleBeforeUnload)
   if (scheduledBatchGenerateTimer !== null) {
     window.clearTimeout(scheduledBatchGenerateTimer)
@@ -910,19 +915,47 @@ const goDubbingStep = async (): Promise<void> => {
     return
   }
 
+  const targetProjectId = projectId.value
+  const targetRouteName = route.name
   const saved = await persistVideoDraft()
-  if (!saved) {
+  if (
+    !saved ||
+    !isProjectRouteContextCurrent({
+      targetProjectId,
+      currentProjectId: projectId.value,
+      targetRouteName,
+      currentRouteName: route.name,
+    })
+  ) {
     return
   }
 
-  if (projectId.value) {
-    await projectStore.updateProjectStep(projectId.value, validation.nextStep)
+  try {
+    if (targetProjectId) {
+      const advanced = await stepTransitionTasks.run(targetProjectId, [
+        (scopedProjectId) => projectStore.updateProjectStep(scopedProjectId, validation.nextStep),
+      ])
+      if (
+        !advanced ||
+        !isProjectRouteContextCurrent({
+          targetProjectId,
+          currentProjectId: projectId.value,
+          targetRouteName,
+          currentRouteName: route.name,
+        })
+      ) {
+        return
+      }
+    }
+  } catch {
+    showToast('进入配音失败，请稍后再试', 'error')
+    return
   }
 
   showToast(validation.successMessage, 'success')
   await router.push({
     name: validation.routeName,
-    params: route.params,
+    params: { projectId: targetProjectId },
   })
 }
 </script>

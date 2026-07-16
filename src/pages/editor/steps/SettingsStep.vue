@@ -153,6 +153,7 @@ import { buildSettingLeaveDialogCopy, shouldInterceptSettingLeave } from '@/feat
 import { buildSettingSaveErrorMessage } from '@/features/editor/settingSaveErrorState'
 import { getStoryboardModeEntryState } from '@/features/editor/storyboardModeState'
 import { createLatestAsyncTaskRunner } from '@/features/shared/latestAsyncTaskState'
+import { createProjectPhaseRunner, isProjectRouteContextCurrent } from '@/features/shared/projectPhaseRunnerState'
 import { mapVoiceAssetsToOptions } from '@/features/voice/voiceOptionState'
 import { buildSettingArtifact, buildSettingBatchExportFileName } from '@/features/editor/settingTransferState'
 import { assetWorkflowService } from '@/services/editor/assetWorkflow.service'
@@ -173,6 +174,7 @@ const projectStore = useProjectStore()
 const uiFeedback = useUiFeedbackStore()
 const voicesStore = useVoicesStore()
 const resourceLibraryTaskRunner = createLatestAsyncTaskRunner()
+const stepTransitionTasks = createProjectPhaseRunner()
 
 const createModalOpen = ref(false)
 const previewOpen = ref(false)
@@ -230,6 +232,8 @@ const batchActions = computed<
 watch(
   projectId,
   async (nextProjectId) => {
+    stepTransitionTasks.invalidate()
+
     if (!nextProjectId) {
       assetsStore.resetAssets()
       persistedAssetIds.value = []
@@ -643,6 +647,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   resourceLibraryTaskRunner.invalidate()
+  stepTransitionTasks.invalidate()
   window.removeEventListener('beforeunload', handleBeforeUnload)
 })
 
@@ -666,22 +671,50 @@ const proceedToStoryboard = async (mode: 'multi-param' | 'image'): Promise<void>
     return
   }
 
+  const targetProjectId = projectId.value
+  const targetRouteName = route.name
   editorStore.updateStoryboardGenerationMode(mode)
   const saved = await persistSettingDraft()
-  if (!saved) {
+  if (
+    !saved ||
+    !isProjectRouteContextCurrent({
+      targetProjectId,
+      currentProjectId: projectId.value,
+      targetRouteName,
+      currentRouteName: route.name,
+    })
+  ) {
     return
   }
 
   generationModeDialogOpen.value = false
 
-  if (projectId.value) {
-    await projectStore.updateProjectStep(projectId.value, validation.nextStep)
+  try {
+    if (targetProjectId) {
+      const advanced = await stepTransitionTasks.run(targetProjectId, [
+        (scopedProjectId) => projectStore.updateProjectStep(scopedProjectId, validation.nextStep),
+      ])
+      if (
+        !advanced ||
+        !isProjectRouteContextCurrent({
+          targetProjectId,
+          currentProjectId: projectId.value,
+          targetRouteName,
+          currentRouteName: route.name,
+        })
+      ) {
+        return
+      }
+    }
+  } catch {
+    showToast('进入分镜失败，请稍后再试', 'error')
+    return
   }
 
   showToast(validation.successMessage, 'success')
   await router.push({
     name: validation.routeName,
-    params: route.params,
+    params: { projectId: targetProjectId },
   })
 }
 

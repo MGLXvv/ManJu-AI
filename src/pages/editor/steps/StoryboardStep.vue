@@ -232,6 +232,7 @@ import {
 } from '@/features/editor/storyboardPreviewState'
 import { validateEditorAdvance } from '@/features/editor/editorCompletionState'
 import { createScopedAsyncTaskRunner } from '@/features/shared/scopedAsyncTaskState'
+import { createProjectPhaseRunner, isProjectRouteContextCurrent } from '@/features/shared/projectPhaseRunnerState'
 import { useEditorStore } from '@/stores/editor'
 import { useProjectStore } from '@/stores/project'
 import { useStoryboardStore } from '@/stores/storyboard'
@@ -286,6 +287,7 @@ const pendingInsertAfterShotId = ref<string | null>(null)
 const optimizingPrompt = ref(false)
 const promptOptimizationTasks = createScopedAsyncTaskRunner()
 const storyboardListGenerationTasks = createScopedAsyncTaskRunner()
+const stepTransitionTasks = createProjectPhaseRunner()
 
 const isAllShotsSelected = computed(
   () => shots.value.length > 0 && shots.value.every((shot) => selectedShotIds.value.includes(shot.id)),
@@ -334,6 +336,7 @@ const insertDraft = ref<StoryboardInsertDraft>(createInsertDraft())
 watch(
   projectId,
   async (nextProjectId) => {
+    stepTransitionTasks.invalidate()
     storyboardListGenerationTasks.invalidate()
     generatingStoryboardList.value = false
 
@@ -1153,6 +1156,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   promptOptimizationTasks.invalidate()
   storyboardListGenerationTasks.invalidate()
+  stepTransitionTasks.invalidate()
   window.removeEventListener('beforeunload', handleBeforeUnload)
 })
 
@@ -1184,15 +1188,38 @@ const goVideoStep = async (): Promise<void> => {
     return
   }
 
+  const targetProjectId = projectId.value
+  const targetRouteName = route.name
   const saved = await persistStoryboardDraft()
-  if (!saved) {
+  if (
+    !saved ||
+    !isProjectRouteContextCurrent({
+      targetProjectId,
+      currentProjectId: projectId.value,
+      targetRouteName,
+      currentRouteName: route.name,
+    })
+  ) {
     return
   }
 
   try {
-    if (projectId.value) {
-      await storyboardWorkflowService.confirmStoryboard(projectId.value)
-      await projectStore.updateProjectStep(projectId.value, validation.nextStep)
+    if (targetProjectId) {
+      const advanced = await stepTransitionTasks.run(targetProjectId, [
+        (scopedProjectId) => storyboardWorkflowService.confirmStoryboard(scopedProjectId),
+        (scopedProjectId) => projectStore.updateProjectStep(scopedProjectId, validation.nextStep),
+      ])
+      if (
+        !advanced ||
+        !isProjectRouteContextCurrent({
+          targetProjectId,
+          currentProjectId: projectId.value,
+          targetRouteName,
+          currentRouteName: route.name,
+        })
+      ) {
+        return
+      }
     }
   } catch {
     showToast('分镜确认失败，请稍后再试', 'error')
@@ -1202,7 +1229,7 @@ const goVideoStep = async (): Promise<void> => {
   showToast(validation.successMessage, 'success')
   await router.push({
     name: validation.routeName,
-    params: route.params,
+    params: { projectId: targetProjectId },
   })
 }
 </script>

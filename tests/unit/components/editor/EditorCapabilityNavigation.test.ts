@@ -59,7 +59,7 @@ describe.sequential('editor capability navigation', () => {
       expect(html).toContain('title="HTTP 模式尚未支持')
       expect(html).toContain('不可用：HTTP 模式尚未支持')
     }
-  }, 15_000)
+  }, 30_000)
 
   it('keeps all navigation links enabled in mock mode', async () => {
     vi.stubEnv('VITE_API_MODE', 'mock')

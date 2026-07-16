@@ -6,6 +6,7 @@ import {
   buildStoryboardDraftPatch,
 } from '@/features/editor/editorDraftMapper'
 import { buildDubbingDraftUpdate } from '@/features/editor/dubbingDraftState'
+import { createLatestRequestGuard } from '@/features/shared/latestRequestState'
 import { EditorPersistenceService } from '@/services/editor/editorPersistence.service'
 import { EDITOR_SAVE_STATES, type EditorSaveState } from '@/types/api-enums'
 import type { DubbingRoleCardModel } from '@/types/dubbing'
@@ -37,6 +38,9 @@ export const useEditorStore = defineStore('editor', () => {
   const localSavedAt = ref<string | null>(null)
   const localSaveErrorCode = ref<string | null>(null)
   const recoveredFromLocal = ref(false)
+  const loadRequestGuard = createLatestRequestGuard()
+  let loadQueue: Promise<void> = Promise.resolve()
+  let activeLoad: { projectId: string; requestId: number; promise: Promise<void> } | null = null
 
   const activeStepIndex = computed(() => editorSteps.findIndex((step) => step.key === currentStep.value))
   const revision = computed(() => draft.value?.revision ?? 0)
@@ -77,31 +81,65 @@ export const useEditorStore = defineStore('editor', () => {
     currentStep.value = step
   }
 
-  const loadDraft = async (projectId: string): Promise<void> => {
-    if (loading.value) {
-      return
+  const loadDraft = (projectId: string): Promise<void> => {
+    if (activeLoad?.projectId === projectId) {
+      return activeLoad.promise
     }
 
+    const requestId = loadRequestGuard.start()
+    currentProjectId.value = projectId
     loading.value = true
-    try {
-      if (currentProjectId.value && currentProjectId.value !== projectId) {
-        persistence.dispose(currentProjectId.value)
-      }
 
-      currentProjectId.value = projectId
-      draft.value = await persistence.load(projectId)
-      const state = persistence.getState(projectId)
-      saveState.value = state?.status ?? EDITOR_SAVE_STATES.idle
-      lastSavedAt.value = state?.lastSavedAt ?? null
-      dirtyPartitions.value = state?.dirtyPartitions ?? []
-      saveErrorCode.value = state?.errorCode ?? null
-      localSaveStatus.value = state?.localSaveStatus ?? 'idle'
-      localSavedAt.value = state?.localSavedAt ?? null
-      localSaveErrorCode.value = state?.localErrorCode ?? null
-      recoveredFromLocal.value = state?.recoveredFromLocal ?? false
-    } finally {
-      loading.value = false
-    }
+    const task = loadQueue
+      .then(async () => {
+        if (!loadRequestGuard.isCurrent(requestId)) {
+          return
+        }
+
+        const previousProjectId = draft.value?.projectId
+        if (previousProjectId && previousProjectId !== projectId) {
+          persistence.dispose(previousProjectId)
+        }
+
+        let nextDraft: EditorDraft
+        try {
+          nextDraft = await persistence.load(projectId)
+        } catch (error) {
+          if (!loadRequestGuard.isCurrent(requestId)) {
+            persistence.dispose(projectId)
+            return
+          }
+          throw error
+        }
+
+        if (!loadRequestGuard.isCurrent(requestId)) {
+          persistence.dispose(projectId)
+          return
+        }
+
+        draft.value = nextDraft
+        const state = persistence.getState(projectId)
+        saveState.value = state?.status ?? EDITOR_SAVE_STATES.idle
+        lastSavedAt.value = state?.lastSavedAt ?? null
+        dirtyPartitions.value = state?.dirtyPartitions ?? []
+        saveErrorCode.value = state?.errorCode ?? null
+        localSaveStatus.value = state?.localSaveStatus ?? 'idle'
+        localSavedAt.value = state?.localSavedAt ?? null
+        localSaveErrorCode.value = state?.localErrorCode ?? null
+        recoveredFromLocal.value = state?.recoveredFromLocal ?? false
+      })
+      .finally(() => {
+        if (loadRequestGuard.isCurrent(requestId)) {
+          loading.value = false
+        }
+        if (activeLoad?.requestId === requestId) {
+          activeLoad = null
+        }
+      })
+
+    loadQueue = task.catch(() => undefined)
+    activeLoad = { projectId, requestId, promise: task }
+    return task
   }
 
   const applySaveResult = (result: SaveDraftResult | null): void => {

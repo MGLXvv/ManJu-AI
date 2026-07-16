@@ -151,8 +151,10 @@ import { buildSettingAssetsSnapshot, resolveSettingAssets } from '@/features/edi
 import { buildSettingDeleteDialogCopy } from '@/features/editor/settingDeleteState'
 import { buildSettingLeaveDialogCopy, shouldInterceptSettingLeave } from '@/features/editor/settingLeaveConfirmState'
 import { buildSettingSaveErrorMessage } from '@/features/editor/settingSaveErrorState'
+import { shouldApplySettingAssetAsyncResult } from '@/features/editor/settingAssetAsyncState'
 import { getStoryboardModeEntryState } from '@/features/editor/storyboardModeState'
 import { createLatestAsyncTaskRunner } from '@/features/shared/latestAsyncTaskState'
+import { createScopedAsyncTaskRunner } from '@/features/shared/scopedAsyncTaskState'
 import { createProjectPhaseRunner, isProjectRouteContextCurrent } from '@/features/shared/projectPhaseRunnerState'
 import { mapVoiceAssetsToOptions } from '@/features/voice/voiceOptionState'
 import { buildSettingArtifact, buildSettingBatchExportFileName } from '@/features/editor/settingTransferState'
@@ -174,6 +176,9 @@ const projectStore = useProjectStore()
 const uiFeedback = useUiFeedbackStore()
 const voicesStore = useVoicesStore()
 const resourceLibraryTaskRunner = createLatestAsyncTaskRunner()
+const assetHydrationTasks = createScopedAsyncTaskRunner()
+const resourceImportTasks = createScopedAsyncTaskRunner()
+const assetSyncTasks = createScopedAsyncTaskRunner()
 const stepTransitionTasks = createProjectPhaseRunner()
 
 const createModalOpen = ref(false)
@@ -232,7 +237,12 @@ const batchActions = computed<
 watch(
   projectId,
   async (nextProjectId) => {
+    assetHydrationTasks.invalidate()
+    resourceImportTasks.invalidate()
+    assetSyncTasks.invalidate()
     stepTransitionTasks.invalidate()
+    resourceLibraryImportingId.value = ''
+    submitting.value = false
 
     if (!nextProjectId) {
       assetsStore.resetAssets()
@@ -241,8 +251,9 @@ watch(
       return
     }
 
-    await hydrateAssetsForProject(nextProjectId)
-    lastSavedSnapshot.value = buildSettingAssetsSnapshot(assetsStore.assets)
+    if (await hydrateAssetsForProject(nextProjectId)) {
+      lastSavedSnapshot.value = buildSettingAssetsSnapshot(assetsStore.assets)
+    }
   },
   { immediate: true },
 )
@@ -306,6 +317,7 @@ const openResourceLibraryImportDialog = async (): Promise<void> => {
 
 const closeResourceLibraryImportDialog = (): void => {
   resourceLibraryTaskRunner.invalidate()
+  resourceImportTasks.invalidate()
   resourceLibraryLoading.value = false
   resourceLibraryDialogOpen.value = false
   resourceLibraryImportingId.value = ''
@@ -322,9 +334,15 @@ const handleImportFromLibrary = async (resourceAssetId: string): Promise<void> =
     return
   }
 
+  const targetProjectId = projectId.value
   resourceLibraryImportingId.value = resourceAssetId
   try {
-    const syncedAssets = await resourceLibraryService.importFromLibrary(projectId.value, [resourceAssetId])
+    const result = await resourceImportTasks.run(() =>
+      resourceLibraryService.importFromLibrary(targetProjectId, [resourceAssetId]),
+    )
+    if (result.status === 'stale' || !isCurrentAssetTarget(targetProjectId)) return
+
+    const syncedAssets = result.value
     if (syncedAssets?.length) {
       const nextAssets = apiMode === 'http' ? syncedAssets : [...syncedAssets, ...assetsStore.assets]
       assetsStore.setAssets(nextAssets)
@@ -336,32 +354,50 @@ const handleImportFromLibrary = async (resourceAssetId: string): Promise<void> =
   } catch {
     showToast('从资源库导入失败，请稍后再试', 'error')
   } finally {
-    resourceLibraryImportingId.value = ''
+    if (isCurrentAssetTarget(targetProjectId)) {
+      resourceLibraryImportingId.value = ''
+    }
   }
 }
 
-async function hydrateAssetsForProject(nextProjectId: string): Promise<void> {
-  await editorStore.loadDraft(nextProjectId)
+const isCurrentAssetTarget = (targetProjectId: string): boolean =>
+  shouldApplySettingAssetAsyncResult({
+    targetProjectId,
+    currentProjectId: projectId.value,
+    currentDraftProjectId: editorStore.draft?.projectId,
+  })
 
-  const draftAssets = resolveSettingAssets(editorStore.draft, createDefaultSettingAssets())
+async function hydrateAssetsForProject(nextProjectId: string): Promise<boolean> {
+  const draftResult = await assetHydrationTasks.run(async () => {
+    await editorStore.loadDraft(nextProjectId)
+    return resolveSettingAssets(editorStore.draft, createDefaultSettingAssets())
+  })
+  if (draftResult.status === 'stale' || !isCurrentAssetTarget(nextProjectId)) return false
+
+  const draftAssets = draftResult.value
   assetsStore.setAssets(draftAssets)
   updatePersistedAssetIds(draftAssets)
 
   if (apiMode !== 'http') {
-    return
+    return true
   }
 
   try {
-    const backendAssets = await assetWorkflowService.loadAssetWorkspace(nextProjectId)
+    const result = await assetHydrationTasks.run(() => assetWorkflowService.loadAssetWorkspace(nextProjectId))
+    if (result.status === 'stale' || !isCurrentAssetTarget(nextProjectId)) return false
+
+    const backendAssets = result.value
     if (!backendAssets) {
-      return
+      return true
     }
 
     assetsStore.setAssets(backendAssets)
     editorStore.updateSettingAssets(backendAssets)
     updatePersistedAssetIds(backendAssets)
+    return true
   } catch {
     showToast('后端资产工作区需在分镜确认后同步，当前先使用本地设定继续编辑', 'info')
+    return true
   }
 }
 
@@ -370,17 +406,22 @@ const persistSettingDraft = async (): Promise<boolean> => {
     return false
   }
 
+  const targetProjectId = projectId.value
   submitting.value = true
   try {
     editorStore.updateSettingAssets(assetsStore.assets)
 
-    if (apiMode === 'http' && projectId.value) {
+    if (apiMode === 'http' && targetProjectId) {
       try {
-        const syncedAssets = await assetWorkflowService.syncAssets(projectId.value, {
-          currentAssets: assetsStore.assets,
-          persistedIds: persistedAssetIds.value,
-        })
+        const result = await assetSyncTasks.run(() =>
+          assetWorkflowService.syncAssets(targetProjectId, {
+            currentAssets: [...assetsStore.assets],
+            persistedIds: [...persistedAssetIds.value],
+          }),
+        )
+        if (result.status === 'stale' || !isCurrentAssetTarget(targetProjectId)) return false
 
+        const syncedAssets = result.value
         if (syncedAssets) {
           assetsStore.setAssets(syncedAssets)
           editorStore.updateSettingAssets(syncedAssets)
@@ -392,15 +433,20 @@ const persistSettingDraft = async (): Promise<boolean> => {
       }
     }
 
+    if (targetProjectId && !isCurrentAssetTarget(targetProjectId)) return false
     await editorStore.saveDraft()
+    if (targetProjectId && !isCurrentAssetTarget(targetProjectId)) return false
     markSaved()
     return true
   } catch (error) {
+    if (targetProjectId && !isCurrentAssetTarget(targetProjectId)) return false
     console.warn('[SettingsStep] Failed to save setting draft', error)
     showToast(buildSettingSaveErrorMessage(error, apiMode), 'error')
     return false
   } finally {
-    submitting.value = false
+    if (projectId.value === targetProjectId) {
+      submitting.value = false
+    }
   }
 }
 
@@ -647,6 +693,9 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   resourceLibraryTaskRunner.invalidate()
+  assetHydrationTasks.invalidate()
+  resourceImportTasks.invalidate()
+  assetSyncTasks.invalidate()
   stepTransitionTasks.invalidate()
   window.removeEventListener('beforeunload', handleBeforeUnload)
 })

@@ -202,18 +202,24 @@ import StoryboardTopActions from '@/components/editor/storyboard/StoryboardTopAc
 import { isLocalStoryboardShotId } from '@/api/modules/editor/storyboard.mapper'
 import { apiMode } from '@/api/shared/apiMode'
 import { resolveStoryboardBatchAvailability } from '@/features/editor/storyboardBatchState'
-import { buildStoryboardDeleteDialogCopy, buildStoryboardDeleteToastMessage } from '@/features/editor/storyboardDeleteState'
+import {
+  buildStoryboardDeleteDialogCopy,
+  buildStoryboardDeleteToastMessage,
+} from '@/features/editor/storyboardDeleteState'
 import { buildStoryboardDraftSnapshot } from '@/features/editor/storyboardDirtyState'
 import { resolveStoryboardTagOptions } from '@/features/editor/storyboardDraftState'
+import { buildStoryboardGenerateErrorMessage } from '@/features/editor/storyboardGenerationState'
 import {
-  buildStoryboardGenerateErrorMessage,
-} from '@/features/editor/storyboardGenerationState'
-import { buildStoryboardLeaveDialogCopy, shouldInterceptStoryboardLeave } from '@/features/editor/storyboardLeaveConfirmState'
+  buildStoryboardLeaveDialogCopy,
+  shouldInterceptStoryboardLeave,
+} from '@/features/editor/storyboardLeaveConfirmState'
 import type { StoryboardMode } from '@/features/editor/storyboardModeState'
 import { loadStoryboardPromptCollapsed, saveStoryboardPromptCollapsed } from '@/features/editor/storyboardPanelState'
 import {
-  resolveStoryboardShots,
-} from '@/features/editor/storyboardPersistState'
+  shouldApplyActiveStoryboardPromptResult,
+  shouldApplyInsertStoryboardPromptResult,
+} from '@/features/editor/storyboardPromptOptimizationState'
+import { resolveStoryboardShots } from '@/features/editor/storyboardPersistState'
 import { buildScopedProjectArtifact, buildScopedProjectExportFileName } from '@/features/editor/editorExportScopeState'
 import {
   buildStoryboardEditedImage,
@@ -222,6 +228,7 @@ import {
   type StoryboardSelectionRect,
 } from '@/features/editor/storyboardPreviewState'
 import { validateEditorAdvance } from '@/features/editor/editorCompletionState'
+import { createScopedAsyncTaskRunner } from '@/features/shared/scopedAsyncTaskState'
 import { useEditorStore } from '@/stores/editor'
 import { useProjectStore } from '@/stores/project'
 import { useStoryboardStore } from '@/stores/storyboard'
@@ -274,6 +281,7 @@ const batchScheduledDate = ref('')
 const batchScheduledTime = ref('08:00')
 const pendingInsertAfterShotId = ref<string | null>(null)
 const optimizingPrompt = ref(false)
+const promptOptimizationTasks = createScopedAsyncTaskRunner()
 
 const isAllShotsSelected = computed(
   () => shots.value.length > 0 && shots.value.every((shot) => selectedShotIds.value.includes(shot.id)),
@@ -285,7 +293,9 @@ const batchAvailability = computed(() =>
     overwriteStrategy: 'skip-generated',
   }),
 )
-const isBatchActionDisabled = computed(() => submitting.value || batchGenerating.value || selectedShotIds.value.length === 0)
+const isBatchActionDisabled = computed(
+  () => submitting.value || batchGenerating.value || selectedShotIds.value.length === 0,
+)
 const storyboardMode = computed<StoryboardMode>(() => editorStore.draft?.storyboardGenerationMode ?? null)
 const storyboardModeLabel = computed(() => {
   if (storyboardMode.value === 'image') return '图片生成'
@@ -350,6 +360,11 @@ watch(
   { immediate: true },
 )
 
+watch([projectId, activeShotId, pendingInsertAfterShotId], () => {
+  promptOptimizationTasks.invalidate()
+  optimizingPrompt.value = false
+})
+
 watch(
   shots,
   (value) => {
@@ -390,9 +405,7 @@ const showToast = (message: string, tone: 'info' | 'success' | 'error' = 'info')
 }
 
 const updatePersistedStoryboardIds = (nextShots: StoryboardShot[]): void => {
-  persistedStoryboardIds.value = nextShots
-    .map((shot) => shot.id)
-    .filter((id) => !isLocalStoryboardShotId(id))
+  persistedStoryboardIds.value = nextShots.map((shot) => shot.id).filter((id) => !isLocalStoryboardShotId(id))
 }
 
 const markSaved = (): void => {
@@ -422,11 +435,7 @@ const persistStoryboardDraft = async (): Promise<boolean> => {
         }
 
         const nextTagOptions = resolveStoryboardTagOptions(draft, tagOptions.value)
-        const syncedShots = resolveStoryboardShots(
-          syncedPatch.shots,
-          nextTagOptions,
-          draft.settingAssets,
-        )
+        const syncedShots = resolveStoryboardShots(syncedPatch.shots, nextTagOptions, draft.settingAssets)
 
         editorStore.updateStoryboardShots(syncedShots)
         store.setTagOptions(nextTagOptions)
@@ -584,20 +593,39 @@ const optimizePrompt = async (): Promise<void> => {
     return
   }
 
+  const target = {
+    projectId: projectId.value,
+    shotId: shot.id,
+    prompt: shot.prompt,
+  }
   optimizingPrompt.value = true
   try {
-    const result = await storyboardPromptService.optimizePrompt({
-      projectId: projectId.value,
-      shotId: shot.id,
-      prompt: shot.prompt,
-      mode: 'active-shot',
-    })
-    store.updateActiveShotPrompt(result.prompt)
+    const result = await promptOptimizationTasks.run(() =>
+      storyboardPromptService.optimizePrompt({
+        projectId: target.projectId,
+        shotId: target.shotId,
+        prompt: target.prompt,
+        mode: 'active-shot',
+      }),
+    )
+    if (result.status === 'stale') return
+
+    optimizingPrompt.value = false
+    if (
+      !shouldApplyActiveStoryboardPromptResult({
+        target,
+        currentProjectId: projectId.value,
+        currentShot: currentShot.value,
+      })
+    ) {
+      return
+    }
+
+    store.updateActiveShotPrompt(result.value.prompt)
     showToast('画面描述已完成 AI 优化', 'success')
   } catch (error) {
-    showToast(buildStoryboardGenerateErrorMessage(error), 'error')
-  } finally {
     optimizingPrompt.value = false
+    showToast(buildStoryboardGenerateErrorMessage(error), 'error')
   }
 }
 
@@ -610,23 +638,44 @@ const updateInsertRatio = (ratio: '16:9' | '9:16'): void => {
 }
 
 const optimizeInsertPrompt = async (): Promise<void> => {
-  if (!insertDraft.value.prompt.trim() || optimizingPrompt.value) {
+  const insertAfterShotId = pendingInsertAfterShotId.value
+  if (!insertAfterShotId || !insertDraft.value.prompt.trim() || optimizingPrompt.value) {
     return
   }
 
+  const target = {
+    projectId: projectId.value,
+    insertAfterShotId,
+    prompt: insertDraft.value.prompt,
+  }
   optimizingPrompt.value = true
   try {
-    const result = await storyboardPromptService.optimizePrompt({
-      projectId: projectId.value,
-      prompt: insertDraft.value.prompt,
-      mode: 'insert-shot',
-    })
-    insertDraft.value.prompt = result.prompt
+    const result = await promptOptimizationTasks.run(() =>
+      storyboardPromptService.optimizePrompt({
+        projectId: target.projectId,
+        prompt: target.prompt,
+        mode: 'insert-shot',
+      }),
+    )
+    if (result.status === 'stale') return
+
+    optimizingPrompt.value = false
+    if (
+      !shouldApplyInsertStoryboardPromptResult({
+        target,
+        currentProjectId: projectId.value,
+        currentInsertAfterShotId: pendingInsertAfterShotId.value,
+        currentPrompt: insertDraft.value.prompt,
+      })
+    ) {
+      return
+    }
+
+    insertDraft.value.prompt = result.value.prompt
     showToast('画面描述已完成 AI 优化', 'success')
   } catch (error) {
-    showToast(buildStoryboardGenerateErrorMessage(error), 'error')
-  } finally {
     optimizingPrompt.value = false
+    showToast(buildStoryboardGenerateErrorMessage(error), 'error')
   }
 }
 
@@ -926,17 +975,15 @@ const closePreviewDialog = (): void => {
   previewDialogOpen.value = false
 }
 
-const openPreviewDialog =
-  (mode: 'view' | 'zoom') =>
-  (): void => {
-    if (!canOpenStoryboardImageTools(currentShot.value?.imageUrl)) {
-      showToast('当前分镜暂无可查看的图片', 'error')
-      return
-    }
-
-    previewDialogMode.value = mode
-    previewDialogOpen.value = true
+const openPreviewDialog = (mode: 'view' | 'zoom') => (): void => {
+  if (!canOpenStoryboardImageTools(currentShot.value?.imageUrl)) {
+    showToast('当前分镜暂无可查看的图片', 'error')
+    return
   }
+
+  previewDialogMode.value = mode
+  previewDialogOpen.value = true
+}
 
 const closeEditDialog = (): void => {
   if (editingImage.value) {
@@ -1077,6 +1124,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  promptOptimizationTasks.invalidate()
   window.removeEventListener('beforeunload', handleBeforeUnload)
 })
 

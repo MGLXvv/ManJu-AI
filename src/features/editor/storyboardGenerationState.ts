@@ -2,6 +2,20 @@ import { resolveGenerationTaskErrorMessage } from '@/features/editor/generationE
 import { hasAnyMockFailureToken } from '@/features/shared/mockFailureState'
 import { API_ERROR_CODES } from '@/types/api-enums'
 
+interface StoryboardListGenerationTarget {
+  targetProjectId: string
+  currentProjectId: string
+  currentDraftProjectId?: string
+}
+
+export const shouldApplyStoryboardListGenerationResult = ({
+  targetProjectId,
+  currentProjectId,
+  currentDraftProjectId,
+}: StoryboardListGenerationTarget): boolean => {
+  return targetProjectId === currentProjectId && targetProjectId === currentDraftProjectId
+}
+
 export const shouldMockStoryboardGenerateFail = (input: { title: string; prompt: string }): boolean => {
   return hasAnyMockFailureToken([input.title, input.prompt], ['#mock-shot-fail'])
 }

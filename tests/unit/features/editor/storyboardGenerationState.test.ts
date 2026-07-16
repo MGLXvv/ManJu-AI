@@ -3,10 +3,41 @@ import { API_ERROR_CODES } from '@/types/api-enums'
 import {
   buildStoryboardGenerateErrorMessage,
   optimizeMockStoryboardPrompt,
+  shouldApplyStoryboardListGenerationResult,
   shouldMockStoryboardGenerateFail,
 } from '@/features/editor/storyboardGenerationState'
 
 describe('storyboardGenerationState', () => {
+  it('accepts a storyboard list result only for the captured project draft', () => {
+    expect(
+      shouldApplyStoryboardListGenerationResult({
+        targetProjectId: 'project-1',
+        currentProjectId: 'project-1',
+        currentDraftProjectId: 'project-1',
+      }),
+    ).toBe(true)
+  })
+
+  it('rejects a storyboard list result after the route project changes', () => {
+    expect(
+      shouldApplyStoryboardListGenerationResult({
+        targetProjectId: 'project-1',
+        currentProjectId: 'project-2',
+        currentDraftProjectId: 'project-2',
+      }),
+    ).toBe(false)
+  })
+
+  it('rejects a storyboard list result while another project draft is active', () => {
+    expect(
+      shouldApplyStoryboardListGenerationResult({
+        targetProjectId: 'project-1',
+        currentProjectId: 'project-1',
+        currentDraftProjectId: 'project-2',
+      }),
+    ).toBe(false)
+  })
+
   it('triggers mock failure when title or prompt contains the fail token', () => {
     expect(shouldMockStoryboardGenerateFail({ title: '#mock-shot-fail', prompt: '正常提示词' })).toBe(true)
     expect(shouldMockStoryboardGenerateFail({ title: '镜头 1', prompt: '#mock-shot-fail' })).toBe(true)
@@ -14,9 +45,13 @@ describe('storyboardGenerationState', () => {
   })
 
   it('maps stable generate errors to user-facing copy', () => {
-    expect(buildStoryboardGenerateErrorMessage(API_ERROR_CODES.storyboardGenerateFailed)).toBe('分镜生成失败，请调整提示词后重试')
+    expect(buildStoryboardGenerateErrorMessage(API_ERROR_CODES.storyboardGenerateFailed)).toBe(
+      '分镜生成失败，请调整提示词后重试',
+    )
     expect(buildStoryboardGenerateErrorMessage(API_ERROR_CODES.storyboardOptimizeFailed)).toBe('AI优化失败，请稍后再试')
-    expect(buildStoryboardGenerateErrorMessage(API_ERROR_CODES.storyboardUpscaleFailed)).toBe('分镜放大失败，请稍后再试')
+    expect(buildStoryboardGenerateErrorMessage(API_ERROR_CODES.storyboardUpscaleFailed)).toBe(
+      '分镜放大失败，请稍后再试',
+    )
     expect(buildStoryboardGenerateErrorMessage('UNKNOWN_ERROR')).toBe('分镜生成失败，请稍后再试')
   })
 
@@ -35,6 +70,8 @@ describe('storyboardGenerationState', () => {
   })
 
   it('throws a stable error code when mocked optimization should fail', () => {
-    expect(() => optimizeMockStoryboardPrompt('#mock-optimize-fail')).toThrowError(API_ERROR_CODES.storyboardOptimizeFailed)
+    expect(() => optimizeMockStoryboardPrompt('#mock-optimize-fail')).toThrowError(
+      API_ERROR_CODES.storyboardOptimizeFailed,
+    )
   })
 })

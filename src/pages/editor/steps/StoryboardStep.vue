@@ -208,7 +208,10 @@ import {
 } from '@/features/editor/storyboardDeleteState'
 import { buildStoryboardDraftSnapshot } from '@/features/editor/storyboardDirtyState'
 import { resolveStoryboardTagOptions } from '@/features/editor/storyboardDraftState'
-import { buildStoryboardGenerateErrorMessage } from '@/features/editor/storyboardGenerationState'
+import {
+  buildStoryboardGenerateErrorMessage,
+  shouldApplyStoryboardListGenerationResult,
+} from '@/features/editor/storyboardGenerationState'
 import {
   buildStoryboardLeaveDialogCopy,
   shouldInterceptStoryboardLeave,
@@ -282,6 +285,7 @@ const batchScheduledTime = ref('08:00')
 const pendingInsertAfterShotId = ref<string | null>(null)
 const optimizingPrompt = ref(false)
 const promptOptimizationTasks = createScopedAsyncTaskRunner()
+const storyboardListGenerationTasks = createScopedAsyncTaskRunner()
 
 const isAllShotsSelected = computed(
   () => shots.value.length > 0 && shots.value.every((shot) => selectedShotIds.value.includes(shot.id)),
@@ -330,6 +334,9 @@ const insertDraft = ref<StoryboardInsertDraft>(createInsertDraft())
 watch(
   projectId,
   async (nextProjectId) => {
+    storyboardListGenerationTasks.invalidate()
+    generatingStoryboardList.value = false
+
     if (!nextProjectId) {
       await store.loadDefaults()
       lastSavedSnapshot.value = buildStoryboardDraftSnapshot(store.shots)
@@ -509,19 +516,32 @@ const generateStoryboardFromScript = async (): Promise<void> => {
     return
   }
 
+  const targetProjectId = projectId.value
   generatingStoryboardList.value = true
 
   try {
-    const patch = await storyboardWorkflowService.generateStoryboard(projectId.value)
+    const result = await storyboardListGenerationTasks.run(() =>
+      storyboardWorkflowService.generateStoryboard(targetProjectId),
+    )
+    if (result.status === 'stale') return
 
-    if (!patch || patch.shots.length === 0) {
-      showToast('后端未返回可用分镜，请稍后重试', 'error')
+    const draft = editorStore.draft
+    if (
+      !draft ||
+      !shouldApplyStoryboardListGenerationResult({
+        targetProjectId,
+        currentProjectId: projectId.value,
+        currentDraftProjectId: draft?.projectId,
+      })
+    ) {
+      generatingStoryboardList.value = false
       return
     }
 
-    const draft = editorStore.draft
-    if (!draft) {
-      showToast('分镜生成失败，请稍后再试', 'error')
+    const patch = result.value
+    if (!patch || patch.shots.length === 0) {
+      generatingStoryboardList.value = false
+      showToast('后端未返回可用分镜，请稍后重试', 'error')
       return
     }
 
@@ -533,11 +553,11 @@ const generateStoryboardFromScript = async (): Promise<void> => {
     store.replaceShots(resolvedShots)
     updatePersistedStoryboardIds(resolvedShots)
     markSaved()
+    generatingStoryboardList.value = false
     showToast('分镜已生成', 'success')
   } catch {
-    showToast('分镜生成失败，请确认剧本已确认后重试', 'error')
-  } finally {
     generatingStoryboardList.value = false
+    showToast('分镜生成失败，请确认剧本已确认后重试', 'error')
   }
 }
 
@@ -1132,6 +1152,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   promptOptimizationTasks.invalidate()
+  storyboardListGenerationTasks.invalidate()
   window.removeEventListener('beforeunload', handleBeforeUnload)
 })
 

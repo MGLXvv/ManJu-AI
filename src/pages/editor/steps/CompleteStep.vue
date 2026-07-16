@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <section class="complete-step">
     <div class="complete-step__bg" aria-hidden="true"></div>
 
@@ -66,9 +66,7 @@
               <strong>Mock 导出任务</strong>
               <p v-if="exportLoading">正在读取导出工作区...</p>
               <p v-else-if="canCreateExportTask">当前项目已满足导出条件，可创建 Mock 导出任务。</p>
-              <p v-else-if="missingVideoCount > 0">
-                仍有 {{ missingVideoCount }} 个分镜缺少视频，暂不能创建导出任务。
-              </p>
+              <p v-else-if="missingVideoCount > 0">仍有 {{ missingVideoCount }} 个分镜缺少视频，暂不能创建导出任务。</p>
               <p v-else>当前项目暂不满足导出条件，请先检查分镜与视频状态。</p>
             </div>
             <span class="complete-step__export-flag">
@@ -135,13 +133,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import { apiMode } from '@/api/shared/apiMode'
 import { useRoute, useRouter } from 'vue-router'
 import WorkflowStepper from '@/components/editor/WorkflowStepper.vue'
 import { buildCompleteSummary } from '@/features/editor/completeSummaryState'
+import { createCompleteProjectSyncRunner } from '@/features/editor/completeProjectSyncState'
 import { buildDubbingArtifact, buildDubbingExportFileName } from '@/features/editor/editorArtifactMapper'
 import { buildScopedProjectArtifact, buildScopedProjectExportFileName } from '@/features/editor/editorExportScopeState'
+import { createLatestAsyncTaskRunner } from '@/features/shared/latestAsyncTaskState'
 import { exportWorkflowService } from '@/services/editor/exportWorkflow.service'
 import { useEditorStore } from '@/stores/editor'
 import { useProjectStore } from '@/stores/project'
@@ -157,6 +157,7 @@ const submitting = ref(false)
 const exportLoading = ref(false)
 const downloadLoading = ref(false)
 const exportWorkspace = ref<Awaited<ReturnType<typeof exportWorkflowService.loadExportWorkspace>>>(null)
+const exportWorkspaceTask = createLatestAsyncTaskRunner()
 const projectId = computed(() => String(route.params.projectId ?? ''))
 const draft = computed(() => editorStore.draft)
 const project = computed(() => projectStore.projects.find((item) => item.id === projectId.value) ?? null)
@@ -205,40 +206,61 @@ const downloadJson = (fileName: string, payload: unknown): void => {
   URL.revokeObjectURL(url)
 }
 
-const refreshExportWorkspace = async (): Promise<void> => {
-  if (!projectId.value || !isHttpMode) {
+const refreshExportWorkspace = async (targetProjectId = projectId.value): Promise<void> => {
+  if (!targetProjectId || !isHttpMode) {
+    exportWorkspaceTask.invalidate()
     exportWorkspace.value = null
+    exportLoading.value = false
     return
   }
 
   exportLoading.value = true
   try {
-    exportWorkspace.value = await exportWorkflowService.loadExportWorkspace(projectId.value)
+    const result = await exportWorkspaceTask.run(() => exportWorkflowService.loadExportWorkspace(targetProjectId))
+    if (result.status === 'stale') return
+    exportWorkspace.value = result.value
+    exportLoading.value = false
   } catch (error) {
     exportWorkspace.value = null
-    showToast(error instanceof Error ? error.message : '导出工作区加载失败', 'error')
-  } finally {
     exportLoading.value = false
+    showToast(error instanceof Error ? error.message : '导出工作区加载失败', 'error')
   }
 }
 
-const syncProject = async (): Promise<void> => {
-  if (!projectId.value) return
-  await editorStore.loadDraft(projectId.value)
-  if (!projectStore.initialized) {
-    await projectStore.bootstrap()
-  }
-  await projectStore.updateProjectStep(projectId.value, 'complete')
-  const current = projectStore.projects.find((item) => item.id === projectId.value)
-  if (current?.status !== 'completed') {
-    await projectStore.toggleProjectStatus(projectId.value)
-  }
-  await refreshExportWorkspace()
-}
+const completeProjectSync = createCompleteProjectSyncRunner({
+  loadDraft: (targetProjectId) => editorStore.loadDraft(targetProjectId),
+  ensureProjectsLoaded: async () => {
+    if (!projectStore.initialized) {
+      await projectStore.bootstrap()
+    }
+  },
+  markProjectComplete: async (targetProjectId) => {
+    await projectStore.updateProjectStep(targetProjectId, 'complete')
+    const current = projectStore.projects.find((item) => item.id === targetProjectId)
+    if (current?.status !== 'completed') {
+      await projectStore.toggleProjectStatus(targetProjectId)
+    }
+  },
+  refreshExportWorkspace,
+})
 
-watch(projectId, () => {
-  void syncProject()
-}, { immediate: true })
+watch(
+  projectId,
+  (nextProjectId) => {
+    exportWorkspaceTask.invalidate()
+    exportWorkspace.value = null
+    exportLoading.value = false
+    void completeProjectSync.run(nextProjectId).catch((error) => {
+      showToast(error instanceof Error ? error.message : '完成页同步失败', 'error')
+    })
+  },
+  { immediate: true },
+)
+
+onUnmounted(() => {
+  completeProjectSync.invalidate()
+  exportWorkspaceTask.invalidate()
+})
 
 const exportDubbingArtifact = async (): Promise<void> => {
   if (!draft.value) {
@@ -338,9 +360,7 @@ const goProjects = async (): Promise<void> => {
 .complete-step__bg {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(circle at top, rgba(172, 105, 255, 0.12), transparent 38%),
-    #0a0a0b;
+  background: radial-gradient(circle at top, rgba(172, 105, 255, 0.12), transparent 38%), #0a0a0b;
 }
 
 .complete-step__shell {

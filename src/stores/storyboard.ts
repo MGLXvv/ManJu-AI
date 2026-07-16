@@ -7,6 +7,7 @@ import {
   storyboardApi,
 } from '@/api/storyboard.api'
 import { normalizeStoryboardShotsWithTagOptions } from '@/features/editor/storyboardDraftState'
+import { shouldApplyStoryboardAsyncResult } from '@/features/editor/storyboardAsyncTargetState'
 import { buildStoryboardImageEditRecord } from '@/features/editor/storyboardPreviewState'
 import { storyboardGenerationService, storyboardPromptService, videoGenerationService } from '@/services/generation'
 import { useEditorStore } from '@/stores/editor'
@@ -115,6 +116,14 @@ export const useStoryboardStore = defineStore('storyboard', () => {
     const idSet = new Set(ids)
     shots.value = shots.value.map((shot) => (idSet.has(shot.id) ? { ...shot, ...patch } : shot))
   }
+
+  const isCurrentAsyncTarget = (targetProjectId: string | null, targetShot: StoryboardShot): boolean =>
+    shouldApplyStoryboardAsyncResult({
+      targetProjectId,
+      currentProjectId: editorStore.currentProjectId,
+      targetShot,
+      currentShot: getShotById(targetShot.id),
+    })
 
   const resequenceShots = (nextShots: StoryboardShot[]): StoryboardShot[] => {
     const derivedCountByBase = new Map<number, number>()
@@ -307,7 +316,6 @@ export const useStoryboardStore = defineStore('storyboard', () => {
     patchShotById(id, { storyboardReviewed: !(target.storyboardReviewed ?? false) })
   }
 
-
   const toggleLock = (id: string): void => {
     const target = shots.value.find((item) => item.id === id)
     if (!target) return
@@ -461,11 +469,14 @@ export const useStoryboardStore = defineStore('storyboard', () => {
     }
   }
 
-  const generateShotById = async (id: string): Promise<void> => {
+  const generateShotById = async (id: string): Promise<boolean> => {
     const target = shots.value.find((item) => item.id === id)
-    if (!target || target.isLocked) return
+    if (!target || target.isLocked) return false
+    const targetProjectId = editorStore.currentProjectId
 
     patchShotById(id, { status: 'generating' })
+    const asyncTarget = getShotById(id)
+    if (!asyncTarget) return false
 
     try {
       const result = await storyboardGenerationService.generateShotImage({
@@ -473,8 +484,11 @@ export const useStoryboardStore = defineStore('storyboard', () => {
         shot: target,
       })
 
+      if (!isCurrentAsyncTarget(targetProjectId, asyncTarget)) return false
       replaceShotById(id, result.shot)
+      return true
     } catch (error) {
+      if (!isCurrentAsyncTarget(targetProjectId, asyncTarget)) return false
       patchShotById(id, { status: 'failed' })
       throw error
     }
@@ -482,9 +496,7 @@ export const useStoryboardStore = defineStore('storyboard', () => {
 
   const optimizeShotPromptsByIds = async (ids: string[]): Promise<void> => {
     const idSet = new Set(ids)
-    const targets = shots.value.filter(
-      (shot) => idSet.has(shot.id) && !shot.isLocked && shot.prompt.trim(),
-    )
+    const targets = shots.value.filter((shot) => idSet.has(shot.id) && !shot.isLocked && shot.prompt.trim())
 
     if (targets.length === 0) return
 
@@ -503,16 +515,19 @@ export const useStoryboardStore = defineStore('storyboard', () => {
     }
   }
 
-  const generateActiveShot = async (): Promise<void> => {
-    if (!activeShot.value) return
-    await generateShotById(activeShot.value.id)
+  const generateActiveShot = async (): Promise<boolean> => {
+    if (!activeShot.value) return false
+    return generateShotById(activeShot.value.id)
   }
 
-  const generateVideoById = async (id: string): Promise<void> => {
+  const generateVideoById = async (id: string): Promise<boolean> => {
     const target = shots.value.find((item) => item.id === id)
-    if (!target || target.isLocked) return
+    if (!target || target.isLocked) return false
+    const targetProjectId = editorStore.currentProjectId
 
     patchShotById(id, { status: 'generating' })
+    const asyncTarget = getShotById(id)
+    if (!asyncTarget) return false
 
     try {
       const result = await videoGenerationService.generateVideo({
@@ -521,26 +536,32 @@ export const useStoryboardStore = defineStore('storyboard', () => {
         storyboardMode: editorStore.draft?.storyboardGenerationMode ?? 'image',
       })
 
+      if (!isCurrentAsyncTarget(targetProjectId, asyncTarget)) return false
       replaceShotById(id, result.shot)
+      return true
     } catch (error) {
+      if (!isCurrentAsyncTarget(targetProjectId, asyncTarget)) return false
       patchShotById(id, { status: 'failed' })
       throw error
     }
   }
 
-  const generateActiveVideo = async (): Promise<void> => {
-    if (!activeShot.value) return
-    await generateVideoById(activeShot.value.id)
+  const generateActiveVideo = async (): Promise<boolean> => {
+    if (!activeShot.value) return false
+    return generateVideoById(activeShot.value.id)
   }
 
-  const upscaleShotById = async (id: string): Promise<void> => {
+  const upscaleShotById = async (id: string): Promise<boolean> => {
     const target = shots.value.find((item) => item.id === id)
-    if (!target || target.isLocked) return
+    if (!target || target.isLocked) return false
     if (!target.imageUrl) {
       throw new Error(API_ERROR_CODES.storyboardUpscaleImageRequired)
     }
+    const targetProjectId = editorStore.currentProjectId
 
     patchShotById(id, { status: 'generating' })
+    const asyncTarget = getShotById(id)
+    if (!asyncTarget) return false
 
     try {
       const result = await storyboardGenerationService.upscaleShotImage({
@@ -548,8 +569,11 @@ export const useStoryboardStore = defineStore('storyboard', () => {
         shot: target,
       })
 
+      if (!isCurrentAsyncTarget(targetProjectId, asyncTarget)) return false
       replaceShotById(id, result.shot)
+      return true
     } catch (error) {
+      if (!isCurrentAsyncTarget(targetProjectId, asyncTarget)) return false
       patchShotById(id, { status: 'failed' })
       throw error
     }

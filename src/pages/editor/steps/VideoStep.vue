@@ -430,8 +430,9 @@ const generateShot = async (): Promise<void> => {
   }
 
   try {
-    await store.generateActiveVideo()
-    showToast('视频镜头已生成', 'success')
+    if (await store.generateActiveVideo()) {
+      showToast('视频镜头已生成', 'success')
+    }
   } catch (error) {
     showToast(buildVideoGenerateErrorMessage(error), 'error')
   }
@@ -640,11 +641,13 @@ const runBatchGenerate = async (ids = selectedShotIds.value): Promise<void> => {
     return
   }
 
+  const targetProjectId = projectId.value
   batchGenerating.value = true
   try {
     const results = await Promise.allSettled(targets.map((shot) => store.generateVideoById(shot.id)))
-    const successCount = results.filter((item) => item.status === 'fulfilled').length
-    const failedCount = results.length - successCount
+    if (projectId.value !== targetProjectId) return
+    const successCount = results.filter((item) => item.status === 'fulfilled' && item.value).length
+    const failedCount = results.filter((item) => item.status === 'rejected').length
 
     showToast(buildVideoBatchGenerateMessage({ successCount, failedCount }), failedCount > 0 ? 'error' : 'success')
     selectedShotIds.value = selectedShotIds.value.filter((id) =>

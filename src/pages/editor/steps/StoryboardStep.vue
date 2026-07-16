@@ -543,8 +543,9 @@ const generateStoryboardFromScript = async (): Promise<void> => {
 
 const generateShot = async (): Promise<void> => {
   try {
-    await store.generateActiveShot()
-    showToast('分镜已生成', 'success')
+    if (await store.generateActiveShot()) {
+      showToast('分镜已生成', 'success')
+    }
   } catch (error) {
     showToast(buildStoryboardGenerateErrorMessage(error), 'error')
   }
@@ -874,7 +875,8 @@ const buildBatchGenerateSummary = (input: {
 const runBatchGenerateNow = async (): Promise<void> => {
   const availability = batchAvailability.value
   const targetIds = availability.targetIds
-  const skippedCount = availability.unavailableCount
+  const targetProjectId = projectId.value
+  let skippedCount = availability.unavailableCount
   if (targetIds.length === 0) {
     showToast(availability.disabledReason || '当前选择中没有可生成的分镜', 'info')
     return
@@ -889,9 +891,13 @@ const runBatchGenerateNow = async (): Promise<void> => {
     let failedCount = 0
 
     for (const id of targetIds) {
+      if (projectId.value !== targetProjectId) return
       try {
-        await store.generateShotById(id)
-        successCount += 1
+        if (await store.generateShotById(id)) {
+          successCount += 1
+        } else {
+          skippedCount += 1
+        }
       } catch {
         failedCount += 1
       }
@@ -1019,8 +1025,9 @@ const upscaleShot = async (): Promise<void> => {
   }
 
   try {
-    await store.upscaleShotById(shot.id)
-    showToast('当前分镜已完成高清放大', 'success')
+    if (await store.upscaleShotById(shot.id)) {
+      showToast('当前分镜已完成高清放大', 'success')
+    }
   } catch (error) {
     if (error instanceof Error && error.message === API_ERROR_CODES.storyboardUpscaleImageRequired) {
       showToast('请先生成或上传分镜图后再进行放大', 'error')

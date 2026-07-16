@@ -1,14 +1,26 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { resetLocalState } from '@/api/local'
 import { buildStoryboardEditedImage } from '@/features/editor/storyboardPreviewState'
+import { storyboardGenerationService, videoGenerationService } from '@/services/generation'
 import { API_ERROR_CODES } from '@/types/api-enums'
 import { useEditorStore } from '@/stores/editor'
 import { useGenerationStore } from '@/stores/generation'
 import { useStoryboardStore } from '@/stores/storyboard'
 
+const createDeferred = <T>() => {
+  let resolve!: (value: T | PromiseLike<T>) => void
+  let reject!: (reason?: unknown) => void
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise
+    reject = rejectPromise
+  })
+  return { promise, resolve, reject }
+}
+
 describe('storyboard store', () => {
   beforeEach(() => {
+    vi.restoreAllMocks()
     resetLocalState()
     setActivePinia(createPinia())
   })
@@ -84,7 +96,7 @@ describe('storyboard store', () => {
     const originalStatus = target.status
     store.toggleLock(target.id)
 
-    await expect(store.generateShotById(target.id)).resolves.toBeUndefined()
+    await expect(store.generateShotById(target.id)).resolves.toBe(false)
 
     expect(generationStore.tasks.find((task) => task.shotId === target.id)).toBeUndefined()
     expect(store.shots.find((shot) => shot.id === target.id)?.status).toBe(originalStatus)
@@ -125,7 +137,7 @@ describe('storyboard store', () => {
     const originalStatus = target.status
     store.toggleLock(target.id)
 
-    await expect(store.generateVideoById(target.id)).resolves.toBeUndefined()
+    await expect(store.generateVideoById(target.id)).resolves.toBe(false)
 
     expect(generationStore.tasks.find((task) => task.shotId === target.id && task.type === 'video')).toBeUndefined()
     expect(store.shots.find((shot) => shot.id === target.id)?.videoUrl).toBe(originalVideoUrl)
@@ -300,9 +312,11 @@ describe('storyboard store', () => {
     const originalStatus = target.status
     store.toggleLock(target.id)
 
-    await expect(store.upscaleShotById(target.id)).resolves.toBeUndefined()
+    await expect(store.upscaleShotById(target.id)).resolves.toBe(false)
 
-    expect(generationStore.tasks.find((task) => task.shotId === target.id && task.type === 'storyboard_upscale')).toBeUndefined()
+    expect(
+      generationStore.tasks.find((task) => task.shotId === target.id && task.type === 'storyboard_upscale'),
+    ).toBeUndefined()
     expect(store.shots.find((shot) => shot.id === target.id)?.imageUrl).toBe(originalImageUrl)
     expect(store.shots.find((shot) => shot.id === target.id)?.status).toBe(originalStatus)
   })
@@ -320,5 +334,64 @@ describe('storyboard store', () => {
     expect(copied.videoReviewed).toBe(false)
     expect(copied.imageUrl).toBe(source.imageUrl)
     expect(copied.videoUrl).toBe(source.videoUrl)
+  })
+  it('ignores a generated image after the project replaces the target shot', async () => {
+    const editorStore = useEditorStore()
+    const store = useStoryboardStore()
+    editorStore.currentProjectId = 'project-old'
+    const target = store.shots[0]
+    const deferred = createDeferred<Awaited<ReturnType<typeof storyboardGenerationService.generateShotImage>>>()
+    vi.spyOn(storyboardGenerationService, 'generateShotImage').mockReturnValue(deferred.promise)
+
+    const pending = store.generateShotById(target.id)
+    const replacement = { ...store.shots[0], title: 'replacement shot', imageUrl: 'replacement-image' }
+    editorStore.currentProjectId = 'project-new'
+    store.replaceShots([replacement])
+    deferred.resolve({
+      shot: { ...target, status: 'success', imageUrl: 'stale-image' },
+    })
+
+    await expect(pending).resolves.toBe(false)
+    expect(store.shots[0].title).toBe('replacement shot')
+    expect(store.shots[0].imageUrl).toBe('replacement-image')
+  })
+
+  it('suppresses a stale video failure after the project replaces the target shot', async () => {
+    const editorStore = useEditorStore()
+    const store = useStoryboardStore()
+    editorStore.currentProjectId = 'project-old'
+    const target = store.shots[0]
+    const deferred = createDeferred<Awaited<ReturnType<typeof videoGenerationService.generateVideo>>>()
+    vi.spyOn(videoGenerationService, 'generateVideo').mockReturnValue(deferred.promise)
+
+    const pending = store.generateVideoById(target.id)
+    const replacement = { ...store.shots[0], title: 'replacement shot', status: 'pending-review' as const }
+    editorStore.currentProjectId = 'project-new'
+    store.replaceShots([replacement])
+    deferred.reject(new Error('stale video failure'))
+
+    await expect(pending).resolves.toBe(false)
+    expect(store.shots[0].title).toBe('replacement shot')
+    expect(store.shots[0].status).toBe('pending-review')
+  })
+
+  it('ignores an upscaled image after the target shot object is replaced', async () => {
+    const editorStore = useEditorStore()
+    const store = useStoryboardStore()
+    editorStore.currentProjectId = 'project-upscale'
+    const target = store.shots[0]
+    const deferred = createDeferred<Awaited<ReturnType<typeof storyboardGenerationService.upscaleShotImage>>>()
+    vi.spyOn(storyboardGenerationService, 'upscaleShotImage').mockReturnValue(deferred.promise)
+
+    const pending = store.upscaleShotById(target.id)
+    const replacement = { ...store.shots[0], title: 'replacement shot', imageUrl: 'replacement-image' }
+    store.replaceShots([replacement])
+    deferred.resolve({
+      shot: { ...target, status: 'success', imageUrl: 'stale-upscaled-image' },
+    })
+
+    await expect(pending).resolves.toBe(false)
+    expect(store.shots[0].title).toBe('replacement shot')
+    expect(store.shots[0].imageUrl).toBe('replacement-image')
   })
 })

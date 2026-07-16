@@ -152,11 +152,9 @@ import { buildSettingDeleteDialogCopy } from '@/features/editor/settingDeleteSta
 import { buildSettingLeaveDialogCopy, shouldInterceptSettingLeave } from '@/features/editor/settingLeaveConfirmState'
 import { buildSettingSaveErrorMessage } from '@/features/editor/settingSaveErrorState'
 import { getStoryboardModeEntryState } from '@/features/editor/storyboardModeState'
+import { createLatestAsyncTaskRunner } from '@/features/shared/latestAsyncTaskState'
 import { mapVoiceAssetsToOptions } from '@/features/voice/voiceOptionState'
-import {
-  buildSettingArtifact,
-  buildSettingBatchExportFileName,
-} from '@/features/editor/settingTransferState'
+import { buildSettingArtifact, buildSettingBatchExportFileName } from '@/features/editor/settingTransferState'
 import { assetWorkflowService } from '@/services/editor/assetWorkflow.service'
 import { resourceLibraryService } from '@/services/editor/resourceLibrary.service'
 import { useEditorStore } from '@/stores/editor'
@@ -174,6 +172,7 @@ const editorStore = useEditorStore()
 const projectStore = useProjectStore()
 const uiFeedback = useUiFeedbackStore()
 const voicesStore = useVoicesStore()
+const resourceLibraryTaskRunner = createLatestAsyncTaskRunner()
 
 const createModalOpen = ref(false)
 const previewOpen = ref(false)
@@ -271,18 +270,28 @@ const markSaved = (): void => {
 
 const loadResourceLibraryItems = async (): Promise<void> => {
   resourceLibraryLoading.value = true
+  let shouldFinishLoading = false
   try {
-    const result = await resourceLibraryService.listLibraryItems({
-      type: resourceLibraryType.value,
-      page: 1,
-      pageSize: 20,
-      scope: 'PRIVATE',
-    })
-    resourceLibraryItems.value = result.items
+    const outcome = await resourceLibraryTaskRunner.run(() =>
+      resourceLibraryService.listLibraryItems({
+        type: resourceLibraryType.value,
+        page: 1,
+        pageSize: 20,
+        scope: 'PRIVATE',
+      }),
+    )
+    if (outcome.status === 'stale') {
+      return
+    }
+    shouldFinishLoading = true
+    resourceLibraryItems.value = outcome.value.items
   } catch {
+    shouldFinishLoading = true
     showToast('资源库加载失败，请稍后再试', 'error')
   } finally {
-    resourceLibraryLoading.value = false
+    if (shouldFinishLoading) {
+      resourceLibraryLoading.value = false
+    }
   }
 }
 
@@ -292,6 +301,8 @@ const openResourceLibraryImportDialog = async (): Promise<void> => {
 }
 
 const closeResourceLibraryImportDialog = (): void => {
+  resourceLibraryTaskRunner.invalidate()
+  resourceLibraryLoading.value = false
   resourceLibraryDialogOpen.value = false
   resourceLibraryImportingId.value = ''
 }
@@ -393,17 +404,15 @@ const openCreateModal = (): void => {
   createModalOpen.value = true
 }
 
-const createAsset = async (
-  payload: {
-    type: Exclude<SettingAssetTypeFilter, 'all'>
-    title: string
-    roleName?: string
-    description: string
-    prompt: string
-    voiceId?: string
-    voiceName?: string
-  },
-): Promise<void> => {
+const createAsset = async (payload: {
+  type: Exclude<SettingAssetTypeFilter, 'all'>
+  title: string
+  roleName?: string
+  description: string
+  prompt: string
+  voiceId?: string
+  voiceName?: string
+}): Promise<void> => {
   await assetsStore.createAsset(payload)
   createModalOpen.value = false
 }
@@ -633,6 +642,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  resourceLibraryTaskRunner.invalidate()
   window.removeEventListener('beforeunload', handleBeforeUnload)
 })
 

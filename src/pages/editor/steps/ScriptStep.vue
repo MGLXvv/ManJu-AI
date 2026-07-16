@@ -185,6 +185,7 @@ import {
   hasUnsavedScriptChanges,
 } from '@/features/editor/scriptDraftState'
 import { resolveEditorActionErrorMessage } from '@/features/editor/generationErrorMessageState'
+import { createScriptConfirmationRunner } from '@/features/editor/scriptConfirmationState'
 import { buildScriptLeaveDialogCopy, shouldInterceptScriptLeave } from '@/features/editor/scriptLeaveConfirmState'
 import { createLatestRequestGuard } from '@/features/shared/latestRequestState'
 import {
@@ -256,6 +257,10 @@ const lastSavedSnapshot = ref(
 const pendingLeaveTarget = ref<RouteLocationRaw | null>(null)
 const bypassLeaveGuard = ref(false)
 const generationRequestGuard = createLatestRequestGuard()
+const scriptConfirmationTasks = createScriptConfirmationRunner({
+  confirmScript: (targetProjectId) => scriptWorkflowService.confirmScript(targetProjectId),
+  advanceProject: (targetProjectId) => projectStore.updateProjectStep(targetProjectId, 'settings'),
+})
 
 const STAGE_ROUTES: Record<ScriptStageKey, ScriptStageRouteName> = {
   input: 'editor-script-input',
@@ -405,9 +410,10 @@ const handleGlobalPointerDown = (event: PointerEvent): void => {
 watch(
   projectId,
   async (nextProjectId) => {
-    if (!nextProjectId) return
     generationRequestGuard.invalidate()
+    scriptConfirmationTasks.invalidate()
     generating.value = false
+    if (!nextProjectId) return
     await editorStore.loadDraft(nextProjectId)
     sourceText.value = editorStore.draft?.script.content ?? ''
     outlineText.value = editorStore.draft?.script.outline ?? ''
@@ -432,6 +438,7 @@ watch(generatedScript, (generated) => editorStore.updateGeneratedScript(generate
 watch(storyboardText, (storyboard) => editorStore.updateStoryboardText(storyboard))
 watch(currentStage, () => {
   generationRequestGuard.invalidate()
+  scriptConfirmationTasks.invalidate()
   generating.value = false
 })
 
@@ -533,6 +540,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   generationRequestGuard.invalidate()
+  scriptConfirmationTasks.invalidate()
   window.removeEventListener('beforeunload', handleBeforeUnload)
   document.removeEventListener('pointerdown', handleGlobalPointerDown)
 })
@@ -663,19 +671,23 @@ const handleNext = async (): Promise<void> => {
     return
   }
 
+  const targetProjectId = projectId.value
+  const targetStage = currentStage.value
   const saved = await persistDraft()
-  if (!saved) return
+  if (!saved || projectId.value !== targetProjectId || currentStage.value !== targetStage) return
 
-  if (currentStage.value === 'input') {
+  if (targetStage === 'input') {
     bypassLeaveGuard.value = true
     await router.push(getStageRouteParams('editor-script-storyboard'))
     return
   }
 
   try {
-    if (projectId.value) {
-      await scriptWorkflowService.confirmScript(projectId.value)
-      await projectStore.updateProjectStep(projectId.value, 'settings')
+    if (targetProjectId) {
+      const confirmed = await scriptConfirmationTasks.run(targetProjectId)
+      if (!confirmed || projectId.value !== targetProjectId || currentStage.value !== targetStage) {
+        return
+      }
     }
   } catch (error) {
     showToast(resolveEditorError(error, '文案确认失败，请稍后再试'), 'error')

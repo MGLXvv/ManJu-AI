@@ -137,11 +137,18 @@ import { computed, onUnmounted, ref, watch } from 'vue'
 import { apiMode } from '@/api/shared/apiMode'
 import { useRoute, useRouter } from 'vue-router'
 import WorkflowStepper from '@/components/editor/WorkflowStepper.vue'
+import {
+  isCompleteExportDownloadCurrent,
+  isCompleteExportProjectCurrent,
+} from '@/features/editor/completeExportAsyncState'
 import { buildCompleteSummary } from '@/features/editor/completeSummaryState'
 import { createCompleteProjectSyncRunner } from '@/features/editor/completeProjectSyncState'
 import { buildDubbingArtifact, buildDubbingExportFileName } from '@/features/editor/editorArtifactMapper'
 import { buildScopedProjectArtifact, buildScopedProjectExportFileName } from '@/features/editor/editorExportScopeState'
 import { createLatestAsyncTaskRunner } from '@/features/shared/latestAsyncTaskState'
+import { createObjectUrlRegistry } from '@/features/shared/objectUrlRegistryState'
+import { createProjectPhaseRunner } from '@/features/shared/projectPhaseRunnerState'
+import { createScopedAsyncTaskRunner } from '@/features/shared/scopedAsyncTaskState'
 import { exportWorkflowService } from '@/services/editor/exportWorkflow.service'
 import { useEditorStore } from '@/stores/editor'
 import { useProjectStore } from '@/stores/project'
@@ -158,6 +165,9 @@ const exportLoading = ref(false)
 const downloadLoading = ref(false)
 const exportWorkspace = ref<Awaited<ReturnType<typeof exportWorkflowService.loadExportWorkspace>>>(null)
 const exportWorkspaceTask = createLatestAsyncTaskRunner()
+const exportCreationTasks = createProjectPhaseRunner()
+const exportDownloadTasks = createScopedAsyncTaskRunner()
+const downloadUrlRegistry = createObjectUrlRegistry(URL)
 const projectId = computed(() => String(route.params.projectId ?? ''))
 const draft = computed(() => editorStore.draft)
 const project = computed(() => projectStore.projects.find((item) => item.id === projectId.value) ?? null)
@@ -196,34 +206,40 @@ const downloadJson = (fileName: string, payload: unknown): void => {
   const blob = new Blob([JSON.stringify(payload, null, 2)], {
     type: 'application/json;charset=utf-8',
   })
-  const url = URL.createObjectURL(blob)
+  const url = downloadUrlRegistry.create(blob)
   const link = document.createElement('a')
   link.href = url
   link.download = fileName
   document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  URL.revokeObjectURL(url)
+  try {
+    link.click()
+  } finally {
+    document.body.removeChild(link)
+    queueMicrotask(() => downloadUrlRegistry.release(url))
+  }
 }
 
-const refreshExportWorkspace = async (targetProjectId = projectId.value): Promise<void> => {
+const refreshExportWorkspace = async (targetProjectId = projectId.value): Promise<boolean> => {
   if (!targetProjectId || !isHttpMode) {
     exportWorkspaceTask.invalidate()
     exportWorkspace.value = null
     exportLoading.value = false
-    return
+    return false
   }
 
   exportLoading.value = true
   try {
     const result = await exportWorkspaceTask.run(() => exportWorkflowService.loadExportWorkspace(targetProjectId))
-    if (result.status === 'stale') return
+    if (result.status === 'stale' || !isCompleteExportProjectCurrent(targetProjectId, projectId.value)) return false
     exportWorkspace.value = result.value
     exportLoading.value = false
+    return true
   } catch (error) {
+    if (!isCompleteExportProjectCurrent(targetProjectId, projectId.value)) return false
     exportWorkspace.value = null
     exportLoading.value = false
     showToast(error instanceof Error ? error.message : '导出工作区加载失败', 'error')
+    return false
   }
 }
 
@@ -241,15 +257,21 @@ const completeProjectSync = createCompleteProjectSyncRunner({
       await projectStore.toggleProjectStatus(targetProjectId)
     }
   },
-  refreshExportWorkspace,
+  refreshExportWorkspace: async (targetProjectId) => {
+    await refreshExportWorkspace(targetProjectId)
+  },
 })
 
 watch(
   projectId,
   (nextProjectId) => {
     exportWorkspaceTask.invalidate()
+    exportCreationTasks.invalidate()
+    exportDownloadTasks.invalidate()
     exportWorkspace.value = null
     exportLoading.value = false
+    submitting.value = false
+    downloadLoading.value = false
     void completeProjectSync.run(nextProjectId).catch((error) => {
       showToast(error instanceof Error ? error.message : '完成页同步失败', 'error')
     })
@@ -257,9 +279,20 @@ watch(
   { immediate: true },
 )
 
+watch(
+  () => latestExportTask.value?.id,
+  () => {
+    exportDownloadTasks.invalidate()
+    downloadLoading.value = false
+  },
+)
+
 onUnmounted(() => {
   completeProjectSync.invalidate()
   exportWorkspaceTask.invalidate()
+  exportCreationTasks.invalidate()
+  exportDownloadTasks.invalidate()
+  downloadUrlRegistry.releaseAll()
 })
 
 const exportDubbingArtifact = async (): Promise<void> => {
@@ -310,15 +343,27 @@ const createMockExportTask = async (): Promise<void> => {
     return
   }
 
+  const targetProjectId = projectId.value
   submitting.value = true
   try {
-    await exportWorkflowService.createExportTask(projectId.value)
-    await refreshExportWorkspace()
+    const completed = await exportCreationTasks.run(targetProjectId, [
+      async (activeProjectId) => {
+        await exportWorkflowService.createExportTask(activeProjectId)
+      },
+      async (activeProjectId) => {
+        await refreshExportWorkspace(activeProjectId)
+      },
+    ])
+    if (!completed || !isCompleteExportProjectCurrent(targetProjectId, projectId.value)) return
     showToast('Mock 导出任务已创建', 'success')
   } catch (error) {
-    showToast(error instanceof Error ? error.message : '创建导出任务失败', 'error')
+    if (isCompleteExportProjectCurrent(targetProjectId, projectId.value)) {
+      showToast(error instanceof Error ? error.message : '创建导出任务失败', 'error')
+    }
   } finally {
-    submitting.value = false
+    if (isCompleteExportProjectCurrent(targetProjectId, projectId.value)) {
+      submitting.value = false
+    }
   }
 }
 
@@ -328,19 +373,34 @@ const openMockDownloadUrl = async (): Promise<void> => {
     return
   }
 
+  const targetProjectId = projectId.value
+  const targetTaskId = latestExportTask.value.id
+  const isCurrent = (): boolean =>
+    isCompleteExportDownloadCurrent({
+      targetProjectId,
+      currentProjectId: projectId.value,
+      targetTaskId,
+      currentTaskId: latestExportTask.value?.id,
+    })
+
   downloadLoading.value = true
   try {
-    const url = await exportWorkflowService.getDownloadUrl(latestExportTask.value.id)
-    if (!url) {
+    const result = await exportDownloadTasks.run(() => exportWorkflowService.getDownloadUrl(targetTaskId))
+    if (result.status === 'stale' || !isCurrent()) return
+    if (!result.value) {
       showToast('当前导出任务暂无可用下载地址', 'error')
       return
     }
 
-    window.open(url, '_blank', 'noopener')
+    window.open(result.value, '_blank', 'noopener')
   } catch (error) {
-    showToast(error instanceof Error ? error.message : '获取下载地址失败', 'error')
+    if (isCurrent()) {
+      showToast(error instanceof Error ? error.message : '获取下载地址失败', 'error')
+    }
   } finally {
-    downloadLoading.value = false
+    if (isCurrent()) {
+      downloadLoading.value = false
+    }
   }
 }
 

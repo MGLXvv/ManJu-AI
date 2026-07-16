@@ -16,9 +16,18 @@
         </div>
 
         <div class="dubbing-toolbar__actions">
-          <span class="storyboard-top-actions__save-state-pill" :class="`is-${saveState.tone}`">{{ saveState.label }}</span>
-          <button type="button" class="dubbing-toolbar__save" :disabled="submitting" @click="handleSaveExport">保存并导出</button>
-          <button type="button" class="dubbing-toolbar__batch" :disabled="isBatchGenerateDisabled" @click="handleGenerateAll">
+          <span class="storyboard-top-actions__save-state-pill" :class="`is-${saveState.tone}`">{{
+            saveState.label
+          }}</span>
+          <button type="button" class="dubbing-toolbar__save" :disabled="submitting" @click="handleSaveExport">
+            保存并导出
+          </button>
+          <button
+            type="button"
+            class="dubbing-toolbar__batch"
+            :disabled="isBatchGenerateDisabled"
+            @click="handleGenerateAll"
+          >
             一键全部配音
           </button>
           <EditorModelSelect v-model="selectedModelId" :options="modelOptions" />
@@ -49,12 +58,19 @@
       </div>
 
       <div class="dubbing-footer">
-        <button type="button" class="dubbing-footer__primary" :disabled="submitting" @click="goCompleteStep">进入结果汇总</button>
+        <button type="button" class="dubbing-footer__primary" :disabled="submitting" @click="goCompleteStep">
+          进入结果汇总
+        </button>
 
         <div class="dubbing-footer__pager">
           <span class="dubbing-footer__count">共{{ totalCount }}项</span>
 
-          <button type="button" class="dubbing-footer__page-btn" :disabled="currentPage === 1" @click="currentPage -= 1">
+          <button
+            type="button"
+            class="dubbing-footer__page-btn"
+            :disabled="currentPage === 1"
+            @click="currentPage -= 1"
+          >
             <FigmaIcon name="pager-prev" :size="14" />
           </button>
 
@@ -109,7 +125,13 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { onBeforeRouteLeave, useRoute, useRouter, type RouteLocationNormalizedLoadedGeneric, type RouteLocationRaw } from 'vue-router'
+import {
+  onBeforeRouteLeave,
+  useRoute,
+  useRouter,
+  type RouteLocationNormalizedLoadedGeneric,
+  type RouteLocationRaw,
+} from 'vue-router'
 import AppConfirmDialog from '@/components/common/AppConfirmDialog.vue'
 import EditorModelSelect, { type EditorModelOption } from '@/components/editor/common/EditorModelSelect.vue'
 import DubbingRoleCard from '@/components/editor/dubbing/DubbingRoleCard.vue'
@@ -128,6 +150,7 @@ import {
 } from '@/features/editor/dubbingGenerationState'
 import { resolveDubbingPlaybackTransition } from '@/features/editor/dubbingPlaybackState'
 import { buildScopedProjectArtifact, buildScopedProjectExportFileName } from '@/features/editor/editorExportScopeState'
+import { createScopedAsyncTaskRunner } from '@/features/shared/scopedAsyncTaskState'
 import { shouldInterceptStoryboardLeave } from '@/features/editor/storyboardLeaveConfirmState'
 import { buildStoryboardSaveState } from '@/features/editor/storyboardPreviewState'
 import { dubbingGenerationService } from '@/services/generation'
@@ -163,6 +186,8 @@ const dubbingGridWrapRef = ref<HTMLElement | null>(null)
 const rowSize = ref(3)
 let previewAudio: HTMLAudioElement | null = null
 let resizeObserver: ResizeObserver | null = null
+const generationTasks = createScopedAsyncTaskRunner()
+const batchGenerationTasks = createScopedAsyncTaskRunner()
 
 const modelOptions: EditorModelOption[] = [
   { id: 'index-tts', name: 'indexTTS', iconName: 'model-openai' },
@@ -199,7 +224,9 @@ const dubbingRows = computed(() => {
   }
   return rows
 })
-const currentSnapshot = computed(() => JSON.stringify(buildDubbingDraftPatch({ modelId: selectedModelId.value, cards: cards.value })))
+const currentSnapshot = computed(() =>
+  JSON.stringify(buildDubbingDraftPatch({ modelId: selectedModelId.value, cards: cards.value })),
+)
 const isDirty = computed(() => currentSnapshot.value !== lastSavedSnapshot.value)
 const saveState = computed(() => buildStoryboardSaveState({ submitting: submitting.value, isDirty: isDirty.value }))
 
@@ -242,10 +269,10 @@ const runGenerateCard = async (
   options: {
     silent?: boolean
   } = {},
-): Promise<boolean> => {
+): Promise<'success' | 'failed' | 'stale'> => {
   const card = cards.value.find((item) => item.id === id)
   if (!card) {
-    return false
+    return 'failed'
   }
 
   const unavailableMessage = buildDubbingCardGenerateDisabledReason(card)
@@ -253,26 +280,31 @@ const runGenerateCard = async (
     if (!options.silent) {
       showToast(unavailableMessage, 'info')
     }
-    return false
+    return 'failed'
   }
 
+  const targetProjectId = projectId.value || editorStore.currentProjectId || 'mock-project'
+  const targetModelId = selectedModelId.value
   setCardLines(id, (line) => ({ ...line, status: 'pending' }))
   setCardLines(id, (line) => ({ ...line, status: 'generating' }))
 
   try {
-    const result = await dubbingGenerationService.generateCard({
-      projectId: projectId.value || editorStore.currentProjectId || 'mock-project',
-      modelId: selectedModelId.value,
-      card,
-    })
+    const taskResult = await generationTasks.run(() =>
+      dubbingGenerationService.generateCard({
+        projectId: targetProjectId,
+        modelId: targetModelId,
+        card,
+      }),
+    )
+    if (taskResult.status === 'stale') return 'stale'
 
-    patchCard(id, { lines: result.lines })
+    patchCard(id, { lines: taskResult.value.lines })
 
     if (!options.silent) {
       showToast(`已完成 ${card.title} 的配音生成`, 'success')
     }
 
-    return true
+    return 'success'
   } catch (error) {
     setCardLines(id, (line) => ({ ...line, status: 'failed' }))
 
@@ -280,7 +312,7 @@ const runGenerateCard = async (
       showToast(buildDubbingGenerateErrorMessage(error), 'error')
     }
 
-    return false
+    return 'failed'
   }
 }
 
@@ -309,6 +341,9 @@ const persistDubbingDraft = async (): Promise<boolean> => {
 watch(
   projectId,
   async (nextProjectId) => {
+    generationTasks.invalidate()
+    batchGenerationTasks.invalidate()
+    batchGenerating.value = false
     if (!nextProjectId) {
       cards.value = []
       selectedModelId.value = 'index-tts'
@@ -443,23 +478,32 @@ const handleGenerateAll = async (): Promise<void> => {
     return
   }
 
-  let successCount = 0
-  let failedCount = 0
-
   batchGenerating.value = true
   try {
-    for (const card of availability.targetCards) {
-      if (await runGenerateCard(card.id, { silent: true })) {
-        successCount += 1
-      } else {
-        failedCount += 1
-      }
-    }
-  } finally {
-    batchGenerating.value = false
-  }
+    const result = await batchGenerationTasks.run(async () => {
+      let successCount = 0
+      let failedCount = 0
 
-  showToast(buildDubbingBatchGenerateMessage({ successCount, failedCount }), failedCount > 0 ? 'error' : 'success')
+      for (const card of availability.targetCards) {
+        const outcome = await runGenerateCard(card.id, { silent: true })
+        if (outcome === 'stale') break
+        if (outcome === 'success') {
+          successCount += 1
+        } else {
+          failedCount += 1
+        }
+      }
+
+      return { successCount, failedCount }
+    })
+    if (result.status === 'stale') return
+
+    batchGenerating.value = false
+    showToast(buildDubbingBatchGenerateMessage(result.value), result.value.failedCount > 0 ? 'error' : 'success')
+  } catch (error) {
+    batchGenerating.value = false
+    showToast(buildDubbingGenerateErrorMessage(error), 'error')
+  }
 }
 
 const handleSaveExport = async (): Promise<void> => {
@@ -523,6 +567,8 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  generationTasks.invalidate()
+  batchGenerationTasks.invalidate()
   window.removeEventListener('beforeunload', handleBeforeUnload)
   window.removeEventListener('resize', recalcDubbingRowSize)
   resizeObserver?.disconnect()

@@ -185,6 +185,10 @@ import {
   hasUnsavedScriptChanges,
 } from '@/features/editor/scriptDraftState'
 import { resolveEditorActionErrorMessage } from '@/features/editor/generationErrorMessageState'
+import {
+  isScriptGenerationContextCurrent,
+  type ScriptGenerationAsyncContext,
+} from '@/features/editor/scriptGenerationState'
 import { createScriptConfirmationRunner } from '@/features/editor/scriptConfirmationState'
 import { buildScriptLeaveDialogCopy, shouldInterceptScriptLeave } from '@/features/editor/scriptLeaveConfirmState'
 import { createLatestRequestGuard } from '@/features/shared/latestRequestState'
@@ -413,6 +417,7 @@ watch(
     generationRequestGuard.invalidate()
     scriptConfirmationTasks.invalidate()
     generating.value = false
+    submitting.value = false
     if (!nextProjectId) return
     await editorStore.loadDraft(nextProjectId)
     sourceText.value = editorStore.draft?.script.content ?? ''
@@ -440,6 +445,7 @@ watch(currentStage, () => {
   generationRequestGuard.invalidate()
   scriptConfirmationTasks.invalidate()
   generating.value = false
+  submitting.value = false
 })
 
 const showToast = (message: string, tone: 'info' | 'success' | 'error' = 'info'): void => {
@@ -461,14 +467,16 @@ const syncScriptDraftToStore = (): void => {
   editorStore.updateStoryboardText(storyboardText.value)
 }
 
-const persistDraft = async (): Promise<boolean> => {
+const persistDraft = async (isCurrent: () => boolean = () => true): Promise<boolean> => {
   syncScriptDraftToStore()
   submitting.value = true
   try {
     await editorStore.saveDraft()
+    if (!isCurrent()) return false
     markSaved()
     return true
   } catch (error) {
+    if (!isCurrent()) return false
     if (editorStore.localSaveStatus === 'saved') {
       showToast('内容已保存到当前浏览器，服务器同步失败，可稍后重试', 'info')
     } else {
@@ -476,7 +484,9 @@ const persistDraft = async (): Promise<boolean> => {
     }
     return false
   } finally {
-    submitting.value = false
+    if (isCurrent()) {
+      submitting.value = false
+    }
   }
 }
 
@@ -601,6 +611,18 @@ const handleDelete = async (): Promise<void> => {
 
 const resolveGenerationProjectId = (): string => projectId.value || editorStore.draft?.projectId || 'mock-project'
 
+const captureGenerationContext = (): ScriptGenerationAsyncContext => {
+  const activeProjectId = resolveGenerationProjectId()
+  return {
+    projectId: activeProjectId,
+    draftProjectId: editorStore.draft?.projectId ?? activeProjectId,
+    stage: currentStage.value,
+    inputText: currentStage.value === 'input' ? sourceText.value : generatedScript.value,
+    promptText: promptText.value,
+    modelId: selectedModelId.value,
+  }
+}
+
 const handleGenerate = async (): Promise<void> => {
   if (!generatedScriptWriteCapability.available) {
     uiFeedback.showToast(generatedScriptWriteCapability.message, { tone: 'error' })
@@ -608,40 +630,47 @@ const handleGenerate = async (): Promise<void> => {
   }
   if (!canGenerate.value || generating.value) return
 
+  const targetContext = captureGenerationContext()
   const requestId = generationRequestGuard.start()
+  const isCurrent = (): boolean =>
+    generationRequestGuard.isCurrent(requestId) &&
+    isScriptGenerationContextCurrent(targetContext, captureGenerationContext())
+
   generating.value = true
   try {
-    if (currentStage.value === 'input') {
+    if (targetContext.stage === 'input') {
       const result = await scriptGenerationWorkflowService.generateScript({
-        projectId: resolveGenerationProjectId(),
-        source: sourceText.value,
-        prompt: promptText.value,
-        modelId: selectedModelId.value,
+        projectId: targetContext.projectId,
+        source: targetContext.inputText,
+        prompt: targetContext.promptText,
+        modelId: targetContext.modelId,
       })
-      if (!generationRequestGuard.isCurrent(requestId)) return
+      if (!isCurrent()) return
       generatedScript.value = result.script
       outlineText.value = result.outline ?? ''
-      const saved = await persistDraft()
-      if (saved) {
+      const saved = await persistDraft(isCurrent)
+      if (saved && isCurrent()) {
         showToast('剧本生成完成', 'success')
       }
       return
     }
 
     const result = await scriptGenerationWorkflowService.generateStoryboardScript({
-      projectId: resolveGenerationProjectId(),
-      script: generatedScript.value,
-      prompt: promptText.value,
-      modelId: selectedModelId.value,
+      projectId: targetContext.projectId,
+      script: targetContext.inputText,
+      prompt: targetContext.promptText,
+      modelId: targetContext.modelId,
     })
-    if (!generationRequestGuard.isCurrent(requestId)) return
+    if (!isCurrent()) return
     storyboardText.value = result.storyboard
-    const saved = await persistDraft()
-    if (saved) {
+    const saved = await persistDraft(isCurrent)
+    if (saved && isCurrent()) {
       showToast('剧本分镜生成完成', 'success')
     }
   } catch (error) {
-    showToast(resolveEditorError(error, '生成失败，请稍后再试'), 'error')
+    if (isCurrent()) {
+      showToast(resolveEditorError(error, '生成失败，请稍后再试'), 'error')
+    }
   } finally {
     if (generationRequestGuard.isCurrent(requestId)) {
       generating.value = false

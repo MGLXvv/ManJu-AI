@@ -6,6 +6,7 @@ import {
   buildStoryboardDraftPatch,
 } from '@/features/editor/editorDraftMapper'
 import { buildDubbingDraftUpdate } from '@/features/editor/dubbingDraftState'
+import { shouldApplyEditorSaveResult } from '@/features/editor/editorSaveResultState'
 import { createLatestRequestGuard } from '@/features/shared/latestRequestState'
 import { EditorPersistenceService } from '@/services/editor/editorPersistence.service'
 import { EDITOR_SAVE_STATES, type EditorSaveState } from '@/types/api-enums'
@@ -162,7 +163,18 @@ export const useEditorStore = defineStore('editor', () => {
       return
     }
 
-    const result = await persistence.flush(currentProjectId.value, draft.value, reason)
+    const targetProjectId = currentProjectId.value
+    const targetDraft = draft.value
+    const result = await persistence.flush(targetProjectId, targetDraft, reason)
+    if (
+      !shouldApplyEditorSaveResult({
+        targetProjectId,
+        currentProjectId: currentProjectId.value,
+        currentDraftProjectId: draft.value?.projectId,
+      })
+    ) {
+      return
+    }
     applySaveResult(result)
   }
 

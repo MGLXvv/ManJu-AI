@@ -1,4 +1,4 @@
-﻿import { hasAnyMockFailureToken } from '@/features/shared/mockFailureState'
+import { hasAnyMockFailureToken } from '@/features/shared/mockFailureState'
 
 export interface ScriptGenerationInput {
   sourceText: string
@@ -44,7 +44,8 @@ export const optimizeMockScript = (generatedScript: string): string => {
     .map((segment) => segment.trim())
     .filter(Boolean)
 
-  const baseSegments = normalized.length > 0 ? normalized : ['第一幕：补充故事起点。', '第二幕：补充冲突升级。', '第三幕：补充成长收束。']
+  const baseSegments =
+    normalized.length > 0 ? normalized : ['第一幕：补充故事起点。', '第二幕：补充冲突升级。', '第三幕：补充成长收束。']
 
   return baseSegments
     .map((segment, index) => {
@@ -52,4 +53,29 @@ export const optimizeMockScript = (generatedScript: string): string => {
       return `${labels[index] ?? '优化版'}：${segment.replace(/^第[一二三]幕：?/, '').trim()}`
     })
     .join('\n\n')
+}
+export type ScriptGenerationStage = 'input' | 'storyboard'
+
+export interface ScriptGenerationAsyncContext {
+  projectId: string
+  draftProjectId: string
+  stage: ScriptGenerationStage
+  inputText: string
+  promptText: string
+  modelId: string
+}
+
+export const isScriptGenerationContextCurrent = (
+  target: ScriptGenerationAsyncContext,
+  current: ScriptGenerationAsyncContext,
+): boolean => {
+  return (
+    target.projectId === target.draftProjectId &&
+    target.projectId === current.projectId &&
+    target.projectId === current.draftProjectId &&
+    target.stage === current.stage &&
+    target.inputText === current.inputText &&
+    target.promptText === current.promptText &&
+    target.modelId === current.modelId
+  )
 }

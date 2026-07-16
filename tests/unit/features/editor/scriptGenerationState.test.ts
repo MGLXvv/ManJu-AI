@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
   canEnterStoryboard,
   generateMockScript,
+  isScriptGenerationContextCurrent,
   optimizeMockScript,
+  type ScriptGenerationAsyncContext,
 } from '@/features/editor/scriptGenerationState'
 
 describe('scriptGenerationState', () => {
@@ -43,5 +45,34 @@ describe('scriptGenerationState', () => {
 
   it('throws a stable error code when mocked optimization should fail', () => {
     expect(() => optimizeMockScript('第一幕内容\n\n#mock-optimize-fail')).toThrowError('SCRIPT_OPTIMIZE_FAILED')
+  })
+})
+describe('script generation async context', () => {
+  const target: ScriptGenerationAsyncContext = {
+    projectId: 'project-1',
+    draftProjectId: 'project-1',
+    stage: 'input',
+    inputText: 'source',
+    promptText: 'prompt',
+    modelId: 'model-1',
+  }
+
+  it('accepts the unchanged active generation context', () => {
+    expect(isScriptGenerationContextCurrent(target, { ...target })).toBe(true)
+  })
+
+  it.each([
+    ['route project', { projectId: 'project-2' }],
+    ['draft project', { draftProjectId: 'project-2' }],
+    ['stage', { stage: 'storyboard' as const }],
+    ['input', { inputText: 'edited source' }],
+    ['prompt', { promptText: 'edited prompt' }],
+    ['model', { modelId: 'model-2' }],
+  ])('rejects a result after the %s changes', (_label, changes) => {
+    expect(isScriptGenerationContextCurrent(target, { ...target, ...changes })).toBe(false)
+  })
+
+  it('rejects a request that did not start from its active draft', () => {
+    expect(isScriptGenerationContextCurrent({ ...target, draftProjectId: 'project-2' }, { ...target })).toBe(false)
   })
 })

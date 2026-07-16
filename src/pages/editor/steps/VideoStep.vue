@@ -109,11 +109,17 @@
 
     <Teleport to="body">
       <Transition name="storyboard-batch-generate-dialog-fade">
-        <div v-if="batchGenerateDialogOpen" class="storyboard-batch-generate-dialog__mask" @click="closeBatchGenerateDialog">
+        <div
+          v-if="batchGenerateDialogOpen"
+          class="storyboard-batch-generate-dialog__mask"
+          @click="closeBatchGenerateDialog"
+        >
           <section class="storyboard-batch-generate-dialog" role="dialog" aria-modal="true" @click.stop>
             <header class="storyboard-batch-generate-dialog__header">
               <h3>批量生成</h3>
-              <button type="button" class="storyboard-batch-generate-dialog__close" @click="closeBatchGenerateDialog">×</button>
+              <button type="button" class="storyboard-batch-generate-dialog__close" @click="closeBatchGenerateDialog">
+                ×
+              </button>
             </header>
 
             <div class="storyboard-batch-generate-dialog__body">
@@ -156,7 +162,9 @@
             </div>
 
             <div class="storyboard-batch-generate-dialog__actions">
-              <button type="button" class="storyboard-batch-generate-dialog__confirm" @click="confirmBatchGenerate">确定</button>
+              <button type="button" class="storyboard-batch-generate-dialog__confirm" @click="confirmBatchGenerate">
+                确定
+              </button>
             </div>
           </section>
         </div>
@@ -192,7 +200,13 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { onBeforeRouteLeave, useRoute, useRouter, type RouteLocationNormalizedLoadedGeneric, type RouteLocationRaw } from 'vue-router'
+import {
+  onBeforeRouteLeave,
+  useRoute,
+  useRouter,
+  type RouteLocationNormalizedLoadedGeneric,
+  type RouteLocationRaw,
+} from 'vue-router'
 import AppConfirmDialog from '@/components/common/AppConfirmDialog.vue'
 import BatchSelectionToolbar from '@/components/editor/common/BatchSelectionToolbar.vue'
 import StoryboardImageEditDialog from '@/components/editor/storyboard/StoryboardImageEditDialog.vue'
@@ -220,11 +234,10 @@ import {
   canOpenStoryboardImageTools,
   type StoryboardSelectionRect,
 } from '@/features/editor/storyboardPreviewState'
-import {
-  buildVideoBatchGenerateMessage,
-  buildVideoGenerateErrorMessage,
-} from '@/features/editor/videoGenerationState'
+import { buildVideoBatchGenerateMessage, buildVideoGenerateErrorMessage } from '@/features/editor/videoGenerationState'
+import { shouldApplyVideoTextOptimizationResult } from '@/features/editor/videoTextOptimizationState'
 import { buildScopedProjectArtifact, buildScopedProjectExportFileName } from '@/features/editor/editorExportScopeState'
+import { createScopedAsyncTaskRunner } from '@/features/shared/scopedAsyncTaskState'
 import { videoPromptService } from '@/services/generation'
 import { useEditorStore } from '@/stores/editor'
 import { useProjectStore } from '@/stores/project'
@@ -265,6 +278,8 @@ const editDialogOpen = ref(false)
 const editingImage = ref(false)
 const optimizingVideoPrompt = ref(false)
 const optimizingDialogue = ref(false)
+const videoPromptTasks = createScopedAsyncTaskRunner()
+const dialogueTasks = createScopedAsyncTaskRunner()
 const pendingUploadShotId = ref<string | null>(null)
 const uploadInputRef = ref<HTMLInputElement | null>(null)
 const isTimelineCollapsed = ref(false)
@@ -309,7 +324,9 @@ watch(
     store.setTagOptions(nextTagOptions)
 
     if (editorStore.draft?.shots.length) {
-      store.replaceShots(resolveStoryboardShots(editorStore.draft.shots, nextTagOptions, editorStore.draft.settingAssets))
+      store.replaceShots(
+        resolveStoryboardShots(editorStore.draft.shots, nextTagOptions, editorStore.draft.settingAssets),
+      )
     } else {
       await store.loadDefaults()
     }
@@ -318,6 +335,13 @@ watch(
   },
   { immediate: true },
 )
+
+watch([projectId, activeShotId], () => {
+  videoPromptTasks.invalidate()
+  dialogueTasks.invalidate()
+  optimizingVideoPrompt.value = false
+  optimizingDialogue.value = false
+})
 
 watch(
   shots,
@@ -417,19 +441,39 @@ const optimizeVideoPrompt = async (): Promise<void> => {
   const shot = currentShot.value
   if (!shot) return
 
+  const target = {
+    projectId: projectId.value,
+    shotId: shot.id,
+    value: shot.videoPrompt ?? shot.prompt ?? '',
+  }
   optimizingVideoPrompt.value = true
   try {
-    const result = await videoPromptService.optimizeVideoPrompt({
-      projectId: projectId.value,
-      shotId: shot.id,
-      prompt: shot.videoPrompt ?? shot.prompt ?? '',
-    })
-    store.updateActiveShotVideoPrompt(result.value)
+    const result = await videoPromptTasks.run(() =>
+      videoPromptService.optimizeVideoPrompt({
+        projectId: target.projectId,
+        shotId: target.shotId,
+        prompt: target.value,
+      }),
+    )
+    if (result.status === 'stale') return
+
+    optimizingVideoPrompt.value = false
+    if (
+      !shouldApplyVideoTextOptimizationResult({
+        target,
+        currentProjectId: projectId.value,
+        currentShotId: currentShot.value?.id ?? null,
+        currentValue: currentShot.value?.videoPrompt ?? currentShot.value?.prompt ?? '',
+      })
+    ) {
+      return
+    }
+
+    store.updateActiveShotVideoPrompt(result.value.value)
     showToast('视频提示词已优化', 'success')
   } catch (error) {
-    showToast(buildVideoGenerateErrorMessage(error), 'error')
-  } finally {
     optimizingVideoPrompt.value = false
+    showToast(buildVideoGenerateErrorMessage(error), 'error')
   }
 }
 
@@ -437,19 +481,39 @@ const optimizeDialogue = async (): Promise<void> => {
   const shot = currentShot.value
   if (!shot) return
 
+  const target = {
+    projectId: projectId.value,
+    shotId: shot.id,
+    value: shot.dialogue ?? '',
+  }
   optimizingDialogue.value = true
   try {
-    const result = await videoPromptService.optimizeDialogue({
-      projectId: projectId.value,
-      shotId: shot.id,
-      dialogue: shot.dialogue ?? '',
-    })
-    store.updateActiveShotDialogue(result.value)
+    const result = await dialogueTasks.run(() =>
+      videoPromptService.optimizeDialogue({
+        projectId: target.projectId,
+        shotId: target.shotId,
+        dialogue: target.value,
+      }),
+    )
+    if (result.status === 'stale') return
+
+    optimizingDialogue.value = false
+    if (
+      !shouldApplyVideoTextOptimizationResult({
+        target,
+        currentProjectId: projectId.value,
+        currentShotId: currentShot.value?.id ?? null,
+        currentValue: currentShot.value?.dialogue ?? '',
+      })
+    ) {
+      return
+    }
+
+    store.updateActiveShotDialogue(result.value.value)
     showToast('对白已优化', 'success')
   } catch (error) {
-    showToast(buildVideoGenerateErrorMessage(error), 'error')
-  } finally {
     optimizingDialogue.value = false
+    showToast(buildVideoGenerateErrorMessage(error), 'error')
   }
 }
 
@@ -709,6 +773,8 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  videoPromptTasks.invalidate()
+  dialogueTasks.invalidate()
   window.removeEventListener('beforeunload', handleBeforeUnload)
   if (scheduledBatchGenerateTimer !== null) {
     window.clearTimeout(scheduledBatchGenerateTimer)
@@ -733,17 +799,15 @@ const closePreviewDialog = (): void => {
   previewDialogOpen.value = false
 }
 
-const openPreviewDialog =
-  (mode: 'view' | 'zoom') =>
-  (): void => {
-    if (!canOpenStoryboardImageTools(currentShot.value?.imageUrl)) {
-      showToast('当前视频镜头暂无可查看的封面图', 'error')
-      return
-    }
-
-    previewDialogMode.value = mode
-    previewDialogOpen.value = true
+const openPreviewDialog = (mode: 'view' | 'zoom') => (): void => {
+  if (!canOpenStoryboardImageTools(currentShot.value?.imageUrl)) {
+    showToast('当前视频镜头暂无可查看的封面图', 'error')
+    return
   }
+
+  previewDialogMode.value = mode
+  previewDialogOpen.value = true
+}
 
 const closeEditDialog = (): void => {
   if (editingImage.value) {

@@ -10,6 +10,7 @@ import { normalizeStoryboardShotsWithTagOptions } from '@/features/editor/storyb
 import { shouldApplyStoryboardAsyncResult } from '@/features/editor/storyboardAsyncTargetState'
 import { buildStoryboardImageEditRecord } from '@/features/editor/storyboardPreviewState'
 import { storyboardGenerationService, storyboardPromptService, videoGenerationService } from '@/services/generation'
+import { mediaBlobRepository } from '@/services/media'
 import { useEditorStore } from '@/stores/editor'
 import { API_ERROR_CODES } from '@/types/api-enums'
 import type {
@@ -409,12 +410,23 @@ export const useStoryboardStore = defineStore('storyboard', () => {
     replaceShotById(shotId, updated)
   }
 
-  const uploadShotVideo = async (shotId: string, videoUrl: string): Promise<void> => {
-    if (isShotLocked(shotId)) return
+  const uploadShotVideo = async (shotId: string, videoUrl: string): Promise<boolean> => {
+    if (isShotLocked(shotId)) return false
     const shot = shots.value.find((item) => item.id === shotId)
-    if (!shot) return
+    if (!shot) return false
+    const previousMediaId = shot.videoMediaId
     const updated = await storyboardApi.uploadShotVideo(shot, videoUrl)
+    if (shots.value.find((item) => item.id === shotId) !== shot) {
+      if (updated.videoMediaId && updated.videoMediaId !== previousMediaId) {
+        await mediaBlobRepository.remove(updated.videoMediaId)
+      }
+      return false
+    }
     replaceShotById(shotId, updated)
+    if (previousMediaId && previousMediaId !== updated.videoMediaId) {
+      await mediaBlobRepository.remove(previousMediaId)
+    }
+    return true
   }
 
   const markShotsGenerating = (ids: string[]): void => {

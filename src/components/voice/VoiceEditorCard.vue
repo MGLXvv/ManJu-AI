@@ -8,11 +8,11 @@
     </button>
 
     <div class="voice-editor-card__footer">
-      <button v-if="showDelete" type="button" class="voice-editor-card__delete" @click="$emit('delete')">
+      <button v-if="showDelete" type="button" class="voice-editor-card__delete" @click="handleDelete">
         <FigmaIcon name="card-delete" :size="18" />
       </button>
       <div class="voice-editor-card__actions">
-        <button type="button" class="voice-editor-card__ghost" @click="$emit('cancel')">取消</button>
+        <button type="button" class="voice-editor-card__ghost" @click="handleCancel">取消</button>
         <button type="button" class="voice-editor-card__save" :disabled="saveDisabled" @click="handleSave">保存</button>
       </div>
     </div>
@@ -22,8 +22,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import FigmaIcon from '@/components/icons/FigmaIcon.vue'
+import { createObjectUrlRegistry } from '@/features/shared/objectUrlRegistryState'
+import type { VoiceEditorSavePayload } from '@/types/voice'
 
 const props = defineProps<{
   modelValue: string
@@ -34,19 +36,43 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void
-  (e: 'save', payload: { name: string; audioUrl: string; duration: number }): void
+  (e: 'save', payload: VoiceEditorSavePayload): void
   (e: 'delete'): void
   (e: 'cancel'): void
 }>()
 
+const previewUrlRegistry = createObjectUrlRegistry({
+  createObjectURL: (blob) => URL.createObjectURL(blob),
+  revokeObjectURL: (url) => URL.revokeObjectURL(url),
+})
 const fileRef = ref<HTMLInputElement | null>(null)
 const uploadedUrl = ref(props.audioUrl ?? '')
 const uploadedName = ref(props.fileName ?? '')
 const uploadedDuration = ref(0)
+const selectedFile = ref<File | null>(null)
+let ownedPreviewUrl = ''
+let selectionVersion = 0
+
+const releaseOwnedPreview = (): void => {
+  if (!ownedPreviewUrl) return
+  const releasedUrl = ownedPreviewUrl
+  ownedPreviewUrl = ''
+  previewUrlRegistry.release(releasedUrl)
+  if (uploadedUrl.value === releasedUrl) uploadedUrl.value = ''
+}
+
+const discardSelectedAudio = (): void => {
+  selectionVersion += 1
+  releaseOwnedPreview()
+  selectedFile.value = null
+  uploadedDuration.value = 0
+}
 
 watch(
   () => props.audioUrl,
   (value) => {
+    if (value === ownedPreviewUrl) return
+    discardSelectedAudio()
     uploadedUrl.value = value ?? ''
   },
 )
@@ -84,14 +110,20 @@ const onFileChange = async (event: Event): Promise<void> => {
   const file = target?.files?.[0]
   if (!file) return
 
-  const objectUrl = URL.createObjectURL(file)
+  selectionVersion += 1
+  const currentSelectionVersion = selectionVersion
+  releaseOwnedPreview()
+  const objectUrl = previewUrlRegistry.create(file)
+  ownedPreviewUrl = objectUrl
+  selectedFile.value = file
   uploadedUrl.value = objectUrl
   uploadedName.value = file.name
-  uploadedDuration.value = await readAudioDuration(objectUrl)
+  uploadedDuration.value = 0
+  if (target) target.value = ''
 
-  if (target) {
-    target.value = ''
-  }
+  const duration = await readAudioDuration(objectUrl)
+  if (selectionVersion !== currentSelectionVersion || ownedPreviewUrl !== objectUrl) return
+  uploadedDuration.value = duration
 }
 
 const handleSave = (): void => {
@@ -99,6 +131,23 @@ const handleSave = (): void => {
     name: nameProxy.value.trim(),
     audioUrl: uploadedUrl.value,
     duration: uploadedDuration.value,
+    audioFile: selectedFile.value ?? undefined,
   })
 }
+
+const handleCancel = (): void => {
+  discardSelectedAudio()
+  emit('cancel')
+}
+
+const handleDelete = (): void => {
+  discardSelectedAudio()
+  emit('delete')
+}
+
+onBeforeUnmount(() => {
+  selectionVersion += 1
+  previewUrlRegistry.releaseAll()
+  ownedPreviewUrl = ''
+})
 </script>

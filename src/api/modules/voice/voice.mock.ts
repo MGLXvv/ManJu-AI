@@ -37,6 +37,7 @@ export const voiceMockApi: VoiceApiContract = {
       id: `voice-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       name: input.name.trim(),
       audioUrl: input.audioUrl,
+      audioMediaId: input.audioMediaId,
       duration: input.duration,
       createdAt: '2026-03-12 17:16',
     })

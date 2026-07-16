@@ -4,6 +4,7 @@ export interface BackendVoiceDTO {
   id?: string | number | null
   name?: string | null
   audioUrl?: string | null
+  audioMediaId?: string | null
   duration?: number | null
   createdAt?: string | null
   createTime?: string | null
@@ -19,6 +20,7 @@ export const mapBackendVoiceToVoiceAsset = (record: BackendVoiceDTO): VoiceAsset
     id: String(record.id),
     name: record.name ?? '',
     audioUrl: record.audioUrl ?? '',
+    audioMediaId: record.audioMediaId ?? undefined,
     duration: typeof record.duration === 'number' ? record.duration : 0,
     createdAt: record.createdAt ?? record.createTime ?? record.updateTime ?? '',
   }

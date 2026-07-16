@@ -240,6 +240,7 @@ import { buildScopedProjectArtifact, buildScopedProjectExportFileName } from '@/
 import { createScopedAsyncTaskRunner } from '@/features/shared/scopedAsyncTaskState'
 import { createProjectPhaseRunner, isProjectRouteContextCurrent } from '@/features/shared/projectPhaseRunnerState'
 import { videoPromptService } from '@/services/generation'
+import { mediaBlobRepository, mediaUploadService } from '@/services/media'
 import { useEditorStore } from '@/stores/editor'
 import { useProjectStore } from '@/stores/project'
 import { useStoryboardStore } from '@/stores/storyboard'
@@ -892,11 +893,32 @@ const handleUploadFileChange = async (event: Event): Promise<void> => {
     return
   }
 
+  const targetProjectId = projectId.value
+  let uploadedMediaId = ''
   try {
-    const videoUrl = URL.createObjectURL(file)
-    await store.uploadShotVideo(shotId, videoUrl)
+    const uploaded = await mediaUploadService.uploadFile(file, {
+      projectId: targetProjectId || undefined,
+      targetType: 'storyboard-video',
+      targetId: shotId,
+      kind: 'video',
+    })
+    uploadedMediaId = uploaded.mediaId
+    if (projectId.value !== targetProjectId || pendingUploadShotId.value !== shotId) {
+      await mediaBlobRepository.remove(uploaded.mediaId)
+      uploadedMediaId = ''
+      return
+    }
+
+    const applied = await store.uploadShotVideo(shotId, uploaded.url)
+    if (!applied) {
+      await mediaBlobRepository.remove(uploaded.mediaId)
+      uploadedMediaId = ''
+      return
+    }
+    uploadedMediaId = ''
     showToast('视频文件已上传', 'success')
   } catch {
+    if (uploadedMediaId) await mediaBlobRepository.remove(uploadedMediaId)
     showToast('视频上传失败，请稍后再试', 'error')
   } finally {
     input.value = ''

@@ -5,6 +5,7 @@ export type MediaTargetType =
   | 'storyboard-video'
   | 'storyboard-edit'
   | 'dubbing-audio'
+  | 'voice-audio'
   | 'resource-asset'
 export type MediaStorageKind = 'remote' | 'indexeddb' | 'memory'
 

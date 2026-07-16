@@ -1,10 +1,6 @@
 import { storyboardShotsMock, storyboardStylesMock, storyboardTagOptions } from '@/mocks/storyboard.mock'
 import { delay } from '@/api/local'
-import {
-  MOCK_MEDIA_IMAGE_URL,
-  MOCK_MEDIA_VIDEO_16_9_URL,
-  MOCK_MEDIA_VIDEO_9_16_URL,
-} from '@/mocks/mockMedia'
+import { MOCK_MEDIA_IMAGE_URL, MOCK_MEDIA_VIDEO_16_9_URL, MOCK_MEDIA_VIDEO_9_16_URL } from '@/mocks/mockMedia'
 import { mediaUploadService } from '@/services/media'
 import type { StoryboardImageEditRecord } from '@/types/storyboard'
 import type {
@@ -39,16 +35,17 @@ export const cloneStoryboardTagOptions = (options: StoryboardTagOptions): Storyb
 const prependReferenceImage = (
   shot: StoryboardShot,
   image: { url: string; mediaId?: string; label?: string; sourceShotId?: string },
-): StoryboardReferenceImage[] => [
-  {
-    id: `ref-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    url: image.url,
-    mediaId: image.mediaId,
-    label: image.label,
-    sourceShotId: image.sourceShotId,
-  },
-  ...shot.referenceImages,
-].slice(0, 8)
+): StoryboardReferenceImage[] =>
+  [
+    {
+      id: `ref-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      url: image.url,
+      mediaId: image.mediaId,
+      label: image.label,
+      sourceShotId: image.sourceShotId,
+    },
+    ...shot.referenceImages,
+  ].slice(0, 8)
 
 const createGeneratedImage = (kind: string, shot: StoryboardShot): string =>
   `${MOCK_MEDIA_IMAGE_URL}?kind=${encodeURIComponent(kind)}&shot=${encodeURIComponent(shot.id)}&ratio=${encodeURIComponent(shot.ratio)}&v=${Date.now()}`
@@ -113,7 +110,7 @@ export const storyboardMockApi: StoryboardApiContract = {
     )
     return cloneStoryboardShot({
       ...shot,
-      videoUrl,
+      videoUrl: media?.url ?? videoUrl,
       videoMediaId: media?.mediaId,
       status: 'success',
     })

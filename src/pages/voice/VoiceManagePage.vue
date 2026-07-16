@@ -31,12 +31,7 @@
       />
 
       <div class="voice-manage-page__grid">
-        <button
-          v-if="!batchMode && !adding"
-          type="button"
-          class="voice-add-card"
-          @click="beginAdd"
-        >
+        <button v-if="!batchMode && !adding" type="button" class="voice-add-card" @click="beginAdd">
           <span>添加音色</span>
         </button>
 
@@ -116,6 +111,7 @@ import FigmaIcon from '@/components/icons/FigmaIcon.vue'
 import VoiceCard from '@/components/voice/VoiceCard.vue'
 import VoiceEditorCard from '@/components/voice/VoiceEditorCard.vue'
 import { useVoicesStore } from '@/stores/voices'
+import type { VoiceEditorSavePayload } from '@/types/voice'
 
 const store = useVoicesStore()
 
@@ -177,7 +173,7 @@ const cancelAdd = (): void => {
   resetDraft()
 }
 
-const saveNewVoice = async (payload: { name: string; audioUrl: string; duration: number }): Promise<void> => {
+const saveNewVoice = async (payload: VoiceEditorSavePayload): Promise<void> => {
   await store.createVoice(payload)
   adding.value = false
   resetDraft()
@@ -198,10 +194,7 @@ const cancelEdit = (): void => {
   resetDraft()
 }
 
-const saveEditingVoice = async (
-  id: string,
-  payload: { name: string; audioUrl: string; duration: number },
-): Promise<void> => {
+const saveEditingVoice = async (id: string, payload: VoiceEditorSavePayload): Promise<void> => {
   await store.updateVoice(id, payload)
   cancelEdit()
 }

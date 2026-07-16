@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { resetLocalState } from '@/api/local'
+import { storyboardApi } from '@/api/storyboard.api'
 import { buildStoryboardEditedImage } from '@/features/editor/storyboardPreviewState'
 import { storyboardGenerationService, videoGenerationService } from '@/services/generation'
+import { mediaBlobRepository } from '@/services/media'
 import { API_ERROR_CODES } from '@/types/api-enums'
 import { useEditorStore } from '@/stores/editor'
 import { useGenerationStore } from '@/stores/generation'
@@ -206,12 +208,43 @@ describe('storyboard store', () => {
     const target = store.shots[0]
     const videoUrl = 'blob:mock-video-upload'
 
-    await store.uploadShotVideo(target.id, videoUrl)
+    const applied = await store.uploadShotVideo(target.id, videoUrl)
 
     const updated = store.shots.find((shot) => shot.id === target.id)
-    expect(updated?.videoUrl).toBe(videoUrl)
+    expect(applied).toBe(true)
+    expect(updated?.videoUrl).toMatch(/^blob:|^mock-media:/)
+    expect(updated?.videoMediaId).toMatch(/^media-/)
   })
 
+  it('releases an uploaded video record when the target shot is replaced while the request is pending', async () => {
+    const store = useStoryboardStore()
+    const target = store.shots[0]
+    const deferred = createDeferred<typeof target>()
+    const remove = vi.spyOn(mediaBlobRepository, 'remove').mockResolvedValue(undefined)
+    vi.spyOn(storyboardApi, 'uploadShotVideo').mockReturnValue(deferred.promise)
+
+    const pending = store.uploadShotVideo(target.id, 'blob:repository-stale')
+    store.replaceShots(store.shots.map((shot) => ({ ...shot })))
+    deferred.resolve({ ...target, videoUrl: 'blob:repository-stale', videoMediaId: 'media-stale' })
+
+    await expect(pending).resolves.toBe(false)
+    expect(remove).toHaveBeenCalledWith('media-stale')
+  })
+
+  it('releases the previous video record after an accepted replacement', async () => {
+    const store = useStoryboardStore()
+    const target = { ...store.shots[0], videoMediaId: 'media-old', videoUrl: 'blob:repository-old' }
+    store.replaceShots([target, ...store.shots.slice(1)])
+    const remove = vi.spyOn(mediaBlobRepository, 'remove').mockResolvedValue(undefined)
+    vi.spyOn(storyboardApi, 'uploadShotVideo').mockResolvedValue({
+      ...target,
+      videoUrl: 'blob:repository-new',
+      videoMediaId: 'media-new',
+    })
+
+    await expect(store.uploadShotVideo(target.id, 'blob:repository-new')).resolves.toBe(true)
+    expect(remove).toHaveBeenCalledWith('media-old')
+  })
   it('applies edited image and appends edit history', async () => {
     const store = useStoryboardStore()
     const target = store.shots[0]

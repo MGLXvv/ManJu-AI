@@ -30,6 +30,9 @@ docs/*
 !docs/generation-task-contract.md
 !docs/api-integration.md
 !docs/remaining-mock-coupling.md
+!docs/backend-integration/
+docs/backend-integration/*
+!docs/backend-integration/backend-integration-runbook.md
 outputs/
 tools/
 原型/

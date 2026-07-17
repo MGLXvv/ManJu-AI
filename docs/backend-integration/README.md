@@ -24,6 +24,7 @@
 
 ## 文档入口
 
+- [backend-integration-runbook.md](./backend-integration-runbook.md)：从证据收集、Adapter 实现、真实联调到能力门禁、灰度和回滚的完整执行手册；
 - [`source/`](./source/)：后端原始 Integration Pack 与 Phase1 更新说明归档；
 - [`endpoint-matrix.md`](./endpoint-matrix.md)：后端状态与前端状态双维度矩阵；
 - [`implemented-interface-register.md`](./implemented-interface-register.md)：历史 PR、已实测接口和本轮 Adapter 优化记录；

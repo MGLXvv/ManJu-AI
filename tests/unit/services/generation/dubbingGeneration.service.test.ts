@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { resetLocalState } from '@/api/local'
-import { generationApi } from '@/api/modules/generation'
 import { MOCK_MEDIA_AUDIO_URL } from '@/mocks/mockMedia'
 import { API_ERROR_CODES } from '@/types/api-enums'
 import type { DubbingRoleCardModel } from '@/types/dubbing'

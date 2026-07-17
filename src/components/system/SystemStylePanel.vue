@@ -2,7 +2,13 @@
   <section class="system-style-panel">
     <header class="system-panel-head">
       <div class="system-style-panel__search">
-        <input :value="search" class="system-style-panel__search-input" type="text" placeholder="请输入名称" @input="onSearch" />
+        <input
+          :value="search"
+          class="system-style-panel__search-input"
+          type="text"
+          placeholder="请输入名称"
+          @input="onSearch"
+        />
       </div>
       <button v-if="!creating" type="button" class="system-page__primary" @click="startCreate">新增风格</button>
     </header>
@@ -20,20 +26,33 @@
         <div v-if="creating" class="system-table__row is-editing">
           <div>{{ items.length + 1 }}</div>
           <div><input v-model="draft.name" class="system-table__input" type="text" placeholder="输入风格名称" /></div>
-          <div><input v-model="draft.category" class="system-table__input" type="text" placeholder="输入风格分类" /></div>
-          <div><textarea v-model="draft.prompt" class="system-table__textarea" placeholder="输入风格描述"></textarea></div>
+          <div>
+            <input v-model="draft.category" class="system-table__input" type="text" placeholder="输入风格分类" />
+          </div>
+          <div>
+            <textarea v-model="draft.prompt" class="system-table__textarea" placeholder="输入风格描述"></textarea>
+          </div>
           <div class="system-table__actions">
             <button type="button" class="is-primary" @click="saveCreate">保存</button>
             <button type="button" @click="cancelEdit">取消</button>
           </div>
         </div>
 
-        <div v-for="(item, index) in items" :key="item.id" class="system-table__row" :class="{ 'is-editing': editingId === item.id }">
+        <div
+          v-for="(item, index) in items"
+          :key="item.id"
+          class="system-table__row"
+          :class="{ 'is-editing': editingId === item.id }"
+        >
           <template v-if="editingId === item.id">
             <div>{{ index + 1 }}</div>
             <div><input v-model="draft.name" class="system-table__input" type="text" placeholder="输入风格名称" /></div>
-            <div><input v-model="draft.category" class="system-table__input" type="text" placeholder="输入风格分类" /></div>
-            <div><textarea v-model="draft.prompt" class="system-table__textarea" placeholder="输入风格描述"></textarea></div>
+            <div>
+              <input v-model="draft.category" class="system-table__input" type="text" placeholder="输入风格分类" />
+            </div>
+            <div>
+              <textarea v-model="draft.prompt" class="system-table__textarea" placeholder="输入风格描述"></textarea>
+            </div>
             <div class="system-table__actions">
               <button type="button" class="is-primary" @click="saveEdit(item.id)">保存</button>
               <button type="button" @click="cancelEdit">取消</button>
@@ -61,7 +80,7 @@
 import { reactive, ref } from 'vue'
 import type { SystemStyleItem } from '@/types/system'
 
-const props = defineProps<{
+defineProps<{
   items: SystemStyleItem[]
   search: string
 }>()

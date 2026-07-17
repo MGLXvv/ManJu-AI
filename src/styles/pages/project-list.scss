@@ -1,37 +1,29 @@
-﻿:root {
+:root {
   --dashboard-content-width: clamp(1080px, 70.4167vw, 1352px);
   --dashboard-page-pad-x: clamp(24px, 3.125vw, 60px);
-
   --dashboard-header-pad-top: clamp(24px, 3.0556vh, 33px);
   --dashboard-header-pad-bottom: clamp(14px, 1.8519vh, 20px);
   --dashboard-list-pad-top: clamp(8px, 0.9259vh, 10px);
   --dashboard-list-pad-bottom: clamp(72px, 11.1111vh, 120px);
-
   --dashboard-title-font: clamp(22px, 1.25vw, 24px);
   --dashboard-control-h: clamp(32px, 3.3333vh, 36px);
   --dashboard-radius-card: clamp(12px, 0.8333vw, 16px);
   --dashboard-radius-control: 8px;
-
   --project-card-width: clamp(176px, 11.0417vw, 212px);
   --project-card-height: clamp(130px, 14.4444vh, 156px);
   --project-grid-gap: clamp(12px, 0.8333vw, 16px);
   --project-grid-row-gap: clamp(20px, 2.5926vh, 28px);
-
   --project-card-inner-x: clamp(10px, 0.625vw, 12px);
   --project-card-inner-y: clamp(8px, 0.9259vh, 10px);
   --project-card-hover-inset-x: clamp(6px, 0.4167vw, 8px);
   --project-card-hover-inset-y: clamp(7px, 0.4688vw, 9px);
   --project-card-hover-image-h: clamp(74px, 8.1481vh, 88px);
-
   --project-font-body: clamp(13px, 0.7292vw, 14px);
   --project-font-small: clamp(10px, 0.625vw, 12px);
 }
 
 .dashboard-page {
-  --dashboard-content-max-width: min(
-    var(--dashboard-content-width),
-    calc(100vw - var(--dashboard-page-pad-x) * 2)
-  );
+  --dashboard-content-max-width: min(var(--dashboard-content-width), calc(100vw - var(--dashboard-page-pad-x) * 2));
 
   position: relative;
   min-height: 0;
@@ -534,11 +526,7 @@
 
 .project-card:hover .project-card__image-wrap,
 .project-card:hover .project-card__fallback {
-  inset:
-    var(--project-card-hover-inset-y)
-    var(--project-card-hover-inset-x)
-    auto
-    var(--project-card-hover-inset-x);
+  inset: var(--project-card-hover-inset-y) var(--project-card-hover-inset-x) auto var(--project-card-hover-inset-x);
   height: var(--project-card-hover-image-h);
   border-radius: clamp(10px, 0.7292vw, 14px);
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / 8%);
@@ -712,7 +700,7 @@
   pointer-events: none;
 }
 
-@media (max-width: 1440px) {
+@media (width <= 1440px) {
   :root {
     --dashboard-content-width: min(1180px, calc(100vw - 48px));
     --project-card-width: clamp(168px, 12vw, 196px);
@@ -720,7 +708,7 @@
   }
 }
 
-@media (max-width: 1280px) and (min-aspect-ratio: 16 / 10) {
+@media (width <= 1280px) and (aspect-ratio >= 16 / 10) {
   :root {
     --dashboard-content-width: calc(100vw - 48px);
     --project-card-width: clamp(160px, 12vw, 184px);
@@ -738,7 +726,7 @@
   }
 }
 
-@media (max-width: 1024px) {
+@media (width <= 1024px) {
   :root {
     --dashboard-content-width: calc(100vw - 40px);
     --project-card-width: clamp(176px, 28vw, 220px);
@@ -796,7 +784,7 @@
   }
 }
 
-@media (max-width: 640px) {
+@media (width <= 640px) {
   :root {
     --dashboard-content-width: calc(100vw - 24px);
     --project-card-width: 100%;

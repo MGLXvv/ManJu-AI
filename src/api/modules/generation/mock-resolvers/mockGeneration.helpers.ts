@@ -1,5 +1,5 @@
 import { API_ERROR_CODES } from '@/types/api-enums'
-import type { SettingAsset, SettingAssetType } from '@/api/modules/setting/setting.types'
+import type { SettingAsset } from '@/api/modules/setting/setting.types'
 import type { StoryboardReferenceImage, StoryboardShot } from '@/api/modules/storyboard/storyboard.types'
 import { MOCK_MEDIA_IMAGE_URL } from '@/mocks/mockMedia'
 import type { StoryboardImageEditRecord } from '@/types/storyboard'
@@ -81,15 +81,16 @@ const cloneStoryboardShot = (shot: StoryboardShot): StoryboardShot => ({
 const prependReferenceImage = (
   shot: StoryboardShot,
   image: { url: string; label: string },
-): StoryboardReferenceImage[] => [
-  {
-    id: `ref-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    url: image.url,
-    label: image.label,
-    sourceShotId: shot.id,
-  },
-  ...shot.referenceImages,
-].slice(0, 8)
+): StoryboardReferenceImage[] =>
+  [
+    {
+      id: `ref-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      url: image.url,
+      label: image.label,
+      sourceShotId: shot.id,
+    },
+    ...shot.referenceImages,
+  ].slice(0, 8)
 
 const createMockImageUrl = (kind: string, targetId: string): string =>
   `${MOCK_MEDIA_IMAGE_URL}?kind=${encodeURIComponent(kind)}&target=${encodeURIComponent(targetId)}&v=${Date.now()}`

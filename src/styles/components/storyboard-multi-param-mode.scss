@@ -1,6 +1,7 @@
 .storyboard-layout:has(.storyboard-canvas__empty.is-multi-param) {
   --reference-width: 0px;
   --layout-column-gap: 0px;
+
   grid-template-columns: minmax(0, 1fr);
 }
 
@@ -20,7 +21,9 @@
   display: none;
 }
 
-.storyboard-layout:has(.storyboard-canvas__empty.is-multi-param) .storyboard-top-actions__group > .storyboard-top-actions__btn:first-of-type {
+.storyboard-layout:has(.storyboard-canvas__empty.is-multi-param)
+  .storyboard-top-actions__group
+  > .storyboard-top-actions__btn:first-of-type {
   display: none;
 }
 

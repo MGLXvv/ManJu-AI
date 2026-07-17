@@ -1,3 +1,4 @@
+/* stylelint-disable declaration-block-no-duplicate-properties -- 100dvh overrides the legacy 100vh fallback. */
 .main-layout,
 .editor-layout {
   height: 100vh;
@@ -7,6 +8,7 @@
   background: var(--color-bg);
   overflow: hidden;
 }
+/* stylelint-enable declaration-block-no-duplicate-properties */
 
 .main-layout,
 .editor-layout {

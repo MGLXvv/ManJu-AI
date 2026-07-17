@@ -353,7 +353,7 @@
   background: #3d3f3f;
 }
 
-@media (max-width: 1280px) {
+@media (width <= 1280px) {
   .dubbing-role-card {
     flex-basis: var(--dubbing-card-width);
     width: var(--dubbing-card-width);

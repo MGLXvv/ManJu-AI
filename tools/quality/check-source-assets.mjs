@@ -8,13 +8,14 @@ import { collectFileStats, firstMatchingRule, formatBytes } from './file-utils.m
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const OUTPUT_ROOT = path.join(ROOT, 'artifacts', 'quality')
 const roots = ['src/assets', 'public']
+const ignoredDirectoryNames = new Set(['node_modules'])
 const files = []
 
 for (const relativeRoot of roots) {
   const absoluteRoot = path.join(ROOT, relativeRoot)
   try {
     await access(absoluteRoot)
-    files.push(...await collectFileStats(ROOT, absoluteRoot))
+    files.push(...await collectFileStats(ROOT, absoluteRoot, { ignoredDirectoryNames }))
   } catch {
     // Optional asset roots may be absent in smaller worktrees.
   }

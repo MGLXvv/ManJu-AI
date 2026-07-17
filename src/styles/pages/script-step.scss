@@ -1,4 +1,4 @@
-﻿.script-step {
+.script-step {
   --script-page-space: clamp(14px, 1.0417vw, 20px);
   --script-panel-gap: var(--script-page-space);
   --script-topbar-h: clamp(52px, 5.6481vh, 61px);
@@ -121,7 +121,7 @@
   border: 0;
   border-radius: 999px;
   background: linear-gradient(90deg, #b969ff 0%, #ef86ff 100%);
-  color: #FFFFFF;
+  color: #fff;
   font-size: var(--script-body-font);
   font-weight: 700;
   cursor: pointer;
@@ -237,9 +237,7 @@
   display: grid;
   place-items: center;
   height: 100%;
-  padding:
-    calc(var(--script-card-pad) + var(--script-pill-h) + clamp(14px, 1.8519vh, 20px))
-    clamp(20px, 1.4583vw, 28px)
+  padding: calc(var(--script-card-pad) + var(--script-pill-h) + clamp(14px, 1.8519vh, 20px)) clamp(20px, 1.4583vw, 28px)
     clamp(20px, 1.4583vw, 28px);
   min-height: 0;
   box-sizing: border-box;
@@ -730,7 +728,7 @@
   display: none;
 }
 
-@media (max-width: 1600px) {
+@media (width <= 1600px) {
   .script-workbench-card__body {
     grid-template-columns: minmax(0, 697fr) minmax(0, 1028fr);
     gap: var(--script-panel-gap);
@@ -738,7 +736,7 @@
   }
 }
 
-@media (max-width: 1024px), (max-aspect-ratio: 4 / 3) {
+@media (width <= 1024px), (aspect-ratio <= 4 / 3) {
   .script-step {
     overflow: auto;
   }
@@ -759,7 +757,7 @@
   }
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .script-step {
     padding: 12px;
   }
@@ -805,8 +803,6 @@
     gap: 8px;
   }
 }
-
-
 
 .script-secondary-btn {
   min-width: clamp(108px, 6.5625vw, 126px);
@@ -928,4 +924,3 @@
   opacity: 0.45;
   cursor: not-allowed;
 }
-

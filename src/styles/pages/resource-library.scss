@@ -502,13 +502,13 @@
   margin-right: 8px;
 }
 
-@media (max-width: 1500px) {
+@media (width <= 1500px) {
   .resource-grid {
     grid-template-columns: repeat(4, minmax(0, 150px));
   }
 }
 
-@media (max-width: 1180px) {
+@media (width <= 1180px) {
   .resource-page__panel {
     grid-template-columns: 1fr;
   }

@@ -1,4 +1,3 @@
-import { resourceFolders } from '@/features/resource/resourceLibraryDefaults'
 import { MOCK_MEDIA_IMAGE_URL } from '@/mocks/mockMedia'
 import type { ResourceAsset } from '@/types/resource'
 import type { VoiceOption } from '@/types/settingAsset'

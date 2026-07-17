@@ -15,7 +15,7 @@
   width: 4px;
   height: 14px;
   border-radius: 2px;
-  background: currentColor;
+  background: currentcolor;
 }
 
 .video-preview-panel__play-icon::after {
@@ -36,8 +36,7 @@
   border-radius: 5px;
   background:
     radial-gradient(64.4% 133.41% at 97.53% 113.7%, rgb(255 187 77 / 30%) 0%, rgb(140 63 255 / 0%) 100%),
-    radial-gradient(64.4% 133.41% at 97.53% 113.7%, rgb(255 187 77 / 60%) 0%, rgb(140 63 255 / 0%) 100%),
-    #c4aee6;
+    radial-gradient(64.4% 133.41% at 97.53% 113.7%, rgb(255 187 77 / 60%) 0%, rgb(140 63 255 / 0%) 100%), #c4aee6;
   box-shadow:
     0 27px 86.3px rgb(0 0 0 / 65%),
     inset 0 0 39.4px rgb(255 255 255 / 54%);

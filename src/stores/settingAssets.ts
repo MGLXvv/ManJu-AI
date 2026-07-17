@@ -4,17 +4,13 @@ import { settingApi } from '@/api/setting.api'
 import { cloneSettingAsset, createDefaultSettingAssets } from '@/mocks/setting.mock'
 import { settingAssetGenerationService } from '@/services/generation'
 import { useEditorStore } from '@/stores/editor'
-import { API_ERROR_CODES } from '@/types/api-enums'
 import type { MediaUploadResult } from '@/types/media'
 import type { SettingAsset, SettingAssetType, SettingAssetTypeFilter } from '@/types/settingAsset'
 
 const normalizeKeyword = (value: string): string => value.trim().toLocaleLowerCase()
 
-const prependUniqueMediaId = (
-  mediaId: string,
-  existing: string[] | undefined,
-  max: number,
-): string[] => [mediaId, ...(existing ?? []).filter((id) => id !== mediaId)].slice(0, max)
+const prependUniqueMediaId = (mediaId: string, existing: string[] | undefined, max: number): string[] =>
+  [mediaId, ...(existing ?? []).filter((id) => id !== mediaId)].slice(0, max)
 
 export { createDefaultSettingAssets } from '@/mocks/setting.mock'
 
@@ -117,17 +113,18 @@ export const useSettingAssetsStore = defineStore('setting-assets', () => {
     }
     const imageUrl = typeof media === 'string' ? media : media.url
     const updated = await settingApi.uploadAssetImage(target, imageUrl)
-    const next = typeof media === 'string'
-      ? updated
-      : {
-          ...updated,
-          imageMediaIds: prependUniqueMediaId(media.mediaId, updated.imageMediaIds ?? target.imageMediaIds, 6),
-          candidateMediaIds: prependUniqueMediaId(
-            media.mediaId,
-            updated.candidateMediaIds ?? target.candidateMediaIds,
-            12,
-          ),
-        }
+    const next =
+      typeof media === 'string'
+        ? updated
+        : {
+            ...updated,
+            imageMediaIds: prependUniqueMediaId(media.mediaId, updated.imageMediaIds ?? target.imageMediaIds, 6),
+            candidateMediaIds: prependUniqueMediaId(
+              media.mediaId,
+              updated.candidateMediaIds ?? target.candidateMediaIds,
+              12,
+            ),
+          }
     assets.value = assets.value.map((asset) => (asset.id === id ? next : asset))
   }
 

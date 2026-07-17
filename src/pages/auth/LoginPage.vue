@@ -107,7 +107,6 @@ const thirdPartyScanState = ref<'idle' | 'scanned' | 'confirmed' | 'expired'>('i
 const authStore = useAuthStore()
 const router = useRouter()
 
-const passwordLoginCapability = resolveCapability('auth.passwordLogin')
 const codeLoginCapability = resolveCapability('auth.codeLogin')
 const registerCapability = resolveCapability('auth.register')
 const resetPasswordCapability = resolveCapability('auth.resetPassword')

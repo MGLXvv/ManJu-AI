@@ -1,10 +1,6 @@
 import { generationApi } from '@/api/modules/generation'
 import { API_ERROR_CODES, GENERATION_TASK_STATUSES } from '@/types/api-enums'
-import type {
-  CreateGenerationTaskInput,
-  GenerationTask,
-  GenerationTaskStatus,
-} from '@/types/generation'
+import type { CreateGenerationTaskInput, GenerationTask, GenerationTaskStatus } from '@/types/generation'
 
 export interface GenerationTaskWaitOptions {
   interval?: number
@@ -42,10 +38,7 @@ export interface GenerationTaskGateway {
   cancel(taskId: string): Promise<GenerationTask | null>
   retry(taskId: string): Promise<GenerationTask | null>
   waitForTask(taskId: string, options?: GenerationTaskWaitOptions): Promise<GenerationTask>
-  createAndWait(
-    input: CreateGenerationTaskInput,
-    options?: GenerationTaskWaitOptions,
-  ): Promise<GenerationTask>
+  createAndWait(input: CreateGenerationTaskInput, options?: GenerationTaskWaitOptions): Promise<GenerationTask>
   listRecoverableByProject(projectId: string): Promise<GenerationTask[]>
   recoverProjectTasks(
     projectId: string,
@@ -83,10 +76,7 @@ const assertNotAborted = (signal?: AbortSignal): void => {
 const releaseTaskExecutionSlot = (): void => {
   activeTaskExecutionCount = Math.max(0, activeTaskExecutionCount - 1)
 
-  while (
-    activeTaskExecutionCount < DEFAULT_BATCH_CONCURRENCY &&
-    taskExecutionQueue.length > 0
-  ) {
+  while (activeTaskExecutionCount < DEFAULT_BATCH_CONCURRENCY && taskExecutionQueue.length > 0) {
     const next = taskExecutionQueue.shift()
     if (!next) {
       return
@@ -147,10 +137,7 @@ const acquireTaskExecutionSlot = (signal?: AbortSignal): Promise<() => void> => 
   })
 }
 
-const withTaskExecutionSlot = async <T>(
-  operation: () => Promise<T>,
-  signal?: AbortSignal,
-): Promise<T> => {
+const withTaskExecutionSlot = async <T>(operation: () => Promise<T>, signal?: AbortSignal): Promise<T> => {
   const release = await acquireTaskExecutionSlot(signal)
 
   try {
@@ -164,14 +151,12 @@ const sleep = (ms: number, signal?: AbortSignal): Promise<void> =>
   new Promise((resolve, reject) => {
     assertNotAborted(signal)
 
-    let timer: ReturnType<typeof globalThis.setTimeout>
-
     const onAbort = (): void => {
       globalThis.clearTimeout(timer)
       reject(createAbortError())
     }
 
-    timer = globalThis.setTimeout(() => {
+    const timer = globalThis.setTimeout(() => {
       signal?.removeEventListener('abort', onAbort)
       resolve()
     }, ms)
@@ -194,9 +179,7 @@ const normalizeConcurrency = (concurrency: number | undefined, itemCount: number
     return 0
   }
 
-  const normalized = Number.isFinite(concurrency)
-    ? Math.floor(concurrency as number)
-    : DEFAULT_BATCH_CONCURRENCY
+  const normalized = Number.isFinite(concurrency) ? Math.floor(concurrency as number) : DEFAULT_BATCH_CONCURRENCY
 
   return Math.min(itemCount, Math.max(1, normalized))
 }
@@ -262,10 +245,7 @@ const cancel = (taskId: string): Promise<GenerationTask | null> => generationApi
 
 const retry = (taskId: string): Promise<GenerationTask | null> => generationApi.retry(taskId)
 
-const waitForTask = async (
-  taskId: string,
-  options: GenerationTaskWaitOptions = {},
-): Promise<GenerationTask> => {
+const waitForTask = async (taskId: string, options: GenerationTaskWaitOptions = {}): Promise<GenerationTask> => {
   const interval = options.interval ?? DEFAULT_POLL_INTERVAL
   const timeout = options.timeout ?? DEFAULT_TIMEOUT
   const startedAt = Date.now()
@@ -318,14 +298,10 @@ const recoverProjectTasks = async (
 ): Promise<GenerationTaskBatchResult<GenerationTask, GenerationTask>[]> => {
   const tasks = await listRecoverableByProject(projectId)
 
-  return runGenerationTaskBatch(
-    tasks,
-    (task) => waitForTask(task.id, options),
-    {
-      concurrency: options.concurrency,
-      signal: options.signal,
-    },
-  )
+  return runGenerationTaskBatch(tasks, (task) => waitForTask(task.id, options), {
+    concurrency: options.concurrency,
+    signal: options.signal,
+  })
 }
 
 export const generationTaskGateway: GenerationTaskGateway = {

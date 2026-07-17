@@ -38,7 +38,7 @@
 import FigmaIcon from '@/components/icons/FigmaIcon.vue'
 import type { ResourceSourceFilter, ResourceTypeFilter } from '@/types/resource'
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     libraryName?: string
     keyword: string

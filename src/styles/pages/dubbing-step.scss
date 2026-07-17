@@ -517,13 +517,13 @@
   cursor: not-allowed;
 }
 
-@media (max-width: 1600px) {
+@media (width <= 1600px) {
   .dubbing-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 1280px) {
+@media (width <= 1280px) {
   .dubbing-step {
     overflow: auto;
   }

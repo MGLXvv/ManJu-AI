@@ -8,6 +8,21 @@ const parseList = (value: string | undefined): string[] =>
     .map((item) => item.trim())
     .filter(Boolean)
 
+export const resolveAssetInlining = (filePath: string): false | undefined =>
+  filePath.toLowerCase().endsWith('.svg') ? false : undefined
+
+export const resolveVendorChunk = (moduleId: string): string | undefined => {
+  const normalizedId = moduleId.replaceAll('\\', '/')
+  if (!normalizedId.includes('/node_modules/')) return undefined
+
+  if (/\/node_modules\/(?:@vue\/|vue\/|vue-router\/|pinia\/|vue-i18n\/)/.test(normalizedId)) {
+    return 'framework'
+  }
+  if (normalizedId.includes('/node_modules/axios/')) return 'http-vendor'
+
+  return undefined
+}
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const allowedHosts = parseList(env.VITE_DEV_ALLOWED_HOSTS)
@@ -18,6 +33,14 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),
+      },
+    },
+    build: {
+      assetsInlineLimit: resolveAssetInlining,
+      rollupOptions: {
+        output: {
+          manualChunks: resolveVendorChunk,
+        },
       },
     },
     server: {

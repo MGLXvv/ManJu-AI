@@ -25,11 +25,35 @@
         <div v-if="creating" class="system-table__row is-editing">
           <div>{{ items.length + 1 }}</div>
           <div><input v-model="draft.role" class="system-table__input" type="text" placeholder="输入角色名称" /></div>
-          <div class="system-permission-matrix__cell"><label class="system-toggle"><input v-model="draft.permissions.resourceLibrary" type="checkbox" /><span></span></label></div>
-          <div class="system-permission-matrix__cell"><label class="system-toggle"><input v-model="draft.permissions.storyboard" type="checkbox" /><span></span></label></div>
-          <div class="system-permission-matrix__cell"><label class="system-toggle"><input v-model="draft.permissions.dubbing" type="checkbox" /><span></span></label></div>
-          <div class="system-permission-matrix__cell"><label class="system-toggle"><input v-model="draft.permissions.systemMessage" type="checkbox" /><span></span></label></div>
-          <div><input v-model.number="draft.members" class="system-table__input" type="number" min="0" placeholder="成员数" /></div>
+          <div class="system-permission-matrix__cell">
+            <label class="system-toggle"
+              ><input v-model="draft.permissions.resourceLibrary" type="checkbox" /><span></span
+            ></label>
+          </div>
+          <div class="system-permission-matrix__cell">
+            <label class="system-toggle"
+              ><input v-model="draft.permissions.storyboard" type="checkbox" /><span></span
+            ></label>
+          </div>
+          <div class="system-permission-matrix__cell">
+            <label class="system-toggle"
+              ><input v-model="draft.permissions.dubbing" type="checkbox" /><span></span
+            ></label>
+          </div>
+          <div class="system-permission-matrix__cell">
+            <label class="system-toggle"
+              ><input v-model="draft.permissions.systemMessage" type="checkbox" /><span></span
+            ></label>
+          </div>
+          <div>
+            <input
+              v-model.number="draft.members"
+              class="system-table__input"
+              type="number"
+              min="0"
+              placeholder="成员数"
+            />
+          </div>
           <div>新建后生成</div>
           <div class="system-table__actions">
             <button type="button" class="is-primary" @click="saveCreate">保存</button>
@@ -37,15 +61,44 @@
           </div>
         </div>
 
-        <div v-for="(item, index) in items" :key="item.id" class="system-table__row" :class="{ 'is-editing': editingId === item.id }">
+        <div
+          v-for="(item, index) in items"
+          :key="item.id"
+          class="system-table__row"
+          :class="{ 'is-editing': editingId === item.id }"
+        >
           <template v-if="editingId === item.id">
             <div>{{ index + 1 }}</div>
             <div><input v-model="draft.role" class="system-table__input" type="text" placeholder="输入角色名称" /></div>
-            <div class="system-permission-matrix__cell"><label class="system-toggle"><input v-model="draft.permissions.resourceLibrary" type="checkbox" /><span></span></label></div>
-            <div class="system-permission-matrix__cell"><label class="system-toggle"><input v-model="draft.permissions.storyboard" type="checkbox" /><span></span></label></div>
-            <div class="system-permission-matrix__cell"><label class="system-toggle"><input v-model="draft.permissions.dubbing" type="checkbox" /><span></span></label></div>
-            <div class="system-permission-matrix__cell"><label class="system-toggle"><input v-model="draft.permissions.systemMessage" type="checkbox" /><span></span></label></div>
-            <div><input v-model.number="draft.members" class="system-table__input" type="number" min="0" placeholder="成员数" /></div>
+            <div class="system-permission-matrix__cell">
+              <label class="system-toggle"
+                ><input v-model="draft.permissions.resourceLibrary" type="checkbox" /><span></span
+              ></label>
+            </div>
+            <div class="system-permission-matrix__cell">
+              <label class="system-toggle"
+                ><input v-model="draft.permissions.storyboard" type="checkbox" /><span></span
+              ></label>
+            </div>
+            <div class="system-permission-matrix__cell">
+              <label class="system-toggle"
+                ><input v-model="draft.permissions.dubbing" type="checkbox" /><span></span
+              ></label>
+            </div>
+            <div class="system-permission-matrix__cell">
+              <label class="system-toggle"
+                ><input v-model="draft.permissions.systemMessage" type="checkbox" /><span></span
+              ></label>
+            </div>
+            <div>
+              <input
+                v-model.number="draft.members"
+                class="system-table__input"
+                type="number"
+                min="0"
+                placeholder="成员数"
+              />
+            </div>
             <div>{{ item.updatedAt }}</div>
             <div class="system-table__actions">
               <button type="button" class="is-primary" @click="saveEdit(item.id)">保存</button>
@@ -57,10 +110,26 @@
           <template v-else>
             <div>{{ index + 1 }}</div>
             <div>{{ item.role }}</div>
-            <div class="system-permission-matrix__cell"><span class="system-permission-pill" :class="{ 'is-enabled': item.permissions.resourceLibrary }">{{ item.permissions.resourceLibrary ? '开' : '关' }}</span></div>
-            <div class="system-permission-matrix__cell"><span class="system-permission-pill" :class="{ 'is-enabled': item.permissions.storyboard }">{{ item.permissions.storyboard ? '开' : '关' }}</span></div>
-            <div class="system-permission-matrix__cell"><span class="system-permission-pill" :class="{ 'is-enabled': item.permissions.dubbing }">{{ item.permissions.dubbing ? '开' : '关' }}</span></div>
-            <div class="system-permission-matrix__cell"><span class="system-permission-pill" :class="{ 'is-enabled': item.permissions.systemMessage }">{{ item.permissions.systemMessage ? '开' : '关' }}</span></div>
+            <div class="system-permission-matrix__cell">
+              <span class="system-permission-pill" :class="{ 'is-enabled': item.permissions.resourceLibrary }">{{
+                item.permissions.resourceLibrary ? '开' : '关'
+              }}</span>
+            </div>
+            <div class="system-permission-matrix__cell">
+              <span class="system-permission-pill" :class="{ 'is-enabled': item.permissions.storyboard }">{{
+                item.permissions.storyboard ? '开' : '关'
+              }}</span>
+            </div>
+            <div class="system-permission-matrix__cell">
+              <span class="system-permission-pill" :class="{ 'is-enabled': item.permissions.dubbing }">{{
+                item.permissions.dubbing ? '开' : '关'
+              }}</span>
+            </div>
+            <div class="system-permission-matrix__cell">
+              <span class="system-permission-pill" :class="{ 'is-enabled': item.permissions.systemMessage }">{{
+                item.permissions.systemMessage ? '开' : '关'
+              }}</span>
+            </div>
             <div>{{ item.members }}</div>
             <div>{{ item.updatedAt }}</div>
             <div class="system-table__actions">
@@ -78,13 +147,17 @@
 import { reactive, ref } from 'vue'
 import type { SystemPermissionItem } from '@/types/system'
 
-const props = defineProps<{
+defineProps<{
   items: SystemPermissionItem[]
 }>()
 
 const emit = defineEmits<{
   (e: 'create', payload: { role: string; members: number; permissions: SystemPermissionItem['permissions'] }): void
-  (e: 'update', id: string, payload: { role: string; members: number; permissions: SystemPermissionItem['permissions'] }): void
+  (
+    e: 'update',
+    id: string,
+    payload: { role: string; members: number; permissions: SystemPermissionItem['permissions'] },
+  ): void
   (e: 'delete', id: string): void
 }>()
 

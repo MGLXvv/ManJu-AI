@@ -1,4 +1,4 @@
-import type { StoryboardReferenceImage, StoryboardShot, StoryboardTagOptions } from '@/types/storyboard'
+import type { StoryboardShot, StoryboardTagOptions } from '@/types/storyboard'
 
 export type { StoryboardReferenceImage, StoryboardShot, StoryboardTagOptions } from '@/types/storyboard'
 

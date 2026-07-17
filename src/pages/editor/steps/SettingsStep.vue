@@ -147,6 +147,7 @@ import { apiMode } from '@/api/shared/apiMode'
 import { getSettingBatchActionToast, toggleSelectVisibleAssets } from '@/features/editor/settingBatchState'
 import { validateEditorAdvance } from '@/features/editor/editorCompletionState'
 import { buildScopedProjectArtifact, buildScopedProjectExportFileName } from '@/features/editor/editorExportScopeState'
+import { createBrowserJsonDownloadController } from '@/features/shared/jsonDownloadState'
 import { buildSettingAssetsSnapshot, resolveSettingAssets } from '@/features/editor/settingDraftState'
 import { buildSettingDeleteDialogCopy } from '@/features/editor/settingDeleteState'
 import { buildSettingLeaveDialogCopy, shouldInterceptSettingLeave } from '@/features/editor/settingLeaveConfirmState'
@@ -174,6 +175,7 @@ const assetsStore = useSettingAssetsStore()
 const editorStore = useEditorStore()
 const projectStore = useProjectStore()
 const uiFeedback = useUiFeedbackStore()
+const jsonDownloadController = createBrowserJsonDownloadController()
 const voicesStore = useVoicesStore()
 const resourceLibraryTaskRunner = createLatestAsyncTaskRunner()
 const assetHydrationTasks = createScopedAsyncTaskRunner()
@@ -606,13 +608,7 @@ const handleBatchExport = (): void => {
   const selectedAssets = assetsStore.assets.filter((asset) => selectedBatchIds.value.includes(asset.id))
   const payload = buildSettingArtifact(projectId.value || 'setting', selectedAssets)
 
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' })
-  const objectUrl = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = objectUrl
-  link.download = buildSettingBatchExportFileName(projectId.value || 'setting')
-  link.click()
-  URL.revokeObjectURL(objectUrl)
+  jsonDownloadController.downloadJson(buildSettingBatchExportFileName(projectId.value || 'setting'), payload)
 
   showToast(getSettingBatchActionToast('export'), 'success')
 }
@@ -648,13 +644,7 @@ const handleSaveExport = async (): Promise<void> => {
   }
 
   const payload = buildScopedProjectArtifact(projectId.value || 'setting', editorStore.draft, 'settings')
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' })
-  const objectUrl = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = objectUrl
-  link.download = buildScopedProjectExportFileName(projectId.value || 'setting')
-  link.click()
-  URL.revokeObjectURL(objectUrl)
+  jsonDownloadController.downloadJson(buildScopedProjectExportFileName(projectId.value || 'setting'), payload)
 
   showToast(hadChanges ? '设定已保存并导出' : '设定已导出', 'success')
 }
@@ -698,6 +688,7 @@ onBeforeUnmount(() => {
   assetSyncTasks.invalidate()
   stepTransitionTasks.invalidate()
   window.removeEventListener('beforeunload', handleBeforeUnload)
+  jsonDownloadController.releaseAll()
 })
 
 onBeforeRouteLeave((to) => {

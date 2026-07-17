@@ -237,6 +237,7 @@ import {
 import { buildVideoBatchGenerateMessage, buildVideoGenerateErrorMessage } from '@/features/editor/videoGenerationState'
 import { shouldApplyVideoTextOptimizationResult } from '@/features/editor/videoTextOptimizationState'
 import { buildScopedProjectArtifact, buildScopedProjectExportFileName } from '@/features/editor/editorExportScopeState'
+import { createBrowserJsonDownloadController } from '@/features/shared/jsonDownloadState'
 import { createScopedAsyncTaskRunner } from '@/features/shared/scopedAsyncTaskState'
 import { createProjectPhaseRunner, isProjectRouteContextCurrent } from '@/features/shared/projectPhaseRunnerState'
 import { videoPromptService } from '@/services/generation'
@@ -250,6 +251,7 @@ const store = useStoryboardStore()
 const editorStore = useEditorStore()
 const projectStore = useProjectStore()
 const uiFeedback = useUiFeedbackStore()
+const jsonDownloadController = createBrowserJsonDownloadController()
 const router = useRouter()
 const route = useRoute()
 
@@ -720,13 +722,7 @@ const handleSaveExport = async (): Promise<void> => {
   }
 
   const payload = buildScopedProjectArtifact(projectId.value, editorStore.draft, 'video')
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' })
-  const objectUrl = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = objectUrl
-  link.download = buildScopedProjectExportFileName(projectId.value)
-  link.click()
-  URL.revokeObjectURL(objectUrl)
+  jsonDownloadController.downloadJson(buildScopedProjectExportFileName(projectId.value), payload)
 
   showToast('视频已保存并导出', 'success')
 }
@@ -789,6 +785,7 @@ onBeforeUnmount(() => {
     window.clearTimeout(scheduledBatchGenerateTimer)
     scheduledBatchGenerateTimer = null
   }
+  jsonDownloadController.releaseAll()
 })
 
 onBeforeRouteLeave((to: RouteLocationNormalizedLoadedGeneric) => {

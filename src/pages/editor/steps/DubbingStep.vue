@@ -150,6 +150,7 @@ import {
 } from '@/features/editor/dubbingGenerationState'
 import { resolveDubbingPlaybackTransition } from '@/features/editor/dubbingPlaybackState'
 import { buildScopedProjectArtifact, buildScopedProjectExportFileName } from '@/features/editor/editorExportScopeState'
+import { createBrowserJsonDownloadController } from '@/features/shared/jsonDownloadState'
 import { createScopedAsyncTaskRunner } from '@/features/shared/scopedAsyncTaskState'
 import { createProjectPhaseRunner, isProjectRouteContextCurrent } from '@/features/shared/projectPhaseRunnerState'
 import { shouldInterceptStoryboardLeave } from '@/features/editor/storyboardLeaveConfirmState'
@@ -165,6 +166,7 @@ const route = useRoute()
 const editorStore = useEditorStore()
 const projectStore = useProjectStore()
 const uiFeedback = useUiFeedbackStore()
+const jsonDownloadController = createBrowserJsonDownloadController()
 
 const DUBBING_CARD_WIDTH = 330
 const DUBBING_CARD_GAP = 16
@@ -516,13 +518,7 @@ const handleSaveExport = async (): Promise<void> => {
   }
 
   const payload = buildScopedProjectArtifact(projectId.value, editorStore.draft, 'dubbing')
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' })
-  const objectUrl = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = objectUrl
-  link.download = buildScopedProjectExportFileName(projectId.value)
-  link.click()
-  URL.revokeObjectURL(objectUrl)
+  jsonDownloadController.downloadJson(buildScopedProjectExportFileName(projectId.value), payload)
 
   showToast('配音已保存并导出', 'success')
 }
@@ -580,6 +576,7 @@ onBeforeUnmount(() => {
     previewAudio.pause()
     previewAudio = null
   }
+  jsonDownloadController.releaseAll()
 })
 
 const handleBlockedNavigation = (target: RouteLocationRaw): void => {

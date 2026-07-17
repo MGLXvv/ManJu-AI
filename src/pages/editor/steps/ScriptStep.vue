@@ -179,6 +179,7 @@ import ScriptResultPanel from '@/components/editor/script/ScriptResultPanel.vue'
 import ScriptTemplatePopover from '@/components/editor/script/ScriptTemplatePopover.vue'
 import { resolveCapability } from '@/features/capabilities/capabilityRegistry'
 import { buildScopedProjectArtifact, buildScopedProjectExportFileName } from '@/features/editor/editorExportScopeState'
+import { createBrowserJsonDownloadController } from '@/features/shared/jsonDownloadState'
 import {
   buildScriptDraftSnapshot,
   clearScriptPromptFields,
@@ -216,6 +217,7 @@ const route = useRoute()
 const editorStore = useEditorStore()
 const projectStore = useProjectStore()
 const uiFeedback = useUiFeedbackStore()
+const jsonDownloadController = createBrowserJsonDownloadController()
 const scriptTemplateStore = useScriptTemplateStore()
 const generatedScriptWriteCapability = resolveCapability('editor.script.generated.write')
 
@@ -490,20 +492,6 @@ const persistDraft = async (isCurrent: () => boolean = () => true): Promise<bool
   }
 }
 
-const downloadJson = (fileName: string, payload: unknown): void => {
-  const blob = new Blob([JSON.stringify(payload, null, 2)], {
-    type: 'application/json;charset=utf-8',
-  })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = fileName
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  URL.revokeObjectURL(url)
-}
-
 const exportStoryboardArtifact = async (): Promise<void> => {
   if (!editorStore.draft) {
     showToast('未找到当前项目草稿', 'error')
@@ -518,7 +506,10 @@ const exportStoryboardArtifact = async (): Promise<void> => {
     editorStore.draft,
     'storyboard',
   )
-  downloadJson(buildScopedProjectExportFileName(projectId.value || editorStore.draft.projectId), artifact)
+  jsonDownloadController.downloadJson(
+    buildScopedProjectExportFileName(projectId.value || editorStore.draft.projectId),
+    artifact,
+  )
   showToast('分镜草稿 JSON 已导出', 'success')
 }
 
@@ -553,6 +544,7 @@ onBeforeUnmount(() => {
   scriptConfirmationTasks.invalidate()
   window.removeEventListener('beforeunload', handleBeforeUnload)
   document.removeEventListener('pointerdown', handleGlobalPointerDown)
+  jsonDownloadController.releaseAll()
 })
 
 onBeforeRouteLeave((to) => {

@@ -224,6 +224,7 @@ import {
 } from '@/features/editor/storyboardPromptOptimizationState'
 import { resolveStoryboardShots } from '@/features/editor/storyboardPersistState'
 import { buildScopedProjectArtifact, buildScopedProjectExportFileName } from '@/features/editor/editorExportScopeState'
+import { createBrowserJsonDownloadController } from '@/features/shared/jsonDownloadState'
 import {
   buildStoryboardEditedImage,
   buildStoryboardSaveState,
@@ -246,6 +247,7 @@ const store = useStoryboardStore()
 const editorStore = useEditorStore()
 const projectStore = useProjectStore()
 const uiFeedback = useUiFeedbackStore()
+const jsonDownloadController = createBrowserJsonDownloadController()
 const router = useRouter()
 const route = useRoute()
 
@@ -971,13 +973,7 @@ const handleSaveExport = async (): Promise<void> => {
   }
 
   const payload = buildScopedProjectArtifact(projectId.value, editorStore.draft, 'storyboard')
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' })
-  const objectUrl = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = objectUrl
-  link.download = buildScopedProjectExportFileName(projectId.value)
-  link.click()
-  URL.revokeObjectURL(objectUrl)
+  jsonDownloadController.downloadJson(buildScopedProjectExportFileName(projectId.value), payload)
 
   showToast('分镜已保存并导出', 'success')
 }
@@ -1158,6 +1154,7 @@ onBeforeUnmount(() => {
   storyboardListGenerationTasks.invalidate()
   stepTransitionTasks.invalidate()
   window.removeEventListener('beforeunload', handleBeforeUnload)
+  jsonDownloadController.releaseAll()
 })
 
 onBeforeRouteLeave((to) => {

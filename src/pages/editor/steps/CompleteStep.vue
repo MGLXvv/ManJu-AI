@@ -146,7 +146,7 @@ import { createCompleteProjectSyncRunner } from '@/features/editor/completeProje
 import { buildDubbingArtifact, buildDubbingExportFileName } from '@/features/editor/editorArtifactMapper'
 import { buildScopedProjectArtifact, buildScopedProjectExportFileName } from '@/features/editor/editorExportScopeState'
 import { createLatestAsyncTaskRunner } from '@/features/shared/latestAsyncTaskState'
-import { createObjectUrlRegistry } from '@/features/shared/objectUrlRegistryState'
+import { createBrowserJsonDownloadController } from '@/features/shared/jsonDownloadState'
 import { createProjectPhaseRunner } from '@/features/shared/projectPhaseRunnerState'
 import { createScopedAsyncTaskRunner } from '@/features/shared/scopedAsyncTaskState'
 import { exportWorkflowService } from '@/services/editor/exportWorkflow.service'
@@ -159,6 +159,7 @@ const router = useRouter()
 const editorStore = useEditorStore()
 const projectStore = useProjectStore()
 const uiFeedback = useUiFeedbackStore()
+const jsonDownloadController = createBrowserJsonDownloadController()
 
 const submitting = ref(false)
 const exportLoading = ref(false)
@@ -167,7 +168,6 @@ const exportWorkspace = ref<Awaited<ReturnType<typeof exportWorkflowService.load
 const exportWorkspaceTask = createLatestAsyncTaskRunner()
 const exportCreationTasks = createProjectPhaseRunner()
 const exportDownloadTasks = createScopedAsyncTaskRunner()
-const downloadUrlRegistry = createObjectUrlRegistry(URL)
 const projectId = computed(() => String(route.params.projectId ?? ''))
 const draft = computed(() => editorStore.draft)
 const project = computed(() => projectStore.projects.find((item) => item.id === projectId.value) ?? null)
@@ -199,23 +199,6 @@ const formatExportStatus = (status: string): string => {
       return '排队中'
     default:
       return status
-  }
-}
-
-const downloadJson = (fileName: string, payload: unknown): void => {
-  const blob = new Blob([JSON.stringify(payload, null, 2)], {
-    type: 'application/json;charset=utf-8',
-  })
-  const url = downloadUrlRegistry.create(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = fileName
-  document.body.appendChild(link)
-  try {
-    link.click()
-  } finally {
-    document.body.removeChild(link)
-    queueMicrotask(() => downloadUrlRegistry.release(url))
   }
 }
 
@@ -292,7 +275,7 @@ onUnmounted(() => {
   exportWorkspaceTask.invalidate()
   exportCreationTasks.invalidate()
   exportDownloadTasks.invalidate()
-  downloadUrlRegistry.releaseAll()
+  jsonDownloadController.releaseAll()
 })
 
 const exportDubbingArtifact = async (): Promise<void> => {
@@ -304,7 +287,7 @@ const exportDubbingArtifact = async (): Promise<void> => {
   submitting.value = true
   try {
     const artifact = buildDubbingArtifact(projectId.value, draft.value.dubbing)
-    downloadJson(buildDubbingExportFileName(projectId.value), artifact)
+    jsonDownloadController.downloadJson(buildDubbingExportFileName(projectId.value), artifact)
     showToast('配音 JSON 已导出', 'success')
   } finally {
     submitting.value = false
@@ -320,7 +303,7 @@ const exportProjectArtifact = async (): Promise<void> => {
   submitting.value = true
   try {
     const artifact = buildScopedProjectArtifact(projectId.value || 'project', draft.value, 'complete')
-    downloadJson(buildScopedProjectExportFileName(projectId.value || 'project'), artifact)
+    jsonDownloadController.downloadJson(buildScopedProjectExportFileName(projectId.value || 'project'), artifact)
     showToast('项目草稿 JSON 已导出', 'success')
   } finally {
     submitting.value = false

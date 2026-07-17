@@ -24,6 +24,7 @@
 
 ## 文档入口
 
+- [backend-interface-gap-requirements.md](./backend-interface-gap-requirements.md)：交付后端的缺口接口需求、优先级、DTO/错误/权限要求和验收标准；
 - [backend-integration-runbook.md](./backend-integration-runbook.md)：从证据收集、Adapter 实现、真实联调到能力门禁、灰度和回滚的完整执行手册；
 - [`source/`](./source/)：后端原始 Integration Pack 与 Phase1 更新说明归档；
 - [`endpoint-matrix.md`](./endpoint-matrix.md)：后端状态与前端状态双维度矩阵；

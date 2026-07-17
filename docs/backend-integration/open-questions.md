@@ -4,6 +4,8 @@
 
 缺少请求 DTO 或写后读证据时，前端只保留 Contract、Capability 和 Backlog，不继续猜测字段。
 
+给后端排期和交付使用的完整需求见 [后端接口缺口需求说明](./backend-interface-gap-requirements.md)；本文件继续作为前端恢复接入前的精简证据清单。
+
 ## 已确认
 
 原始依据归档于 [`source/`](./source/)。当前已确认：

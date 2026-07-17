@@ -1,285 +1,259 @@
 # 前端项目接口接入与可维护性审核
 
-## 1. 审核结论
+> 状态日期：2026-07-17
+>
+> 本文描述当前前端收口状态。历史接口证据以 [接口矩阵](./endpoint-matrix.md) 为准；需要后端补齐的交付项以 [后端接口缺口需求说明](./backend-interface-gap-requirements.md) 为准。
 
-当前项目已经具备较完整的前端工程基础：Runtime Config、统一 HTTP Client、API Contract、Mock/HTTP Adapter、CapabilityRegistry、GenerationTaskGateway、EditorPersistenceService、MediaUploadService、Fixture、单元测试、Mock E2E、视觉回归和 CI 均已建立。
+## 1. 当前结论
 
-后续接入成本的主要风险不在页面数量，而在以下几类历史契约漂移：
+当前前端工程优化已经完成，可以冻结功能开发并等待后端接口证据。
 
-- 旧 HTTP Adapter 使用了后端文档中不存在的路径；
-- 前端聚合保存 Contract 与后端单实体 CRUD 不一致；
-- 多个模块在 HTTP 文件内直接处理任意对象，DTO/Mapper 边界不清晰；
-- 后端状态和前端接入状态混为一个“READY/未完成”；
-- 环境变量可以绕过受控拒绝能力；
-- 真实 AI、媒体上传和导出流程尚无完整协议。
+前端已经具备“后端到位后主要修改 Adapter、DTO、Mapper、Fixture 和 Capability”的接入条件，不需要重新设计页面、Store 或主流程。继续在缺少契约的情况下扩展真实写接口，收益低且容易形成猜测性实现。
 
-本轮已经修复可低风险确定的部分，其余问题按 P0/P1/P2 排序。
+当前状态：
 
-## 2. 已有优势
+- 工作区和主分支保持干净；
+- ESLint、Stylelint 历史基线均已归零；
+- HTTP/Mock 边界、统一 HTTP Client、Contract、Mapper 和 Capability 已建立；
+- 编辑器持久化、生成任务、媒体引用与异步生命周期已有统一前端边界；
+- Mock E2E、单元测试、视觉回归、长会话诊断和构建预算已经建立；
+- 第一方源码没有待处理的 TODO/FIXME；脚手架中的 TODO 是生成新模块后必须替换的契约占位；
+- 最终前端优化之后仅有文档提交，生产代码没有新增风险变更。
 
-### 架构边界
+因此，当前没有必须在等待后端期间继续处理的前端 P0/P1 工程问题。
 
-```text
-Page / Component
--> Store / Feature Service
--> Domain Service
--> ApiContract
--> MockAdapter | HttpAdapter
--> Shared HTTP Client
-```
+## 2. 已完成的前端基础
 
-该方向正确，应继续保持。
+### 2.1 运行配置与网络
 
-### 运行与安全
+- `VITE_API_MODE` 统一控制 `mock` / `http`；
+- `VITE_API_BASE_URL` 和 Vite Proxy 统一管理 API 前缀；
+- 严格运行配置可在联调和生产环境提前阻止非法配置；
+- HTTP 模式不得静默回退 Mock；
+- Token、密码和 Authorization 不进入 Fixture、日志或构建变量。
 
-- API Mode、Base URL、Proxy 和 Capability 统一读取；
-- Token 作为不透明 Session 保存；
-- 401 和 403 行为已区分；
-- HTTP 模式禁止依赖 Mock；
-- 密码、Token、Cookie 和 Authorization Header 不进入 Fixture；
-- 临时真实写入工具支持显式授权和自动清理。
+### 2.2 HTTP 与错误处理
 
-### 异步任务和持久化
+- 统一 Axios 实例和请求超时；
+- 统一注入 Bearer Token 和 `X-Requested-With`；
+- 统一解包 `{ code, msg, data }`；
+- `code !== 0` 转换为统一 ApiError；
+- 401 清理失效会话；
+- 403 保留登录态并进入无权限状态；
+- 页面不直接处理后端 DTO 或 Axios 响应。
 
-- GenerationTaskGateway 已统一轮询、超时、恢复、取消和重试；
-- EditorPersistenceService 已统一防抖保存、分区脏状态和冲突处理；
-- MediaUploadService 已隔离本地临时媒体和稳定后端媒体引用。
+### 2.3 模块化接入边界
 
-### 质量保证
+标准模块结构已经形成：
 
-- Linux 和 Windows 双平台质量脚本；
-- TypeScript、Vitest 覆盖率和 Build Budget；
-- Mock E2E、无障碍基线、视觉回归和长会话诊断；
-- 资源体积、Object URL、Timer、Subscription 和 Editor 挂载监控。
+~~~text
+<module>.api.ts
+<module>.http.ts
+<module>.mock.ts
+<module>.types.ts
+<module>.mapper.ts
+~~~
 
-## 3. P0：接入真实接口前必须处理
+页面和 Store 依赖领域 Contract；后端字段差异只允许在 DTO、Mapper 和 HTTP Adapter 内处理。新模块可使用 `pnpm scaffold:http-module <module-name>` 创建边界骨架。
 
-### 3.1 Storyboard 接口迁移
+### 2.4 能力门禁
 
-当前 `storyboard.http.ts` 仍使用历史辅助路径：
+Capability Registry 已将能力分为：
 
-```text
-/storyboard/defaults
-/storyboard/shots/{id}/...
-```
+- `available`；
+- `mock-only`；
+- `readonly`；
+- `unsupported`。
 
-Integration Pack 的真实接口是项目级 Workspace 和 `/aidrama/storyboards/{id}` CRUD。
+受控拒绝、语义不匹配、媒体上传、真实生成和导出等能力不能通过环境变量强行开启。导航、按钮和业务服务共享同一能力判断。
 
-建议：
+### 2.5 编辑器持久化
 
-1. 新建 Storyboard Contract 文件；
-2. 将 Workspace、CRUD、sort、confirm 分开建 Adapter 方法；
-3. 生成图片、视频和高清图不放进 CRUD Adapter；
-4. AI Submit 统一进入具体业务 Service，再由 GenerationTaskGateway 跟踪；
-5. 保存真实 Workspace、空列表、403 和非法状态 Fixture。
+EditorPersistenceService 已统一：
 
-### 3.2 Setting 与 Project Asset 合并边界
+- script、setting、storyboard、video、dubbing、projectMeta 分区；
+- 防抖保存、dirty 状态和保存结果；
+- 页面切换、过期响应和冲突边界；
+- HTTP 未实现分区的显式拒绝；
+- Script Draft 已确认字段的真实保存；
+- 未确认 Script Content DTO 的显式阻断。
 
-当前同时存在：
+### 2.6 生成任务和媒体
 
-- `setting.http.ts` 的 `/settings/...` 历史路径；
-- `asset.http.ts` 的 Project Asset 列表；
-- Editor Asset Mapper；
-- SettingAssets Store。
+- GenerationTaskGateway 已统一轮询、取消、超时、恢复、重试和批量并发；
+- 页面与 Store 不直接维护后端任务状态机；
+- 业务生成入口与通用任务查询分离；
+- mediaId、远程 URL、Blob URL 和 Data URL 职责已经分离；
+- 浏览器临时媒体不会被误作跨会话持久化资源；
+- HTTP 上传未确认时显式返回不支持。
 
-建议把真实后端接入统一为 `projectAsset` 模块：
+### 2.7 工程质量
 
-```text
-workspace
-list
-getById
-create
-update
-remove
-batchDelete
-saveToLibrary
-importFromLibrary
-```
+已完成：
 
-页面中的 Setting 概念保留为领域名称，但 HTTP 模块应使用后端 Project Asset 术语，避免同一实体出现两套路径。
+- ESLint 基线归零；
+- Stylelint 基线归零；
+- 无效 Store 和死状态清理；
+- 路由懒加载和稳定 vendor 分包；
+- SVG 资源外置；
+- Source Asset 扫描排除嵌套 node_modules；
+- Build Budget；
+- Object URL、Timer、Subscription、异步过期结果和组件卸载测试；
+- Windows/Linux 质量脚本；
+- Mock E2E、视觉基线和长会话诊断。
 
-### 3.3 Script Content 请求 DTO
+旧审核中“继续清理 Lint 基线、分包和重复状态”等建议已经完成，不再作为待办。
 
-路径是 READY，但 Request DTO 尚未从文档得到确认。当前显式阻断是正确处理。
+## 3. 已完成的真实接口证据
 
-完成条件：
+### 3.1 Auth/Profile
 
-- 后端提供 DTO/OpenAPI 或真实请求示例；
-- 保存后能通过 Workspace 或独立读取接口验证；
-- Confirm 前置状态明确；
-- 失败响应和权限响应有 Fixture。
+已经真实验证：
 
-### 3.4 真实媒体协议
+- 账号密码登录；
+- Bearer Session Token；
+- Profile 和角色/权限映射；
+- 刷新后的会话恢复；
+- 无效 Token 401；
+- 401 后清理会话。
 
-在 Image、Video、TTS 和 Export 接入前，必须冻结：
+仍等待后端提供低权限账号 403、生产 Session、Logout/Refresh 策略。
 
-- 上传方式；
-- 文件限制；
-- 媒体资源 ID；
-- 永久 URL / 临时签名 URL；
-- URL 刷新；
-- 删除和引用计数；
-- CDN、CORS 和鉴权；
-- Callback 验签；
-- 任务幂等键。
+### 3.2 Project
 
-没有这些协议时，不应继续扩展页面内 Data URL 或直接 URL 保存逻辑。
+已经真实验证：
 
-## 4. P1：降低后续接入成本
+- 列表和 `data.list/data.total`；
+- 详情；
+- 创建；
+- 更新/重命名；
+- 删除；
+- 删除后列表复查；
+- 测试数据异常清理。
 
-### 4.1 将 Backend DTO 移回模块目录
+扩展查询、完整 Update DTO、删除后详情响应和生产权限不阻塞当前冻结状态。
 
-`src/types/api-dto.ts` 逐渐成为跨模块大文件。建议后续迁移为：
+### 3.3 Script Draft
 
-```text
-src/api/modules/project/project.dto.ts
-src/api/modules/storyboard/storyboard.dto.ts
-src/api/modules/projectAsset/projectAsset.dto.ts
-src/api/modules/generation/generation.dto.ts
-```
+已经真实验证：
 
-公共协议只保留在 `src/api/shared/`。
+- Script Workspace GET；
+- Script Draft PUT；
+- `rawText/prompt` 写入；
+- 保存后重新读取。
 
-### 4.2 为现有真实模块补 `*.contract.ts`
+Script Content、Confirm、revision/version 和 409 仍缺后端证据，当前显式关闭。
 
-新脚手架已生成机器可读 Contract。建议优先给以下模块补齐：
+### 3.4 已接入读取或目录边界
 
-- auth；
-- project；
-- script/editor；
-- storyboard；
-- projectAsset；
-- resource；
-- voice；
-- scriptTemplate；
-- generation；
-- system。
+已有不同程度 Adapter 支持：
 
-Contract 记录 Method、Path、后端状态、证据来源和后端 commit，但不参与运行时请求。
+- Storyboard Workspace 读取；
+- Project Asset 列表；
+- Resource Library；
+- Voices；
+- Script Templates；
+- Generation Tasks 列表、详情、取消和重试；
+- System 只读数据。
 
-### 4.3 统一分页 Contract
+“已有 Adapter”不等于完整页面写流程已验证，最终状态必须查看接口矩阵。
 
-当前页面型 Contract 多数直接返回数组，丢失 total、pageNo 和 pageSize。
+## 4. 当前剩余缺口
 
-建议新增：
+剩余缺口主要属于后端契约或真实环境，而不是前端架构：
 
-```ts
-interface PageResult<T> {
-  list: T[]
-  total: number
-  pageNo: number
-  pageSize: number
-}
-```
+### P0：主编辑流程
 
-Project、Resource、Voice、Template 和 Generation 逐步迁移。短期内当前 `extractBackendList` 可降低包装差异，但不能替代真正分页。
+1. Script Content 请求 DTO、保存响应、写后读和 Confirm；
+2. Storyboard 完整 Workspace/CRUD DTO、排序、确认、版本和错误响应；
+3. Project Asset 单实体 CRUD 响应、PUT 语义、逻辑删除和写后读；
+4. 编辑器领域字段与后端持久化字段的完整映射。
 
-### 4.4 统一写操作返回语义
+### P0：真实生成与媒体
 
-建议后端和前端明确三种写响应：
+1. Script/Image/Video/TTS 具体业务 Submit；
+2. 任务状态、结果、失败、取消、重试和幂等；
+3. multipart 或预签名上传；
+4. mediaId、URL 刷新、删除、引用计数和 OSS/CDN；
+5. 真实视频合成和下载。
 
-- 返回完整实体；
-- 只返回 ID；
-- 返回 `null`，要求重新读取 Workspace。
+### P1：权限与生产协议
 
-Adapter 不应默认猜测 `data.asset`、`data.voice` 或直接实体。真实 Fixture 到位后删除临时别名。
+1. 低权限测试账号和稳定 403；
+2. Session 过期、Logout 和 Refresh 策略；
+3. 时间格式和时区；
+4. requestId/traceId；
+5. 跨模块错误码；
+6. ID、null、空字符串和缺省字段规则；
+7. 分页上限、排序、429 和重试；
+8. 正式域名、HTTPS、Nginx、上传限制和超时。
 
-### 4.5 Store 加载生命周期
+详细交付要求见 [后端接口缺口需求说明](./backend-interface-gap-requirements.md)。
 
-部分 Store 只有 `loading/hydrated`，缺少：
+## 5. 当前不应继续的前端工作
 
-- error；
-- lastLoadedAt；
-- reload；
-- AbortSignal；
-- 请求去重；
-- 页面切换取消；
-- 乐观更新失败回滚。
+在没有新后端证据时，不应：
 
-建议先在 Project、Resource 和 System Store 建立统一 AsyncState 模板。
+- 根据响应字段反推请求 DTO；
+- 根据页面模型补造后端字段；
+- 将 HTTP 200 或 `code=0` 当成写入成功；
+- 给未验证写能力解除门禁；
+- 将 Provider Sandbox 当作真实 Provider；
+- 将占位 resultUrl 当作生产媒体；
+- 将 Blob/Data URL 长期保存；
+- 为历史路径增加新的猜测性兼容；
+- 在 HTTP 失败后回退到 Mock；
+- 为提高平均覆盖率而编写低价值重复测试。
 
-### 4.6 Capability 与后端权限联动
+## 6. 可以进行的非阻塞维护
 
-当前 Capability 主要来自构建配置。后续应将：
+等待期间仅建议做低频、低风险维护：
 
-```text
-静态产品能力
-+ 后端 readiness
-+ Profile permissions
-+ 当前实体状态
-```
+- 依赖安全公告和浏览器兼容性检查；
+- 后端文档到达后的差异审阅；
+- CI 环境或构建工具升级；
+- 已知测试不稳定问题修复；
+- 文档状态同步。
 
-合并为最终页面动作能力。
+这些维护不是当前交付阻塞项，不需要主动开启新一轮功能优化。
 
-本轮已禁止环境变量强行开启 CONTROLLED_REJECT 和语义不匹配能力。
+## 7. 恢复开发的触发条件
 
-## 5. P2：工程质量继续优化
+满足任一条件后恢复评估：
 
-### 5.1 清理 ESLint/Stylelint 历史基线
+1. 新 OpenAPI/Swagger；
+2. 后端 DTO 或 Controller 源码；
+3. 脱敏 Success/Empty/Error Fixture；
+4. 可访问测试环境和可自动清理写数据的账号；
+5. 低权限账号；
+6. 真实 AI、媒体或导出契约；
+7. 后端接口版本变化及变更说明。
 
-当前使用非回归基线是合理过渡，但建议按模块逐步归零：
+恢复后按 [后端接口接入执行手册](./backend-integration-runbook.md) 推进，不直接从页面开始修改。
 
-1. API 和 Service；
-2. Store；
-3. 通用组件；
-4. 页面；
-5. SCSS。
+## 8. 推荐恢复顺序
 
-### 5.2 提升测试重点
-
-当前总体覆盖率约四成，建议不追求平均铺开，优先提升：
-
-- Mapper；
-- Capability；
-- Store 错误与回滚；
-- 任务恢复；
-- 媒体清理；
-- 真实接口失败 Fixture。
-
-### 5.3 分包与页面懒加载
-
-生产包已受预算保护。后续检查：
-
-- 大型编辑器步骤是否按路由拆包；
-- 图标和媒体是否重复打包；
-- 资源库、系统管理和登录页是否独立 chunk；
-- Mock-only 代码是否进入 HTTP 生产包。
-
-### 5.4 删除重复领域模型
-
-重点检查：
-
-- `Asset`、`SettingAsset`、`ResourceAsset`；
-- `StoryboardShot` 与 BackendStoryboardDTO；
-- Project Export 与 Editor Export；
-- GenerationTask 与业务任务结果。
-
-不是简单合并类型，而是明确“后端实体、前端领域实体、页面视图模型”三层。
-
-## 6. 推荐实施顺序
-
-```text
-P0.1 Storyboard Workspace/CRUD
--> P0.2 Project Asset 单实体 CRUD
--> P1.1 模块化 DTO/Contract
--> Project 扩展查询接口
--> Resource 与 Project Asset COPY 流程
--> Voice/Template/Generation 真实 Fixture
--> Auth Code/Register/Reset 页面范围确认
--> 真实 AI Submit/Task/Callback
+~~~text
+Script Content / Confirm
+-> Project Asset 单实体 CRUD
+-> Storyboard CRUD / sort / confirm
+-> 编辑器其他分区持久化
+-> 业务 Generation Submit
 -> Media Upload
 -> Export
-```
+-> 生产鉴权与部署协议
+~~~
 
-## 7. 每个后续 PR 的完成定义
+每一项都应独立完成 Contract、DTO、Mapper、Fixture、真实验证、能力门禁和回滚，不把多个证据不足的能力同时开启。
 
-- 后端状态和前端状态分开记录；
-- `*.contract.ts` 已更新；
-- DTO 和 Mapper 不进入页面/Store；
-- 不存在猜测路径；
-- 不存在 HTTP 失败后 Mock 回退；
-- 有成功、空值、失败、401、403、404 Fixture；
-- Capability 和 Profile 权限已检查；
-- 页面刷新恢复已验证；
-- TypeScript、单元测试、构建、Mock E2E 和视觉回归通过；
-- 文档记录后端 commit 和仍未完成的完整流程。
+## 9. 冻结判断
+
+当前可以停止前端功能开发并等待后端。
+
+冻结期间保持：
+
+- Mock 主流程可回归；
+- HTTP 已验证链路不回退；
+- 未验证能力继续关闭；
+- 文档和接口矩阵作为唯一状态来源；
+- 后端交付新证据后再启动下一轮。

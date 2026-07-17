@@ -33,6 +33,7 @@ docs/*
 !docs/backend-integration/
 docs/backend-integration/*
 !docs/backend-integration/backend-integration-runbook.md
+!docs/backend-integration/backend-interface-gap-requirements.md
 outputs/
 tools/
 原型/

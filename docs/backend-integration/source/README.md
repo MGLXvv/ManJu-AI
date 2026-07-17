@@ -1,12 +1,19 @@
-# 后端原始联调资料归档
+# 后端集成历史资料归档
 
-本目录保存后端交付给前端的原始联调文档，作为接口状态、Method/Path、阶段限制和后端版本的历史依据。
+本目录保存后端交付给前端的原始联调文档，以及已被当前接入入口替代的过程资料，作为接口状态、Method/Path、阶段限制和后端版本的历史依据。
 
 ## 文件
 
 - [`frontend-integration-pack.md`](./frontend-integration-pack.md)：后端测试环境、通用协议、核心业务接口、READY/PARTIAL 状态和完整推荐联调顺序；
 - [`frontend-phase1-update.md`](./frontend-phase1-update.md)：Frontend API Compat Phase1 增量接口和特殊状态说明。
 
+## 已归档的前端过程资料
+
+下列文档在归档前位于 `docs/` 根目录。当前接入状态请以 [`../README.md`](../README.md)、[`../endpoint-matrix.md`](../endpoint-matrix.md) 和 [`../frontend-readiness-handbook.md`](../frontend-readiness-handbook.md) 为准。
+
+- 接口与接入：`api-contract-status-matrix.md`、`api-integration.md`、`api-module-audit.md`、`backend-api-gap-list.md`、`backend-api-matrix.md`、`backend-integration-checklist.md`、`backend-runtime-config.md`、`frontend-backend-integration-guide.md`、`frontend-backend-readiness-plan.md`、`frontend-handoff-summary.md`、`frontend-required-backend-apis.md`、`local-dev-and-integration.md`。
+- 编辑器与生成任务：`editor-persistence-boundary.md`、`generation-entrypoint-strategy.md`、`generation-http-boundary.md`、`generation-results-media-upload.md`、`generation-task-contract.md`、`generation-task-gateway.md`。
+- Mock、范围与验收：`mock-coupling-checklist.md`、`remaining-mock-coupling.md`、`remaining-scope-and-mock-status.md`、`stage-acceptance-checklist.md`、`final-delivery-checklist.md`。
 ## 来源与版本
 
 - 后端仓库：`manju-ai-server`；
@@ -18,7 +25,7 @@
 
 ## 使用原则
 
-1. 本目录保存原始输入，不随前端实现推测性修改；
+1. 本目录保存原始输入和已替代的过程资料，不随前端实现推测性修改；
 2. 当前前端结论以 [`../endpoint-matrix.md`](../endpoint-matrix.md) 为准；
 3. 后端 `READY` 只表示真实业务接口已实现，不代表完整 AI、媒体或导出流程完成；
 4. 接口是否可在正式页面启用，还需要 Adapter、Mapper、Fixture、错误链和真实写后读证据；

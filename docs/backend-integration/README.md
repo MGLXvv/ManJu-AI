@@ -30,7 +30,7 @@
 - [`frontend-project-audit.md`](./frontend-project-audit.md)：整个前端项目的 P0/P1/P2 优化审核；
 - [`frontend-readiness-handbook.md`](./frontend-readiness-handbook.md)：当前框架和标准接入流程；
 - [`scaffold-http-module.md`](./scaffold-http-module.md)：真实接口模块脚手架使用说明；
-- [`../frontend-backend-integration-guide.md`](../frontend-backend-integration-guide.md)：详细 DTO/Mapper、测试和页面验收指南；
+- [`source/frontend-backend-integration-guide.md`](./source/frontend-backend-integration-guide.md)：历史 DTO/Mapper、测试和页面验收指南；
 - [`environment.md`](./environment.md)：环境、代理、鉴权与运行配置；
 - [`protocol.md`](./protocol.md)：CommonResult、分页、Token 和错误处理；
 - [`verification-log.md`](./verification-log.md)：脱敏真实验证记录；

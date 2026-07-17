@@ -138,4 +138,4 @@ Project Asset 路径和保存模型仍不一致，PROP 和 scope 映射存在风
 - Script Content 请求 DTO 未确认时抛出 `EDITOR_SCRIPT_CONTENT_CONTRACT_UNCONFIRMED`；
 - 不保留猜测性 Script Workspace 写入验证器。
 
-详细步骤参见 `frontend-readiness-handbook.md` 和 `../frontend-backend-integration-guide.md`。
+详细步骤参见 `frontend-readiness-handbook.md` 和 `source/frontend-backend-integration-guide.md`。

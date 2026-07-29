@@ -82,7 +82,7 @@ jobs:
 
       - name: Upload frontend quality diagnostics
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: frontend-quality-diagnostics
           path: artifacts/quality
@@ -91,7 +91,7 @@ jobs:
 
       - name: Upload frontend coverage report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: frontend-coverage-report
           path: artifacts/coverage
@@ -100,7 +100,7 @@ jobs:
 
       - name: Upload frontend build report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: frontend-build-report
           path: artifacts/build
@@ -207,7 +207,7 @@ jobs:
 
       - name: Upload E2E reports and failure artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: mock-e2e-report
           path: artifacts/e2e
